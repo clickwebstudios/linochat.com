@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LinoChat WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    
+    <script>
+        const REVERB_KEY = 'stccy2qt6gy1est5xeep';
+        const ws = new WebSocket('ws://127.0.0.1:8080/app/' + REVERB_KEY);
+        
+        ws.onopen = function() {
+            document.getElementById('status').textContent = 'Connected!';
+            console.log('WebSocket connected');
+        };
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            const div = document.createElement('div');
+            div.textContent = JSON.stringify(data);
+            document.getElementById('messages').appendChild(div);
+        };
+        
+        ws.onclose = function() {
+            document.getElementById('status').textContent = 'Disconnected';
+        };
+        
+        ws.onerror = function(error) {
+            document.getElementById('status').textContent = 'Error: ' + error;
+        };
+    </script>
+</body>
+</html>

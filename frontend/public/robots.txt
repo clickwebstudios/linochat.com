@@ -1,0 +1,11 @@
+# LinoChat - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /portal/
+
+# Sitemap location
+Sitemap: https://linochat.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

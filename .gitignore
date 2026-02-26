@@ -1,0 +1,40 @@
+# Environment files
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+.env.backend.example
+!.env.backend.example
+!.env.frontend.example
+
+# Dependencies
+backend/vendor/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+
+# Docker volumes (if local)
+docker/volumes/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.backup
+*.bak
+*.sql
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp

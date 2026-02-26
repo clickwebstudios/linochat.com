@@ -1,0 +1,1363 @@
+openapi: 3.0.3
+info:
+  title: LinoChat API
+  description: |
+    **LinoChat** - AI-powered customer support platform API.
+    
+    ## Features
+    - AI Chat with GPT-4o-mini integration
+    - Real-time messaging via WebSocket (Laravel Reverb)
+    - Agent dashboard for managing conversations
+    - Support tickets with email integration
+    - Widget embed for websites
+    - Agent invitation system
+    
+    ## Authentication
+    The API uses JWT Bearer tokens for authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer {your-jwt-token}
+    ```
+    
+    ## Base URL
+    - Development: `http://localhost:8000/api`
+    - Production: `https://linochat.com/api`
+    
+    ## WebSocket
+    Real-time events are delivered via WebSocket:
+    - URL: `ws://localhost:8080/app/{REVERB_APP_KEY}`
+    - Channels: `chat.{chat_id}`, `agent.{user_id}`, `project.{project_id}`
+    
+  version: 1.0.0
+  contact:
+    name: LinoChat Support
+    email: support@linochat.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local Development Server
+  - url: https://linochat.com/api
+    description: Production Server
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Widget
+    description: Public widget API for customer chat (no auth required)
+  - name: Agent Dashboard
+    description: Agent dashboard for managing chats and tickets
+  - name: Projects
+    description: Project management
+  - name: Invitations
+    description: Agent invitation management
+  - name: Tickets
+    description: Support ticket management
+  - name: Widget Settings
+    description: Widget customization settings
+
+paths:
+  # ========== AUTHENTICATION ==========
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user with AI website analysis
+      description: Creates a new user account with company. Automatically analyzes website and creates Knowledge Base articles using GPT-4o-mini.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email, password, website, company_name]
+              properties:
+                first_name:
+                  type: string
+                  example: "John"
+                last_name:
+                  type: string
+                  example: "Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@company.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: "securepassword123"
+                password_confirmation:
+                  type: string
+                  example: "securepassword123"
+                website:
+                  type: string
+                  format: uri
+                  example: "https://example.com"
+                company_name:
+                  type: string
+                  example: "Acme Inc"
+                role:
+                  type: string
+                  enum: [admin, agent, superadmin]
+                  default: admin
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      token_type:
+                        type: string
+                        example: bearer
+                      expires_in:
+                        type: integer
+                        example: 432000
+                      user:
+                        $ref: '#/components/schemas/User'
+                      project:
+                        $ref: '#/components/schemas/Project'
+                      analysis:
+                        type: string
+                        example: completed
+                      kb_articles_count:
+                        type: integer
+                        example: 24
+        422:
+          description: Validation error
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and receive JWT tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      token_type:
+                        type: string
+                      expires_in:
+                        type: integer
+                      user:
+                        $ref: '#/components/schemas/User'
+        401:
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        200:
+          description: Token refreshed
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Successfully logged out
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  # ========== WIDGET (PUBLIC) ==========
+  /widget/{widget_id}/config:
+    get:
+      tags: [Widget]
+      summary: Get widget configuration
+      description: Public endpoint - no authentication required. Returns widget settings for embedding on customer websites.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "wc_abc123xyz"
+      responses:
+        200:
+          description: Widget configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      widget_id:
+                        type: string
+                      company_name:
+                        type: string
+                      color:
+                        type: string
+                        example: "#4F46E5"
+                      position:
+                        type: string
+                        enum: [bottom-right, bottom-left, top-right, top-left]
+                      welcome_message:
+                        type: string
+                      button_text:
+                        type: string
+                      widget_title:
+                        type: string
+                      settings_updated_at:
+                        type: string
+                        format: date-time
+
+  /widget/{widget_id}/init:
+    post:
+      tags: [Widget]
+      summary: Initialize or get existing chat
+      description: Creates a new chat session or returns existing one for the customer.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_email:
+                  type: string
+                  format: email
+                customer_name:
+                  type: string
+                customer_id:
+                  type: string
+                  description: Existing customer ID from localStorage
+      responses:
+        200:
+          description: Chat initialized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      chat_id:
+                        type: string
+                      customer_id:
+                        type: string
+                      status:
+                        type: string
+                        enum: [active, waiting, ai_handling, closed]
+                      messages:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatMessage'
+
+  /widget/{widget_id}/message:
+    post:
+      tags: [Widget]
+      summary: Send message from customer
+      description: Sends a message and triggers AI response if chat is in ai_handling status.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chat_id, customer_id, message]
+              properties:
+                chat_id:
+                  type: string
+                customer_id:
+                  type: string
+                message:
+                  type: string
+                  maxLength: 5000
+      responses:
+        200:
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        $ref: '#/components/schemas/ChatMessage'
+                      ai_response:
+                        type: object
+                        nullable: true
+                      chat_status:
+                        type: string
+
+  /widget/{widget_id}/messages:
+    get:
+      tags: [Widget]
+      summary: Get chat messages
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: chat_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: customer_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated messages
+
+  /widget/{widget_id}/handover:
+    post:
+      tags: [Widget]
+      summary: Request human handover
+      description: Transfers chat from AI to human agent.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chat_id, customer_id]
+              properties:
+                chat_id:
+                  type: string
+                customer_id:
+                  type: string
+      responses:
+        200:
+          description: Handover requested
+
+  /widget/{widget_id}/check-ticket-needed:
+    post:
+      tags: [Widget]
+      summary: Check if ticket should be created
+      description: Checks if agents are busy/not responding and ticket creation is needed.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chat_id, customer_id]
+              properties:
+                chat_id:
+                  type: string
+                customer_id:
+                  type: string
+      responses:
+        200:
+          description: Check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      create_ticket:
+                        type: boolean
+                      agents_available:
+                        type: boolean
+
+  /widget/{widget_id}/create-ticket:
+    post:
+      tags: [Widget]
+      summary: Create ticket from chat
+      description: Submits contact info and creates support ticket from chat conversation.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chat_id, customer_id, email]
+              properties:
+                chat_id:
+                  type: string
+                customer_id:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+      responses:
+        200:
+          description: Ticket created
+
+  /widget/{widget_id}/status:
+    get:
+      tags: [Widget]
+      summary: Get agent status
+      description: Returns online/offline status and estimated wait time.
+      parameters:
+        - name: widget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Agent status
+
+  # ========== AGENT DASHBOARD ==========
+  /agent/chats:
+    get:
+      tags: [Agent Dashboard]
+      summary: List chats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, mine, unassigned, closed]
+      responses:
+        200:
+          description: List of chats
+
+  /agent/chats/{chat_id}:
+    get:
+      tags: [Agent Dashboard]
+      summary: Get chat details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Chat details with messages
+
+  /agent/chats/{chat_id}/take:
+    post:
+      tags: [Agent Dashboard]
+      summary: Take chat (self-assign)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Chat assigned
+
+  /agent/chats/{chat_id}/message:
+    post:
+      tags: [Agent Dashboard]
+      summary: Send message as agent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  maxLength: 5000
+      responses:
+        200:
+          description: Message sent
+
+  /agent/chats/{chat_id}/close:
+    post:
+      tags: [Agent Dashboard]
+      summary: Close chat
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Chat closed
+
+  /agent/chats/{chat_id}/typing:
+    post:
+      tags: [Agent Dashboard]
+      summary: Send typing indicator
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_typing]
+              properties:
+                is_typing:
+                  type: boolean
+      responses:
+        200:
+          description: Typing indicator broadcasted
+
+  /agent/stats:
+    get:
+      tags: [Agent Dashboard]
+      summary: Get agent statistics
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Stats including active chats, unassigned, closed today
+
+  # ========== TICKETS ==========
+  /agent/tickets:
+    get:
+      tags: [Tickets]
+      summary: List tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: assigned_to
+          in: query
+          schema:
+            type: string
+            enum: [me, unassigned]
+      responses:
+        200:
+          description: List of tickets
+
+    post:
+      tags: [Tickets]
+      summary: Create ticket
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, customer_email, subject, description]
+              properties:
+                project_id:
+                  type: string
+                customer_email:
+                  type: string
+                  format: email
+                customer_name:
+                  type: string
+                subject:
+                  type: string
+                description:
+                  type: string
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                category:
+                  type: string
+      responses:
+        201:
+          description: Ticket created
+
+  /agent/tickets/stats:
+    get:
+      tags: [Tickets]
+      summary: Get ticket statistics
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Ticket stats
+
+  /agent/tickets/{ticket_id}:
+    get:
+      tags: [Tickets]
+      summary: Get ticket details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ticket details
+    delete:
+      tags: [Tickets]
+      summary: Delete ticket
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ticket deleted
+    post:
+      tags: [Tickets]
+      summary: Take ticket (self-assign)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ticket assigned
+
+  /agent/tickets/{ticket_id}/assign:
+    post:
+      tags: [Tickets]
+      summary: Assign ticket to agent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agent_id:
+                  type: string
+                  nullable: true
+      responses:
+        200:
+          description: Ticket assigned
+
+  /agent/tickets/{ticket_id}/status:
+    post:
+      tags: [Tickets]
+      summary: Update ticket status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [open, in_progress, waiting, resolved, closed]
+      responses:
+        200:
+          description: Status updated
+
+  /agent/tickets/{ticket_id}/reply:
+    post:
+      tags: [Tickets]
+      summary: Reply to ticket
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                send_email:
+                  type: boolean
+                  default: true
+      responses:
+        200:
+          description: Reply sent
+
+  # ========== PROJECTS ==========
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, owned, assigned]
+      responses:
+        200:
+          description: List of projects
+
+    post:
+      tags: [Projects]
+      summary: Create project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, website]
+              properties:
+                name:
+                  type: string
+                website:
+                  type: string
+                  format: uri
+                color:
+                  type: string
+                  pattern: '^#[a-fA-F0-9]{6}$'
+                description:
+                  type: string
+      responses:
+        201:
+          description: Project created
+
+  /projects/{project_id}:
+    get:
+      tags: [Projects]
+      summary: Get project details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Project details
+
+    put:
+      tags: [Projects]
+      summary: Update project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                website:
+                  type: string
+                color:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [active, inactive, archived]
+      responses:
+        200:
+          description: Project updated
+
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Project deleted
+
+  /projects/{project_id}/agents:
+    get:
+      tags: [Projects]
+      summary: Get project agents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of agents
+
+  /projects/{project_id}/agents/{agent_id}:
+    delete:
+      tags: [Projects]
+      summary: Remove agent from project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Agent removed
+
+  # ========== WIDGET SETTINGS ==========
+  /projects/{project_id}/widget-settings:
+    get:
+      tags: [Widget Settings]
+      summary: Get widget settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Widget settings
+
+    put:
+      tags: [Widget Settings]
+      summary: Update widget settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                color:
+                  type: string
+                position:
+                  type: string
+                  enum: [bottom-right, bottom-left, top-right, top-left]
+                welcome_message:
+                  type: string
+                button_text:
+                  type: string
+                widget_title:
+                  type: string
+                auto_open:
+                  type: boolean
+                auto_open_delay:
+                  type: integer
+      responses:
+        200:
+          description: Settings updated
+
+    delete:
+      tags: [Widget Settings]
+      summary: Reset widget settings to defaults
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Settings reset
+
+  /projects/{project_id}/embed-code:
+    get:
+      tags: [Widget Settings]
+      summary: Get embed code
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Embed code for website
+
+  # ========== INVITATIONS ==========
+  /invitations/{token}:
+    get:
+      tags: [Invitations]
+      summary: Get invitation details
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Invitation details
+        404:
+          description: Invalid token
+        410:
+          description: Expired or already used
+
+  /invitations/{token}/accept:
+    post:
+      tags: [Invitations]
+      summary: Accept invitation and create account
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, password, password_confirmation]
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                password:
+                  type: string
+                  minLength: 6
+                password_confirmation:
+                  type: string
+      responses:
+        200:
+          description: Invitation accepted, returns JWT token
+
+  /invitations/{token}/reject:
+    post:
+      tags: [Invitations]
+      summary: Reject invitation
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Invitation rejected
+
+  /projects/{project_id}/invitations:
+    get:
+      tags: [Invitations]
+      summary: List invitations for project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of invitations
+
+    post:
+      tags: [Invitations]
+      summary: Send invitation to agent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+      responses:
+        200:
+          description: Invitation sent
+
+  /invitations/{invitation_id}:
+    delete:
+      tags: [Invitations]
+      summary: Cancel invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: invitation_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Invitation cancelled
+
+  # ========== HEALTH ==========
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        200:
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, agent, superadmin]
+        status:
+          type: string
+          enum: [Active, Away, Offline, Deactivated, Invited]
+        avatar_url:
+          type: string
+          nullable: true
+        join_date:
+          type: string
+          format: date
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        widget_id:
+          type: string
+        website:
+          type: string
+        color:
+          type: string
+        status:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        agent_id:
+          type: string
+          nullable: true
+        customer_email:
+          type: string
+          nullable: true
+        customer_name:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, waiting, ai_handling, closed]
+        priority:
+          type: string
+        last_message_at:
+          type: string
+          format: date-time
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        chat_id:
+          type: string
+        sender_type:
+          type: string
+          enum: [customer, agent, ai, system]
+        sender_id:
+          type: string
+          nullable: true
+        content:
+          type: string
+        is_ai:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        assigned_to:
+          type: string
+          nullable: true
+        customer_email:
+          type: string
+        customer_name:
+          type: string
+        subject:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, waiting, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        category:
+          type: string
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        email:
+          type: string
+        token:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, rejected, expired]
+        expires_at:
+          type: string
+          format: date-time
