@@ -195,17 +195,6 @@ export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId,
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="button-text">Button Text / Icon</Label>
-                  <Input 
-                    id="button-text" 
-                    value={buttonText}
-                    onChange={(e) => setButtonText(e.target.value)}
-                    placeholder="💬 or text"
-                    maxLength={10}
-                  />
-                </div>
-
-                <div className="grid gap-2">
                   <Label htmlFor="widget-position">Widget Position</Label>
                   <Select value={widgetPosition} onValueChange={setWidgetPosition}>
                     <SelectTrigger id="widget-position">
