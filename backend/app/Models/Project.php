@@ -27,6 +27,11 @@ class Project extends Model
         'settings_updated_at' => 'datetime',
     ];
 
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

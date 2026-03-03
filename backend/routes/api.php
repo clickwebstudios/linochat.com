@@ -235,6 +235,7 @@ Route::middleware('auth:api')->prefix('superadmin')->group(function () {
     Route::get('/stats', [SuperadminController::class, 'platformStats']);
     Route::get('/chats', [SuperadminController::class, 'allChats']);
     Route::get('/projects', [SuperadminController::class, 'allProjects']);
+    Route::get('/projects/{projectId}', [SuperadminController::class, 'projectDetails']);
     Route::get('/agents', [SuperadminController::class, 'allAgents']);
     Route::get('/agents/{agentId}', [SuperadminController::class, 'agentDetails']);
 });

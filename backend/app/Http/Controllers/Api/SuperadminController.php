@@ -506,6 +506,37 @@ class SuperadminController extends Controller
         ]);
     }
 
+
+    /**
+     * Get project details
+     */
+    public function projectDetails($projectId)
+    {
+        $project = Project::with(['owner', 'agents', 'chats', 'tickets'])
+            ->withCount(['chats', 'tickets', 'agents'])
+            ->findOrFail($projectId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $project->id,
+                'name' => $project->name,
+                'website' => $project->website,
+                'owner' => $project->owner ? [
+                    'id' => $project->owner->id,
+                    'name' => $project->owner->name,
+                    'email' => $project->owner->email,
+                ] : null,
+                'chats_count' => $project->chats_count,
+                'tickets_count' => $project->tickets_count,
+                'agents_count' => $project->agents_count,
+                'created_at' => $project->created_at,
+                'widget_id' => $project->widget_id,
+                'settings' => $project->widget_settings,
+            ]
+        ]);
+    }
+
     /**
      * Helper: Get company plan
      */
