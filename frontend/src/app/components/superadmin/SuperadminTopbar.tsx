@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { ProjectSelector } from '../ProjectSelector';
 import { NotificationBell } from './NotificationBell';
+import { useAuthStore } from '../../stores/authStore';
 
 export function SuperadminTopbar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
@@ -37,11 +39,15 @@ export function SuperadminTopbar() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer">
               <div className="text-right">
-                <div className="text-sm font-semibold">Admin User</div>
+                <div className="text-sm font-semibold">
+                  {user ? `${user.first_name} ${user.last_name}` : 'Admin User'}
+                </div>
                 <div className="text-xs text-gray-500">Superadmin</div>
               </div>
               <Avatar>
-                <AvatarFallback className="bg-purple-600 text-white">AD</AvatarFallback>
+                <AvatarFallback className="bg-purple-600 text-white">
+                  {user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` : 'AD'}
+                </AvatarFallback>
               </Avatar>
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </button>
@@ -56,7 +62,7 @@ export function SuperadminTopbar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 cursor-pointer"
-              onClick={() => navigate('/')}
+              onClick={() => { logout(); navigate('/'); }}
             >
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log Out</span>
