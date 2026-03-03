@@ -858,7 +858,30 @@ export function CompanyDetailView({
           {/* Add Project Dialog */}
           <Dialog open={addProjectDialogOpen} onOpenChange={setAddProjectDialogOpen}>
             <DialogContent className="sm:max-w-[640px]">
-              <AddProjectForm onClose={() => setAddProjectDialogOpen(false)} />
+              <AddProjectForm
+                userId={viewingCompanyId}
+                onClose={() => setAddProjectDialogOpen(false)}
+                onSuccess={(newProject) => {
+                  // Append newly created project to the list
+                  setCompanyProjects((prev) => [
+                    ...prev,
+                    {
+                      id: String(newProject.id),
+                      name: newProject.name,
+                      color: newProject.color ?? '#4F46E5',
+                      description: newProject.description ?? '',
+                      website: newProject.website ?? '',
+                      tickets: 0,
+                      totalTickets: 0,
+                      activeTickets: 0,
+                      members: 0,
+                      companyId: viewingCompanyId,
+                      status: newProject.status ?? 'active',
+                    },
+                  ]);
+                  setAddProjectDialogOpen(false);
+                }}
+              />
             </DialogContent>
           </Dialog>
         </TabsContent>

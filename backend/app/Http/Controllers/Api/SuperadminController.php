@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
+use App\Jobs\GenerateKbFromWebsiteJob;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Chat;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 // Icon references for activity feed (used in agent details response)
 // CheckCircle, MessageCircle, AlertCircle, FileText
@@ -543,6 +546,59 @@ class SuperadminController extends Controller
             'success' => true,
             'data' => $resource,
         ]);
+    }
+
+    /**
+     * Create a project on behalf of a company (admin user)
+     */
+    public function storeProject(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id'     => 'required|exists:users,id',
+            'name'        => 'required|string|max:255',
+            'website'     => 'required|url|max:512',
+            'color'       => 'nullable|string|regex:/^#[a-fA-F0-9]{6}$/',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $owner = User::find($request->input('user_id'));
+
+        if (!$owner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Company user not found',
+            ], 404);
+        }
+
+        $project = Project::create([
+            'user_id'     => $owner->id,
+            'name'        => $request->input('name'),
+            'slug'        => Str::slug($request->input('name')) . '-' . Str::random(6),
+            'widget_id'   => 'wc_' . Str::random(32),
+            'website'     => $request->input('website'),
+            'color'       => $request->input('color', '#4F46E5'),
+            'description' => $request->input('description'),
+            'status'      => 'active',
+        ]);
+
+        // Trigger KB generation from website
+        if ($project->website) {
+            GenerateKbFromWebsiteJob::dispatch($project, $owner->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Project created successfully',
+            'data'    => $project,
+        ], 201);
     }
 
     /**

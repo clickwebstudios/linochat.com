@@ -133,6 +133,7 @@ export default function SuperadminDashboard() {
   // Loading states
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
@@ -575,15 +576,19 @@ export default function SuperadminDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Project Management</CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="bg-blue-600">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Project
-                    </Button>
-                  </DialogTrigger>
+                <Button className="bg-blue-600" onClick={() => setAddProjectDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Project
+                </Button>
+                <Dialog open={addProjectDialogOpen} onOpenChange={setAddProjectDialogOpen}>
                   <DialogContent className="sm:max-w-[640px]">
-                    <AddProjectForm />
+                    <AddProjectForm
+                      onClose={() => setAddProjectDialogOpen(false)}
+                      onSuccess={(newProject) => {
+                        setProjects((prev) => [newProject, ...prev]);
+                        setAddProjectDialogOpen(false);
+                      }}
+                    />
                   </DialogContent>
                 </Dialog>
               </CardHeader>

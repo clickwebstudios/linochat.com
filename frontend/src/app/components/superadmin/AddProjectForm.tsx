@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Badge } from '../ui/badge';
 import {
   DialogHeader,
   DialogTitle,
@@ -8,141 +11,371 @@ import {
 } from '../ui/dialog';
 import {
   Globe,
-  Building2,
   Sparkles,
   Check,
-  FileText,
   ArrowLeft,
-  Code,
-  FolderKanban,
-  Copy,
-  ClipboardCheck,
+  ArrowRight,
+  ExternalLink,
+  FileText,
+  Search,
+  Palette,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
+import { api } from '../../api/client';
+import { toast } from 'sonner';
 
-interface ProjectFormData {
-  website: string;
-  projectName: string;
-  domain: string;
-  description: string;
-  widgetId: string;
+interface AddProjectFormProps {
+  /** The user_id of the company this project belongs to (required for saving) */
+  userId?: string;
+  onClose?: () => void;
+  onSuccess?: (project: any) => void;
 }
 
-export function AddProjectForm({ onClose }: { onClose?: () => void }) {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [websiteAnalyzed, setWebsiteAnalyzed] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [formData, setFormData] = useState<ProjectFormData>({
-    website: '',
-    projectName: '',
-    domain: '',
-    description: '',
-    widgetId: '',
-  });
+type AnalysisStatus = 'idle' | 'analyzing' | 'done' | 'error';
 
-  const generateWidgetId = (domain: string) => {
-    const slug = domain.replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-    const rand = Math.random().toString(36).substring(2, 7);
-    return `widget_${slug}_${rand}`;
+interface AnalyzedData {
+  name: string;
+  description: string;
+  color: string;
+  website: string;
+  category: string;
+  language: string;
+  pages: number;
+}
+
+const PRESET_COLORS = [
+  '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
+  '#8B5CF6', '#EC4899', '#06B6D4', '#F97316',
+];
+
+const ANALYSIS_STEPS = [
+  'Connecting to website...',
+  'Extracting page content...',
+  'Analyzing brand identity...',
+  'Detecting site structure...',
+  'Generating project details...',
+];
+
+export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormProps) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>('idle');
+  const [analysisStep, setAnalysisStep] = useState(0);
+  const [analyzedData, setAnalyzedData] = useState<AnalyzedData | null>(null);
+  const [urlError, setUrlError] = useState('');
+
+  // Step 2 editable fields
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectColor, setProjectColor] = useState('#3B82F6');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const reset = () => {
+    setStep(1);
+    setWebsiteUrl('');
+    setAnalysisStatus('idle');
+    setAnalysisStep(0);
+    setAnalyzedData(null);
+    setProjectName('');
+    setProjectDescription('');
+    setProjectColor('#3B82F6');
+    setUrlError('');
   };
 
-  const analyzeWebsite = () => {
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      try {
-        const url = new URL(
-          formData.website.startsWith('http')
-            ? formData.website
-            : `https://${formData.website}`
-        );
-        const domain = url.hostname.replace('www.', '');
-        const domainParts = domain.split('.');
-        const companyName =
-          domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+  const validateUrl = (url: string): boolean => {
+    if (!url.trim()) {
+      setUrlError('Please enter a website URL');
+      return false;
+    }
+    try {
+      new URL(url.startsWith('http') ? url : `https://${url}`);
+      setUrlError('');
+      return true;
+    } catch {
+      setUrlError('Please enter a valid URL (e.g. https://example.com)');
+      return false;
+    }
+  };
 
-        setFormData((prev) => ({
-          ...prev,
-          projectName: `${companyName} Customer Support`,
-          domain: domain,
-          description: `Providing excellent customer support and service for ${companyName} customers. This project handles live chat, tickets, and knowledge base for ${domain}.`,
-          widgetId: generateWidgetId(domain),
-        }));
-      } catch {
-        setFormData((prev) => ({
-          ...prev,
-          projectName: 'Customer Support',
-          domain: '',
-          description:
-            'Providing excellent customer support and service to customers worldwide.',
-          widgetId: generateWidgetId('project'),
-        }));
+  const handleAnalyze = async () => {
+    if (!validateUrl(websiteUrl)) return;
+
+    const normalizedUrl = websiteUrl.startsWith('http')
+      ? websiteUrl
+      : `https://${websiteUrl}`;
+
+    setAnalysisStatus('analyzing');
+    setAnalysisStep(0);
+
+    // Animate steps while real API call runs
+    const stepTimer = setInterval(() => {
+      setAnalysisStep((prev) => {
+        if (prev < ANALYSIS_STEPS.length - 1) return prev + 1;
+        clearInterval(stepTimer);
+        return prev;
+      });
+    }, 400);
+
+    try {
+      const response = await api.post('/projects/analyze', { url: normalizedUrl });
+
+      clearInterval(stepTimer);
+      setAnalysisStep(ANALYSIS_STEPS.length - 1);
+
+      if (!response.success) {
+        throw new Error((response as any).message || 'Failed to analyze website');
       }
 
-      setWebsiteAnalyzed(true);
-      setIsAnalyzing(false);
-    }, 2200);
+      const data = response.data as AnalyzedData;
+      setAnalyzedData(data);
+      setProjectName(data.name ?? '');
+      setProjectDescription(data.description ?? '');
+      setProjectColor(data.color ?? '#3B82F6');
+      setAnalysisStatus('done');
+    } catch (error) {
+      clearInterval(stepTimer);
+      console.error('Analysis failed:', error);
+      setAnalysisStatus('error');
+    }
   };
 
-  const handleReset = () => {
-    setWebsiteAnalyzed(false);
-    setIsAnalyzing(false);
-    setFormData({
-      website: '',
-      projectName: '',
-      domain: '',
-      description: '',
-      widgetId: '',
-    });
+  const handleContinueManually = () => {
+    const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+    const brand = domain.split('.')[0];
+    const name = brand ? brand.charAt(0).toUpperCase() + brand.slice(1) + ' Support' : 'New Project';
+    setProjectName(name);
+    setProjectDescription('');
+    setProjectColor('#4F46E5');
+    setAnalyzedData(null);
+    setAnalysisStatus('idle');
+    setUrlError('');
+    setStep(2);
   };
 
-  const handleCreate = () => {
-    // In a real app, this would call an API
-    onClose?.();
+  const handleSubmit = async () => {
+    if (!projectName.trim()) return;
+
+    setIsSubmitting(true);
+    const normalizedUrl = websiteUrl.startsWith('http')
+      ? websiteUrl
+      : `https://${websiteUrl}`;
+
+    try {
+      const endpoint = userId ? '/superadmin/projects' : '/projects';
+      const payload: any = {
+        name: projectName,
+        description: projectDescription,
+        color: projectColor,
+        website: normalizedUrl,
+      };
+      if (userId) payload.user_id = userId;
+
+      const response = await api.post(endpoint, payload);
+
+      if (!response.success) {
+        throw new Error((response as any).message || 'Failed to create project');
+      }
+
+      toast.success('Project created successfully!');
+      onSuccess?.(response.data);
+      onClose?.();
+    } catch (error) {
+      console.error('Create project failed:', error);
+      toast.error('Failed to create project. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Step 1: URL input
-  if (!websiteAnalyzed && !isAnalyzing) {
+  const progressPercent =
+    analysisStatus === 'analyzing'
+      ? ((analysisStep + 1) / ANALYSIS_STEPS.length) * 100
+      : analysisStatus === 'done' ? 100 : 0;
+
+  // ─── STEP 1 ─────────────────────────────────────────────────────────────────
+  if (step === 1) {
     return (
       <>
         <DialogHeader>
           <DialogTitle>Add New Project</DialogTitle>
           <DialogDescription>
-            Enter the project's website URL and we'll analyze it to pre-fill details
+            Enter the website URL and we'll use AI to pre-fill project details
           </DialogDescription>
         </DialogHeader>
+
         <div className="space-y-4 mt-4">
+          {/* URL input */}
           <div className="space-y-2">
-            <label className="text-sm block">Website URL</label>
+            <Label htmlFor="add-project-url" className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-gray-500" />
+              Website URL
+            </Label>
             <div className="relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
+                id="add-project-url"
                 type="url"
-                placeholder="https://example.com"
-                value={formData.website}
-                onChange={(e) =>
-                  setFormData({ ...formData, website: e.target.value })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && formData.website) {
-                    analyzeWebsite();
+                placeholder="https://www.yourcompany.com"
+                value={websiteUrl}
+                onChange={(e) => {
+                  setWebsiteUrl(e.target.value);
+                  if (urlError) setUrlError('');
+                  if (analysisStatus === 'done') {
+                    setAnalysisStatus('idle');
+                    setAnalyzedData(null);
                   }
                 }}
-                className="pl-10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && analysisStatus !== 'analyzing') handleAnalyze();
+                }}
+                disabled={analysisStatus === 'analyzing'}
+                className={urlError ? 'border-red-400' : ''}
               />
             </div>
-            <p className="text-xs text-gray-500">
-              Our AI will analyze the website to generate project details
-            </p>
+            {urlError && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" /> {urlError}
+              </p>
+            )}
           </div>
 
-          {formData.website && (
-            <Button
-              onClick={analyzeWebsite}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              Analyze Website
-            </Button>
+          {/* Analyzing progress */}
+          {analysisStatus === 'analyzing' && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-blue-900">Analyzing…</span>
+                  <span className="text-blue-600">{Math.round(progressPercent)}%</span>
+                </div>
+                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                {ANALYSIS_STEPS.map((label, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2.5 text-sm transition-opacity ${i > analysisStep ? 'opacity-30' : 'opacity-100'}`}
+                  >
+                    {i < analysisStep ? (
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    ) : i === analysisStep ? (
+                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                    )}
+                    <span className={i === analysisStep ? 'text-blue-900 font-medium' : i < analysisStep ? 'text-green-700' : 'text-gray-400'}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Analysis error */}
+          {analysisStatus === 'error' && (
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <span className="font-semibold text-red-900">Analysis Failed</span>
+              </div>
+              <p className="text-sm text-red-700">
+                Could not analyze this website. You can still create the project by entering details manually.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full border-red-300 text-red-700 hover:bg-red-100"
+                onClick={handleContinueManually}
+              >
+                Continue Manually
+              </Button>
+            </div>
+          )}
+
+          {/* Analysis success */}
+          {analysisStatus === 'done' && analyzedData && (
+            <div className="rounded-xl border border-green-200 bg-green-50/50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="font-semibold text-green-900">Analysis Complete</span>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 ml-auto">
+                  <Sparkles className="h-3 w-3 mr-1" />AI Generated
+                </Badge>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-green-200 bg-white">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
+                  style={{ backgroundColor: analyzedData.color }}
+                >
+                  {analyzedData.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{analyzedData.name}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{analyzedData.description}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200">
+                  <FileText className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase">Pages Found</p>
+                    <p className="text-sm text-gray-900">{analyzedData.pages}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200">
+                  <Search className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase">Category</p>
+                    <p className="text-sm text-gray-900">{analyzedData.category}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200 col-span-2">
+                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500 uppercase">Website</p>
+                    <p className="text-sm text-gray-900 truncate">{analyzedData.website.replace(/^https?:\/\//, '')}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <Palette className="h-4 w-4 text-gray-400" />
+                    <div
+                      className="w-4 h-4 rounded-full border"
+                      style={{ backgroundColor: analyzedData.color }}
+                    />
+                    <p className="text-sm text-gray-900">{analyzedData.color}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            {analysisStatus === 'done' ? (
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2"
+                onClick={() => setStep(2)}
+              >
+                Continue <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2"
+                onClick={handleAnalyze}
+                disabled={!websiteUrl.trim() || analysisStatus === 'analyzing'}
+              >
+                {analysisStatus === 'analyzing' ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Analyzing…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4" />Analyze Website</>
+                )}
+              </Button>
+            )}
+          </div>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -153,20 +386,7 @@ export function AddProjectForm({ onClose }: { onClose?: () => void }) {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              setFormData((prev) => ({
-                ...prev,
-                projectName: '',
-                domain: '',
-                description: '',
-                widgetId: generateWidgetId('project'),
-              }));
-              setWebsiteAnalyzed(true);
-            }}
-          >
+          <Button variant="outline" className="w-full" onClick={handleContinueManually}>
             Enter details manually
           </Button>
         </div>
@@ -174,161 +394,136 @@ export function AddProjectForm({ onClose }: { onClose?: () => void }) {
     );
   }
 
-  // Analyzing state
-  if (isAnalyzing) {
-    return (
-      <>
-        <DialogHeader>
-          <DialogTitle>Add New Project</DialogTitle>
-          <DialogDescription>Analyzing website...</DialogDescription>
-        </DialogHeader>
-        <div className="py-10">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 animate-pulse">
-              <Sparkles className="h-7 w-7 text-blue-600" />
-            </div>
-            <div>
-              <h4 className="text-sm mb-1">Analyzing {formData.website}...</h4>
-              <p className="text-xs text-gray-600">
-                Extracting project information, this will only take a moment
-              </p>
-            </div>
-            <div className="flex justify-center gap-1 pt-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Step 2: Review & edit pre-filled data
+  // ─── STEP 2 ─────────────────────────────────────────────────────────────────
   return (
     <>
       <DialogHeader>
         <DialogTitle>Add New Project</DialogTitle>
         <DialogDescription>
-          Review and edit the extracted details, then create the project
+          Review and edit the details, then create the project
         </DialogDescription>
       </DialogHeader>
-      <div className="space-y-4 mt-4 pr-1">
-        {formData.website && (
+
+      <div className="space-y-4 mt-4">
+        {analyzedData && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
             <div className="bg-green-100 p-1.5 rounded-lg shrink-0">
               <Check className="h-4 w-4 text-green-600" />
             </div>
             <div className="min-w-0">
               <p className="text-sm text-green-800">Website analyzed successfully</p>
-              <p className="text-xs text-green-600 truncate">{formData.website}</p>
+              <p className="text-xs text-green-600 truncate">{websiteUrl}</p>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <FolderKanban className="h-4 w-4 text-gray-400" />
-              <label className="text-sm">Project Name</label>
-            </div>
-            <Input
-              value={formData.projectName}
-              onChange={(e) =>
-                setFormData({ ...formData, projectName: e.target.value })
-              }
-              placeholder="TechCorp Customer Support"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-gray-400" />
-              <label className="text-sm">Domain</label>
-            </div>
-            <Input
-              value={formData.domain}
-              onChange={(e) =>
-                setFormData({ ...formData, domain: e.target.value })
-              }
-              placeholder="techcorp.com"
-            />
-          </div>
-        </div>
-
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-gray-400" />
-            <label className="text-sm">Description</label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="edit-name">Project Name</Label>
+            {analyzedData && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Sparkles className="h-3 w-3 mr-1" />AI Suggested
+              </Badge>
+            )}
           </div>
-          <textarea
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="Brief description of the project..."
-            className="w-full p-2 border rounded-lg text-sm resize-none h-20"
+          <Input
+            id="edit-name"
+            placeholder="TechCorp Customer Support"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
           />
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Code className="h-4 w-4 text-gray-400" />
-              <label className="text-sm">Embed Script</label>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs gap-1.5"
-              onClick={() => {
-                const script = `<script>\n  (function(w,d,s,o,f,js,fjs){\n    w['LinoChat']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};\n    js=d.createElement(s);fjs=d.getElementsByTagName(s)[0];\n    js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);\n  }(window,document,'script','lc','https://cdn.linochat.com/widget.js'));\n  lc('init', { widgetId: '${formData.widgetId}' });\n</script>`;
-                navigator.clipboard.writeText(script);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
+          <Label htmlFor="edit-desc">Description</Label>
+          <Textarea
+            id="edit-desc"
+            placeholder="Describe your project..."
+            rows={3}
+            value={projectDescription}
+            onChange={(e) => setProjectDescription(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Website URL</Label>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-gray-50 text-sm text-gray-700">
+            <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <span className="truncate">
+              {websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
+            </span>
+            <a
+              href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-blue-600 hover:text-blue-700 flex-shrink-0"
+              onClick={(e) => e.stopPropagation()}
             >
-              {copied ? (
-                <><ClipboardCheck className="h-3.5 w-3.5 text-green-600" /><span className="text-green-600">Copied!</span></>
-              ) : (
-                <><Copy className="h-3.5 w-3.5" />Copy</>
-              )}
-            </Button>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
-          <div className="bg-gray-900 rounded-lg p-3 overflow-x-auto">
-            <pre
-              className="text-xs text-gray-300 font-mono whitespace-pre"
-              dangerouslySetInnerHTML={{
-                __html: `<code><span class="text-pink-400">&lt;script&gt;</span>
-  (<span class="text-blue-300">function</span>(<span class="text-orange-300">w</span>,<span class="text-orange-300">d</span>,<span class="text-orange-300">s</span>,<span class="text-orange-300">o</span>,<span class="text-orange-300">f</span>,<span class="text-orange-300">js</span>,<span class="text-orange-300">fjs</span>){
-    w[<span class="text-green-400">'LinoChat'</span>]=o;
-    w[o]=w[o]||<span class="text-blue-300">function</span>(){(w[o].q=w[o].q||[]).push(arguments)};
-    js=d.createElement(s);fjs=d.getElementsByTagName(s)[0];
-    js.id=o;js.src=f;js.async=<span class="text-blue-300">1</span>;
-    fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,<span class="text-green-400">'script'</span>,<span class="text-green-400">'lc'</span>,
-    <span class="text-green-400">'https://cdn.linochat.com/widget.js'</span>));
-  lc(<span class="text-green-400">'init'</span>, { widgetId: <span class="text-green-400">'${formData.widgetId}'</span> });
-<span class="text-pink-400">&lt;/script&gt;</span></code>`,
-              }}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Project Color</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              type="color"
+              value={projectColor}
+              onChange={(e) => setProjectColor(e.target.value)}
+              className="w-12 h-10 p-1 cursor-pointer rounded-md"
             />
+            <div className="flex gap-2 flex-wrap">
+              {PRESET_COLORS.map((color) => (
+                <button
+                  key={color}
+                  className={`w-7 h-7 rounded-full border-2 shadow-sm hover:scale-110 transition-transform ${
+                    projectColor === color ? 'border-gray-900 ring-2 ring-gray-300' : 'border-white'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setProjectColor(color)}
+                />
+              ))}
+            </div>
           </div>
-          <p className="text-xs text-gray-500">
-            Paste this script before the closing <code className="bg-gray-100 px-1 rounded text-[11px]">{'</body>'}</code> tag of your website.
-          </p>
+        </div>
+
+        {/* Live preview */}
+        <div className="space-y-2 pt-2 border-t">
+          <Label className="text-xs text-gray-500 uppercase tracking-wider">Preview</Label>
+          <div
+            className="flex items-center gap-3 p-4 rounded-xl border-2 transition-colors"
+            style={{ backgroundColor: projectColor + '08', borderColor: projectColor + '40' }}
+          >
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shadow-md flex-shrink-0"
+              style={{ backgroundColor: projectColor }}
+            >
+              {projectName ? projectName.substring(0, 2).toUpperCase() : 'NP'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900">{projectName || 'Project Name'}</p>
+              <p className="text-sm text-gray-500 truncate">
+                {projectDescription || 'Project description will appear here'}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1" onClick={handleReset}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+          <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
           <Button
             className="flex-1 bg-blue-600 hover:bg-blue-700"
-            onClick={handleCreate}
-            disabled={!formData.projectName}
+            onClick={handleSubmit}
+            disabled={!projectName.trim() || isSubmitting}
           >
-            Create Project
+            {isSubmitting ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</>
+            ) : (
+              'Create Project'
+            )}
           </Button>
         </div>
       </div>
