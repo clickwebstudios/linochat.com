@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProjectResource;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Chat;
@@ -506,34 +507,38 @@ class SuperadminController extends Controller
         ]);
     }
 
-
     /**
-     * Get project details
+     * Get project details — returns same format as ProjectController@show()
      */
     public function projectDetails($projectId)
     {
-        $project = Project::with(['owner', 'agents', 'chats', 'tickets'])
-            ->withCount(['chats', 'tickets', 'agents'])
-            ->findOrFail($projectId);
+        $project = Project::where('id', $projectId)
+            ->with(['agents', 'kbCategories.articles', 'owner'])
+            ->withCount(['chats', 'tickets'])
+            ->first();
+
+        if (!$project) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Project not found',
+            ], 404);
+        }
+
+        $activeTickets = $project->tickets()->where('status', 'open')->count();
+
+        $resource = (new ProjectResource($project))->toArray(request());
+        $resource['active_tickets_count'] = $activeTickets;
+        $resource['agents'] = $project->agents;
+        $resource['kb_categories'] = $project->kbCategories;
+        $resource['owner'] = $project->owner ? [
+            'id' => $project->owner->id,
+            'name' => $project->owner->company_name ?: $project->owner->name,
+            'email' => $project->owner->email,
+        ] : null;
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $project->id,
-                'name' => $project->name,
-                'website' => $project->website,
-                'owner' => $project->owner ? [
-                    'id' => $project->owner->id,
-                    'name' => $project->owner->name,
-                    'email' => $project->owner->email,
-                ] : null,
-                'chats_count' => $project->chats_count,
-                'tickets_count' => $project->tickets_count,
-                'agents_count' => $project->agents_count,
-                'created_at' => $project->created_at,
-                'widget_id' => $project->widget_id,
-                'settings' => $project->widget_settings,
-            ]
+            'data' => $resource,
         ]);
     }
 
