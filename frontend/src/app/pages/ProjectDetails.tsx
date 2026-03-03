@@ -5,7 +5,6 @@ import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Card, CardContent } from '../components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,16 +15,12 @@ import {
   Archive,
   ArrowLeft,
   Edit,
-  Ticket,
-  Users,
-  AlertCircle,
   Settings,
   Bell,
   LogOut,
   Search,
   Menu,
   ChevronDown,
-  MessageSquare,
   Globe,
   Building2,
   ExternalLink,
@@ -346,56 +341,6 @@ export default function ProjectDetails() {
               </Button>
             </div>
           </div>
-
-          {/* Superadmin Stats Overview */}
-          {isSuperadmin && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Ticket className="h-5 w-5 text-blue-600 shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Total Tickets</p>
-                      <p className="text-xl font-bold">{project.totalTickets}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Active Tickets</p>
-                      <p className="text-xl font-bold text-orange-600">{project.activeTickets}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-purple-600 shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Team Members</p>
-                      <p className="text-xl font-bold">{project.members}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5 text-green-600 shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Active Chats</p>
-                      <p className="text-xl font-bold text-green-600">{projectChatsList.filter(c => c.status === 'active').length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
 
           {/* Tabs */}
           <Tabs defaultValue="overview" className="space-y-4">
