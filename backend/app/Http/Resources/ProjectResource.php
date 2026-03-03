@@ -25,6 +25,11 @@ class ProjectResource extends JsonResource
             'agents_count' => $this->agents_count ?? 0,
             'chats_count' => $this->chats_count ?? 0,
             'tickets_count' => $this->tickets_count ?? 0,
+            'totalTickets' => $this->tickets_count ?? 0,
+            'activeTickets' => $this->active_tickets_count ?? 0,
+            'members' => $this->agents_count ?? 0,
+            'agents' => $this->agents ?? [],
+            'kbCategories' => $this->kbCategories ?? [],
         ];
     }
 }

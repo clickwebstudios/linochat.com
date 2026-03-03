@@ -150,7 +150,7 @@ export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId,
     js.id=o;js.src=f;js.async=1;
     fjs.parentNode.insertBefore(js,fjs);
   }(window,document,'script',
-    'lc','https://cdn.linochat.com/widget.js'));
+    'lc','https://linochat.com/widget.js'));
   lc('init', '${widgetId}');
 </script>`}</pre>
                 </div>
