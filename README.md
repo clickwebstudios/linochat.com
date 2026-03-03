@@ -1,4 +1,8 @@
-# LinoChat - AI-Powered Customer Support Platform
+# LinoChat
+
+## Design
+
+🎨 **Figma Design File:** [LinoChat - Desktop](https://www.figma.com/design/0jiiT3qjd5QfHbPWHigV7y/LinoChat---Desktop) - AI-Powered Customer Support Platform
 
 LinoChat is a modern customer support platform with live chat, ticketing, knowledge base, and multi-tenant company management. It features role-based access for Agents, Admins, and Superadmins, plus a customer-facing help center and embeddable chat widget.
 
