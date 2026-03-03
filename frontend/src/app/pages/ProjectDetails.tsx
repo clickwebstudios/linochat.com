@@ -394,7 +394,6 @@ export default function ProjectDetails() {
             <TabsContent value="chat-widget" className="space-y-4">
               <ChatWidgetTab
                 project={project}
-                isSuperadmin={isSuperadmin}
                 widgetId={widgetId}
                 copiedWidgetId={copiedWidgetId}
                 onCopyWidgetId={handleCopyWidgetId}

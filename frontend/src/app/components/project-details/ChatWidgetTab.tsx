@@ -40,13 +40,12 @@ function getWidgetBaseUrl(): string {
 
 interface ChatWidgetTabProps {
   project: any;
-  isSuperadmin: boolean;
   widgetId: string;
   copiedWidgetId: boolean;
   onCopyWidgetId: () => void;
 }
 
-export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId, onCopyWidgetId }: ChatWidgetTabProps) {
+export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetId }: ChatWidgetTabProps) {
   const [widgetDesign, setWidgetDesign] = useState('modern');
   const [widgetColor, setWidgetColor] = useState(project?.color || '#3B82F6');
   const [widgetPosition, setWidgetPosition] = useState('bottom-right');
@@ -61,7 +60,7 @@ export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId,
 
   // Load widget settings from API when project is available
   useEffect(() => {
-    if (!project?.id || isSuperadmin) return;
+    if (!project?.id) return;
     const loadSettings = async () => {
       try {
         const response = await api.get(`/projects/${project.id}/widget-settings`);
@@ -79,10 +78,10 @@ export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId,
       }
     };
     loadSettings();
-  }, [project?.id, isSuperadmin]);
+  }, [project?.id]);
 
   const handleSaveSettings = async () => {
-    if (!project?.id || isSuperadmin) return;
+    if (!project?.id) return;
     setSaving(true);
     setSaveSuccess(false);
     try {
@@ -103,64 +102,6 @@ export function ChatWidgetTab({ project, isSuperadmin, widgetId, copiedWidgetId,
       setSaving(false);
     }
   };
-
-  if (isSuperadmin) {
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Chat Widget Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium block mb-1">Widget ID</label>
-                  <div className="flex items-center gap-2">
-                    <Input value={widgetId} readOnly className="font-mono bg-gray-50" />
-                    <Button variant="outline" size="icon" onClick={onCopyWidgetId}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {copiedWidgetId && <p className="text-xs text-green-600 mt-1">Copied!</p>}
-                </div>
-                <div>
-                  <label className="text-sm font-medium block mb-1">Domain</label>
-                  <Input value={project.website} readOnly className="bg-gray-50" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium block mb-1">Widget Color</label>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg border" style={{ backgroundColor: project.color }}></div>
-                    <Input value={project.color} readOnly className="bg-gray-50 font-mono w-32" />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-2">Embed Code</label>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                  <pre>{`<script>
-  (function(w,d,s,o,f,js,fjs){
-    w['LinoChat']=o;
-    w[o]=w[o]||function(){
-      (w[o].q=w[o].q||[]).push(arguments)
-    };
-    js=d.createElement(s);
-    fjs=d.getElementsByTagName(s)[0];
-    js.id=o;js.src=f;js.async=1;
-    fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,'script',
-    'lc','https://linochat.com/widget.js'));
-  lc('init', '${widgetId}');
-</script>`}</pre>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
