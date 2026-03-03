@@ -96,7 +96,8 @@ export default function ProjectDetails() {
     if (!projectId) return;
     setLoadingAgents(true);
     try {
-      const agentsEndpoint = isSuperadmin ? `/superadmin/projects/${projectId}/agents` : `/projects/${projectId}/agents`;
+      // Both regular and superadmin use the same agents endpoint (superadmin role is checked server-side)
+      const agentsEndpoint = `/projects/${projectId}/agents`;
       const response = await api.get(agentsEndpoint);
       if (response.success) {
         setProjectAgents(response.data || []);
@@ -332,22 +333,14 @@ export default function ProjectDetails() {
             </div>
 
             <div className="flex gap-2">
-              {!isSuperadmin && (
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setEditProjectDialogOpen(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Project
-                </Button>
-              )}
-              {isSuperadmin && (
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              )}
-              <Button variant="outline" size={isSuperadmin ? 'sm' : 'default'}>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setEditProjectDialogOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Project
+              </Button>
+              <Button variant="outline">
                 <Archive className="h-4 w-4 mr-2" />
                 Archive
               </Button>
@@ -410,11 +403,11 @@ export default function ProjectDetails() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="tickets">Tickets</TabsTrigger>
               <TabsTrigger value="chats">Chats</TabsTrigger>
-              <TabsTrigger value="team">{isSuperadmin ? 'Agents' : 'Team Members'}</TabsTrigger>
+              <TabsTrigger value="team">Team Members</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="chat-widget">{isSuperadmin ? 'Widget' : 'Chat Widget'}</TabsTrigger>
-              {!isSuperadmin && <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>}
-              {!isSuperadmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
+              <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
+              <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -463,20 +456,16 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            {!isSuperadmin && (
-              <TabsContent value="ai-settings" className="space-y-4">
-                <AISettingsTab />
-              </TabsContent>
-            )}
+            <TabsContent value="ai-settings" className="space-y-4">
+              <AISettingsTab />
+            </TabsContent>
 
-            {!isSuperadmin && (
-              <TabsContent value="settings" className="space-y-4">
-                <SettingsTab
-                  project={project}
-                  onSaved={(updated) => setProject(updated)}
-                />
-              </TabsContent>
-            )}
+            <TabsContent value="settings" className="space-y-4">
+              <SettingsTab
+                project={project}
+                onSaved={(updated) => setProject(updated)}
+              />
+            </TabsContent>
           </Tabs>
         </main>
 

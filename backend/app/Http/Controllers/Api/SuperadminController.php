@@ -514,7 +514,7 @@ class SuperadminController extends Controller
     {
         $project = Project::where('id', $projectId)
             ->with(['agents', 'kbCategories.articles', 'owner'])
-            ->withCount(['chats', 'tickets'])
+            ->withCount(['chats', 'tickets', 'agents'])
             ->first();
 
         if (!$project) {
@@ -525,6 +525,9 @@ class SuperadminController extends Controller
         }
 
         $activeTickets = $project->tickets()->where('status', 'open')->count();
+
+        // Set active_tickets_count on model BEFORE resource creation
+        $project->active_tickets_count = $activeTickets;
 
         $resource = (new ProjectResource($project))->toArray(request());
         $resource['active_tickets_count'] = $activeTickets;
