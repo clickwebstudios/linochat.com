@@ -71,7 +71,8 @@ export default function ProjectDetails() {
       }
       
       try {
-        const response = await api.get(`/projects/${projectId}`);
+        const endpoint = isSuperadmin ? `/superadmin/projects/${projectId}` : `/projects/${projectId}`;
+        const response = await api.get(endpoint);
         if (response.success) {
           setProject(response.data);
         }
@@ -95,7 +96,8 @@ export default function ProjectDetails() {
     if (!projectId) return;
     setLoadingAgents(true);
     try {
-      const response = await api.get(`/projects/${projectId}/agents`);
+      const agentsEndpoint = isSuperadmin ? `/superadmin/projects/${projectId}/agents` : `/projects/${projectId}/agents`;
+      const response = await api.get(agentsEndpoint);
       if (response.success) {
         setProjectAgents(response.data || []);
       }
