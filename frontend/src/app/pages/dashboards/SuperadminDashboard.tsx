@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../lib/AuthContext';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -367,11 +368,11 @@ export default function SuperadminDashboard() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer">
                   <div className="text-right">
-                    <div className="text-sm font-semibold">Admin User</div>
-                    <div className="text-xs text-gray-500">Superadmin</div>
+                    <div className="text-sm font-semibold">{user?.name || user?.first_name || 'Admin User'}</div>
+                    <div className="text-xs text-gray-500">{user?.role || 'Superadmin'}</div>
                   </div>
                   <Avatar>
-                    <AvatarFallback className="bg-purple-600 text-white">AD</AvatarFallback>
+                    <AvatarFallback className="bg-purple-600 text-white">{(user?.name || user?.first_name || 'AD').substring(0,2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </button>
