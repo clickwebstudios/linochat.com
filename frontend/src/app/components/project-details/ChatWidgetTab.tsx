@@ -71,6 +71,7 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
           if (d.widget_title) setWidgetTitle(d.widget_title);
           if (d.welcome_message) setWelcomeMessage(d.welcome_message);
           if (d.button_text) setButtonText(d.button_text);
+          if (d.design) setWidgetDesign(d.design);
         }
       } catch {
         // Use project defaults if API fails
@@ -91,6 +92,7 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
         widget_title: widgetTitle,
         welcome_message: welcomeMessage,
         button_text: buttonText,
+        design: widgetDesign,
       });
       if (response.success) {
         setSaveSuccess(true);

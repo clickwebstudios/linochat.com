@@ -419,7 +419,8 @@ class WidgetLoaderController extends Controller
         }
         
         if (header) {
-            header.style.background = color;
+            var noColoredHeader = CONFIG.design === 'minimal' || CONFIG.design === 'professional';
+            if (!noColoredHeader) header.style.background = color;
             var titleEl = document.getElementById('linochat-title');
             if (titleEl) titleEl.textContent = CONFIG.widget_title || CONFIG.company_name;
         }
@@ -704,108 +705,103 @@ class WidgetLoaderController extends Controller
     function createWidget(openImmediately) {
         var existing = document.getElementById('linochat-widget');
         if (existing) existing.remove();
-        
+
         var color = CONFIG.color || '#4F46E5';
         var position = CONFIG.position || 'bottom-right';
+        var design = CONFIG.design || 'modern';
         var posStyles = POSITION_STYLES[position] || POSITION_STYLES['bottom-right'];
         var buttonText = CONFIG.button_text || '💬';
         var title = CONFIG.widget_title || CONFIG.company_name;
-        
+
+        var posStr = Object.keys(posStyles).map(function(k) { return k + ':' + posStyles[k]; }).join(';');
+        var winBottom = posStyles.bottom !== 'auto' ? 'bottom:88px;' : 'top:88px;';
+        var winSide = posStyles.right !== 'auto' ? 'right:' + posStyles.right + ';' : 'left:' + posStyles.left + ';';
+
+        // Design-specific variables
+        var btnW = 56, btnH = 56, btnRadius = '9999px', btnFontSize = '22px';
+        var btnBorder = '', btnContent = buttonText;
+        var winW = 320, winRadius = '8px', msgBg = '#f9fafb';
+        var headerHTML = '';
+
+        if (design === 'minimal') {
+            btnW = 48; btnH = 48;
+            winW = 288; winRadius = '4px'; msgBg = '#ffffff';
+            headerHTML = '<div id="linochat-header" style="background:white;color:#111827;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;">'
+                + '<span id="linochat-title" style="font-size:14px;font-weight:500;">' + title + '</span>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:18px;color:#9ca3af;line-height:1;">×</span>'
+                + '<span id="linochat-status" style="display:none;"></span>'
+                + '</div>';
+        } else if (design === 'classic') {
+            btnW = 80; btnH = 44; btnRadius = '4px'; btnFontSize = '14px'; btnContent = '💬 Chat';
+            winW = 320; winRadius = '0px'; msgBg = '#f9fafb';
+            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>'
+                + '<span id="linochat-title" style="font-size:14px;font-weight:500;">Support Chat</span>'
+                + '</div>'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<span id="linochat-status" style="font-size:11px;opacity:0.85;"></span>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:20px;opacity:0.8;line-height:1;">×</span>'
+                + '</div></div>';
+        } else if (design === 'bubble') {
+            btnW = 64; btnH = 64; btnBorder = 'border:4px solid white;';
+            winW = 320; winRadius = '24px'; msgBg = '#f9fafb';
+            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:20px 16px;border-radius:24px 24px 0 0;">'
+                + '<div style="display:flex;align-items:center;justify-content:space-between;">'
+                + '<div style="display:flex;align-items:center;gap:12px;">'
+                + '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">' + buttonText + '</div>'
+                + '<div><div id="linochat-title" style="font-weight:500;font-size:15px;">' + title + '</div><div id="linochat-status" style="font-size:12px;opacity:0.9;">Always here to help</div></div>'
+                + '</div>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.8;line-height:1;">×</span>'
+                + '</div></div>';
+        } else if (design === 'compact') {
+            btnW = 44; btnH = 44; btnRadius = '10px'; btnFontSize = '20px';
+            winW = 256; winRadius = '8px'; msgBg = '#f9fafb';
+            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
+                + '<div><span id="linochat-title" style="font-size:12px;font-weight:500;">Chat Support</span><span id="linochat-status" style="font-size:11px;opacity:0.85;margin-left:6px;"></span></div>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:16px;opacity:0.8;line-height:1;">×</span>'
+                + '</div>';
+        } else if (design === 'professional') {
+            winW = 352; winRadius = '4px'; msgBg = '#ffffff';
+            headerHTML = '<div id="linochat-header" style="background:#f9fafb;color:#111827;padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;">'
+                + '<div style="display:flex;align-items:center;gap:12px;">'
+                + '<div style="width:36px;height:36px;border-radius:4px;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">' + buttonText + '</div>'
+                + '<div><div id="linochat-title" style="font-weight:600;font-size:14px;">' + title + '</div><div id="linochat-status" style="font-size:12px;color:#6b7280;">Typical response: &lt;2 min</div></div>'
+                + '</div>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:20px;color:#9ca3af;line-height:1;">×</span>'
+                + '</div>';
+        } else {
+            // modern / friendly / gradient → modern layout
+            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;">'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;">' + buttonText + '</div>'
+                + '<div><div id="linochat-title" style="font-weight:500;font-size:14px;">' + title + '</div>'
+                + '<div id="linochat-status" style="font-size:12px;opacity:0.9;">We\'re online</div></div>'
+                + '</div>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:20px;opacity:0.8;line-height:1;">×</span>'
+                + '</div>';
+        }
+
+        var btnStyle = 'position:fixed;width:' + btnW + 'px;height:' + btnH + 'px;border-radius:' + btnRadius
+            + ';background:' + color + ';color:white;display:flex;align-items:center;justify-content:center;cursor:pointer'
+            + ';box-shadow:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05);z-index:2147483647'
+            + ';font-size:' + btnFontSize + ';' + posStr + ';transition:transform 0.2s ease,box-shadow 0.2s ease;' + btnBorder + 'gap:4px;font-weight:500;box-sizing:border-box;';
+
         var div = document.createElement('div');
         div.id = 'linochat-widget';
         div.style.cssText = 'box-sizing:border-box;--linochat-color:' + color;
-        div.innerHTML = `
-            <div id="linochat-button" style="
-                box-sizing: border-box;
-                position: fixed;
-                width: 56px;
-                height: 56px;
-                border-radius: 9999px;
-                background: \${color};
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-                z-index: 2147483647;
-                font-size: 24px;
-                \${Object.keys(posStyles).map(k => k + ': ' + posStyles[k]).join(';')};
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            "\u003e\${buttonText}</div>
-            
-            <div id="linochat-window" style="
-                box-sizing: border-box;
-                position: fixed;
-                width: 320px;
-                height: 480px;
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-                border: 1px solid #e5e7eb;
-                z-index: 2147483647;
-                display: none;
-                flex-direction: column;
-                overflow: hidden;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                \${posStyles.top === 'auto' ? 'bottom: 88px;' : 'top: 88px;'};
-                \${posStyles.right !== 'auto' ? 'right: ' + posStyles.right : 'left: ' + posStyles.left};
-            ">
-                <div id="linochat-header" style="
-                    background: \${color};
-                    color: white;
-                    padding: 16px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-radius: 8px 8px 0 0;
-                ">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 32px; height: 32px; border-radius: 9999px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px;">\${buttonText}</div>
-                        <div>
-                            <div id="linochat-title" style="font-weight: 500; font-size: 14px;">\${title}</div>
-                            <div id="linochat-status" style="font-size: 12px; opacity: 0.9;">We're online</div>
-                        </div>
-                    </div>
-                    <span id="linochat-close" style="cursor: pointer; font-size: 20px; opacity: 0.8;">×</span>
-                </div>
-                <div id="linochat-messages" style="
-                    box-sizing: border-box;
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
-                    background: #f9fafb;
-                "></div>
-                <div style="
-                    padding: 12px;
-                    border-top: 1px solid #e5e7eb;
-                    display: flex;
-                    gap: 8px;
-                    background: white;
-                ">
-                    <input type="text" id="linochat-input" placeholder="Type a message..." style="
-                        flex: 1;
-                        padding: 8px 12px;
-                        border: 1px solid var(--linochat-color, #d1d5db);
-                        border-radius: 8px;
-                        outline: none;
-                        font-size: 12px;
-                    ">
-                    <button id="linochat-send" style="
-                        background: \${color};
-                        color: white;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    ">Send</button>
-                </div>
-            </div>
-        `;
+        div.innerHTML = '<div id="linochat-button" style="' + btnStyle + '">' + btnContent + '</div>'
+            + '<div id="linochat-window" style="box-sizing:border-box;position:fixed;width:' + winW + 'px;height:480px;background:white;border-radius:' + winRadius
+            + ';box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);border:1px solid #e5e7eb;z-index:2147483647'
+            + ';display:none;flex-direction:column;overflow:hidden'
+            + ';font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;' + winBottom + winSide + '">'
+            + headerHTML
+            + '<div id="linochat-messages" style="box-sizing:border-box;flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:' + msgBg + ';"></div>'
+            + '<div style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;background:white;">'
+            + '<input type="text" id="linochat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--linochat-color,#d1d5db);border-radius:8px;outline:none;font-size:12px;">'
+            + '<button id="linochat-send" style="background:' + color + ';color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;">Send</button>'
+            + '</div>'
+            + '</div>';
         document.body.appendChild(div);
         WIDGET_ELEMENT = div;
         
