@@ -677,7 +677,7 @@ class WidgetLoaderController extends Controller
             button.style.background = color;
             button.style.width = '80px'; button.style.height = '44px'; button.style.borderRadius = '4px';
             button.style.fontSize = '14px';
-            button.innerHTML = '\uD83D\uDCAC Chat';
+            button.innerHTML = (CONFIG.button_text || '\uD83D\uDCAC') + ' Chat';
         } else if (design === 'compact') {
             button.style.background = color;
             button.style.width = '44px'; button.style.height = '44px'; button.style.borderRadius = '10px';
@@ -766,7 +766,7 @@ class WidgetLoaderController extends Controller
                 + '<span id="linochat-status" style="display:none;"></span>'
                 + '</div>';
         } else if (design === 'classic') {
-            btnW = 80; btnH = 44; btnRadius = '4px'; btnFontSize = '14px'; btnContent = '💬 Chat';
+            btnW = 80; btnH = 44; btnRadius = '4px'; btnFontSize = '14px'; btnContent = buttonText + ' Chat';
             winW = 320; winRadius = '0px'; msgBg = '#f9fafb';
             headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">'
                 + '<div style="display:flex;align-items:center;gap:8px;">'
