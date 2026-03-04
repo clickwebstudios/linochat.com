@@ -502,14 +502,14 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-110" style={{ backgroundColor: color }}>
-            <span className="text-2xl">{buttonText}</span>
+            <MessageSquare className="h-6 w-6" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-lg shadow-xl border overflow-hidden`}>
             <div className="p-4 text-white" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <span className="text-base">{buttonText}</span>
+                    <MessageSquare className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="font-medium text-sm">{title}</p>
@@ -545,7 +545,7 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-12 h-12 rounded-full shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }}>
-            <span className="text-xl">{buttonText}</span>
+            <MessageSquare className="h-5 w-5" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-72 bg-white rounded shadow-lg border overflow-hidden`}>
             <div className="p-3 border-b">
@@ -598,7 +598,7 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-16 h-12 rounded shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }}>
-            <span className="text-base">{buttonText}</span><span className="ml-1 text-xs">Chat</span>
+            <MessageSquare className="h-5 w-5" /><span className="ml-1 text-xs">Chat</span>
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-none shadow-xl border-2 overflow-hidden`} style={{ borderColor: color }}>
             <div className="p-3 text-white flex items-center justify-between" style={{ backgroundColor: color }}>
@@ -643,13 +643,13 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white border-4 border-white" style={{ backgroundColor: color }}>
-            <span className="text-2xl">{buttonText}</span>
+            <MessageSquare className="h-7 w-7" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-3xl shadow-2xl overflow-hidden`}>
             <div className="p-5 text-white rounded-t-3xl" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center"><span className="text-xl">{buttonText}</span></div>
+                  <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>
                   <div>
                     <p className="font-medium">{title}</p>
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently offline" : "Always here to help"}</p>
@@ -693,7 +693,7 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-11 h-11 rounded-lg shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }}>
-            <span className="text-xl">{buttonText}</span>
+            <MessageSquare className="h-5 w-5" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-64 bg-white rounded-lg shadow-lg border overflow-hidden`}>
             <div className="p-2.5 text-white text-xs font-medium" style={{ backgroundColor: color }}>
@@ -737,13 +737,13 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-14 h-14 rounded-sm shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }}>
-            <span className="text-2xl">{buttonText}</span>
+            <MessageSquare className="h-6 w-6" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-96 bg-white rounded-sm shadow-2xl border overflow-hidden`}>
             <div className="p-4 bg-gray-50 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-sm flex items-center justify-center text-white" style={{ backgroundColor: color }}><span className="text-base">{buttonText}</span></div>
+                  <div className="w-9 h-9 rounded-sm flex items-center justify-center text-white" style={{ backgroundColor: color }}><MessageSquare className="h-5 w-5" /></div>
                   <div>
                     <p className="font-semibold text-sm text-gray-900">{title}</p>
                     <p className="text-xs text-gray-500">{showOfflinePreview ? "Currently Offline" : "Typical response time: < 2 min"}</p>
@@ -790,7 +790,7 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-16 h-16 rounded-2xl shadow-xl flex flex-col items-center justify-center text-white" style={{ backgroundColor: color }}>
-            <span className="text-2xl">{buttonText}</span><span className="text-xs mt-0.5">Help</span>
+            <MessageSquare className="h-6 w-6" /><span className="text-xs mt-0.5">Help</span>
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-2xl shadow-2xl overflow-hidden border-2`} style={{ borderColor: color }}>
             <div className="p-4 text-white relative overflow-hidden" style={{ backgroundColor: color }}>
@@ -843,13 +843,13 @@ function WidgetPreview({
       return (
         <div className="relative">
           <button className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
-            <span className="text-2xl">{buttonText}</span>
+            <MessageSquare className="h-6 w-6" />
           </button>
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-xl shadow-2xl overflow-hidden`}>
             <div className="p-4 text-white bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm flex items-center justify-center"><span className="text-base">{buttonText}</span></div>
+                  <div className="w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>
                   <div>
                     <p className="font-semibold text-sm">{title}</p>
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently Offline" : "Online now"}</p>
