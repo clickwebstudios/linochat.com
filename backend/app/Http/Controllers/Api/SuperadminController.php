@@ -305,7 +305,7 @@ class SuperadminController extends Controller
         $perPage = $request->input('per_page', 20);
         
         $projects = Project::withCount(['agents', 'chats', 'tickets'])
-            ->with('owner:id,company_name,name,email')
+            ->with('owner:id,company_name,first_name,last_name,email')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
         
@@ -318,7 +318,7 @@ class SuperadminController extends Controller
                 'status' => $project->status === 'active' ? 'Active' : 'Inactive',
                 'agents' => $project->agents_count,
                 'tickets' => $project->tickets_count,
-                'owner' => $project->owner?->company_name ?? $project->owner?->name ?? 'Unknown',
+                'owner' => $project->owner?->company_name ?? trim(($project->owner?->first_name ?? '') . ' ' . ($project->owner?->last_name ?? '')) ?: 'Unknown',
             ];
         });
         
@@ -396,11 +396,11 @@ class SuperadminController extends Controller
         // Get company info from first project owner
         $company = null;
         if ($allProjects->isNotEmpty()) {
-            $firstProject = Project::with('owner:id,company_name,name,email')->find($allProjects->first()->id);
+            $firstProject = Project::with('owner:id,company_name,first_name,last_name,email')->find($allProjects->first()->id);
             if ($firstProject && $firstProject->owner) {
                 $company = [
                     'id' => $firstProject->owner->id,
-                    'name' => $firstProject->owner->company_name ?: $firstProject->owner->name,
+                    'name' => $firstProject->owner->company_name ?: trim($firstProject->owner->first_name . ' ' . $firstProject->owner->last_name),
                     'email' => $firstProject->owner->email,
                     'plan' => $this->getCompanyPlan($firstProject->owner),
                 ];

@@ -498,9 +498,11 @@ class WidgetLoaderController extends Controller
     // Send message - try fetch first, fallback to JSONP when CSP blocks fetch
     function sendMessage(content) {
         addMessage(content, 'customer');
-        
+
         return sendMessageFetch(content).catch(function() {
             return sendMessageJsonp(content);
+        }).catch(function() {
+            addMessage('Sorry, we could not send your message. Please check your connection and try again.', 'ai');
         });
     }
     
@@ -536,12 +538,11 @@ class WidgetLoaderController extends Controller
             return data;
         })
         .catch(function(err) {
-            console.error('LinoChat: Send message failed', err);
-            addMessage('Sorry, we could not send your message. Please check your connection and try again.', 'ai');
+            console.error('LinoChat: Send message failed (trying fallback)', err);
             throw err;
         });
     }
-    
+
     function sendMessageJsonp(content) {
         if (content.length > 500) {
             addMessage('Message too long for fallback mode. Please shorten your message.', 'ai');
