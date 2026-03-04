@@ -42,6 +42,7 @@ class WidgetSettingsController extends Controller
             'data' => [
                 'widget_id' => $project->widget_id,
                 'color' => $settings['color'] ?? $project->color ?? '#4F46E5',
+                'design' => $settings['design'] ?? 'modern',
                 'position' => $settings['position'] ?? 'bottom-right',
                 'welcome_message' => $settings['welcome_message'] ?? "Hi there! How can we help you today?",
                 'button_text' => $settings['button_text'] ?? '💬',
@@ -83,6 +84,7 @@ class WidgetSettingsController extends Controller
 
         $validator = Validator::make($request->all(), [
             'color' => 'nullable|string|regex:/^#[a-fA-F0-9]{6}$/',
+            'design' => 'nullable|string|in:modern,minimal,classic,bubble,compact,professional,friendly,gradient',
             'position' => 'nullable|string|in:bottom-right,bottom-left,top-right,top-left',
             'welcome_message' => 'nullable|string|max:500',
             'button_text' => 'nullable|string|max:10',
