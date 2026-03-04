@@ -288,6 +288,8 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
                       design={widgetDesign}
                       color={widgetColor}
                       position={widgetPosition}
+                      title={widgetTitle}
+                      welcomeMessage={welcomeMessage}
                       showOfflinePreview={showOfflinePreview}
                       offlineBehavior={offlineBehavior}
                       offlineMessage={offlineMessage}
@@ -431,6 +433,8 @@ function WidgetPreview({
   design,
   color,
   position = 'bottom-right',
+  title,
+  welcomeMessage,
   showOfflinePreview,
   offlineBehavior,
   offlineMessage,
@@ -438,6 +442,8 @@ function WidgetPreview({
   design: string;
   color: string;
   position?: string;
+  title: string;
+  welcomeMessage: string;
   showOfflinePreview: boolean;
   offlineBehavior: string;
   offlineMessage: string;
@@ -501,7 +507,7 @@ function WidgetPreview({
                     <MessageSquare className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">LinoChat Widget</p>
+                    <p className="font-medium text-sm">{title}</p>
                     <p className="text-xs opacity-90">{showOfflinePreview ? "We're offline" : "We're online"}</p>
                   </div>
                 </div>
@@ -514,7 +520,7 @@ function WidgetPreview({
                   <div className="flex gap-2">
                     <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0"></div>
                     <div className="bg-white rounded-lg rounded-tl-none p-3 shadow-sm max-w-[80%]">
-                      <p className="text-xs">Hi! How can we help you today?</p>
+                      <p className="text-xs">{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
@@ -567,7 +573,7 @@ function WidgetPreview({
                 <div className="p-3 space-y-2 bg-white h-48">
                   <div className="flex gap-2">
                     <div className="bg-gray-100 rounded p-2 max-w-[80%]">
-                      <p className="text-xs text-gray-700">Hi! How can we help you today?</p>
+                      <p className="text-xs text-gray-700">{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
@@ -613,7 +619,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gray-50 h-48">
                   <div className="flex gap-2">
                     <div className="w-7 h-7 rounded bg-gray-300 flex-shrink-0"></div>
-                    <div className="bg-white rounded p-2.5 shadow-sm border max-w-[80%]"><p className="text-xs">Hi! How can we help you today?</p></div>
+                    <div className="bg-white rounded p-2.5 shadow-sm border max-w-[80%]"><p className="text-xs">{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-3 bg-white border-t-2" style={{ borderColor: color }}>
@@ -640,7 +646,7 @@ function WidgetPreview({
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>
                   <div>
-                    <p className="font-medium">LinoChat</p>
+                    <p className="font-medium">{title}</p>
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently offline" : "Always here to help"}</p>
                   </div>
                 </div>
@@ -663,7 +669,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white h-48">
                   <div className="flex gap-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0"></div>
-                    <div className="bg-white rounded-3xl rounded-tl-sm p-3 shadow-md max-w-[80%]"><p className="text-xs">Hi! How can we help you today?</p></div>
+                    <div className="bg-white rounded-3xl rounded-tl-sm p-3 shadow-md max-w-[80%]"><p className="text-xs">{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-4 bg-white">
@@ -707,7 +713,7 @@ function WidgetPreview({
                 <div className="p-2.5 space-y-2 bg-gray-50 h-40">
                   <div className="flex gap-1.5">
                     <div className="w-5 h-5 rounded-full bg-gray-300 flex-shrink-0"></div>
-                    <div className="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[85%]"><p className="text-xs">Hi! How can we help?</p></div>
+                    <div className="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[85%]"><p className="text-xs">{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-2 bg-white border-t">
@@ -734,7 +740,7 @@ function WidgetPreview({
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-sm flex items-center justify-center text-white" style={{ backgroundColor: color }}><MessageSquare className="h-5 w-5" /></div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900">Customer Support</p>
+                    <p className="font-semibold text-sm text-gray-900">{title}</p>
                     <p className="text-xs text-gray-500">{showOfflinePreview ? "Currently Offline" : "Typical response time: < 2 min"}</p>
                   </div>
                 </div>
@@ -758,7 +764,7 @@ function WidgetPreview({
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-sm bg-gray-200 flex-shrink-0"></div>
                     <div>
-                      <div className="bg-gray-100 rounded-sm p-3 max-w-[85%]"><p className="text-xs text-gray-800">Hi! How can we help you today?</p></div>
+                      <div className="bg-gray-100 rounded-sm p-3 max-w-[85%]"><p className="text-xs text-gray-800">{welcomeMessage}</p></div>
                       <p className="text-xs text-gray-400 mt-1">Support Agent &bull; Now</p>
                     </div>
                   </div>
@@ -813,7 +819,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gradient-to-b from-blue-50/50 to-white h-48">
                   <div className="flex gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-300 to-pink-400 flex items-center justify-center flex-shrink-0"><span>{"\uD83D\uDE0A"}</span></div>
-                    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-md max-w-[80%] border border-gray-100"><p className="text-xs">Hi! How can we help you today?</p></div>
+                    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-md max-w-[80%] border border-gray-100"><p className="text-xs">{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-3 bg-white border-t">
@@ -840,7 +846,7 @@ function WidgetPreview({
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>
                   <div>
-                    <p className="font-semibold text-sm">LinoChat Support</p>
+                    <p className="font-semibold text-sm">{title}</p>
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently Offline" : "Online now"}</p>
                   </div>
                 </div>
@@ -864,7 +870,7 @@ function WidgetPreview({
                   <div className="flex gap-2">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex-shrink-0"></div>
                     <div className="bg-white rounded-xl rounded-tl-sm p-3 shadow-lg max-w-[80%] border border-purple-100">
-                      <p className="text-xs bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium">Hi! How can we help you today?</p>
+                      <p className="text-xs bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium">{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
