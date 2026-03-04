@@ -108,7 +108,7 @@ class WidgetSettingsController extends Controller
         $updatableFields = [
             'color', 'position', 'welcome_message', 'button_text',
             'widget_title', 'show_agent_name', 'show_agent_avatar',
-            'auto_open', 'auto_open_delay'
+            'auto_open', 'auto_open_delay', 'design'
         ];
 
         foreach ($updatableFields as $field) {

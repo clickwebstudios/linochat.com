@@ -649,19 +649,53 @@ class WidgetLoaderController extends Controller
         container.scrollTop = container.scrollHeight;
     }
     
-    // Update initial button with config (color, position, text) - called when config preload completes
+    // Update initial button with config (color, position, text, design shape) - called when config preload completes
     function updateButtonAppearance() {
         var button = document.getElementById('linochat-button');
         if (!button || !CONFIG) return;
         var color = CONFIG.color || '#4F46E5';
+        var design = CONFIG.design || 'modern';
         var position = CONFIG.position || 'bottom-right';
         var posStyles = POSITION_STYLES[position] || POSITION_STYLES['bottom-right'];
-        button.style.background = color;
+        // Apply design-specific button shape
+        if (design === 'gradient') {
+            button.style.background = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            button.style.width = '56px'; button.style.height = '56px'; button.style.borderRadius = '9999px';
+            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+        } else if (design === 'friendly') {
+            button.style.background = color;
+            button.style.width = '64px'; button.style.height = '64px'; button.style.borderRadius = '16px';
+            button.style.flexDirection = 'column';
+            button.style.fontSize = '20px';
+            button.innerHTML = (CONFIG.button_text || '\uD83D\uDCAC') + '<span style="font-size:9px;display:block;margin-top:2px;font-weight:500;">Help</span>';
+        } else if (design === 'bubble') {
+            button.style.background = color;
+            button.style.width = '64px'; button.style.height = '64px'; button.style.borderRadius = '9999px';
+            button.style.border = '4px solid white';
+            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+        } else if (design === 'classic') {
+            button.style.background = color;
+            button.style.width = '80px'; button.style.height = '44px'; button.style.borderRadius = '4px';
+            button.style.fontSize = '14px';
+            button.innerHTML = '\uD83D\uDCAC Chat';
+        } else if (design === 'compact') {
+            button.style.background = color;
+            button.style.width = '44px'; button.style.height = '44px'; button.style.borderRadius = '10px';
+            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+        } else if (design === 'minimal') {
+            button.style.background = color;
+            button.style.width = '48px'; button.style.height = '48px'; button.style.borderRadius = '9999px';
+            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+        } else {
+            // modern, professional
+            button.style.background = color;
+            button.style.width = '56px'; button.style.height = '56px'; button.style.borderRadius = '9999px';
+            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+        }
         button.style.bottom = posStyles.bottom;
         button.style.right = posStyles.right;
         button.style.top = posStyles.top;
         button.style.left = posStyles.left;
-        button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
         if (WIDGET_ELEMENT) WIDGET_ELEMENT.style.setProperty('--linochat-color', color);
     }
     
