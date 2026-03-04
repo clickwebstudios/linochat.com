@@ -33,6 +33,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
+import { authApi } from '../../api/client';
 
 type SignupStep = 'account' | 'verify' | 'project' | 'team' | 'customize' | 'complete';
 
@@ -84,6 +85,9 @@ export default function Signup() {
 
   const [currentStep, setCurrentStep] = useState<SignupStep>('account');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [websiteAnalyzed, setWebsiteAnalyzed] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -132,6 +136,54 @@ export default function Signup() {
       if (value && index < 5) {
         document.getElementById(`code-${index + 1}`)?.focus();
       }
+    }
+  };
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const sendCode = async (email: string) => {
+    setIsSendingCode(true);
+    try {
+      await authApi.sendVerificationCode(email);
+      setResendCooldown(60);
+      toast.success('Verification code sent to your email');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send verification code');
+      throw err;
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    try {
+      await sendCode(formData.email);
+    } catch {
+      // toast already shown
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const code = verificationCode.join('');
+    if (code.length !== 6) {
+      toast.error('Please enter the full 6-digit code');
+      return;
+    }
+    setIsVerifying(true);
+    try {
+      await authApi.verifyEmailCode(formData.email, code);
+      toast.success('Email verified!');
+      handleNext();
+    } catch (err: any) {
+      toast.error(err.message || 'Invalid verification code');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -215,8 +267,8 @@ export default function Signup() {
     }
   }, [currentStep, navigate]);
 
-  // Validate Step 1 before advancing
-  const handleStep1Continue = () => {
+  // Validate Step 1 before advancing — sends verification code
+  const handleStep1Continue = async () => {
     if (!formData.fullName.trim()) return toast.error('Full name is required');
     if (!formData.email.trim()) return toast.error('Email address is required');
     if (!formData.companyName.trim()) return toast.error('Company name is required');
@@ -224,7 +276,12 @@ export default function Signup() {
     if (formData.password.length < 6) return toast.error('Password must be at least 6 characters');
     if (formData.password !== formData.confirmPassword) return toast.error('Passwords do not match');
     clearError();
-    handleNext();
+    try {
+      await sendCode(formData.email);
+      handleNext();
+    } catch {
+      // toast already shown in sendCode
+    }
   };
 
   // ─── Analysis loading screen (shown while API call is in progress) ────────────
@@ -506,9 +563,18 @@ export default function Signup() {
                   </Button>
                 </div>
 
-                <Button onClick={handleStep1Continue} className="w-full bg-blue-600 hover:bg-blue-700">
-                  Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button onClick={handleStep1Continue} className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSendingCode}>
+                  {isSendingCode ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending code...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
 
                 <p className="text-center text-sm text-gray-600">
@@ -548,18 +614,33 @@ export default function Signup() {
                   </div>
                   <p className="text-xs text-center text-gray-500">
                     Didn't receive the code?{' '}
-                    <button className="text-blue-600 hover:underline">Resend</button>
+                    <button
+                      className="text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleResendCode}
+                      disabled={resendCooldown > 0 || isSendingCode}
+                    >
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend'}
+                    </button>
                   </p>
                 </div>
 
                 <div className="flex gap-3">
-                  <Button onClick={handleBack} variant="outline" className="flex-1">
+                  <Button onClick={handleBack} variant="outline" className="flex-1" disabled={isVerifying}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={handleNext} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Verify & Continue
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button onClick={handleVerifyCode} className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={isVerifying || verificationCode.join('').length !== 6}>
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        Verify & Continue
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

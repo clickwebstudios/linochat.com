@@ -155,6 +155,12 @@ export const authApi = {
     company_name: string;
   }) => api.post<AuthResponse>('/auth/register', data),
 
+  sendVerificationCode: (email: string) =>
+    api.post('/auth/send-verification-code', { email }),
+
+  verifyEmailCode: (email: string, code: string) =>
+    api.post('/auth/verify-email-code', { email, code }),
+
   logout: () => api.post('/auth/logout', {}),
 
   me: () => api.get<User>('/auth/me'),

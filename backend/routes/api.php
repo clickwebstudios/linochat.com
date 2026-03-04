@@ -30,6 +30,8 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode']);
+    Route::post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     

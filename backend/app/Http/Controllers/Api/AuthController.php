@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\ApiController;
 use App\Http\Resources\UserResource;
 use App\Mail\PasswordResetMail;
+use App\Mail\VerificationCodeMail;
 use App\Mail\WelcomeMail;
+use App\Models\EmailVerificationCode;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\KbCategory;
@@ -36,7 +38,7 @@ class AuthController extends ApiController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'forgotPassword', 'resetPassword']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'forgotPassword', 'resetPassword', 'sendVerificationCode', 'verifyEmailCode']]);
     }
 
     /**
@@ -220,6 +222,119 @@ class AuthController extends ApiController
                 ]);
             }
         }
+    }
+
+    /**
+     * Send a 6-digit verification code to the given email.
+     */
+    public function sendVerificationCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $email = $request->input('email');
+
+        // Check if email is already registered
+        if (User::where('email', $email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This email is already registered.',
+            ], 422);
+        }
+
+        // Rate limit: max 1 code per email per 60 seconds
+        $recent = EmailVerificationCode::where('email', $email)
+            ->where('created_at', '>', now()->subSeconds(60))
+            ->first();
+
+        if ($recent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please wait before requesting a new code.',
+            ], 429);
+        }
+
+        // Delete old codes for this email
+        EmailVerificationCode::where('email', $email)->delete();
+
+        // Generate 6-digit code
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        EmailVerificationCode::create([
+            'email' => $email,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(15),
+        ]);
+
+        try {
+            Mail::to($email)->send(new VerificationCodeMail($code, $email));
+        } catch (\Exception $e) {
+            Log::error('Failed to send verification code email', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send verification email. Please try again.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Verification code sent to your email.',
+        ]);
+    }
+
+    /**
+     * Verify the 6-digit email code.
+     */
+    public function verifyEmailCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+            'code' => 'required|string|size:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $record = EmailVerificationCode::where('email', $request->input('email'))
+            ->where('code', $request->input('code'))
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification code.',
+            ], 422);
+        }
+
+        if ($record->isExpired()) {
+            $record->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Verification code has expired. Please request a new one.',
+            ], 422);
+        }
+
+        // Code is valid — delete it so it can't be reused
+        $record->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully.',
+        ]);
     }
 
     /**
