@@ -236,13 +236,13 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
                   </Label>
                   <pre className="text-xs text-gray-800 overflow-x-auto bg-gray-900 text-green-400 p-3 rounded">
 {`<script>
-  (function() {
+  (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
     script.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
     script.async = true;
     script.crossOrigin = 'anonymous';
     document.body.appendChild(script);
-  })();
+  });
 </script>`}
                   </pre>
                   {getWidgetBaseUrl().startsWith('http://') && (
@@ -256,13 +256,13 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
                     className="mt-3"
                     onClick={() => {
                       const code = `<script>
-  (function() {
+  (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
     script.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
     script.async = true;
     script.crossOrigin = 'anonymous';
     document.body.appendChild(script);
-  })();
+  });
 </script>`;
                       navigator.clipboard.writeText(code);
                     }}
