@@ -96,6 +96,7 @@ class WidgetLoaderController extends Controller
 
     // Default button icon (MessageSquare SVG)
     var DEFAULT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"><\/path><\/svg>';
+    var HEADER_ICON  = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"><\/path><\/svg>';
 
     // Headers for fetch - only add ngrok bypass when using ngrok (avoids CORS preflight for Cloudflare)
     var FETCH_HEADERS = API_URL.indexOf('ngrok') !== -1 ? { 'ngrok-skip-browser-warning': '1' } : {};
@@ -786,7 +787,7 @@ class WidgetLoaderController extends Controller
             headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:20px 16px;border-radius:24px 24px 0 0;">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;">'
                 + '<div style="display:flex;align-items:center;gap:12px;">'
-                + '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">' + buttonText + '</div>'
+                + '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
                 + '<div><div id="linochat-title" style="font-weight:500;font-size:15px;">' + title + '</div><div id="linochat-status" style="font-size:12px;opacity:0.9;">Always here to help</div></div>'
                 + '</div>'
                 + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.8;line-height:1;">×</span>'
@@ -802,7 +803,7 @@ class WidgetLoaderController extends Controller
             winW = 352; winRadius = '4px'; msgBg = '#ffffff';
             headerHTML = '<div id="linochat-header" style="background:#f9fafb;color:#111827;padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;">'
                 + '<div style="display:flex;align-items:center;gap:12px;">'
-                + '<div style="width:36px;height:36px;border-radius:4px;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">' + buttonText + '</div>'
+                + '<div style="width:36px;height:36px;border-radius:4px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + HEADER_ICON + '</div>'
                 + '<div><div id="linochat-title" style="font-weight:600;font-size:14px;">' + title + '</div><div id="linochat-status" style="font-size:12px;color:#6b7280;">Typical response: &lt;2 min</div></div>'
                 + '</div>'
                 + '<span id="linochat-close" style="cursor:pointer;font-size:20px;color:#9ca3af;line-height:1;">×</span>'
@@ -815,7 +816,7 @@ class WidgetLoaderController extends Controller
                 + '<div style="position:absolute;top:0;right:0;width:128px;height:128px;background:rgba(255,255,255,0.1);border-radius:50%;margin-right:-64px;margin-top:-64px;"></div>'
                 + '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;">'
                 + '<div style="display:flex;align-items:center;gap:12px;">'
-                + '<div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">' + buttonText + '</div>'
+                + '<div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
                 + '<div><div id="linochat-title" style="font-weight:600;font-size:15px;">Welcome!</div><div id="linochat-status" style="font-size:12px;opacity:0.9;">We\'re here to help</div></div>'
                 + '</div>'
                 + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.8;line-height:1;">×</span>'
@@ -826,7 +827,7 @@ class WidgetLoaderController extends Controller
             headerHTML = '<div id="linochat-header" style="background:linear-gradient(to right,#3b82f6,#8b5cf6,#ec4899);color:white;padding:16px;">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;">'
                 + '<div style="display:flex;align-items:center;gap:10px;">'
-                + '<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;">' + buttonText + '</div>'
+                + '<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
                 + '<div><div id="linochat-title" style="font-weight:600;font-size:14px;">' + title + '</div><div id="linochat-status" style="font-size:12px;opacity:0.9;">Online now</div></div>'
                 + '</div>'
                 + '<span id="linochat-close" style="cursor:pointer;font-size:20px;opacity:0.9;line-height:1;">×</span>'
@@ -835,7 +836,7 @@ class WidgetLoaderController extends Controller
             // modern (default)
             headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;">'
                 + '<div style="display:flex;align-items:center;gap:8px;">'
-                + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;">' + buttonText + '</div>'
+                + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
                 + '<div><div id="linochat-title" style="font-weight:500;font-size:14px;">' + title + '</div>'
                 + '<div id="linochat-status" style="font-size:12px;opacity:0.9;">We\'re online</div></div>'
                 + '</div>'
