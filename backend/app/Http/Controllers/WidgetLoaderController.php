@@ -93,7 +93,10 @@ class WidgetLoaderController extends Controller
     var CUSTOMER_TYPING_TIMEOUT = null;
     var CUSTOMER_TYPING_SENT = false;
     var CHAT_INITIALIZED = false;
-    
+
+    // Default button icon (MessageSquare SVG)
+    var DEFAULT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"><\/path><\/svg>';
+
     // Headers for fetch - only add ngrok bypass when using ngrok (avoids CORS preflight for Cloudflare)
     var FETCH_HEADERS = API_URL.indexOf('ngrok') !== -1 ? { 'ngrok-skip-browser-warning': '1' } : {};
     
@@ -408,7 +411,7 @@ class WidgetLoaderController extends Controller
             button.style.right = posStyles.right;
             button.style.top = posStyles.top;
             button.style.left = posStyles.left;
-            button.textContent = CONFIG.button_text || '💬';
+            button.innerHTML = DEFAULT_ICON;
         }
         
         if (window_) {
@@ -661,36 +664,36 @@ class WidgetLoaderController extends Controller
         if (design === 'gradient') {
             button.style.background = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
             button.style.width = '56px'; button.style.height = '56px'; button.style.borderRadius = '9999px';
-            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+            button.innerHTML = DEFAULT_ICON;
         } else if (design === 'friendly') {
             button.style.background = color;
             button.style.width = '64px'; button.style.height = '64px'; button.style.borderRadius = '16px';
             button.style.flexDirection = 'column';
             button.style.fontSize = '20px';
-            button.innerHTML = (CONFIG.button_text || '\uD83D\uDCAC') + '<span style="font-size:9px;display:block;margin-top:2px;font-weight:500;">Help</span>';
+            button.innerHTML = DEFAULT_ICON + '<span style="font-size:9px;display:block;margin-top:2px;font-weight:500;">Help</span>';
         } else if (design === 'bubble') {
             button.style.background = color;
             button.style.width = '64px'; button.style.height = '64px'; button.style.borderRadius = '9999px';
             button.style.border = '4px solid white';
-            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+            button.innerHTML = DEFAULT_ICON;
         } else if (design === 'classic') {
             button.style.background = color;
             button.style.width = '80px'; button.style.height = '44px'; button.style.borderRadius = '4px';
             button.style.fontSize = '14px';
-            button.innerHTML = (CONFIG.button_text || '\uD83D\uDCAC') + ' Chat';
+            button.innerHTML = DEFAULT_ICON + ' Chat';
         } else if (design === 'compact') {
             button.style.background = color;
             button.style.width = '44px'; button.style.height = '44px'; button.style.borderRadius = '10px';
-            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+            button.innerHTML = DEFAULT_ICON;
         } else if (design === 'minimal') {
             button.style.background = color;
             button.style.width = '48px'; button.style.height = '48px'; button.style.borderRadius = '9999px';
-            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+            button.innerHTML = DEFAULT_ICON;
         } else {
             // modern, professional
             button.style.background = color;
             button.style.width = '56px'; button.style.height = '56px'; button.style.borderRadius = '9999px';
-            button.textContent = CONFIG.button_text || '\uD83D\uDCAC';
+            button.innerHTML = DEFAULT_ICON;
         }
         button.style.bottom = posStyles.bottom;
         button.style.right = posStyles.right;
@@ -712,7 +715,7 @@ class WidgetLoaderController extends Controller
         document.body.appendChild(div);
         WIDGET_ELEMENT = div;
         var btn = document.getElementById('linochat-button');
-        btn.textContent = '\uD83D\uDCAC';
+        btn.innerHTML = DEFAULT_ICON;
         btn.addEventListener('mouseenter', function() { btn.style.transform = 'scale(1.1)'; });
         btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; });
         btn.addEventListener('click', function onFirstClick() {
@@ -729,7 +732,7 @@ class WidgetLoaderController extends Controller
                 })
                 .catch(function(err) {
                     console.error('LinoChat Widget Error:', err);
-                    btn.textContent = CONFIG ? (CONFIG.button_text || '\uD83D\uDCAC') : '\uD83D\uDCAC';
+                    btn.innerHTML = DEFAULT_ICON;
                     btn.style.pointerEvents = 'auto';
                 });
         });
@@ -744,7 +747,7 @@ class WidgetLoaderController extends Controller
         var position = CONFIG.position || 'bottom-right';
         var design = CONFIG.design || 'modern';
         var posStyles = POSITION_STYLES[position] || POSITION_STYLES['bottom-right'];
-        var buttonText = CONFIG.button_text || '💬';
+        var buttonText = CONFIG.button_text || DEFAULT_ICON;
         var title = CONFIG.widget_title || CONFIG.company_name;
 
         var posStr = Object.keys(posStyles).map(function(k) { return k + ':' + posStyles[k]; }).join(';');
@@ -753,7 +756,7 @@ class WidgetLoaderController extends Controller
 
         // Design-specific variables
         var btnW = 56, btnH = 56, btnRadius = '9999px', btnFontSize = '22px';
-        var btnBorder = '', btnContent = buttonText, btnBg = color;
+        var btnBorder = '', btnContent = DEFAULT_ICON, btnBg = color;
         var winW = 320, winRadius = '8px', msgBg = '#f9fafb';
         var headerHTML = '';
 
@@ -766,7 +769,7 @@ class WidgetLoaderController extends Controller
                 + '<span id="linochat-status" style="display:none;"></span>'
                 + '</div>';
         } else if (design === 'classic') {
-            btnW = 80; btnH = 44; btnRadius = '4px'; btnFontSize = '14px'; btnContent = buttonText + ' Chat';
+            btnW = 80; btnH = 44; btnRadius = '4px'; btnFontSize = '14px'; btnContent = DEFAULT_ICON + ' Chat';
             winW = 320; winRadius = '0px'; msgBg = '#f9fafb';
             headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">'
                 + '<div style="display:flex;align-items:center;gap:8px;">'
@@ -806,7 +809,7 @@ class WidgetLoaderController extends Controller
                 + '</div>';
         } else if (design === 'friendly') {
             btnW = 64; btnH = 64; btnRadius = '16px'; btnFontSize = '20px';
-            btnContent = buttonText + '<span style="font-size:9px;display:block;margin-top:2px;font-weight:500;">Help</span>';
+            btnContent = DEFAULT_ICON + '<span style="font-size:9px;display:block;margin-top:2px;font-weight:500;">Help</span>';
             winW = 320; winRadius = '24px'; msgBg = '#f0f6ff';
             headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:16px;position:relative;overflow:hidden;border-radius:24px 24px 0 0;">'
                 + '<div style="position:absolute;top:0;right:0;width:128px;height:128px;background:rgba(255,255,255,0.1);border-radius:50%;margin-right:-64px;margin-top:-64px;"></div>'
