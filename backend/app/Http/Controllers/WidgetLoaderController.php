@@ -1060,8 +1060,10 @@ class WidgetLoaderController extends Controller
         if (window.__linochat_init_done) return;
         window.__linochat_init_done = true;
         injectStyles();
-        createButtonOnly();
-        loadConfig().then(function() { updateButtonAppearance(); }).catch(function() {});
+        // Load config first so the button appears with correct design/color immediately (no flash of default)
+        loadConfig()
+            .then(function() { createButtonOnly(); updateButtonAppearance(); })
+            .catch(function() { createButtonOnly(); });
     }
     
     // Cleanup
