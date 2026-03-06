@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\WidgetController;
 use App\Http\Controllers\Api\TransferRequestController;
 use App\Http\Controllers\Api\WidgetSettingsController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,38 +43,37 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
-// DEBUG: Test token validation (public)
-Route::get('/debug/token', function (Request $request) {
-    $token = $request->bearerToken();
-    
-    try {
-        $user = auth('api')->user();
+// DEBUG routes — only available in local environment
+if (app()->environment('local')) {
+    Route::get('/debug/token', function (Request $request) {
+        $token = $request->bearerToken();
+        try {
+            $user = auth('api')->user();
+            return response()->json([
+                'success' => true,
+                'token_received' => $token ? 'YES' : 'NO',
+                'token_length' => $token ? strlen($token) : 0,
+                'user_authenticated' => $user ? 'YES' : 'NO',
+                'user_id' => $user ? $user->id : null,
+                'auth_guard' => config('auth.defaults.guard'),
+                'jwt_secret_set' => !empty(config('jwt.secret')),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'token_received' => $token ? 'YES' : 'NO',
+            ]);
+        }
+    });
+    Route::middleware('auth:api')->get('/debug/auth-test', function (Request $request) {
         return response()->json([
             'success' => true,
-            'token_received' => $token ? 'YES' : 'NO',
-            'token_length' => $token ? strlen($token) : 0,
-            'user_authenticated' => $user ? 'YES' : 'NO',
-            'user_id' => $user ? $user->id : null,
-            'auth_guard' => config('auth.defaults.guard'),
-            'jwt_secret_set' => !empty(config('jwt.secret')),
+            'user_id' => auth('api')->id(),
+            'user_email' => auth('api')->user()->email,
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'token_received' => $token ? 'YES' : 'NO',
-        ]);
-    }
-});
-
-// DEBUG: Test with auth middleware
-Route::middleware('auth:api')->get('/debug/auth-test', function (Request $request) {
-    return response()->json([
-        'success' => true,
-        'user_id' => auth('api')->id(),
-        'user_email' => auth('api')->user()->email,
-    ]);
-});
+    });
+}
 
 // Test route
 Route::get('/test', function () {
@@ -146,8 +146,10 @@ Route::middleware('auth:api')->prefix('agent')->group(function () {
     Route::get('/tickets/volume', [TicketController::class, 'volume']);
     Route::get('/tickets/stats', [TicketController::class, 'stats']);
     Route::get('/tickets/{ticket_id}', [TicketController::class, 'show']);
+    Route::put('/tickets/{ticket_id}', [TicketController::class, 'update']);
     Route::post('/tickets/{ticket_id}/take', [TicketController::class, 'take']);
     Route::post('/tickets/{ticket_id}/assign', [TicketController::class, 'assign']);
+    Route::post('/tickets/{ticket_id}/escalate', [TicketController::class, 'escalate']);
     Route::post('/tickets/{ticket_id}/status', [TicketController::class, 'updateStatus']);
     Route::post('/tickets/{ticket_id}/reply', [TicketController::class, 'reply']);
     Route::delete('/tickets/{ticket_id}', [TicketController::class, 'destroy']);
@@ -216,6 +218,11 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/agent/transfer-requests', [TransferRequestController::class, 'store']);
     Route::post('/agent/transfer-requests/{id}/accept', [TransferRequestController::class, 'accept']);
     Route::post('/agent/transfer-requests/{id}/reject', [TransferRequestController::class, 'reject']);
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 });
 
 // Alternative route for messages (with 's')
@@ -232,7 +239,14 @@ Route::prefix('ai')->group(function () {
 Route::middleware('auth:api')->prefix('superadmin')->group(function () {
     Route::get('/companies', [SuperadminController::class, 'companies']);
     Route::get('/companies/{companyId}', [SuperadminController::class, 'companyDetails']);
+    Route::put('/companies/{companyId}', [SuperadminController::class, 'updateCompany']);
+    Route::delete('/companies/{companyId}', [SuperadminController::class, 'deleteCompany']);
     Route::get('/companies/{companyId}/chats', [SuperadminController::class, 'companyChats']);
+    Route::get('/companies/{companyId}/projects', [SuperadminController::class, 'companyProjects']);
+    Route::get('/companies/{companyId}/agents', [SuperadminController::class, 'companyAgents']);
+    Route::get('/companies/{companyId}/tickets', [SuperadminController::class, 'companyTickets']);
+    Route::post('/companies/{companyId}/invite', [SuperadminController::class, 'companyInvite']);
+    Route::get('/companies/{companyId}/invitations', [SuperadminController::class, 'companyInvitations']);
     Route::get('/dashboard-stats', [SuperadminController::class, 'dashboardStats']);
     Route::get('/stats', [SuperadminController::class, 'platformStats']);
     Route::get('/chats', [SuperadminController::class, 'allChats']);
@@ -241,4 +255,7 @@ Route::middleware('auth:api')->prefix('superadmin')->group(function () {
     Route::get('/projects/{projectId}', [SuperadminController::class, 'projectDetails']);
     Route::get('/agents', [SuperadminController::class, 'allAgents']);
     Route::get('/agents/{agentId}', [SuperadminController::class, 'agentDetails']);
+    Route::put('/agents/{agentId}', [SuperadminController::class, 'updateAgent']);
+    Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
+    Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
 });

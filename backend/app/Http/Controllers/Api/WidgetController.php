@@ -517,9 +517,12 @@ class WidgetController extends Controller
             ], 404);
         }
 
-        // Count active agents for this project
-        // For now, return mock data - will connect to real status later
-        $activeAgents = 1; // TODO: Check agent online status via WebSocket/DB
+        // Count active agents for this project (online = last_active_at within 5 min)
+        $agentIds = $project->agents()->pluck('users.id');
+        $activeAgents = \App\Models\User::whereIn('id', $agentIds)
+            ->where('status', 'Active')
+            ->where('last_active_at', '>=', now()->subMinutes(5))
+            ->count();
 
         return response()->json([
             'success' => true,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { api } from '../../api/client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -60,7 +61,7 @@ import {
   ExternalLink,
   Loader2,
 } from 'lucide-react';
-import { mockArticles, mockProjects } from '../../data/mockData';
+import { mockArticles } from '../../data/mockData';
 import { TICKET_CATEGORIES } from '../../lib/constants';
 import { initEcho } from '../../lib/echo';
 import { playNotificationSound } from '../../lib/notificationSound';
@@ -94,6 +95,7 @@ interface ChatsViewProps {
   chatFilter: 'all' | 'active' | 'closed';
   setChatFilter: (filter: 'all' | 'active' | 'closed') => void;
   getProjectById: (id: string) => any;
+  projects?: any[];
   role: string;
   teamMembers?: TeamMemberForTransfer[];
   currentUserId?: string;
@@ -117,6 +119,7 @@ export function ChatsView({
   chatFilter,
   setChatFilter,
   getProjectById,
+  projects = [],
   role,
   teamMembers = [],
   currentUserId,
@@ -142,6 +145,7 @@ export function ChatsView({
   const [isTakingOver, setIsTakingOver] = useState(false);
   const [takeoverError, setTakeoverError] = useState<string | null>(null);
   const [isGeneratingSubject, setIsGeneratingSubject] = useState(false);
+  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -289,7 +293,7 @@ export function ChatsView({
         content: event.content,
         is_ai: event.is_ai,
         created_at: event.created_at,
-        isRead: event.sender_type === 'agent',
+        isRead: true,
         metadata: event.metadata,
       };
       
@@ -433,7 +437,7 @@ export function ChatsView({
           content: msg.content,
           is_ai: msg.is_ai,
           created_at: msg.created_at,
-          isRead: msg.sender_type === 'agent' || msg.sender_type === 'system' || msg.read_at != null,
+          isRead: true,
           metadata: msg.metadata,
         }));
         // Fallback: show human requested modal when transfer message appears (works without WebSocket)
@@ -1587,7 +1591,7 @@ export function ChatsView({
           <div className="space-y-2">
             <Label htmlFor="ticket-project">Project</Label>
             <select id="ticket-project" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" value={newTicket.projectId} onChange={(e) => setNewTicket({ ...newTicket, projectId: e.target.value })}>
-              {mockProjects.map((project) => (<option key={project.id} value={project.id}>{project.name}</option>))}
+              {projects.map((project) => (<option key={project.id} value={project.id}>{project.name}</option>))}
             </select>
           </div>
           <div className="space-y-2">
@@ -1606,7 +1610,30 @@ export function ChatsView({
         </div>
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
           <Button variant="outline" onClick={() => { setShowCreateTicketDialog(false); setNewTicket({ subject: '', priority: 'medium', category: '', description: '', customerName: activeChat?.customer_name || activeChat?.customer || '', customerEmail: '', projectId: activeChat?.project_id || activeChat?.projectId || '' }); }}>Cancel</Button>
-          <Button onClick={() => { console.log('Creating ticket:', newTicket); setShowCreateTicketDialog(false); setNewTicket({ subject: '', priority: 'medium', category: '', description: '', customerName: activeChat?.customer_name || activeChat?.customer || '', customerEmail: '', projectId: activeChat?.project_id || activeChat?.projectId || '' }); }} disabled={!newTicket.subject.trim()} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={async () => {
+            if (!newTicket.subject.trim()) return;
+            setIsCreatingTicket(true);
+            try {
+              await api.post('/api/agent/tickets', {
+                project_id: newTicket.projectId,
+                subject: newTicket.subject,
+                description: newTicket.description || newTicket.subject,
+                priority: newTicket.priority,
+                category: newTicket.category || undefined,
+                customer_name: newTicket.customerName || undefined,
+                customer_email: newTicket.customerEmail,
+                chat_id: activeChat?.id,
+              });
+              toast.success('Ticket created successfully');
+              setShowCreateTicketDialog(false);
+              setNewTicket({ subject: '', priority: 'medium', category: '', description: '', customerName: activeChat?.customer_name || activeChat?.customer || '', customerEmail: '', projectId: activeChat?.project_id || activeChat?.projectId || '' });
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err?.response?.data?.errors ? Object.values(err.response.data.errors).flat().join(', ') : 'Failed to create ticket';
+              toast.error(typeof msg === 'string' ? msg : 'Failed to create ticket');
+            } finally {
+              setIsCreatingTicket(false);
+            }
+          }} disabled={!newTicket.subject.trim() || isCreatingTicket} className="bg-blue-600 hover:bg-blue-700">
 
             <Ticket className="mr-2 h-4 w-4" />Create Ticket
           </Button>

@@ -9,13 +9,15 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\Chat;
 use App\Models\Ticket;
+use App\Models\Invitation;
+use App\Mail\AgentInvitationMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
-// Icon references for activity feed (used in agent details response)
-// CheckCircle, MessageCircle, AlertCircle, FileText
+// Icon references for activity feed: CheckCircle, MessageCircle, AlertCircle, FileText
 
 class SuperadminController extends Controller
 {
@@ -84,6 +86,68 @@ class SuperadminController extends Controller
     }
     
     /**
+     * Update company (admin user)
+     */
+    public function updateCompany(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'company_name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'location' => 'nullable|string|max:255',
+            'status' => 'sometimes|string|in:Active,Suspended,Inactive,Archived',
+        ]);
+        $updateData = [];
+        if (isset($validated['name'])) {
+            $updateData['company_name'] = $validated['name'];
+            $parts = explode(' ', $validated['name'], 2);
+            $updateData['first_name'] = $parts[0] ?? '';
+            $updateData['last_name'] = $parts[1] ?? '';
+        }
+        foreach (['company_name', 'email', 'phone', 'location', 'status'] as $key) {
+            if (array_key_exists($key, $validated)) {
+                $updateData[$key] = $validated[$key];
+            }
+        }
+        if (!empty($updateData)) {
+            $company->update($updateData);
+        }
+        return response()->json(['success' => true, 'data' => $company->fresh()]);
+    }
+
+    /**
+     * Delete company (admin user and cascade)
+     */
+    public function deleteCompany(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        if ($company->role === 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Cannot delete superadmin'], 403);
+        }
+        $company->ownedProjects()->each(function ($project) {
+            $project->agents()->detach();
+            $project->kbCategories()->each(fn ($c) => $c->articles()->delete());
+            $project->kbCategories()->delete();
+            $project->chats()->each(fn ($c) => $c->messages()->delete());
+            $project->chats()->delete();
+            $project->tickets()->each(fn ($t) => $t->messages()->delete());
+            $project->tickets()->delete();
+            Invitation::where('project_id', $project->id)->delete();
+            $project->delete();
+        });
+        $company->delete();
+        return response()->json(['success' => true, 'message' => 'Company deleted']);
+    }
+
+    /**
      * Get company details with all related data
      */
     public function companyDetails(Request $request, $companyId)
@@ -116,14 +180,16 @@ class SuperadminController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $company->id,
+                'id' => (string) $company->id,
                 'name' => $companyName,
                 'email' => $company->email,
                 'phone' => $company->phone,
                 'location' => $company->location,
                 'plan' => $this->getCompanyPlan($company),
-                'status' => $company->status,
+                'status' => $company->status ?? 'Active',
                 'created_at' => $company->created_at,
+                'joined' => $company->created_at?->format('M j, Y') ?? 'N/A',
+                'mrr' => '$0',
                 'stats' => $stats,
                 'projects' => $company->ownedProjects,
             ]
@@ -189,19 +255,242 @@ class SuperadminController extends Controller
                 'message' => 'Company not found'
             ], 404);
         }
-        
+
         $projectIds = $company->ownedProjects()->pluck('id');
         $perPage = $request->input('per_page', 20);
-        
+
         $chats = Chat::whereIn('project_id', $projectIds)
-            ->with(['project:id,name', 'agent:id,first_name,last_name'])
+            ->with([
+                'project:id,name',
+                'agent:id,first_name,last_name',
+                'messages' => fn ($q) => $q->orderBy('created_at', 'asc')->limit(50),
+            ])
+            ->withCount('messages')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
-        
+
+        $data = $chats->map(function ($chat) {
+            $lastMessage = $chat->messages->last();
+            return [
+                'id' => (string) $chat->id,
+                'customer' => $chat->customer_name ?? 'Anonymous',
+                'avatar' => strtoupper(substr($chat->customer_name ?? 'A', 0, 2)),
+                'preview' => $lastMessage?->content ? substr($lastMessage->content, 0, 80) : 'No messages yet',
+                'agent' => $chat->agent ? trim($chat->agent->first_name . ' ' . $chat->agent->last_name) : 'Unassigned',
+                'status' => $chat->status ?? 'active',
+                'time' => $chat->created_at?->diffForHumans() ?? '',
+                'unread' => 0,
+                'isAIBot' => (bool) ($chat->ai_enabled ?? false),
+                'projectId' => (string) $chat->project_id,
+                'project' => ['id' => $chat->project_id, 'name' => $chat->project?->name ?? ''],
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $chats
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $chats->currentPage(),
+                'last_page' => $chats->lastPage(),
+                'per_page' => $chats->perPage(),
+                'total' => $chats->total(),
+            ],
         ]);
+    }
+
+    /**
+     * Get company projects
+     */
+    public function companyProjects(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $projects = $company->ownedProjects()
+            ->withCount(['agents', 'chats', 'tickets'])
+            ->get();
+        $projectIds = $projects->pluck('id');
+        $activeTicketsByProject = Ticket::whereIn('project_id', $projectIds)
+            ->whereIn('status', ['open', 'in_progress', 'waiting'])
+            ->selectRaw('project_id, count(*) as cnt')
+            ->groupBy('project_id')
+            ->pluck('cnt', 'project_id');
+        $data = $projects->map(function ($p) use ($activeTicketsByProject) {
+            return [
+                'id' => (string) $p->id,
+                'name' => $p->name,
+                'color' => $p->color ?? '#3b82f6',
+                'description' => $p->description ?? '',
+                'website' => $p->website ?? '',
+                'domain' => $p->website ?? '',
+                'tickets' => $p->tickets_count ?? 0,
+                'totalTickets' => $p->tickets_count ?? 0,
+                'activeTickets' => $activeTicketsByProject[$p->id] ?? 0,
+                'members' => $p->agents_count ?? 0,
+                'companyId' => (string) $p->user_id,
+                'status' => $p->status === 'active' ? 'Active' : 'Inactive',
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * Get company agents (users in company's projects)
+     */
+    public function companyAgents(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $projectIds = $company->ownedProjects()->pluck('id');
+        $agentIds = DB::table('project_user')->whereIn('project_id', $projectIds)->pluck('user_id')->unique();
+        $agents = User::whereIn('id', $agentIds)->get();
+        $todayStart = now()->startOfDay();
+        $data = $agents->map(function ($agent) use ($todayStart) {
+            $activeTickets = Ticket::where('assigned_to', $agent->id)
+                ->whereIn('status', ['open', 'in_progress', 'waiting'])
+                ->count();
+            $resolvedToday = Ticket::where('assigned_to', $agent->id)
+                ->whereIn('status', ['resolved', 'closed'])
+                ->where('updated_at', '>=', $todayStart)
+                ->count();
+            $status = 'Offline';
+            if ($agent->last_active_at && $agent->last_active_at->diffInMinutes(now()) < 5) {
+                $status = 'Online';
+            } elseif ($agent->last_active_at && $agent->last_active_at->diffInMinutes(now()) < 30) {
+                $status = 'Away';
+            }
+            return [
+                'id' => (string) $agent->id,
+                'name' => trim($agent->first_name . ' ' . $agent->last_name) ?: $agent->email,
+                'email' => $agent->email,
+                'status' => $agent->status === 'Active' ? $status : $agent->status,
+                'activeTickets' => $activeTickets,
+                'resolvedToday' => $resolvedToday,
+                'companyId' => (string) $company->id,
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * Get company tickets
+     */
+    public function companyTickets(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $projectIds = $company->ownedProjects()->pluck('id');
+        $tickets = Ticket::whereIn('project_id', $projectIds)
+            ->with('assignedAgent:id,first_name,last_name')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+        $data = $tickets->map(function ($t) {
+            return [
+                'id' => (string) $t->id,
+                'subject' => $t->subject,
+                'customer' => $t->customer_name ?: $t->customer_email ?: 'Anonymous',
+                'priority' => $t->priority ?? 'medium',
+                'status' => $t->status,
+                'assignedTo' => $t->assignedAgent
+                    ? trim($t->assignedAgent->first_name . ' ' . $t->assignedAgent->last_name)
+                    : 'Unassigned',
+                'created' => $t->created_at?->diffForHumans() ?? '',
+                'projectId' => (string) $t->project_id,
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * Invite member to company (uses first project)
+     */
+    public function companyInvite(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $firstProject = $company->ownedProjects()->first();
+        if (!$firstProject) {
+            return response()->json(['success' => false, 'message' => 'Company has no projects. Create a project first.'], 422);
+        }
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'name' => 'required|string|max:255',
+            'role' => 'nullable|string|in:agent,admin',
+        ]);
+        $email = $validated['email'];
+        $nameParts = explode(' ', $validated['name'], 2);
+        $firstName = $nameParts[0] ?? '';
+        $lastName = $nameParts[1] ?? '';
+        $existingUser = User::where('email', $email)->first();
+        if ($existingUser && $existingUser->projects()->where('projects.id', $firstProject->id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'User is already an agent on this project'], 422);
+        }
+        $existingInvitation = Invitation::where('project_id', $firstProject->id)
+            ->where('email', $email)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->first();
+        if ($existingInvitation) {
+            return response()->json(['success' => false, 'message' => 'Invitation already sent to this email'], 422);
+        }
+        $invitation = Invitation::create([
+            'project_id' => $firstProject->id,
+            'email' => $email,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'role' => $validated['role'] ?? 'agent',
+            'token' => Str::random(32),
+            'status' => 'pending',
+            'expires_at' => now()->addDays(7),
+        ]);
+        try {
+            Mail::to($email)->send(new AgentInvitationMail($invitation, $firstProject));
+        } catch (\Exception $e) {
+            \Log::error('Company invite email failed', ['error' => $e->getMessage()]);
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation sent',
+            'data' => [
+                'invitation_id' => $invitation->id,
+                'email' => $email,
+                'name' => trim($firstName . ' ' . $lastName),
+                'role' => $validated['role'] ?? 'agent',
+            ],
+        ]);
+    }
+
+    /**
+     * Get company pending invitations
+     */
+    public function companyInvitations(Request $request, $companyId)
+    {
+        $company = User::find($companyId);
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+        $projectIds = $company->ownedProjects()->pluck('id');
+        $invitations = Invitation::whereIn('project_id', $projectIds)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->get();
+        $data = $invitations->map(function ($inv) {
+            return [
+                'id' => (string) $inv->id,
+                'name' => trim(($inv->first_name ?? '') . ' ' . ($inv->last_name ?? '')),
+                'email' => $inv->email,
+                'role' => $inv->role === 'admin' ? 'Admin' : 'Agent',
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
     }
     
     /**
@@ -267,21 +556,32 @@ class SuperadminController extends Controller
     {
         $perPage = $request->input('per_page', 20);
         
-        $chats = Chat::with(['project:id,name', 'agent:id,first_name,last_name', 'customer:id,name,email'])
+        $chats = Chat::with([
+            'project:id,name',
+            'agent:id,first_name,last_name',
+            'messages' => fn ($q) => $q->orderBy('created_at', 'asc')->limit(50),
+        ])
+            ->withCount('messages')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
         
         $data = $chats->map(function($chat) {
+            $messages = $chat->messages->map(fn ($m) => [
+                'from' => in_array($m->sender_type, ['agent', 'user']) ? 'agent' : 'customer',
+                'text' => $m->content ?? '',
+                'time' => $m->created_at?->toIso8601String() ?? '',
+            ])->values()->all();
             return [
-                'id' => $chat->id,
+                'id' => (string) $chat->id,
                 'chat_id' => '#CH-' . $chat->id,
-                'status' => $chat->status,
+                'status' => $chat->status ?? 'active',
                 'company' => $chat->project?->name ?? 'Unknown',
-                'agent' => $chat->agent ? $chat->agent->first_name . ' ' . $chat->agent->last_name : null,
-                'customer_name' => $chat->customer?->name ?? 'Anonymous',
+                'agent' => $chat->agent ? trim($chat->agent->first_name . ' ' . $chat->agent->last_name) : null,
+                'customer_name' => $chat->customer_name ?? 'Anonymous',
                 'created_at' => $chat->created_at,
                 'updated_at' => $chat->updated_at,
                 'messages_count' => $chat->messages_count ?? 0,
+                'messages' => $messages,
             ];
         });
         
@@ -346,16 +646,28 @@ class SuperadminController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
         
-        $data = $agents->map(function($agent) {
+        $todayStart = now()->startOfDay();
+        $data = $agents->map(function ($agent) use ($todayStart) {
+            $activeTickets = Ticket::where('assigned_to', $agent->id)
+                ->whereIn('status', ['open', 'in_progress', 'waiting'])
+                ->count();
+            $resolvedToday = Ticket::where('assigned_to', $agent->id)
+                ->whereIn('status', ['resolved', 'closed'])
+                ->where('updated_at', '>=', $todayStart)
+                ->count();
             return [
-                'id' => $agent->id,
-                'name' => $agent->first_name . ' ' . $agent->last_name,
+                'id' => (string) $agent->id,
+                'first_name' => $agent->first_name ?? '',
+                'last_name' => $agent->last_name ?? '',
+                'name' => trim($agent->first_name . ' ' . $agent->last_name) ?: $agent->email,
                 'email' => $agent->email,
-                'status' => $agent->status,
+                'role' => $agent->role ?? 'agent',
+                'status' => $agent->status ?? 'Active',
+                'join_date' => $agent->join_date?->format('Y-m-d') ?? $agent->created_at?->format('Y-m-d') ?? '',
                 'project' => $agent->projects->first()?->name ?? 'Unassigned',
-                'active_tickets' => 0, // TODO: calculate
-                'resolved_today' => 0, // TODO: calculate
-                'avg_response_time' => '1h 30m', // TODO: calculate
+                'active_tickets' => $activeTickets,
+                'resolved_today' => $resolvedToday,
+                'avg_response_time' => $this->formatAvgResponseTime($agent->id),
             ];
         });
         
@@ -369,6 +681,83 @@ class SuperadminController extends Controller
                 'total' => $agents->total(),
             ]
         ]);
+    }
+
+    /**
+     * Update agent (e.g. role)
+     */
+    public function updateAgent(Request $request, $agentId)
+    {
+        $agent = User::find($agentId);
+        if (!$agent || $agent->role === 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Agent not found'], 404);
+        }
+        $validated = $request->validate(['role' => 'sometimes|string|in:admin,agent,viewer']);
+        if (!empty($validated['role'])) {
+            $agent->update(['role' => $validated['role']]);
+        }
+        return response()->json(['success' => true, 'data' => $agent->fresh()]);
+    }
+
+    /**
+     * Invite user as agent (superadmin can invite to any project)
+     */
+    public function inviteAgent(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'first_name' => 'nullable|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'role' => 'nullable|string|in:agent,admin',
+            'project_id' => 'required|exists:projects,id',
+        ]);
+        $project = Project::find($validated['project_id']);
+        $email = $validated['email'];
+        $existingUser = User::where('email', $email)->first();
+        if ($existingUser && $existingUser->projects()->where('projects.id', $project->id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'User is already an agent on this project'], 422);
+        }
+        $existingInvitation = Invitation::where('project_id', $project->id)
+            ->where('email', $email)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->first();
+        if ($existingInvitation) {
+            return response()->json(['success' => false, 'message' => 'Invitation already sent to this email'], 422);
+        }
+        $invitation = Invitation::create([
+            'project_id' => $project->id,
+            'email' => $email,
+            'first_name' => $validated['first_name'] ?? null,
+            'last_name' => $validated['last_name'] ?? null,
+            'role' => $validated['role'] ?? 'agent',
+            'token' => Str::random(32),
+            'status' => 'pending',
+            'expires_at' => now()->addDays(7),
+        ]);
+        try {
+            Mail::to($email)->send(new AgentInvitationMail($invitation, $project));
+        } catch (\Exception $e) {
+            \Log::error('Superadmin invite email failed', ['error' => $e->getMessage()]);
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation sent',
+            'data' => ['invitation_id' => $invitation->id, 'email' => $email],
+        ]);
+    }
+
+    /**
+     * Remove/deactivate agent (soft delete or status change)
+     */
+    public function deleteAgent(Request $request, $agentId)
+    {
+        $agent = User::find($agentId);
+        if (!$agent || $agent->role === 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Agent not found'], 404);
+        }
+        $agent->update(['status' => 'Deactivated']);
+        return response()->json(['success' => true, 'message' => 'Agent deactivated']);
     }
 
     /**
@@ -484,13 +873,16 @@ class SuperadminController extends Controller
                 'last_active' => $agent->last_active_at?->diffForHumans() ?? 'Recently',
                 'company' => $company,
                 'projects' => $allProjects->map(function ($project) {
+                    $activeTickets = Ticket::where('project_id', $project->id)
+                        ->whereIn('status', ['open', 'in_progress', 'waiting'])
+                        ->count();
                     return [
                         'id' => $project->id,
                         'name' => $project->name,
                         'color' => $project->color ?? '#3b82f6',
                         'website' => $project->website,
                         'status' => $project->status === 'active' ? 'Active' : 'Inactive',
-                        'active_tickets' => 0, // TODO: calculate
+                        'active_tickets' => $activeTickets,
                     ];
                 })->values(),
                 'stats' => [
@@ -498,7 +890,7 @@ class SuperadminController extends Controller
                     'tickets_resolved' => $ticketsResolved,
                     'active_tickets' => $activeTickets,
                     'total_chats' => $agent->total_chats ?? 0,
-                    'avg_response_time' => '2.5 min',
+                    'avg_response_time' => $this->formatAvgResponseTime($agent->id),
                     'rating' => 4.7,
                     'customer_satisfaction' => 94,
                 ],
@@ -599,6 +991,30 @@ class SuperadminController extends Controller
             'message' => 'Project created successfully',
             'data'    => $project,
         ], 201);
+    }
+
+    /**
+     * Helper: Format average response time for agent's tickets
+     */
+    private function formatAvgResponseTime(int $agentId): string
+    {
+        $resolved = Ticket::where('assigned_to', $agentId)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->get();
+        if ($resolved->isEmpty()) {
+            return '—';
+        }
+        $totalMinutes = $resolved->sum(function ($t) {
+            $resolvedAt = $t->resolved_at ?? $t->updated_at;
+            return $t->created_at->diffInMinutes($resolvedAt);
+        });
+        $avgMinutes = (int) round($totalMinutes / $resolved->count());
+        if ($avgMinutes < 60) {
+            return $avgMinutes . ' min';
+        }
+        $hours = (int) floor($avgMinutes / 60);
+        $mins = $avgMinutes % 60;
+        return $mins > 0 ? "{$hours}h {$mins}m" : "{$hours}h";
     }
 
     /**

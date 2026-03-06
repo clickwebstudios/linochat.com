@@ -171,13 +171,13 @@ export function CompanyDetailView({
       
       try {
         // Fetch company details
-        const companyResponse = await api.get(`/api/superadmin/companies/${viewingCompanyId}`);
+        const companyResponse = await api.get(`/superadmin/companies/${viewingCompanyId}`);
         setCompany(companyResponse.data);
         
         // Fetch company chats
         try {
-          const chatsResponse = await api.get(`/api/superadmin/companies/${viewingCompanyId}/chats`);
-          setCompanyChats(chatsResponse.data || []);
+          const chatsResponse = await api.get<{ success: boolean; data: Chat[] }>(`/superadmin/companies/${viewingCompanyId}/chats`);
+          setCompanyChats(Array.isArray(chatsResponse.data) ? chatsResponse.data : []);
         } catch (chatsErr) {
           // Chats endpoint might not exist yet, use empty array
           setCompanyChats([]);
@@ -185,7 +185,7 @@ export function CompanyDetailView({
         
         // Fetch company projects
         try {
-          const projectsResponse = await api.get(`/api/superadmin/companies/${viewingCompanyId}/projects`);
+          const projectsResponse = await api.get(`/superadmin/companies/${viewingCompanyId}/projects`);
           setCompanyProjects(projectsResponse.data || []);
         } catch (projectsErr) {
           // Projects endpoint might not exist yet, use empty array
@@ -194,7 +194,7 @@ export function CompanyDetailView({
         
         // Fetch company agents
         try {
-          const agentsResponse = await api.get(`/api/superadmin/companies/${viewingCompanyId}/agents`);
+          const agentsResponse = await api.get(`/superadmin/companies/${viewingCompanyId}/agents`);
           setCompanyAgents(agentsResponse.data || []);
         } catch (agentsErr) {
           // Agents endpoint might not exist yet, use empty array
@@ -203,11 +203,28 @@ export function CompanyDetailView({
         
         // Fetch company tickets
         try {
-          const ticketsResponse = await api.get(`/api/superadmin/companies/${viewingCompanyId}/tickets`);
+          const ticketsResponse = await api.get(`/superadmin/companies/${viewingCompanyId}/tickets`);
           setCompanyTickets(ticketsResponse.data || []);
         } catch (ticketsErr) {
-          // Tickets endpoint might not exist yet, use empty array
           setCompanyTickets([]);
+        }
+
+        // Fetch company invitations
+        try {
+          const invitationsResponse = await api.get(`/superadmin/companies/${viewingCompanyId}/invitations`);
+          const invs = invitationsResponse.data || [];
+          setInvitedMembers(
+            Array.isArray(invs)
+              ? invs.map((i: { id: string; name: string; email: string; role: string }) => ({
+                  id: i.id,
+                  name: i.name || i.email,
+                  email: i.email,
+                  role: (i.role === 'Admin' ? 'Admin' : 'Agent') as 'Admin' | 'Agent',
+                }))
+              : []
+          );
+        } catch (invErr) {
+          setInvitedMembers([]);
         }
       } catch (err) {
         setError('Failed to load company data. Please try again.');
@@ -251,13 +268,6 @@ export function CompanyDetailView({
   >([]);
 
   const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectWebsite, setNewProjectWebsite] = useState('');
-  const [newProjectDescription, setNewProjectDescription] = useState('');
-  const [newProjectColor, setNewProjectColor] = useState('#3b82f6');
-  const [addedProjects, setAddedProjects] = useState<
-    { id: string; name: string; color: string; description: string; website: string; totalTickets: number; activeTickets: number; members: number; companyId: string; tickets: number; status: string }[]
-  >([]);
 
   // Edit company state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -296,20 +306,34 @@ export function CompanyDetailView({
     setEditDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    setEditedCompanyName(tempName);
-    setEditedEmail(tempEmail);
-    setEditedLocation(tempLocation);
-    setEditedStatus(tempStatus);
-    setEditDialogOpen(false);
-    // TODO: Call API to update company
+  const handleSaveEdit = async () => {
+    try {
+      await api.put(`/superadmin/companies/${viewingCompanyId}`, {
+        name: tempName,
+        email: tempEmail,
+        location: tempLocation,
+        status: tempStatus,
+      });
+      setEditedCompanyName(tempName);
+      setEditedEmail(tempEmail);
+      setEditedLocation(tempLocation);
+      setEditedStatus(tempStatus);
+      setCompany((prev) => prev ? { ...prev, name: tempName, email: tempEmail, location: tempLocation, status: tempStatus } : null);
+      setEditDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to update company:', err);
+    }
   };
 
-  const handleDeleteCompany = () => {
-    setDeleteDialogOpen(false);
-    setDeleteConfirmText('');
-    setViewingCompanyId(null);
-    // TODO: Call API to delete company
+  const handleDeleteCompany = async () => {
+    try {
+      await api.delete(`/superadmin/companies/${viewingCompanyId}`);
+      setDeleteDialogOpen(false);
+      setDeleteConfirmText('');
+      setViewingCompanyId(null);
+    } catch (err) {
+      console.error('Failed to delete company:', err);
+    }
   };
 
   // Archive company state
@@ -317,80 +341,66 @@ export function CompanyDetailView({
   const [archiveReason, setArchiveReason] = useState('');
   const [isArchived, setIsArchived] = useState(false);
 
-  const handleArchiveCompany = () => {
-    setIsArchived(true);
-    setEditedStatus('Archived');
-    setArchiveDialogOpen(false);
-    setArchiveReason('');
-    // TODO: Call API to archive company
+  const handleArchiveCompany = async () => {
+    try {
+      await api.put(`/superadmin/companies/${viewingCompanyId}`, { status: 'Archived' });
+      setIsArchived(true);
+      setEditedStatus('Archived');
+      setCompany((prev) => prev ? { ...prev, status: 'Archived' } : null);
+      setArchiveDialogOpen(false);
+      setArchiveReason('');
+    } catch (err) {
+      console.error('Failed to archive company:', err);
+    }
   };
 
-  const handleRestoreCompany = () => {
-    setIsArchived(false);
-    setEditedStatus('Active');
-    // TODO: Call API to restore company
+  const handleRestoreCompany = async () => {
+    try {
+      await api.put(`/superadmin/companies/${viewingCompanyId}`, { status: 'Active' });
+      setIsArchived(false);
+      setEditedStatus('Active');
+      setCompany((prev) => prev ? { ...prev, status: 'Active' } : null);
+    } catch (err) {
+      console.error('Failed to restore company:', err);
+    }
   };
 
-  const projectColors = [
-    { value: '#3b82f6', label: 'Blue' },
-    { value: '#10b981', label: 'Green' },
-    { value: '#f59e0b', label: 'Amber' },
-    { value: '#8b5cf6', label: 'Purple' },
-    { value: '#ec4899', label: 'Pink' },
-    { value: '#ef4444', label: 'Red' },
-    { value: '#06b6d4', label: 'Cyan' },
-    { value: '#f97316', label: 'Orange' },
-  ];
+  const allCompanyProjects = companyProjects;
 
-  const handleAddProject = () => {
-    if (!newProjectName.trim() || !company) return;
-    setAddedProjects(prev => [
-      ...prev,
-      {
-        id: `proj-new-${Date.now()}`,
-        name: newProjectName.trim(),
-        color: newProjectColor,
-        description: newProjectDescription.trim(),
-        website: newProjectWebsite.trim() || '',
-        totalTickets: 0,
-        activeTickets: 0,
-        members: 1,
-        companyId: company.id,
-        tickets: 0,
-        status: 'Active',
-      },
-    ]);
-    setNewProjectName('');
-    setNewProjectWebsite('');
-    setNewProjectDescription('');
-    setNewProjectColor('#3b82f6');
-    setAddProjectDialogOpen(false);
-    // TODO: Call API to create project
-  };
-
-  const allCompanyProjects = [...companyProjects, ...addedProjects];
-
-  const handleInviteMember = () => {
+  const handleInviteMember = async () => {
     if (!inviteName.trim() || !inviteEmail.trim()) return;
-    setInvitedMembers(prev => [
-      ...prev,
-      {
-        id: `invited-${Date.now()}`,
-        name: inviteName.trim(),
+    try {
+      const res = await api.post(`/superadmin/companies/${viewingCompanyId}/invite`, {
         email: inviteEmail.trim(),
-        role: inviteRole,
-      },
-    ]);
-    setInviteName('');
-    setInviteEmail('');
-    setInviteRole('Agent');
-    setInviteDialogOpen(false);
-    // TODO: Call API to invite member
+        name: inviteName.trim(),
+        role: inviteRole.toLowerCase(),
+      });
+      const data = res.data as { invitation_id: number; email: string; name: string; role: string };
+      setInvitedMembers((prev) => [
+        ...prev,
+        {
+          id: String(data.invitation_id),
+          name: data.name,
+          email: data.email,
+          role: inviteRole,
+        },
+      ]);
+      setInviteName('');
+      setInviteEmail('');
+      setInviteRole('Agent');
+      setInviteDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to invite member:', err);
+    }
   };
 
-  const handleRemoveInvited = (id: string) => {
-    setInvitedMembers(prev => prev.filter(m => m.id !== id));
-    // TODO: Call API to revoke invite
+  const handleRemoveInvited = async (id: string) => {
+    try {
+      await api.delete(`/invitations/${id}`);
+      setInvitedMembers((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error('Failed to revoke invite:', err);
+    }
   };
 
   // Loading state

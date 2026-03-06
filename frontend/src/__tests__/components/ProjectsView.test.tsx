@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { ProjectsView } from '../../components/agent-dashboard/ProjectsView';
+import { ProjectsView } from '../../app/components/agent-dashboard/ProjectsView';
 
 // Mock fetch
 global.fetch = vi.fn();

@@ -65,6 +65,9 @@ import { mockProjects } from '../../data/mockData';
 import { Sheet, SheetContent } from '../../components/ui/sheet';
 import { AdminSidebar } from '../../components/AdminSidebar';
 import { useLayout } from '../../components/layouts/LayoutContext';
+import { api } from '../../api/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export default function TicketDetails() {
   const { ticketId } = useParams<{ ticketId: string }>();
@@ -72,109 +75,291 @@ export default function TicketDetails() {
   const location = useLocation();
   const { toggleMobileSidebar } = useLayout();
 
-  // Derive basePath from URL for back navigation
   const pathSegments = location.pathname.split('/');
-  const basePath = `/${pathSegments[1]}`; // /agent, /admin, or /superadmin
+  const basePath = `/${pathSegments[1]}`;
   const isSuperadmin = basePath === '/superadmin';
 
   const [escalateDialogOpen, setEscalateDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [resolutionNotes, setResolutionNotes] = useState('');
   const [responseMessage, setResponseMessage] = useState('');
-  const [ticket, setTicket] = useState<any>(null);
+  const [ticket, setTicket] = useState<{
+    id: string | number;
+    subject?: string;
+    description?: string;
+    priority?: string;
+    category?: string;
+    status?: string;
+    created_at?: string;
+    updated_at?: string;
+    customer_name?: string;
+    customer_email?: string;
+    project?: { id: string; name: string };
+    project_id?: string;
+    assigned_to?: string | number;
+    assigned_agent?: { first_name?: string; last_name?: string; email?: string };
+    messages?: Array<{ id: string; sender_type: string; content: string; created_at?: string }>;
+  } | null>(null);
   const [ticketLoading, setTicketLoading] = useState(true);
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedAssignId, setSelectedAssignId] = useState<string>('');
+  const [customerTickets, setCustomerTickets] = useState<Array<{ id: number; subject: string; status: string; created_at: string }>>([]);
+  const [editForm, setEditForm] = useState({ subject: '', description: '', priority: 'medium', category: '' });
+  const [escalateTo, setEscalateTo] = useState('');
+  const [escalateReason, setEscalateReason] = useState('');
+  const [isEscalating, setIsEscalating] = useState(false);
 
-  // Fetch real ticket data from API
+  const loadTicket = async () => {
+    if (!ticketId) return;
+    setTicketLoading(true);
+    try {
+      const data = await api.get<any>(`/agent/tickets/${ticketId}`);
+      if (data.success) setTicket(data.data);
+    } catch (error) {
+      console.error('Failed to load ticket:', error);
+    } finally {
+      setTicketLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadTicket = async () => {
-      if (!ticketId) return;
-      
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          setTicketLoading(false);
-          return;
-        }
-        
-        const response = await fetch(`/api/agent/tickets/${ticketId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          console.error('Ticket API error:', response.status);
-          setTicketLoading(false);
-          return;
-        }
-        
-        const data = await response.json();
-        if (data.success) {
-          setTicket(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to load ticket:', error);
-      } finally {
-        setTicketLoading(false);
-      }
-    };
-    
     loadTicket();
   }, [ticketId]);
 
-  const project = ticket ? mockProjects.find(p => p.id === ticket.project_id) : null;
-
-  // Use real ticket messages if available, otherwise empty
-  const conversationHistory = ticket ? [
-    {
-      id: 1,
-      sender: 'customer' as const,
-      name: ticket.customer_name,
-      avatar: ticket.customer_name?.substring(0, 2).toUpperCase() || '??',
-      message: ticket.description || 'No description provided.',
-      time: new Date(ticket.created_at).toLocaleString(),
-      attachments: [],
-    },
-    {
-      id: 5,
-      sender: 'internal' as const,
-      name: 'System',
-      avatar: 'SYS',
-      message: `Account security lock removed. Password reset link sent to customer's email.`,
-      time: '55 min ago',
-      attachments: [],
-      isSystemMessage: true,
-    },
-  ] : [];
-
-  // Mock activity timeline
-  const activityTimeline = [
-    { time: ticket.created, action: 'Ticket created', user: ticket.customer, icon: Ticket, color: 'text-blue-600' },
-    { time: '2 hours ago', action: 'Assigned to', user: ticket.assignedTo, icon: UserPlus, color: 'text-purple-600' },
-    { time: '1 hour ago', action: 'Status changed to', user: ticket.assignedTo, status: ticket.status, icon: AlertCircle, color: 'text-orange-600' },
-    { time: '55 min ago', action: 'Internal note added', user: ticket.assignedTo, icon: FileText, color: 'text-gray-600' },
-    { time: ticket.lastUpdate, action: 'Last update', user: ticket.assignedTo, icon: History, color: 'text-gray-600' },
-  ];
-
-  // Mock customer info
-  const customerInfo = {
-    name: ticket.customer,
-    email: `${ticket.customer.toLowerCase().replace(' ', '.')}@example.com`,
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    customerSince: 'Jan 2023',
-    totalTickets: 12,
-    openTickets: 2,
-    satisfaction: 4.5,
-  };
-
-  const handleSendResponse = () => {
-    if (responseMessage.trim()) {
-      // Handle sending response
-      console.log('Sending response:', responseMessage);
-      setResponseMessage('');
+  const loadCustomerTickets = async () => {
+    if (!ticket?.customer_email) return;
+    try {
+      const res = await api.get<any>(`/agent/tickets?customer_email=${encodeURIComponent(ticket.customer_email)}&per_page=50`);
+      const list = res.success && res.data ? (res.data.data ?? res.data) : [];
+      setCustomerTickets(Array.isArray(list) ? list : []);
+    } catch {
+      setCustomerTickets([]);
     }
   };
+
+  useEffect(() => {
+    if (ticket?.customer_email) loadCustomerTickets();
+  }, [ticket?.customer_email]);
+
+  const project = ticket ? (ticket.project || mockProjects.find((p: any) => p.id === ticket.project_id)) : null;
+  const assignedAgentName = ticket?.assigned_agent
+    ? `${ticket.assigned_agent.first_name || ''} ${ticket.assigned_agent.last_name || ''}`.trim() || ticket.assigned_agent.email
+    : 'Unassigned';
+
+  // Build conversation from API messages, or fallback to description
+  const conversationHistory = ticket
+    ? (ticket.messages?.length
+        ? ticket.messages.map((m: any) => ({
+            id: m.id,
+            sender: (m.sender_type === 'agent' ? 'agent' : 'customer') as const,
+            name: m.sender_type === 'agent' ? assignedAgentName : (ticket.customer_name || 'Customer'),
+            avatar: (m.sender_type === 'agent' ? assignedAgentName : ticket.customer_name || 'C')
+              .substring(0, 2)
+              .toUpperCase(),
+            message: m.content,
+            time: m.created_at ? new Date(m.created_at).toLocaleString() : '',
+            isSystemMessage: false,
+          }))
+        : [
+            {
+              id: 1,
+              sender: 'customer' as const,
+              name: ticket.customer_name || 'Customer',
+              avatar: (ticket.customer_name || 'C').substring(0, 2).toUpperCase(),
+              message: ticket.description || 'No description provided.',
+              time: ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '',
+              isSystemMessage: false,
+            },
+          ])
+    : [];
+
+  const activityTimeline = ticket
+    ? [
+        {
+          time: ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '',
+          action: 'Ticket created',
+          user: ticket.customer_name || 'Customer',
+          icon: Ticket,
+          color: 'text-blue-600',
+        },
+        ...(ticket.assigned_agent
+          ? [{
+              time: ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '',
+              action: 'Assigned to',
+              user: assignedAgentName,
+              icon: UserPlus,
+              color: 'text-purple-600',
+            }]
+          : []),
+        {
+          time: ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '',
+          action: 'Status',
+          user: ticket.status,
+          icon: AlertCircle,
+          color: 'text-orange-600',
+        },
+      ]
+    : [];
+
+  const customerInfo = ticket
+    ? {
+        name: ticket.customer_name || ticket.customer_email || 'Customer',
+        email: ticket.customer_email || '',
+        phone: '—',
+        location: '—',
+        totalTickets: 0,
+        openTickets: 0,
+        satisfaction: 0,
+      }
+    : { name: '', email: '', phone: '', location: '', totalTickets: 0, openTickets: 0, satisfaction: 0 };
+
+  const handleEditSubmit = async () => {
+    if (!ticketId || isUpdating) return;
+    setIsUpdating(true);
+    try {
+      const res = await api.put<any>(`/agent/tickets/${ticketId}`, {
+        subject: editForm.subject,
+        description: editForm.description,
+        priority: editForm.priority,
+        category: editForm.category || undefined,
+      });
+      if (res.success && res.data) setTicket(res.data);
+      setEditDialogOpen(false);
+      toast.success('Ticket updated');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update ticket');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleSendResponse = async () => {
+    if (!responseMessage.trim() || !ticketId || isSendingReply) return;
+    setIsSendingReply(true);
+    try {
+      await api.post(`/agent/tickets/${ticketId}/reply`, { message: responseMessage.trim() });
+      setResponseMessage('');
+      loadTicket();
+      toast.success('Reply sent');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to send reply');
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!ticketId || isResolving) return;
+    setIsResolving(true);
+    try {
+      await api.post(`/agent/tickets/${ticketId}/status`, { status: 'resolved' });
+      setCloseDialogOpen(false);
+      setResolutionNotes('');
+      loadTicket();
+      toast.success('Ticket resolved');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to resolve ticket');
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const loadTeamMembers = async () => {
+    try {
+      const res = await api.get<{ success: boolean; data: Array<{ id: string; first_name: string; last_name: string; email: string }> }>('/agent/users');
+      if (res.success && Array.isArray(res.data)) {
+        // Only include actual users (not pending invitations) for reassignment
+        const users = res.data.filter((u: any) => !String(u.id).startsWith('invitation-'));
+        setTeamMembers(users.map((u: any) => ({
+          id: String(u.id),
+          name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+        })));
+      }
+    } catch {
+      setTeamMembers([]);
+    }
+  };
+
+  const handleEscalate = async () => {
+    if (!ticketId || !escalateTo || isEscalating) return;
+    setIsEscalating(true);
+    try {
+      const res = await api.post<any>(`/agent/tickets/${ticketId}/escalate`, {
+        escalate_to: escalateTo,
+        reason: escalateReason.trim() || undefined,
+      });
+      if (res.success && res.data) setTicket(res.data);
+      setEscalateDialogOpen(false);
+      setEscalateTo('');
+      setEscalateReason('');
+      loadTicket();
+      toast.success('Ticket escalated');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to escalate');
+    } finally {
+      setIsEscalating(false);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (!ticketId || isReassigning) return;
+    setIsReassigning(true);
+    try {
+      await api.post(`/agent/tickets/${ticketId}/assign`, {
+        agent_id: selectedAssignId || null,
+      });
+      setReassignDialogOpen(false);
+      setSelectedAssignId('');
+      loadTicket();
+      toast.success(selectedAssignId ? 'Ticket reassigned' : 'Ticket unassigned');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to reassign');
+    } finally {
+      setIsReassigning(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!ticketId || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/agent/tickets/${ticketId}`);
+      setDeleteDialogOpen(false);
+      toast.success('Ticket deleted');
+      navigate(`${basePath}/tickets`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete ticket');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (ticketLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+  if (!ticket) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center p-6">
+        <Ticket className="h-12 w-12 text-gray-300 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-600 mb-2">Ticket not found</h2>
+        <Button variant="outline" onClick={() => navigate(`${basePath}/tickets`)}>
+          Back to Tickets
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -258,11 +443,20 @@ export default function TicketDetails() {
             </Button>
 
             <div className="flex gap-2">
-              <Button className="bg-green-600 hover:bg-green-700" onClick={() => setCloseDialogOpen(true)}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Resolve Ticket
-              </Button>
-              <Button variant="outline">
+              {(ticket.status !== 'resolved' && ticket.status !== 'closed') && (
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => setCloseDialogOpen(true)}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Resolve Ticket
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReassignDialogOpen(true);
+                  loadTeamMembers();
+                  setSelectedAssignId(ticket.assigned_to ? String(ticket.assigned_to) : '');
+                }}
+              >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Reassign
               </Button>
@@ -273,11 +467,30 @@ export default function TicketDetails() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    setEditForm({
+                      subject: ticket.subject || '',
+                      description: ticket.description || '',
+                      priority: ticket.priority || 'medium',
+                      category: ticket.category || '',
+                    });
+                    setEditDialogOpen(true);
+                  }}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">
+                  {(ticket.status !== 'resolved' && ticket.status !== 'closed') && (
+                    <DropdownMenuItem onClick={() => {
+                      setEscalateTo('');
+                      setEscalateReason('');
+                      loadTeamMembers();
+                      setEscalateDialogOpen(true);
+                    }}>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Escalate Ticket
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem className="text-red-600" onClick={() => setDeleteDialogOpen(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Ticket
                   </DropdownMenuItem>
@@ -314,23 +527,23 @@ export default function TicketDetails() {
                   <div className="grid grid-cols-5 gap-3 text-sm">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Created: {ticket.created}</span>
+                      <span className="text-gray-600">Created: {ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Last update: {ticket.lastUpdate}</span>
+                      <span className="text-gray-600">Last update: {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Assigned to: {ticket.assignedTo}</span>
+                      <span className="text-gray-600">Assigned to: {assignedAgentName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Tag className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Category: Technical Support</span>
+                      <span className="text-gray-600">Category: {ticket.category || '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Ticket className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600 font-mono">{ticket.id}</span>
+                      <span className="text-gray-600 font-mono">#{ticket.id}</span>
                     </div>
                   </div>
 
@@ -341,7 +554,7 @@ export default function TicketDetails() {
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <Avatar className="h-12 w-12">
                           <AvatarFallback className="bg-blue-600 text-white">
-                            {customerInfo.name.split(' ').map(n => n[0]).join('')}
+                            {(customerInfo.name?.split(' ').map((n: string) => n[0]).join('') || '?').toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -398,7 +611,7 @@ export default function TicketDetails() {
                   <Button variant="outline" className="gap-2">
                     <User className="h-4 w-4" />
                     Customer Tickets
-                    <Badge variant="secondary" className="ml-1">12</Badge>
+                    <Badge variant="secondary" className="ml-1">{customerTickets.length}</Badge>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -406,93 +619,30 @@ export default function TicketDetails() {
                   <div className="px-2 py-1.5 text-sm font-semibold border-b sticky top-0 bg-white z-10">
                     {customerInfo.name}'s Tickets
                     <span className="text-xs text-gray-500 font-normal ml-2">
-                      12 total, 2 open
+                      {customerTickets.length} total, {customerTickets.filter((t) => t.status === 'open' || t.status === 'pending').length} open
                     </span>
                   </div>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-1001`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Login issues with dashboard</div>
-                      <div className="text-xs text-gray-500">TICK-1001 • 2 days ago</div>
-                    </div>
-                    <Badge variant="default">Open</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0989`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Password reset not working</div>
-                      <div className="text-xs text-gray-500">TICK-0989 • 1 week ago</div>
-                    </div>
-                    <Badge variant="default">Open</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0965`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Account billing inquiry</div>
-                      <div className="text-xs text-gray-500">TICK-0965 • 2 weeks ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0943`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Feature request - Dark mode</div>
-                      <div className="text-xs text-gray-500">TICK-0943 • 3 weeks ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0912`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Integration setup help</div>
-                      <div className="text-xs text-gray-500">TICK-0912 • 1 month ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0901`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">API rate limit exceeded</div>
-                      <div className="text-xs text-gray-500">TICK-0901 • 1 month ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0887`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Email notifications not sending</div>
-                      <div className="text-xs text-gray-500">TICK-0887 • 2 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0872`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Profile picture upload failed</div>
-                      <div className="text-xs text-gray-500">TICK-0872 • 2 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0856`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Mobile app crashes on startup</div>
-                      <div className="text-xs text-gray-500">TICK-0856 • 3 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0843`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Data export request</div>
-                      <div className="text-xs text-gray-500">TICK-0843 • 3 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0829`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Two-factor auth setup help</div>
-                      <div className="text-xs text-gray-500">TICK-0829 • 4 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-start gap-2 py-2" onClick={() => navigate(`${basePath}/tickets/TICK-0815`)}>
-                    <div className="flex-1">
-                      <div className="font-medium">Account upgrade questions</div>
-                      <div className="text-xs text-gray-500">TICK-0815 • 4 months ago</div>
-                    </div>
-                    <Badge variant="outline">Resolved</Badge>
-                  </DropdownMenuItem>
+                  {customerTickets.length === 0 ? (
+                    <div className="px-2 py-4 text-sm text-gray-500">No other tickets for this customer</div>
+                  ) : (
+                    customerTickets.map((t) => (
+                      <DropdownMenuItem
+                        key={t.id}
+                        className="flex items-start gap-2 py-2"
+                        onClick={() => navigate(`${basePath}/tickets/${t.id}`)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{t.subject || 'No subject'}</div>
+                          <div className="text-xs text-gray-500">
+                            #{t.id} • {t.created_at ? new Date(t.created_at).toLocaleDateString() : '—'}
+                          </div>
+                        </div>
+                        <Badge variant={t.status === 'open' || t.status === 'pending' ? 'default' : 'outline'}>
+                          {t.status}
+                        </Badge>
+                      </DropdownMenuItem>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               
@@ -554,8 +704,9 @@ export default function TicketDetails() {
                         className="bg-blue-600 hover:bg-blue-700" 
                         size="sm"
                         onClick={handleSendResponse}
+                        disabled={isSendingReply || !responseMessage.trim() || ticket.status === 'resolved' || ticket.status === 'closed'}
                       >
-                        <Send className="h-4 w-4 mr-2" />
+                        {isSendingReply ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                         Send Response
                       </Button>
                     </div>
@@ -598,7 +749,10 @@ export default function TicketDetails() {
         </main>
 
       {/* Escalate Dialog */}
-      <Dialog open={escalateDialogOpen} onOpenChange={setEscalateDialogOpen}>
+      <Dialog open={escalateDialogOpen} onOpenChange={(open) => {
+        setEscalateDialogOpen(open);
+        if (!open) { setEscalateTo(''); setEscalateReason(''); }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Escalate Ticket</DialogTitle>
@@ -609,31 +763,40 @@ export default function TicketDetails() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="escalate-to">Escalate To</Label>
-              <Select>
+              <Select value={escalateTo} onValueChange={setEscalateTo}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select team member" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="senior1">Lisa Anderson (Senior Agent)</SelectItem>
-                  <SelectItem value="manager1">Michael Brown (Manager)</SelectItem>
-                  <SelectItem value="tech1">Technical Team</SelectItem>
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason for Escalation</Label>
-              <Textarea id="reason" placeholder="Explain why this ticket needs escalation..." rows={3} />
+              <Label htmlFor="reason">Reason for Escalation (optional)</Label>
+              <Textarea
+                id="reason"
+                placeholder="Explain why this ticket needs escalation..."
+                rows={3}
+                value={escalateReason}
+                onChange={(e) => setEscalateReason(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEscalateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => setEscalateDialogOpen(false)}>Escalate Ticket</Button>
+            <Button variant="outline" onClick={() => setEscalateDialogOpen(false)} disabled={isEscalating}>Cancel</Button>
+            <Button onClick={handleEscalate} disabled={!escalateTo || isEscalating}>
+              {isEscalating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
+              Escalate Ticket
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Close Ticket Dialog */}
-      <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+      <Dialog open={closeDialogOpen} onOpenChange={(open) => { setCloseDialogOpen(open); if (!open) setResolutionNotes(''); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Resolve Ticket</DialogTitle>
@@ -643,30 +806,133 @@ export default function TicketDetails() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="resolution">Resolution Notes</Label>
-              <Textarea id="resolution" placeholder="Describe how the issue was resolved..." rows={3} />
+              <Label htmlFor="resolution">Resolution Notes (optional)</Label>
+              <Textarea
+                id="resolution"
+                placeholder="Describe how the issue was resolved..."
+                rows={3}
+                value={resolutionNotes}
+                onChange={(e) => setResolutionNotes(e.target.value)}
+              />
             </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseDialogOpen(false)} disabled={isResolving}>Cancel</Button>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={handleResolve} disabled={isResolving}>
+              {isResolving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+              Resolve Ticket
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reassign Dialog */}
+      <Dialog open={reassignDialogOpen} onOpenChange={(open) => { setReassignDialogOpen(open); if (!open) setSelectedAssignId(''); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reassign Ticket</DialogTitle>
+            <DialogDescription>Assign this ticket to another agent or leave unassigned.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="satisfaction">Customer Satisfaction</Label>
-              <Select>
+              <Label>Assign To</Label>
+              <Select value={selectedAssignId} onValueChange={setSelectedAssignId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Rate the interaction" />
+                  <SelectValue placeholder="Select agent (or leave unassigned)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐ Excellent</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐ Good</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐ Fair</SelectItem>
-                  <SelectItem value="2">⭐⭐ Poor</SelectItem>
-                  <SelectItem value="1">⭐ Very Poor</SelectItem>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={() => setCloseDialogOpen(false)}>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Resolve Ticket
+            <Button variant="outline" onClick={() => setReassignDialogOpen(false)} disabled={isReassigning}>Cancel</Button>
+            <Button onClick={handleReassign} disabled={isReassigning}>
+              {isReassigning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Reassign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Details Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Ticket Details</DialogTitle>
+            <DialogDescription>Update subject, description, priority, and category.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <Input
+                value={editForm.subject}
+                onChange={(e) => setEditForm((f) => ({ ...f, subject: e.target.value }))}
+                placeholder="Ticket subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Ticket description"
+                rows={4}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={editForm.priority} onValueChange={(v) => setEditForm((f) => ({ ...f, priority: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Input
+                  value={editForm.category}
+                  onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
+                  placeholder="e.g. Technical Support"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={isUpdating}>Cancel</Button>
+            <Button onClick={handleEditSubmit} disabled={isUpdating}>
+              {isUpdating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Edit className="h-4 w-4 mr-2" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Ticket Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Ticket</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Are you sure you want to delete this ticket?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

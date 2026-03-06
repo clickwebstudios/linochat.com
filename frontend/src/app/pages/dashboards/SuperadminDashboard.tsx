@@ -102,6 +102,12 @@ interface Agent {
   avg_response_time: string;
 }
 
+interface ChatMessage {
+  from: string;
+  text: string;
+  time: string;
+}
+
 interface Chat {
   id: string;
   chat_id: string;
@@ -111,6 +117,7 @@ interface Chat {
   customer_name: string;
   created_at: string;
   messages_count: number;
+  messages?: ChatMessage[];
 }
 
 interface PlatformStats {
@@ -320,9 +327,10 @@ export default function SuperadminDashboard() {
       })
     : projects;
   
-  const filteredChats = selectedCompanyId
+  const filteredChats = (selectedCompanyId
     ? chats.filter(c => c.company === companies.find(comp => comp.id === selectedCompanyId)?.name)
-    : chats;
+    : chats
+  ).filter(c => !chatStatusFilter || c.status === chatStatusFilter);
 
   // Transform chats for ChatsSection
   const superadminChats = filteredChats.map(chat => ({
@@ -334,13 +342,17 @@ export default function SuperadminDashboard() {
     company: chat.company,
     chatId: chat.chat_id,
     time: new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    preview: `Chat with ${chat.customer_name}`,
+    preview: chat.messages?.length ? (chat.messages[chat.messages.length - 1]?.text?.slice(0, 50) || `Chat with ${chat.customer_name}`) : `Chat with ${chat.customer_name}`,
     agent: chat.agent,
     msgs: chat.messages_count,
     duration: '5m',
     respTime: '1m',
-    borderColor: chat.status === 'active' ? 'border-green-500' : chat.status === 'waiting' ? 'border-orange-500' : 'border-blue-500',
-    messages: []
+    borderColor: chat.status === 'active' ? 'border-green-500' : chat.status === 'waiting' ? 'border-orange-500' : chat.status === 'ai_handling' ? 'border-purple-500' : 'border-blue-500',
+    messages: (chat.messages || []).map(m => ({
+      from: m.from,
+      text: m.text,
+      time: m.time ? new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+    })),
   }));
 
   return (
@@ -419,6 +431,9 @@ export default function SuperadminDashboard() {
               selectedChat={selectedChat}
               selectedCompanyId={selectedCompanyId}
               isLoading={isLoadingChats}
+              onChatsRefresh={fetchChats}
+              statusFilter={chatStatusFilter}
+              onStatusFilterChange={setChatStatusFilter}
             />
           )}
 

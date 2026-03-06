@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2, Bot } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Bot, UserCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,6 +36,8 @@ export default function ChatWidget({
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactInfo, setContactInfo] = useState({ name: '', email: '' });
   const [isAiTyping, setIsAiTyping] = useState(false);
+  // True when the AI has detected the customer wants a human agent
+  const [isTransferring, setIsTransferring] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,6 +68,9 @@ export default function ChatWidget({
           } else if (data.type === 'message' && data.message) {
             setMessages(prev => [...prev, data.message]);
             setIsAiTyping(false);
+            if (data.message.metadata?.request_transfer || data.message.metadata?.request_human) {
+              setIsTransferring(true);
+            }
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -191,6 +196,10 @@ export default function ChatWidget({
         // Check if AI is requesting contact info
         if (data.data.message.metadata?.request_contact) {
           setShowContactForm(true);
+        }
+        // Check if AI is transferring to a human agent
+        if (data.data.message.metadata?.request_transfer || data.data.message.metadata?.request_human) {
+          setIsTransferring(true);
         }
       }
     } catch (error: any) {
@@ -344,6 +353,37 @@ export default function ChatWidget({
               {/* AI Typing Indicator */}
               {isAiTyping && <AiTypingIndicator />}
               
+              {/* Human Transfer Banner - shown when AI routes to a human agent */}
+              {isTransferring && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-blue-200 bg-blue-50 p-4 mt-2 flex items-start gap-3"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#155dfc' }}>
+                    <UserCheck className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">Connecting you to an agent</p>
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      A human agent will join the chat shortly. Please hold on…
+                    </p>
+                    <div className="flex gap-1 mt-2">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="inline-block w-2 h-2 rounded-full animate-bounce"
+                          style={{
+                            backgroundColor: '#155dfc',
+                            animationDelay: `${i * 0.15}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Contact Form - Only shown when AI/agent requests it */}
               {showContactForm && (
                 <motion.div
@@ -389,7 +429,7 @@ export default function ChatWidget({
             </div>
 
             {/* Input */}
-            {!showContactForm && !error && (
+            {!showContactForm && !isTransferring && !error && (
               <div className="border-t p-4">
                 <div className="flex gap-2">
                   <Input

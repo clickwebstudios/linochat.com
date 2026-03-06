@@ -1,5 +1,5 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "linochat-frontend",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -19,7 +19,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:chrome": "playwright test --project=chromium",
     "test:e2e:firefox": "playwright test --project=firefox",
-    "test:e2e:webkit": "playwright test --project=webkit"
+    "test:e2e:webkit": "playwright test --project=webkit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -91,6 +93,10 @@
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@playwright/test": "^1.58.2",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0",
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
     "eslint": "^9.22.0",

@@ -55,7 +55,14 @@ const ANALYSIS_STEPS = [
   'Extracting page content...',
   'Analyzing brand identity...',
   'Detecting site structure...',
-  'Generating project details...',
+  'Generating knowledge base content...',
+];
+
+const CREATION_STEPS = [
+  'Saving project details...',
+  'Generating knowledge base...',
+  'Training AI assistant...',
+  'Setting up chat widget...',
 ];
 
 export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormProps) {
@@ -72,6 +79,11 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
   const [projectColor, setProjectColor] = useState('#3B82F6');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // KB Generation overlay state
+  const [isCreatingKB, setIsCreatingKB] = useState(false);
+  const [creationStep, setCreationStep] = useState(0);
+  const [creationDone, setCreationDone] = useState(false);
+
   const reset = () => {
     setStep(1);
     setWebsiteUrl('');
@@ -82,6 +94,9 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     setProjectDescription('');
     setProjectColor('#3B82F6');
     setUrlError('');
+    setIsCreatingKB(false);
+    setCreationStep(0);
+    setCreationDone(false);
   };
 
   const validateUrl = (url: string): boolean => {
@@ -109,7 +124,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     setAnalysisStatus('analyzing');
     setAnalysisStep(0);
 
-    // Animate steps while real API call runs
+    // Animate steps concurrently with real API call
     const stepTimer = setInterval(() => {
       setAnalysisStep((prev) => {
         if (prev < ANALYSIS_STEPS.length - 1) return prev + 1;
@@ -158,9 +173,22 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     if (!projectName.trim()) return;
 
     setIsSubmitting(true);
+    setIsCreatingKB(true);
+    setCreationStep(0);
+    setCreationDone(false);
+
     const normalizedUrl = websiteUrl.startsWith('http')
       ? websiteUrl
       : `https://${websiteUrl}`;
+
+    // Animate creation steps concurrently with API call
+    const stepTimer = setInterval(() => {
+      setCreationStep((prev) => {
+        if (prev < CREATION_STEPS.length - 1) return prev + 1;
+        clearInterval(stepTimer);
+        return prev;
+      });
+    }, 600);
 
     try {
       const endpoint = userId ? '/superadmin/projects' : '/projects';
@@ -174,15 +202,24 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
 
       const response = await api.post(endpoint, payload);
 
+      clearInterval(stepTimer);
+      setCreationStep(CREATION_STEPS.length - 1);
+
       if (!response.success) {
         throw new Error((response as any).message || 'Failed to create project');
       }
 
-      toast.success('Project created successfully!');
-      onSuccess?.(response.data);
-      onClose?.();
+      setCreationDone(true);
+      setTimeout(() => {
+        toast.success('Project created successfully!');
+        onSuccess?.(response.data);
+        onClose?.();
+      }, 1500);
     } catch (error) {
+      clearInterval(stepTimer);
       console.error('Create project failed:', error);
+      setIsCreatingKB(false);
+      setCreationDone(false);
       toast.error('Failed to create project. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -193,6 +230,88 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     analysisStatus === 'analyzing'
       ? ((analysisStep + 1) / ANALYSIS_STEPS.length) * 100
       : analysisStatus === 'done' ? 100 : 0;
+
+  const creationProgressPercent = ((creationStep + 1) / CREATION_STEPS.length) * 100;
+
+  // ─── KB Generation Overlay ───────────────────────────────────────────────────
+  if (isCreatingKB) {
+    return (
+      <>
+        <DialogHeader>
+          <DialogTitle>{creationDone ? 'Project Created!' : 'Creating Project'}</DialogTitle>
+          <DialogDescription>
+            {creationDone
+              ? 'Your knowledge base has been generated successfully.'
+              : 'AI is building your knowledge base from your website...'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 flex flex-col items-center text-center">
+          {!creationDone ? (
+            <>
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
+                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full space-y-2 mb-6">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-blue-900">Processing...</span>
+                  <span className="text-blue-600">{Math.round(creationProgressPercent)}%</span>
+                </div>
+                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${creationProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Steps */}
+              <div className="w-full space-y-3 text-left">
+                {CREATION_STEPS.map((stepLabel, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2.5 text-sm transition-opacity duration-300 ${
+                      i > creationStep ? 'opacity-30' : 'opacity-100'
+                    }`}
+                  >
+                    {i < creationStep ? (
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    ) : i === creationStep ? (
+                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                    )}
+                    <span
+                      className={
+                        i === creationStep
+                          ? 'text-blue-900 font-medium'
+                          : i < creationStep
+                            ? 'text-green-700'
+                            : 'text-gray-400'
+                      }
+                    >
+                      {stepLabel}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <p className="text-sm text-gray-500">
+                Your project is ready. The AI assistant has been trained on your website content.
+              </p>
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
 
   // ─── STEP 1 ─────────────────────────────────────────────────────────────────
   if (step === 1) {

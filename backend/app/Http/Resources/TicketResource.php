@@ -33,6 +33,14 @@ class TicketResource extends JsonResource
                 'last_name' => $this->assignedAgent->last_name ?? '',
                 'email' => $this->assignedAgent->email ?? '',
             ] : null,
+            'messages' => $this->whenLoaded('messages', function () {
+                return $this->messages->map(fn ($m) => [
+                    'id' => $m->id,
+                    'sender_type' => $m->sender_type ?? 'customer',
+                    'content' => $m->content,
+                    'created_at' => $m->created_at?->toIso8601String(),
+                ]);
+            }),
         ];
     }
 }

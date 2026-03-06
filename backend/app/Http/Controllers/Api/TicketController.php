@@ -53,7 +53,13 @@ class TicketController extends Controller
             $query->whereNull('assigned_to');
         }
 
-        $tickets = $query->orderBy('created_at', 'desc')->paginate(20);
+        // Filter by customer email
+        if ($request->filled('customer_email')) {
+            $query->where('customer_email', $request->input('customer_email'));
+        }
+
+        $perPage = min((int) $request->input('per_page', 20), 100);
+        $tickets = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
@@ -101,6 +107,51 @@ class TicketController extends Controller
     }
 
     /**
+     * Update ticket details (subject, description, priority, category)
+     */
+    public function update(Request $request, string $ticket_id)
+    {
+        $validator = Validator::make($request->all(), [
+            'subject' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'priority' => 'sometimes|in:low,medium,high,urgent',
+            'category' => 'sometimes|nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = auth('api')->user();
+        $ticket = Ticket::where('id', $ticket_id)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $hasAccess = $ticket->assigned_to === $user->id ||
+                     $user->projects()->where('projects.id', $ticket->project_id)->exists() ||
+                     $user->ownedProjects()->where('id', $ticket->project_id)->exists() ||
+                     $user->role === 'superadmin';
+
+        if (!$hasAccess) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $ticket->update($request->only(['subject', 'description', 'priority', 'category']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket updated',
+            'data' => new TicketResource($ticket->fresh(['project', 'assignedAgent', 'messages'])),
+        ]);
+    }
+
+    /**
      * Create ticket from email or API
      */
     public function store(Request $request)
@@ -113,6 +164,7 @@ class TicketController extends Controller
             'description' => 'required|string',
             'priority' => 'nullable|in:low,medium,high,urgent',
             'category' => 'nullable|string',
+            'assigned_to' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -123,6 +175,7 @@ class TicketController extends Controller
             ], 422);
         }
 
+        $assignedTo = $request->input('assigned_to');
         $ticket = Ticket::create([
             'project_id' => $request->input('project_id'),
             'customer_email' => $request->input('customer_email'),
@@ -131,7 +184,8 @@ class TicketController extends Controller
             'description' => $request->input('description'),
             'priority' => $request->input('priority', 'medium'),
             'category' => $request->input('category'),
-            'status' => 'open',
+            'status' => $assignedTo ? 'in_progress' : 'open',
+            'assigned_to' => $assignedTo,
         ]);
 
         // Create initial message
@@ -228,6 +282,72 @@ class TicketController extends Controller
                 'assigned_to' => $agentId,
                 'status' => $ticket->fresh()->status,
             ],
+        ]);
+    }
+
+    /**
+     * Escalate ticket to another agent with optional reason
+     */
+    public function escalate(Request $request, string $ticket_id)
+    {
+        $validator = Validator::make($request->all(), [
+            'escalate_to' => 'required|exists:users,id',
+            'reason' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = auth('api')->user();
+        $ticket = Ticket::where('id', $ticket_id)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $hasAccess = $user->projects()->where('projects.id', $ticket->project_id)->exists() ||
+                     $user->ownedProjects()->where('id', $ticket->project_id)->exists() ||
+                     $ticket->assigned_to === $user->id ||
+                     $user->role === 'superadmin';
+
+        if (!$hasAccess) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $escalateToId = $request->input('escalate_to');
+        $reason = trim($request->input('reason', ''));
+        $targetAgent = \App\Models\User::find($escalateToId);
+        $oldAgent = $ticket->assignedAgent;
+
+        $ticket->update([
+            'assigned_to' => $escalateToId,
+            'status' => 'in_progress',
+        ]);
+
+        $messageText = "Escalated to {$targetAgent->name}";
+        if ($oldAgent && (string) $oldAgent->id !== (string) $escalateToId) {
+            $messageText = "Escalated from {$oldAgent->name} to {$targetAgent->name}";
+        }
+        if ($reason) {
+            $messageText .= ". Reason: {$reason}";
+        }
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'sender_type' => 'agent',
+            'content' => $messageText,
+            'metadata' => ['system' => true, 'escalation' => true],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket escalated',
+            'data' => new TicketResource($ticket->fresh(['project', 'assignedAgent', 'messages'])),
         ]);
     }
 

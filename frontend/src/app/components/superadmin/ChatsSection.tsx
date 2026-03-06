@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { api } from '../../api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -56,9 +59,34 @@ interface ChatsSectionProps {
   selectedChat: SuperadminChat | undefined;
   selectedCompanyId?: string | null;
   isLoading?: boolean;
+  onChatsRefresh?: () => void;
+  statusFilter?: string | null;
+  onStatusFilterChange?: (value: string | null) => void;
 }
 
-export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatId, selectedChat, isLoading }: ChatsSectionProps) {
+export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatId, selectedChat, isLoading, onChatsRefresh, statusFilter, onStatusFilterChange }: ChatsSectionProps) {
+  const [messageInput, setMessageInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!selectedChat?.id || !messageInput.trim() || isSending) return;
+    const chatId = selectedChat.id;
+    setIsSending(true);
+    try {
+      const response = await api.post<{ success: boolean }>(`/agent/chats/${chatId}/message`, {
+        message: messageInput.trim(),
+      });
+      if (response.success) {
+        setMessageInput('');
+        onChatsRefresh?.();
+      }
+    } catch (error) {
+      toast.error('Failed to send message');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div>
       {/* Split Layout: Chat List + Chat Window */}
@@ -75,11 +103,16 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
               <Input placeholder="Search chats..." className="pl-10 h-9 text-sm" />
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <select className="px-2 py-1 border rounded text-xs flex-1">
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Waiting</option>
-                <option>Resolved</option>
+              <select
+                className="px-2 py-1 border rounded text-xs flex-1"
+                value={statusFilter ?? ''}
+                onChange={(e) => onStatusFilterChange?.(e.target.value || null)}
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="waiting">Waiting</option>
+                <option value="ai_handling">AI Handling</option>
+                <option value="closed">Closed</option>
               </select>
               <select className="px-2 py-1 border rounded text-xs flex-1">
                 <option>All Companies</option>
@@ -245,12 +278,29 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
                     <Paperclip className="h-4 w-4 text-gray-400" />
                   </Button>
-                  <Input placeholder="Type a message..." className="flex-1 h-9" />
+                  <Input
+                    placeholder="Type a message..."
+                    className="flex-1 h-9"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={isSending || selectedChat.status === 'resolved'}
+                  />
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
                     <SmilePlus className="h-4 w-4 text-gray-400" />
                   </Button>
-                  <Button size="sm" className="bg-blue-600 h-8 w-8 p-0 shrink-0">
-                    <Send className="h-4 w-4" />
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 h-8 w-8 p-0 shrink-0"
+                    onClick={handleSendMessage}
+                    disabled={isSending || !messageInput.trim() || selectedChat.status === 'resolved'}
+                  >
+                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
                 {selectedChat.status === 'resolved' && (

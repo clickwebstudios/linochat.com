@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -37,31 +38,103 @@ import {
 } from 'lucide-react';
 import { api, User } from '../../api/client';
 
-const predefinedRoles = ['Superadmin', 'Admin', 'Agent', 'Viewer', 'Billing Manager'];
+const editableRoles = ['Admin', 'Agent', 'Viewer'];
+
+interface ProjectOption {
+  id: string;
+  name: string;
+}
 
 export function TeamSection() {
   const navigate = useNavigate();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('agent');
+  const [inviteProjectId, setInviteProjectId] = useState('');
+  const [inviteFirstName, setInviteFirstName] = useState('');
+  const [inviteLastName, setInviteLastName] = useState('');
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [inviteLoading, setInviteLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editRoleUserId, setEditRoleUserId] = useState<string | null>(null);
+  const [editRoleValue, setEditRoleValue] = useState<string>('');
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get<{ data: User[] }>('/superadmin/agents');
+      setUsers(response.data ?? []);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get<User[]>('/superadmin/agents');
-        if (response.success) {
-          setUsers(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (inviteDialogOpen) {
+      api.get<{ data: Array<{ id: string; name: string }> }>('/superadmin/projects')
+        .then((res) => setProjects(Array.isArray(res.data) ? res.data : (res as any).data?.data ?? []))
+        .catch(() => setProjects([]));
+    }
+  }, [inviteDialogOpen]);
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim() || !inviteProjectId || inviteLoading) return;
+    setInviteLoading(true);
+    try {
+      await api.post('/superadmin/agents/invite', {
+        email: inviteEmail.trim(),
+        first_name: inviteFirstName.trim() || undefined,
+        last_name: inviteLastName.trim() || undefined,
+        role: inviteRole,
+        project_id: inviteProjectId,
+      });
+      toast.success('Invitation sent');
+      setInviteDialogOpen(false);
+      setInviteEmail('');
+      setInviteRole('agent');
+      setInviteProjectId('');
+      setInviteFirstName('');
+      setInviteLastName('');
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to send invitation');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleEditRole = async (userId: string, newRole: string) => {
+    try {
+      const response = await api.put<{ success: boolean }>(`/superadmin/agents/${userId}`, { role: newRole.toLowerCase() });
+      if (response.success) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        setEditRoleUserId(null);
+        toast.success('Role updated');
+      }
+    } catch (error) {
+      toast.error('Failed to update role');
+    }
+  };
+
+  const handleRemove = async (userId: string, userName: string) => {
+    if (!window.confirm(`Deactivate ${userName}? They will no longer have access.`)) return;
+    try {
+      const response = await api.delete<{ success: boolean }>(`/superadmin/agents/${userId}`);
+      if (response.success) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        toast.success('Agent deactivated');
+      }
+    } catch (error) {
+      toast.error('Failed to deactivate agent');
+    }
+  };
 
   const getFullName = (user: User) => {
     return `${user.first_name} ${user.last_name}`.trim();
@@ -85,22 +158,56 @@ export function TeamSection() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Invite New User</DialogTitle>
-              <DialogDescription>Send an invitation to a new team member</DialogDescription>
+              <DialogDescription>Send an invitation to join a project as an agent</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>
-                <label className="text-sm mb-2 block">Email</label>
-                <Input placeholder="user@company.com" />
+                <label className="text-sm mb-2 block">Email *</label>
+                <Input
+                  type="email"
+                  placeholder="user@company.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm mb-2 block">First Name</label>
+                  <Input placeholder="John" value={inviteFirstName} onChange={(e) => setInviteFirstName(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-sm mb-2 block">Last Name</label>
+                  <Input placeholder="Doe" value={inviteLastName} onChange={(e) => setInviteLastName(e.target.value)} />
+                </div>
               </div>
               <div>
-                <label className="text-sm mb-2 block">Role</label>
-                <select className="w-full p-2 border rounded-lg">
-                  {predefinedRoles.map((role) => (
-                    <option key={role}>{role}</option>
+                <label className="text-sm mb-2 block">Project *</label>
+                <select
+                  className="w-full p-2 border rounded-lg"
+                  value={inviteProjectId}
+                  onChange={(e) => setInviteProjectId(e.target.value)}
+                >
+                  <option value="">Select project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
-              <Button className="w-full bg-blue-600">Send Invitation</Button>
+              <div>
+                <label className="text-sm mb-2 block">Role</label>
+                <select className="w-full p-2 border rounded-lg" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
+                  {editableRoles.map((role) => (
+                    <option key={role} value={role.toLowerCase()}>{role}</option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                className="w-full bg-blue-600"
+                onClick={handleInvite}
+                disabled={inviteLoading || !inviteEmail.trim() || !inviteProjectId}
+              >
+                {inviteLoading ? 'Sending...' : 'Send Invitation'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -175,12 +282,24 @@ export function TeamSection() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditRoleUserId(user.id);
+                              setEditRoleValue(user.role);
+                            }}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Role
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(user.id, getFullName(user));
+                            }}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Remove
                           </DropdownMenuItem>
@@ -194,6 +313,36 @@ export function TeamSection() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={!!editRoleUserId} onOpenChange={(open) => !open && setEditRoleUserId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Role</DialogTitle>
+            <DialogDescription>Change the user&apos;s role</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm mb-2 block">Role</label>
+              <select
+                className="w-full p-2 border rounded-lg"
+                value={editRoleValue}
+                onChange={(e) => setEditRoleValue(e.target.value)}
+              >
+                {editableRoles.map((role) => (
+                  <option key={role} value={role.toLowerCase()}>{role}</option>
+                ))}
+              </select>
+            </div>
+            <Button
+              className="w-full bg-blue-600"
+              onClick={() => editRoleUserId && handleEditRole(editRoleUserId, editRoleValue)}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

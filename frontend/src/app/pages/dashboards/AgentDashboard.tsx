@@ -56,7 +56,8 @@ import { useHumanRequestedStore } from '../../stores/humanRequestedStore';
 import { useTransferRequestsStore } from '../../stores/transferRequestsStore';
 import { api } from '../../api/client';
 import { initEcho } from '../../lib/echo';
-import { playNotificationSound } from '../../lib/notificationSound';
+import { playNotificationSound, playTransferRequestSound } from '../../lib/notificationSound';
+import type { HumanRequestedPayload } from '../../components/HumanRequestedModal';
 
 type Section = 'dashboard' | 'chats' | 'tickets' | 'knowledge' | 'reports' | 'users' | 'projects' | 'integrations';
 
@@ -181,29 +182,13 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     if (!user) return [];
     setChatsLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setChatsLoading(false);
-        return [];
-      }
-      
       // Build URL with company_id filter for superadmin
       const targetCompanyId = options?.companyId !== undefined ? options.companyId : selectedCompanyId;
-      const url = targetCompanyId && isSuperadmin
-        ? `/api/agent/chats?company_id=${targetCompanyId}`
-        : '/api/agent/chats';
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        console.error('Chats API error:', response.status);
-        return [];
-      }
-      const data = await response.json();
+      const endpoint = targetCompanyId && isSuperadmin
+        ? `/agent/chats?company_id=${targetCompanyId}`
+        : '/agent/chats';
+
+      const data = await api.get<any>(endpoint);
       if (data.success) {
         const chatsData = data.data?.data || data.data || [];
         setChats(chatsData);
@@ -318,37 +303,23 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   // Load tickets from API
   const loadTickets = useCallback(async (companyId?: string | null) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setTicketsLoading(false);
+      return;
+    }
+
+    setTicketsLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setTicketsLoading(false);
-        return;
-      }
-      
-      // Build URL with company_id filter for superadmin
       const targetCompanyId = companyId !== undefined ? companyId : selectedCompanyId;
-      const url = targetCompanyId && isSuperadmin
-        ? `/api/agent/tickets?company_id=${targetCompanyId}`
-        : '/api/agent/tickets';
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        console.error('Tickets API error:', response.status);
-        setTicketsLoading(false);
-        return;
-      }
-      
-      const data = await response.json();
+      const endpoint = targetCompanyId && isSuperadmin
+        ? `/agent/tickets?company_id=${targetCompanyId}`
+        : '/agent/tickets';
+
+      const data = await api.get<any>(endpoint);
       if (data.success) {
         const ticketsData = data.data?.data || data.data || [];
         setTickets(ticketsData);
-        // Update stats in layout context
         setStats(prev => ({ ...prev, tickets: ticketsData.length }));
       }
     } catch (error) {
@@ -356,7 +327,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     } finally {
       setTicketsLoading(false);
     }
-  }, [user, isSuperadmin, selectedCompanyId]);
+  }, [isSuperadmin, selectedCompanyId, setStats]);
   
   // Fetch tickets on mount
   useEffect(() => {
@@ -498,6 +469,9 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const [initiateTransferDialogOpen, setInitiateTransferDialogOpen] = useState(false);
   // transferData state is now managed internally by InitiateTransferDialog
 
+  // Holds the chat payload when AI triggers a human-transfer request
+  const [aiTransferPayload, setAiTransferPayload] = useState<HumanRequestedPayload | null>(null);
+
   const chartData = [
     { name: 'Mon', tickets: 24 },
     { name: 'Tue', tickets: 35 },
@@ -538,7 +512,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     const matchesStatus = chatFilter === 'all' || 
       (chatFilter === 'active' && (chat.status === 'active' || chat.status === 'waiting' || chat.status === 'ai_handling')) ||
       (chatFilter === 'closed' && chat.status === 'closed');
-    return matchesProject && matchesStatus;
+    const matchesSearch = searchQuery === '' ||
+      chat.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      chat.customer_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(chat.id).toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesProject && matchesStatus && matchesSearch;
   });
 
   const getProjectById = (projectId: string) => {
@@ -589,6 +567,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             chatFilter={chatFilter}
             setChatFilter={setChatFilter}
             getProjectById={getProjectById}
+            projects={displayProjects}
             role={role}
             teamMembers={teamMembers}
             currentUserId={user?.id}
@@ -598,7 +577,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             takeoverFromAi={takeoverFromAiFlag}
             onTakeoverTriggerHandled={() => { setOpenTakeoverForChatId(null); setTakeoverFromAiFlag(false); }}
             onTakeOverComplete={() => loadChats({ setFirstAsActive: false, companyId: selectedCompanyId })}
-            onHumanRequestedInChat={(payload) => useTransferRequestsStore.getState().addHumanRequested(payload)}
+            onHumanRequestedInChat={(payload) => {
+              useTransferRequestsStore.getState().addHumanRequested(payload);
+              useTransferRequestsStore.getState().setDialogOpen(true);
+              playTransferRequestSound();
+            }}
           />
         );
       case 'tickets':
@@ -783,7 +766,12 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             
             <div className="relative w-96 hidden md:block">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input placeholder="Search tickets, chats, customers..." className="pl-10" />
+              <Input
+                placeholder="Search tickets, chats, customers..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -986,8 +974,8 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
         open={createTicketDialogOpen}
         onOpenChange={setCreateTicketDialogOpen}
         teamMembers={existingTeamMembers}
-        onTicketCreated={(ticket) => {
-          console.log('Ticket created:', ticket);
+        onTicketCreated={() => {
+          loadTickets(isSuperadmin ? selectedCompanyId : undefined);
         }}
       />
 
@@ -1056,15 +1044,35 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
         }}
       />
 
-      {/* Initiate Transfer Dialog */}
+      {/* Initiate Transfer Dialog — opened manually by agent OR auto-triggered when customer asks AI for human */}
       <InitiateTransferDialog
         open={initiateTransferDialogOpen}
-        onOpenChange={setInitiateTransferDialogOpen}
-        activeChat={activeChat}
+        onOpenChange={(open) => {
+          setInitiateTransferDialogOpen(open);
+          if (!open) setAiTransferPayload(null); // clear AI-transfer context on close
+        }}
+        activeChat={
+          aiTransferPayload
+            ? {
+                id: aiTransferPayload.chat_id,
+                customer: aiTransferPayload.customer_name,
+                avatar: (aiTransferPayload.customer_name || 'G')
+                  .trim()
+                  .split(/\s+/)
+                  .map((n: string) => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2),
+                status: 'active',
+                preview: 'Customer requested human assistance',
+              }
+            : activeChat
+        }
         teamMembers={existingTeamMembers}
         currentAgentId={user?.id}
         onTransferSubmitted={async (data) => {
-          if (!activeChat?.id) return;
+          const chatId = aiTransferPayload?.chat_id || activeChat?.id;
+          if (!chatId) return;
           const reasonLabels: Record<string, string> = {
             expertise: 'Requires specialized expertise',
             language: 'Language preference',
@@ -1076,7 +1084,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
           };
           try {
             await api.post('/agent/transfer-requests', {
-              chat_id: activeChat.id,
+              chat_id: chatId,
               to_agent_id: data.targetAgentId,
               reason: reasonLabels[data.reason] || data.reason,
             });

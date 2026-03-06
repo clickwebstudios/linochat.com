@@ -49,7 +49,8 @@ interface NewTicket {
   category: string;
   assignTo: string;
   projectId: string;
-  customerId: string;
+  customerEmail: string;
+  customerName: string;
   aiAutoFill: boolean;
 }
 
@@ -60,7 +61,8 @@ const INITIAL_TICKET: NewTicket = {
   category: '',
   assignTo: '',
   projectId: '',
-  customerId: '',
+  customerEmail: '',
+  customerName: '',
   aiAutoFill: false,
 };
 
@@ -76,13 +78,13 @@ interface CreateTicketDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   teamMembers: TeamMember[];
-  onTicketCreated?: (ticket: NewTicket) => void;
+  onTicketCreated?: (ticket: { id: string } & Partial<NewTicket>) => void;
 }
 
 interface ValidationErrors {
   subject?: string;
   description?: string;
-  customerId?: string;
+  customerEmail?: string;
   projectId?: string;
 }
 
@@ -111,20 +113,13 @@ export function CreateTicketDialog({
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
-    
-    if (!newTicket.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+    if (!newTicket.subject.trim()) newErrors.subject = 'Subject is required';
+    if (!newTicket.description.trim()) newErrors.description = 'Description is required';
+    if (!newTicket.customerEmail.trim()) newErrors.customerEmail = 'Customer email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newTicket.customerEmail)) {
+      newErrors.customerEmail = 'Valid email is required';
     }
-    if (!newTicket.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    if (!newTicket.customerId) {
-      newErrors.customerId = 'Customer is required';
-    }
-    if (!newTicket.projectId) {
-      newErrors.projectId = 'Project is required';
-    }
-    
+    if (!newTicket.projectId) newErrors.projectId = 'Project is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -134,18 +129,27 @@ export function CreateTicketDialog({
       toast.error('Please fix the errors before submitting');
       return;
     }
-
     setIsSubmitting(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      onTicketCreated?.(newTicket);
-      toast.success('Ticket created successfully!');
-      resetAndClose();
-    } catch (error) {
-      toast.error('Failed to create ticket. Please try again.');
+      const response = await api.post<{ success: boolean; data: { id: string } }>('/agent/tickets', {
+        project_id: newTicket.projectId,
+        customer_email: newTicket.customerEmail.trim(),
+        customer_name: newTicket.customerName.trim() || undefined,
+        subject: newTicket.subject.trim(),
+        description: newTicket.description.trim(),
+        priority: newTicket.priority,
+        category: newTicket.category || undefined,
+        assigned_to: newTicket.assignTo || undefined,
+      });
+      if (response.success) {
+        onTicketCreated?.(response.data as any);
+        toast.success('Ticket created successfully!');
+        resetAndClose();
+      } else {
+        toast.error('Failed to create ticket');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create ticket. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -198,40 +202,34 @@ export function CreateTicketDialog({
             )}
           </div>
 
-          {/* Customer Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="ticket-customer">Customer *</Label>
-            <Select
-              value={newTicket.customerId}
-              onValueChange={(value) => handleFieldChange('customerId', value)}
-            >
-              <SelectTrigger id="ticket-customer" className={errors.customerId ? 'border-red-500 focus:ring-red-500' : ''}>
-                <SelectValue placeholder="Select a customer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">
-                  Emma Thompson - emma@example.com
-                </SelectItem>
-                <SelectItem value="2">
-                  James Wilson - james@example.com
-                </SelectItem>
-                <SelectItem value="3">
-                  Sarah Martinez - sarah@example.com
-                </SelectItem>
-                <SelectItem value="4">
-                  Michael Brown - michael@example.com
-                </SelectItem>
-                <SelectItem value="5">
-                  Lisa Anderson - lisa@example.com
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.customerId && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {errors.customerId}
-              </p>
-            )}
+          {/* Customer */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ticket-customer-email">Customer Email *</Label>
+              <Input
+                id="ticket-customer-email"
+                type="email"
+                placeholder="customer@example.com"
+                value={newTicket.customerEmail}
+                onChange={(e) => handleFieldChange('customerEmail', e.target.value)}
+                className={errors.customerEmail ? 'border-red-500 focus-visible:ring-red-500' : ''}
+              />
+              {errors.customerEmail && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {errors.customerEmail}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ticket-customer-name">Customer Name</Label>
+              <Input
+                id="ticket-customer-name"
+                placeholder="John Doe"
+                value={newTicket.customerName}
+                onChange={(e) => handleFieldChange('customerName', e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Description */}

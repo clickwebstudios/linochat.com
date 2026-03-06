@@ -55,6 +55,7 @@ import { Sheet, SheetContent } from '../../components/ui/sheet';
 import { AdminSidebar } from '../../components/AdminSidebar';
 import { mockProjects } from '../../data/mockData';
 import { useLayout } from '../../components/layouts/LayoutContext';
+import { api } from '../../api/client';
 
 // Extended chat data for chats referenced from ProjectDetails (CHAT-xxxx IDs)
 const projectChats: Record<string, {
@@ -339,28 +340,9 @@ export default function ChatDetails() {
   useEffect(() => {
     const loadChat = async () => {
       if (!chatId) return;
-      
+      setChatLoading(true);
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          setChatLoading(false);
-          return;
-        }
-        
-        const response = await fetch(`/api/agent/chats/${chatId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          console.error('Chat API error:', response.status);
-          setChatLoading(false);
-          return;
-        }
-        
-        const data = await response.json();
+        const data = await api.get<any>(`/agent/chats/${chatId}`);
         if (data.success) {
           setChat(data.data);
         }
@@ -370,7 +352,6 @@ export default function ChatDetails() {
         setChatLoading(false);
       }
     };
-    
     loadChat();
   }, [chatId]);
 
@@ -436,18 +417,25 @@ export default function ChatDetails() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
-    const newMessage = {
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !chatId) return;
+    const text = messageInput.trim();
+    setMessageInput('');
+    const optimisticMessage = {
       id: `msg-new-${Date.now()}`,
       sender: 'agent' as const,
       name: 'Sarah Chen',
-      text: messageInput,
+      text,
       timestamp: 'Just now',
       isRead: true,
     };
-    setMessages(prev => [...prev, newMessage]);
-    setMessageInput('');
+    setMessages(prev => [...prev, optimisticMessage]);
+    try {
+      await api.post(`/agent/chats/${chatId}/message`, { message: text });
+    } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      console.error('Failed to send message:', error);
+    }
   };
 
   const timeline = chatId ? (chatActivityTimeline[chatId] || []) : [];

@@ -12,9 +12,10 @@ class TicketMessage extends Model
 
     protected $fillable = [
         'ticket_id',
-        'user_id',
+        'sender_type',
+        'sender_id',
         'content',
-        'is_internal',
+        'metadata',
     ];
 
     protected $casts = [
