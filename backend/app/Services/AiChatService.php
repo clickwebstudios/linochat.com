@@ -435,6 +435,7 @@ class AiChatService
 
         $prompt = "You are a helpful AI customer support assistant for {$companyName}. ";
         $prompt .= "Your goal is to provide accurate, friendly, and concise answers to customer questions.\n\n";
+        $prompt .= "LANGUAGE: Always respond in English, regardless of the language the customer uses.\n\n";
         $prompt .= "IMPORTANT INSTRUCTIONS:\n";
         $prompt .= "1. At the start of every new conversation: greet the customer warmly, then immediately ask for their name. Write your greeting and name request in the chat (e.g. 'Hi! Welcome to {$companyName}. How can I help you today? Please tell me your name.')\n";
         $prompt .= "2. PRIORITY: Use the KNOWLEDGE BASE ARTICLES provided below to answer questions. These articles contain the most accurate and up-to-date information about {$companyName}.\n";
