@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\WidgetController;
 use App\Http\Controllers\Api\TransferRequestController;
 use App\Http\Controllers\Api\WidgetSettingsController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OAuthController;
+use App\Http\Controllers\Api\OAuthClientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -266,3 +268,38 @@ Route::middleware('auth:api')->prefix('superadmin')->group(function () {
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OAuth 2.0 Provider
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Authorization endpoints (user must be logged in with JWT to use these)
+Route::middleware('auth:api')->prefix('oauth')->group(function () {
+    // Show consent page data (GET) and handle approve/deny (POST)
+    Route::get('/authorize', [OAuthController::class, 'authorizeForm']);
+    Route::post('/authorize', [OAuthController::class, 'authorize']);
+    // List available scopes
+    Route::get('/scopes', [OAuthController::class, 'scopes']);
+});
+
+// Token endpoint — no user auth required (client authenticates with secret)
+// Throttled to prevent brute-force
+Route::middleware('throttle:30,1')->post('/oauth/token', [OAuthController::class, 'token']);
+
+// Revoke endpoint
+Route::post('/oauth/revoke', [OAuthController::class, 'revoke']);
+
+// OAuth client management (authenticated users managing their own apps)
+Route::middleware('auth:api')->prefix('oauth/clients')->group(function () {
+    Route::get('/', [OAuthClientController::class, 'index']);
+    Route::post('/', [OAuthClientController::class, 'store']);
+    Route::get('/{client}', [OAuthClientController::class, 'show']);
+    Route::put('/{client}', [OAuthClientController::class, 'update']);
+    Route::post('/{client}/rotate-secret', [OAuthClientController::class, 'rotateSecret']);
+    Route::delete('/{client}', [OAuthClientController::class, 'destroy']);
+});
+
+// ─── Example: OAuth-protected API endpoints (accessible by 3rd-party apps) ──
+// Usage: middleware('oauth:chats:read') — validates Bearer token + required scope
+// Route::middleware('oauth:chats:read')->get('/v1/chats', ...);
+// Route::middleware('oauth:tickets:read')->get('/v1/tickets', ...);

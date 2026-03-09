@@ -39,6 +39,8 @@ const AIArticleGenerator = lazy(() => import('./pages/AIArticleGenerator'));
 const CreateArticle = lazy(() => import('./pages/CreateArticle'));
 const ArticleDetails = lazy(() => import('./pages/ArticleDetails'));
 const BillingPage = lazy(() => import('./pages/dashboards/BillingPage'));
+const OAuthAuthorizePage = lazy(() => import('./pages/oauth/OAuthAuthorizePage'));
+const OAuthAppsPage = lazy(() => import('./pages/oauth/OAuthAppsPage'));
 
 // Lazy-loaded standalone pages
 const ExampleChatDashboard = lazy(() => import('./components/layouts').then(m => ({ default: m.ExampleChatDashboard })));
@@ -194,6 +196,19 @@ export default function App() {
               <Route path="/superadmin-dashboard" element={<Navigate to="/superadmin/dashboard" replace />} />
               <Route path="/ai-article-generator" element={<Navigate to="/admin/ai-article-generator" replace />} />
               <Route path="/create-article" element={<Navigate to="/admin/create-article" replace />} />
+
+              {/* OAuth authorization page — shown when 3rd-party app redirects user here */}
+              <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
+
+              {/* OAuth apps management — in admin/agent settings */}
+              <Route
+                path="/admin/oauth-apps"
+                element={<ProtectedRoute><ErrorBoundary><OAuthAppsPage /></ErrorBoundary></ProtectedRoute>}
+              />
+              <Route
+                path="/agent/oauth-apps"
+                element={<ProtectedRoute><ErrorBoundary><OAuthAppsPage /></ErrorBoundary></ProtectedRoute>}
+              />
 
               {/* Standalone pages */}
               <Route path="/example-dashboard" element={<ExampleDashboard />} />

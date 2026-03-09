@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
                $middleware->prepend(\App\Http\Middleware\WidgetCorsHeaders::class);
 
+        $middleware->alias([
+            'oauth' => \App\Http\Middleware\OAuthTokenAuth::class,
+        ]);
+
 
         $middleware->validateCsrfTokens(except: [
             'api/*',
