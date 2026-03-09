@@ -277,7 +277,7 @@ Route::middleware('auth:api')->prefix('superadmin')->group(function () {
 Route::middleware('auth:api')->prefix('oauth')->group(function () {
     // Show consent page data (GET) and handle approve/deny (POST)
     Route::get('/authorize', [OAuthController::class, 'authorizeForm']);
-    Route::post('/authorize', [OAuthController::class, 'authorize']);
+    Route::post('/authorize', [OAuthController::class, 'approveAuthorize']);
     // List available scopes
     Route::get('/scopes', [OAuthController::class, 'scopes']);
 });

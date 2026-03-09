@@ -76,7 +76,7 @@ class OAuthController extends Controller
      * POST /oauth/authorize
      * User clicks Approve or Deny.
      */
-    public function authorize(Request $request)
+    public function approveAuthorize(Request $request)
     {
         $validated = $request->validate([
             'client_id'     => 'required|string',
