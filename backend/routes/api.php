@@ -108,15 +108,22 @@ Route::group([
     'prefix' => 'widget/{widget_id}',
     'middleware' => [\App\Http\Middleware\WidgetApiCors::class],
 ], function () {
-    Route::get('/config', [WidgetController::class, 'config']);
-    Route::get('/status', [WidgetController::class, 'agentStatus']);
-    Route::match(['get', 'post'], '/init', [WidgetController::class, 'init']);
-    Route::match(['get', 'post'], '/message', [WidgetController::class, 'sendMessage']);
-    Route::post('/typing', [WidgetController::class, 'typing']);
-    Route::get('/messages', [WidgetController::class, 'messages']);
-    Route::post('/handover', [WidgetController::class, 'requestHuman']);
-    Route::post('/check-ticket-needed', [WidgetController::class, 'checkTicketNeeded']);
-    Route::post('/create-ticket', [WidgetController::class, 'submitContactAndCreateTicket']);
+    // Read-only endpoints — generous limit (120 req/min per IP)
+    Route::middleware('throttle:120,1')->group(function () {
+        Route::get('/config', [WidgetController::class, 'config']);
+        Route::get('/status', [WidgetController::class, 'agentStatus']);
+        Route::get('/messages', [WidgetController::class, 'messages']);
+        Route::match(['get', 'post'], '/init', [WidgetController::class, 'init']);
+    });
+
+    // Write/AI endpoints — strict limit (20 req/min per IP) to prevent spam & abuse
+    Route::middleware('throttle:20,1')->group(function () {
+        Route::match(['get', 'post'], '/message', [WidgetController::class, 'sendMessage']);
+        Route::post('/typing', [WidgetController::class, 'typing']);
+        Route::post('/handover', [WidgetController::class, 'requestHuman']);
+        Route::post('/check-ticket-needed', [WidgetController::class, 'checkTicketNeeded']);
+        Route::post('/create-ticket', [WidgetController::class, 'submitContactAndCreateTicket']);
+    });
 });
 
 // Widget Settings API (auth required)

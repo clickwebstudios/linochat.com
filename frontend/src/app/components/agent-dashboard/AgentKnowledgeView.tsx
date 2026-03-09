@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
@@ -187,10 +188,20 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
     return [...apiArticles, ...dynamicArticles];
   };
   
+  const debouncedSearch = useDebounce(kbSearchQuery, 300);
+  const isSearching = debouncedSearch.trim().length > 0;
+
+  // Cross-category search when a query is active
+  const searchResults = isSearching
+    ? categories.flatMap(cat =>
+        getMergedArticles(cat.id)
+          .filter((a: any) => a.title?.toLowerCase().includes(debouncedSearch.toLowerCase()))
+          .map((a: any) => ({ ...a, _categoryName: cat.name }))
+      )
+    : [];
+
   const selectedArticles = selectedCategoryId ? getMergedArticles(selectedCategoryId) : [];
-  const filteredArticles = kbSearchQuery
-    ? selectedArticles.filter((a: any) => a.title?.toLowerCase().includes(kbSearchQuery.toLowerCase()))
-    : selectedArticles;
+  const filteredArticles = isSearching ? searchResults : selectedArticles;
   
   // Calculate total including dynamic articles across all categories
   const dynamicArticlesTotal = categories.reduce((sum, cat) => {
@@ -287,8 +298,12 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
           <div className="bg-white border border-[rgba(0,0,0,0.1)] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-5 gap-4">
               <div>
-                <h3 className="text-base font-medium text-[#0a0a0a]">{selectedCategory?.name}</h3>
-                <p className="text-sm text-[#6a7282] mt-0.5">{selectedArticles.length} articles</p>
+                <h3 className="text-base font-medium text-[#0a0a0a]">
+                  {isSearching ? `Search results` : selectedCategory?.name}
+                </h3>
+                <p className="text-sm text-[#6a7282] mt-0.5">
+                  {filteredArticles.length} {isSearching ? `results for "${debouncedSearch}"` : 'articles'}
+                </p>
               </div>
               <div className="relative w-56">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#717182]" />
@@ -318,7 +333,10 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                     <FileText className="h-4 w-4 text-[#6a7282] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-[#0a0a0a] font-normal">{article.title}</div>
-                      <div className="text-xs text-[#99a1af] mt-0.5">
+                      <div className="text-xs text-[#99a1af] mt-0.5 flex items-center gap-2">
+                        {isSearching && article._categoryName && (
+                          <span className="text-blue-500">{article._categoryName} · </span>
+                        )}
                         Updated {article.updated_at?.substring(0, 10) || article.created_at?.substring(0, 10)}
                       </div>
                     </div>

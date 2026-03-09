@@ -13,6 +13,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/__tests__/setup.ts',
+    exclude: ['**/node_modules/**', '**/tests/e2e/**', '**/*.spec.ts'],
   },
   server: {
     proxy: {

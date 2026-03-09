@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -74,6 +75,30 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
     ticket.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ticket.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Optimistic status update — update local state immediately, rollback on error
+  const updateTicketStatus = useCallback(async (ticketId: string, newStatus: TicketItem['status']) => {
+    const prev = tickets;
+    setTickets(t => t.map(tk => tk.id === ticketId ? { ...tk, status: newStatus } : tk));
+    try {
+      await api.put(`/projects/${projectId}/tickets/${ticketId}`, { status: newStatus });
+    } catch {
+      setTickets(prev);
+      toast.error('Failed to update ticket status');
+    }
+  }, [tickets, projectId]);
+
+  const deleteTicket = useCallback(async (ticketId: string) => {
+    const prev = tickets;
+    setTickets(t => t.filter(tk => tk.id !== ticketId));
+    try {
+      await api.delete(`/projects/${projectId}/tickets/${ticketId}`);
+      toast.success('Ticket deleted');
+    } catch {
+      setTickets(prev);
+      toast.error('Failed to delete ticket');
+    }
+  }, [tickets, projectId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -194,7 +219,15 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
                             <Edit className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          {ticket.status !== 'closed' && (
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateTicketStatus(ticket.id, 'closed'); }}>
+                              Close Ticket
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={(e) => { e.stopPropagation(); deleteTicket(ticket.id); }}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>

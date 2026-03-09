@@ -19,6 +19,7 @@ import ContactPage from './pages/marketing/ContactPage';
 
 // Layout Components (needed for route structure)
 import AgentAdminLayout from './components/layouts/AgentAdminLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded dashboard pages
 const AgentDashboard = lazy(() => import('./pages/dashboards/AgentDashboard'));
@@ -121,7 +122,7 @@ export default function App() {
               />
 
               {/* Agent Layout Routes */}
-              <Route element={<ProtectedRoute><AgentAdminLayout role="Agent" /></ProtectedRoute>}>
+              <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Agent" /></ErrorBoundary></ProtectedRoute>}>
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />
                 <Route path="/agent/chats" element={<AgentDashboard />} />
                 <Route path="/agent/tickets" element={<AgentDashboard />} />
@@ -137,7 +138,7 @@ export default function App() {
               </Route>
 
               {/* Admin Layout Routes */}
-              <Route element={<ProtectedRoute><AgentAdminLayout role="Admin" /></ProtectedRoute>}>
+              <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Admin" /></ErrorBoundary></ProtectedRoute>}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/projects" element={<AdminDashboard />} />
                 <Route path="/admin/chats" element={<AdminDashboard />} />
@@ -159,7 +160,7 @@ export default function App() {
               </Route>
 
               {/* Superadmin Layout Routes */}
-              <Route element={<ProtectedRoute><AgentAdminLayout role="Superadmin" /></ProtectedRoute>}>
+              <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Superadmin" /></ErrorBoundary></ProtectedRoute>}>
                 <Route path="/superadmin/dashboard" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/chats" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/tickets" element={<AgentDashboard role="Superadmin" />} />
