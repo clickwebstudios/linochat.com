@@ -95,6 +95,34 @@ server {
 }
 ```
 
+**Same-domain setup** (frontend + API on `linochat.com`):
+
+If `VITE_API_URL=/api`, the API must be reachable at `https://linochat.com/api`. Add a `location /api` block to your Nginx config:
+
+```nginx
+server {
+    server_name linochat.com www.linochat.com;
+    root /home/admin2/web/linochat.com/public_html/frontend/dist;
+
+    # API routes → Laravel (REQUIRED for chat widget to work)
+    location /api {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME /home/admin2/web/linochat.com/public_html/backend/backend/public/index.php;
+        fastcgi_param REQUEST_URI $request_uri;
+        include fastcgi_params;
+    }
+
+    # Frontend SPA
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+Adjust paths and PHP-FPM socket for your server. On shared hosting, contact support to add the `/api` location block.
+
+**Troubleshooting "Failed to initialize chat: 404"**: The `/api` path is not reaching Laravel. Add the `location /api` block above. Without it, the chat widget cannot initialize and AI will not reply.
+
 ### 5. Queue & Reverb (optional)
 
 For background jobs and WebSockets, use Supervisor:

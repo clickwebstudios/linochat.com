@@ -175,7 +175,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
     setAddUserSubmitting(true);
     setAddUserError(null);
     try {
-      const response = await api.post<{ success: boolean; message?: string; data?: { email_sent?: boolean } }>('/agent/invitations', {
+      const response = await api.post<{ email_sent?: boolean }>('/agent/invitations', {
         email: newUser.email.trim(),
         first_name: newUser.firstName.trim() || undefined,
         last_name: newUser.lastName.trim() || undefined,
@@ -221,7 +221,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
     setResendingId(agent.id);
     setResendError(null);
     try {
-      const res = await api.post<{ success: boolean; message?: string }>(`/agent/invitations/${invId}/resend`);
+      const res = await api.post<unknown>(`/agent/invitations/${invId}/resend`, {});
       if (res.success) {
         loadAgents();
         if (res.message?.includes('Configure MAIL')) {
@@ -301,7 +301,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
                     <div className="text-gray-500">
                       <User className="h-10 w-10 mx-auto mb-3 text-gray-300" />
                       <p className="font-medium">{agentsError}</p>
-                      <Button variant="outline" size="sm" className="mt-3" onClick={loadAgents}>
+                      <Button variant="outline" size="sm" className="mt-3" onClick={() => loadAgents()}>
                         Retry
                       </Button>
                     </div>

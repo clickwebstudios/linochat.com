@@ -51,7 +51,6 @@ import {
   FileText,
   MoreVertical,
   Edit,
-  Trash2,
   UserX,
   Users,
   Ticket,
@@ -59,7 +58,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '../../api/client';
-import { SuperadminSidebar } from '../../components/superadmin/SuperadminSidebar';
 import { SuperadminTopbar } from '../../components/superadmin/SuperadminTopbar';
 import {
   LineChart,
@@ -136,7 +134,6 @@ const loginHistory = [
 export default function UserDetails() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [sidebarOpen] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   

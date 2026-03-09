@@ -31,7 +31,7 @@ interface AgentKnowledgeViewProps {
   selectedCompanyId?: string | null;
 }
 
-export function AgentKnowledgeView({ basePath, selectedCompanyId }: AgentKnowledgeViewProps) {
+export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   

@@ -4,7 +4,7 @@ import ChatWidget from '../../components/ChatWidget';
 import SEOHead from '../../components/SEOHead';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { MessageCircle, Ticket, BarChart, Zap, Bot, Shield, Check } from 'lucide-react';
+import { Bot, Shield, Check } from 'lucide-react';
 
 export default function FeaturesPage() {
   return (

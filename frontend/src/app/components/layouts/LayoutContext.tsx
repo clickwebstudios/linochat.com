@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode, type SetStateAction } from 'react';
 
 interface LayoutContextValue {
   mobileSidebarOpen: boolean;
@@ -6,7 +6,7 @@ interface LayoutContextValue {
   toggleMobileSidebar: () => void;
   role: 'Agent' | 'Admin' | 'Superadmin';
   stats: { chats: number; tickets: number };
-  setStats: (stats: { chats: number; tickets: number }) => void;
+  setStats: (stats: SetStateAction<{ chats: number; tickets: number }>) => void;
 }
 
 const LayoutContext = createContext<LayoutContextValue>({

@@ -84,21 +84,6 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
   const [creationStep, setCreationStep] = useState(0);
   const [creationDone, setCreationDone] = useState(false);
 
-  const reset = () => {
-    setStep(1);
-    setWebsiteUrl('');
-    setAnalysisStatus('idle');
-    setAnalysisStep(0);
-    setAnalyzedData(null);
-    setProjectName('');
-    setProjectDescription('');
-    setProjectColor('#3B82F6');
-    setUrlError('');
-    setIsCreatingKB(false);
-    setCreationStep(0);
-    setCreationDone(false);
-  };
-
   const validateUrl = (url: string): boolean => {
     if (!url.trim()) {
       setUrlError('Please enter a website URL');

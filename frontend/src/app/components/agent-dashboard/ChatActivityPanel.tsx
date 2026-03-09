@@ -1,0 +1,245 @@
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import {
+  MessageCircle,
+  User,
+  X,
+  Clock,
+  Eye,
+  MapPin,
+  Calendar,
+  Tag,
+  History,
+  Info,
+  Ticket,
+  Mail,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+} from 'lucide-react';
+
+interface ActivityData {
+  customer: string;
+  customer_email: string;
+  sessionStart: string;
+  chatInitiatedFrom: string;
+  location: string;
+  device: string;
+  browser: string;
+  referralSource: string;
+  pagesVisited: Array<{ page: string; url: string; timestamp: string; duration: string }>;
+  previousChats: Array<{ id: string; date: string; topic: string; duration: string; agent: string }>;
+  totalTickets: number;
+  customerTier: string | null;
+}
+
+export interface ChatActivityPanelProps {
+  activeChat: any;
+  activity: ActivityData | null;
+  activityLoading: boolean;
+  onClose: () => void;
+  onOpenPreviousChat: (chat: any) => void;
+}
+
+export function ChatActivityPanel({
+  activeChat,
+  activity,
+  activityLoading,
+  onClose,
+  onOpenPreviousChat,
+}: ChatActivityPanelProps) {
+  const [showCustomerDetails, setShowCustomerDetails] = useState(true);
+  const [showSessionInfo, setShowSessionInfo] = useState(true);
+  const [showPreviousChats, setShowPreviousChats] = useState(true);
+
+  return (
+    <div className="w-96 border-l border-[rgba(0,0,0,0.1)] bg-white flex flex-col animate-in slide-in-from-right duration-200">
+      <div className="p-4 border-b border-[rgba(0,0,0,0.1)] shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
+            <Info className="h-4 w-4 text-[#6a7282]" />
+            Info
+          </h3>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <p className="text-xs text-[#6a7282]">
+          {activity?.customer || activeChat?.customer_name || activeChat?.customer || 'Guest'}
+        </p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pt-4">
+        {activityLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#155dfc]" />
+          </div>
+        ) : !activity ? (
+          <div className="text-center py-8">
+            <History className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">No activity data available</p>
+            <p className="text-xs text-gray-400 mt-1">Activity history will appear here</p>
+          </div>
+        ) : (
+          <>
+            {/* Previous Conversations */}
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+              <button
+                onClick={() => setShowPreviousChats(!showPreviousChats)}
+                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+              >
+                <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-[#6a7282]" />
+                  Previous Conversations
+                  {activity.previousChats.length > 0 && (
+                    <Badge className="bg-[#155dfc] text-white text-xs rounded-lg px-2">
+                      {activity.previousChats.length}
+                    </Badge>
+                  )}
+                </h4>
+                {showPreviousChats ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+              </button>
+              {showPreviousChats && (
+                <div className="p-3 pt-0 border-t">
+                  {activity.previousChats.length > 0 ? (
+                    <div className="space-y-2">
+                      {activity.previousChats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                          onClick={() => onOpenPreviousChat(chat)}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-[#155dfc] hover:underline">{chat.topic}</p>
+                            <Badge variant="outline" className="text-xs border-[rgba(0,0,0,0.1)] text-[#0a0a0a]">{chat.duration}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-[#6a7282]">
+                            <Calendar className="h-3 w-3" />
+                            <span>{chat.date}</span>
+                            <span>&bull;</span>
+                            <User className="h-3 w-3" />
+                            <span>{chat.agent}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-4 text-center">
+                      <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No previous conversations</p>
+                      <p className="text-xs text-gray-400 mt-1">This is their first time chatting</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Customer Details */}
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+              <button
+                onClick={() => setShowCustomerDetails(!showCustomerDetails)}
+                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+              >
+                <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
+                  <User className="h-4 w-4 text-[#6a7282]" />
+                  Customer Details
+                </h4>
+                {showCustomerDetails ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+              </button>
+              {showCustomerDetails && (
+                <div className="p-3 pt-0 border-t border-[rgba(0,0,0,0.1)] space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Mail className="h-3 w-3" /><span>Email</span></div>
+                    <p className="text-sm font-medium text-[#0a0a0a]">{activity.customer_email || activeChat?.customer_email || '\u2014'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><MapPin className="h-3 w-3" /><span>Location</span></div>
+                    <p className="text-sm font-medium text-[#0a0a0a]">{activity.location}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Ticket className="h-3 w-3" /><span>Total Tickets</span></div>
+                    <p className="text-sm font-medium text-[#0a0a0a]">{activity.totalTickets ? `${activity.totalTickets} tickets` : '\u2014'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Tag className="h-3 w-3" /><span>Customer Tier</span></div>
+                    <Badge className={activity.customerTier ? 'bg-[#9810fa] text-white text-xs rounded-lg' : 'bg-gray-200 text-gray-600'}>{activity.customerTier ?? 'Standard'}</Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Session Information */}
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+              <button
+                onClick={() => setShowSessionInfo(!showSessionInfo)}
+                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+              >
+                <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-[#6a7282]" />
+                  Session Information
+                </h4>
+                {showSessionInfo ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+              </button>
+              {showSessionInfo && (
+                <div className="p-3 pt-0 border-t border-[rgba(0,0,0,0.1)] space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                    <div><p className="text-xs text-[#4a5565]">Session Started</p><p className="text-sm text-[#0a0a0a]">{activity.sessionStart}</p></div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                    <div><p className="text-xs text-[#4a5565]">Location</p><p className="text-sm text-[#0a0a0a]">{activity.location}</p></div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <User className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                    <div><p className="text-xs text-[#4a5565]">Device</p><p className="text-sm text-[#0a0a0a]">{activity.device}</p></div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Eye className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                    <div><p className="text-xs text-[#4a5565]">Browser</p><p className="text-sm text-[#0a0a0a]">{activity.browser}</p></div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Tag className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                    <div><p className="text-xs text-[#4a5565]">Referral Source</p><p className="text-sm text-[#0a0a0a]">{activity.referralSource}</p></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Initiated From */}
+            <div>
+              <h4 className="text-xs font-semibold text-[#6a7282] uppercase tracking-wide mb-3">Chat Initiated From</h4>
+              <div className="bg-[#eff6ff] border border-[#bedbff] rounded-[10px] p-3">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-[#155dfc] shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-[#1c398e]">{activity.chatInitiatedFrom}</p>
+                    <p className="text-xs text-[#155dfc]">Current page when chat started</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pages Visited */}
+            <div>
+              <h4 className="text-xs font-semibold text-[#6a7282] uppercase tracking-wide mb-3">Pages Visited</h4>
+              <div className="space-y-2">
+                {activity.pagesVisited.map((page, index) => (
+                  <div key={index} className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-sm font-medium text-[#0a0a0a]">{page.page}</p>
+                      <span className="text-xs text-[#6a7282]">{page.duration}</span>
+                    </div>
+                    <p className="text-xs text-[#6a7282] font-mono">{page.url}</p>
+                    <p className="text-xs text-[#99a1af] mt-1">{page.timestamp}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -45,7 +45,7 @@ interface ChatWidgetTabProps {
   onCopyWidgetId: () => void;
 }
 
-export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetId }: ChatWidgetTabProps) {
+export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const [widgetDesign, setWidgetDesign] = useState('modern');
   const [widgetColor, setWidgetColor] = useState(project?.color || '#3B82F6');
   const [widgetPosition, setWidgetPosition] = useState('bottom-right');
@@ -63,7 +63,7 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
     if (!project?.id) return;
     const loadSettings = async () => {
       try {
-        const response = await api.get(`/projects/${project.id}/widget-settings`);
+        const response = await api.get<{ color?: string; position?: string; widget_title?: string; welcome_message?: string; button_text?: string; design?: string }>(`/projects/${project.id}/widget-settings`);
         if (response.success && response.data) {
           const d = response.data;
           if (d.color) setWidgetColor(d.color);
@@ -311,7 +311,7 @@ export function ChatWidgetTab({ project, widgetId, copiedWidgetId, onCopyWidgetI
 // --- Sub-components ---
 
 function WidgetScheduleConfig({
-  offlineBehavior,
+  offlineBehavior: _offlineBehavior,
   setOfflineBehavior,
   offlineMessage,
   setOfflineMessage,
@@ -438,7 +438,7 @@ function WidgetPreview({
   position = 'bottom-right',
   title,
   welcomeMessage,
-  buttonText = '💬',
+  buttonText: _buttonText = '💬',
   showOfflinePreview,
   offlineBehavior,
   offlineMessage,

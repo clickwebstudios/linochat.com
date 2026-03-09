@@ -28,7 +28,13 @@ async function ensureCsrf() {
   }
 }
 
-api.interceptors.request.use(async (config) => {
+api.interceptors.request.use(async (config: any) => {
+  // Attach JWT token from localStorage if available
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
   if (['post', 'put', 'patch', 'delete'].includes(config.method ?? '')) {
     await ensureCsrf();
   }
@@ -36,8 +42,8 @@ api.interceptors.request.use(async (config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: any) => response,
+  (error: any) => {
     if (error.response?.status === 401) {
       // Only redirect to login if the user is on a protected page.
       // Don't redirect from public pages (login, signup, forgot-password, etc.)

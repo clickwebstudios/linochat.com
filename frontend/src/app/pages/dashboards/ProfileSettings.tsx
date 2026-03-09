@@ -72,11 +72,11 @@ export default function ProfileSettings() {
         firstName: user.first_name || '',
         lastName: user.last_name || '',
         email: user.email || '',
-        phone: user.phone || '',
-        company: user.company || '',
-        country: user.country || 'US',
-        bio: user.bio || '',
-        location: user.location || '',
+        phone: (user as any).phone || '',
+        company: (user as any).company || '',
+        country: (user as any).country || 'US',
+        bio: (user as any).bio || '',
+        location: (user as any).location || '',
       });
     }
   }, [user]);

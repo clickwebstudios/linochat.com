@@ -55,7 +55,7 @@ export default function ChatWidget({
       const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        // WebSocket connected
       };
       
       ws.onmessage = (event) => {
@@ -82,7 +82,7 @@ export default function ChatWidget({
       };
       
       ws.onclose = () => {
-        console.log('WebSocket disconnected');
+        // WebSocket disconnected
       };
       
       wsRef.current = ws;

@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { mockProjects } from '../../data/mockData';
 import { useAuthStore } from '../../stores/authStore';
-import { useProjectsStore, selectProjects, selectProjectsLoading } from '../../stores/projectsStore';
+import { useProjectsStore, selectProjects } from '../../stores/projectsStore';
 import {
   Popover,
   PopoverContent,
@@ -72,7 +72,8 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   
   // Detect if this is superadmin from URL or role prop
   const isSuperadmin = role === 'Superadmin' || location.pathname.startsWith('/superadmin');
-  const effectiveRole = isSuperadmin ? 'Admin' : role; // Superadmin has same permissions as Admin
+  const _effectiveRole: string = isSuperadmin ? 'Admin' : role; // Superadmin has same permissions as Admin
+  void _effectiveRole;
   
   // Derive basePath from the URL: /agent/* -> '/agent', /admin/* -> '/admin', /superadmin/* -> '/superadmin'
   const basePath = location.pathname.startsWith('/superadmin') 
@@ -103,14 +104,13 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const clearTakeover = useHumanRequestedStore((s) => s.clearTakeover);
 
   // Get user from auth store
-  const { user, logout, project } = useAuthStore();
+  const { user, logout } = useAuthStore();
   
   // Superadmin company selection
   const { selectedCompanyId, setSelectedCompany } = useSuperadminStore();
   
   // Use projects store
   const projects = useProjectsStore(selectProjects);
-  const projectsLoading = useProjectsStore(selectProjectsLoading);
   const fetchProjects = useProjectsStore(state => state.fetchProjects);
   const addProject = useProjectsStore(state => state.addProject);
   
@@ -147,17 +147,15 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   // Team members from API (agents/admins who can receive transfers) - must be before WebSocket effect
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name: string; email: string; avatar: string; role: string; status?: string; active_chats_count?: number }>>([]);
-  const [teamMembersLoading, setTeamMembersLoading] = useState(false);
 
   const loadTeamMembers = useCallback(async () => {
     if (!user) return;
-    setTeamMembersLoading(true);
     try {
-      const response = await api.get<{ success: boolean; data: Array<{ id: string; first_name: string; last_name: string; email: string; role: string; status: string; avatar_url?: string; active_chats_count?: number }> }>('/agent/users');
+      const response = await api.get<Array<{ id: string; first_name: string; last_name: string; email: string; role: string; status: string; avatar_url?: string; active_chats_count?: number }>>('/agent/users');
       if (response.success && Array.isArray(response.data)) {
-        const mapped = response.data.map((u) => {
+        const mapped = response.data.map((u: { id: string; first_name: string; last_name: string; email: string; role: string; status: string; avatar_url?: string; active_chats_count?: number }) => {
           const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
-          const initials = name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+          const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
           const roleLabel = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Agent';
           return { id: String(u.id), name, email: u.email, avatar: initials, role: roleLabel, status: u.status, active_chats_count: u.active_chats_count ?? 0 };
         });
@@ -166,8 +164,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     } catch (error) {
       console.error('Failed to load team members:', error);
       setTeamMembers([]);
-    } finally {
-      setTeamMembersLoading(false);
     }
   }, [user, isSuperadmin, selectedCompanyId]);
 
@@ -249,15 +245,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       return;
     }
 
-    console.log(`Subscribing to agent channel: agent.${user.id}`);
-
     // Subscribe to agent's private channel for new chats
     const channel = echo.private(`agent.${user.id}`);
 
     // Listen for new chat events
     channel.listen('.new.chat', (event: any) => {
-      console.log('New chat received:', event);
-
       const chat = event?.chat;
       if (!chat?.id) return;
 
@@ -274,8 +266,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
     // Listen for chat status updates
     channel.listen('.chat.status.updated', (event: any) => {
-      console.log('Chat status updated:', event);
-      
       setChats(prev => 
         prev.map(chat => {
           if (chat.id === event.chat_id) {
@@ -294,7 +284,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     });
 
     return () => {
-      console.log(`Leaving agent channel: agent.${user.id}`);
       channel.stopListening('.new.chat');
       channel.stopListening('.chat.status.updated');
       echo.leave(`agent.${user.id}`);
@@ -320,7 +309,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       if (data.success) {
         const ticketsData = data.data?.data || data.data || [];
         setTickets(ticketsData);
-        setStats(prev => ({ ...prev, tickets: ticketsData.length }));
+        setStats((prev: { chats: number; tickets: number }) => ({ ...prev, tickets: ticketsData.length }));
       }
     } catch (error) {
       console.error('Failed to load tickets:', error);
@@ -349,7 +338,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   // Derive unread count from chats and update sidebar badge (stats.chats = unread, not total)
   useEffect(() => {
     const unreadCount = chats.reduce((sum, c) => sum + (c.unread_count ?? c.unread ?? 0), 0);
-    setStats(prev => ({ ...prev, chats: unreadCount }));
+    setStats((prev: { chats: number; tickets: number }) => ({ ...prev, chats: unreadCount }));
   }, [chats, setStats]);
 
   // Keep activeChat in sync with chats when updated via WebSocket
@@ -362,8 +351,8 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     }
   }, [chats]);
   const [tickets, setTickets] = useState<any[]>([]);
-  const [chatsLoading, setChatsLoading] = useState(true);
-  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [, setChatsLoading] = useState(true);
+  const [, setTicketsLoading] = useState(true);
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'pending' | 'closed'>('all');
   const [chatFilter, setChatFilter] = useState<'all' | 'active' | 'closed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -391,12 +380,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       try {
         const response = await api.get('/notifications');
         if (response.success) {
-          setNotifications(response.data || []);
+          setNotifications((response.data || []) as any[]);
         }
       } catch (error) {
         // Silently fail - notifications not critical
-        console.log('Notifications API not available');
-        setNotifications([]);
+        setNotifications([] as any[]);
       } finally {
         setNotificationsLoading(false);
       }
@@ -406,7 +394,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const transferRequestsCount = transferRequests.length + pendingHumanRequests.length;
   // transferStep, selectedOperatorForTransfer, transferReason are local to ChatsView's own transfer dialog
-  const [hasKnowledgeBase, setHasKnowledgeBase] = useState(false);
+  const [, setHasKnowledgeBase] = useState(false);
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false);
   // aiWebsiteUrl is now managed internally by AIGenerateKBDialog
   const [addCategoryDialogOpen, setAddCategoryDialogOpen] = useState(false);
@@ -472,30 +460,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   // Holds the chat payload when AI triggers a human-transfer request
   const [aiTransferPayload, setAiTransferPayload] = useState<HumanRequestedPayload | null>(null);
 
-  const chartData = [
-    { name: 'Mon', tickets: 24 },
-    { name: 'Tue', tickets: 35 },
-    { name: 'Wed', tickets: 28 },
-    { name: 'Thu', tickets: 42 },
-    { name: 'Fri', tickets: 38 },
-    { name: 'Sat', tickets: 18 },
-    { name: 'Sun', tickets: 12 },
-  ];
-
-  const responseTimeData = [
-    { time: '9 AM', minutes: 3.2 },
-    { time: '11 AM', minutes: 2.8 },
-    { time: '1 PM', minutes: 4.1 },
-    { time: '3 PM', minutes: 2.5 },
-    { time: '5 PM', minutes: 3.8 },
-  ];
-
-  const ticketStatusData = [
-    { name: 'Open', value: 45, color: '#3b82f6' },
-    { name: 'Pending', value: 30, color: '#f59e0b' },
-    { name: 'Resolved', value: 80, color: '#10b981' },
-    { name: 'Closed', value: 25, color: '#6b7280' },
-  ];
+  // Chart data reserved for future dashboard visualizations
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesFilter = ticketFilter === 'all' || ticket.status === ticketFilter;
@@ -524,8 +489,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   };
 
   const handleProjectCreated = async (createdProject: { id: string; name: string; description: string; color: string; website: string }) => {
-    console.log('Project created:', createdProject);
-    
     // Add to store
     addProject({
       id: createdProject.id,
@@ -540,7 +503,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     // Navigate to the new project
     if (createdProject.id) {
       const projectUrl = `${basePath}/project/${createdProject.id}`;
-      console.log('Navigating to:', projectUrl, 'basePath:', basePath);
       navigate(projectUrl);
     }
   };
@@ -983,7 +945,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       <AIGenerateKBDialog
         open={aiGenerateDialogOpen}
         onOpenChange={setAiGenerateDialogOpen}
-        onGenerate={(projectId) => {
+        onGenerate={(_projectId) => {
           setHasKnowledgeBase(true);
         }}
       />

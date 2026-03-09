@@ -73,10 +73,7 @@ export default function InviteAcceptPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post<{
-        success: boolean;
-        data?: { access_token: string; refresh_token: string; user: unknown };
-      }>(`/invitations/${token}/accept`, {
+      const res = await api.post<{ access_token: string; refresh_token: string; user: unknown }>(`/invitations/${token}/accept`, {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         password: formData.password,

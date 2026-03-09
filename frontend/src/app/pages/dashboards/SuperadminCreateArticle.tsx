@@ -31,7 +31,6 @@ import {
   CheckCircle,
   Loader2,
   X,
-  Sparkles,
   Building2,
 } from 'lucide-react';
 import { api } from '../../api/client';
@@ -67,7 +66,7 @@ interface Company {
 export default function SuperadminCreateArticle() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { companyId, companyName } = (location.state as { companyId?: string; companyName?: string }) || {};
+  const { companyId } = (location.state as { companyId?: string; companyName?: string }) || {};
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -78,7 +77,7 @@ export default function SuperadminCreateArticle() {
   useEffect(() => {
     if (companyId) {
       setIsLoadingCompanies(true);
-      api.get('/api/superadmin/companies')
+      api.get<Company[]>('/api/superadmin/companies')
         .then(response => {
           setCompanies(response.data);
         })

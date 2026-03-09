@@ -1,9 +1,11 @@
 import api from '../lib/api';
+import type { AxiosResponse } from 'axios';
+import type { Company, ApiResponse } from '../types';
 
 export const companyService = {
-  getAll: (params?: object) => api.get('/api/companies', { params }).then(r => r.data),
-  getById: (id: number | string) => api.get(`/api/companies/${id}`).then(r => r.data.data),
-  create: (data: object) => api.post('/api/companies', data).then(r => r.data.data),
-  update: (id: number | string, data: object) => api.put(`/api/companies/${id}`, data).then(r => r.data.data),
+  getAll: (params?: object) => api.get<ApiResponse<Company[]>>('/api/companies', { params }).then((r) => r.data),
+  getById: (id: number | string): Promise<Company> => api.get(`/api/companies/${id}`).then((r: AxiosResponse<ApiResponse<Company>>) => r.data.data),
+  create: (data: object): Promise<Company> => api.post('/api/companies', data).then((r: AxiosResponse<ApiResponse<Company>>) => r.data.data),
+  update: (id: number | string, data: object): Promise<Company> => api.put(`/api/companies/${id}`, data).then((r: AxiosResponse<ApiResponse<Company>>) => r.data.data),
   delete: (id: number | string) => api.delete(`/api/companies/${id}`),
 };

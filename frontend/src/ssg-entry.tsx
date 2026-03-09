@@ -1,5 +1,4 @@
-import { StaticRouter } from 'react-router-dom/server';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { StaticRouter, Routes, Route, Navigate } from 'react-router';
 
 // Marketing Pages
 import HomePage from './app/pages/marketing/HomePage';

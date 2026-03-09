@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Bell,
   Search,
@@ -13,7 +13,6 @@ import {
   Key,
   ChevronDown,
   Shield,
-  Menu,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
@@ -29,7 +28,6 @@ import { ProjectSelector } from '../../components/ProjectSelector';
 
 export default function SuperadminProfileSettings() {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <>

@@ -18,9 +18,8 @@ import {
   TrendingUp,
   Clock,
   Star,
-  Check,
 } from 'lucide-react';
-import { mockTestimonials, mockStats } from '../../data/mockData';
+import { mockTestimonials } from '../../data/mockData';
 
 export default function HomePage() {
   const benefits = [

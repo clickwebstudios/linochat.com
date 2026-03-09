@@ -4,7 +4,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Badge } from '../ui/badge';
 import { Switch } from '../ui/switch';
 import {
   Dialog,
@@ -242,8 +241,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
 
   // Get project data from context or props if needed
   const projectName = 'Current Project'; // This should come from context or props
-  const projectId = '1'; // This should come from context or props
-  const projectAgents = []; // This should come from context or props
+  const projectAgents: { id: string; name: string }[] = []; // This should come from context or props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -346,7 +344,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => { onOpenChange(false); resetTicket(); }}>Cancel</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { console.log('Creating ticket:', { ...newTicket, projectId }); onOpenChange(false); resetTicket(); }} disabled={!newTicket.subject || !newTicket.description || !newTicket.customerId}>
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onOpenChange(false); resetTicket(); }} disabled={!newTicket.subject || !newTicket.description || !newTicket.customerId}>
             <Plus className="h-4 w-4 mr-2" />
             Create Ticket
           </Button>
@@ -385,7 +383,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   };
 
   const handleEditProject = () => {
-    console.log('Editing project:', editedProject);
     onOpenChange(false);
   };
 

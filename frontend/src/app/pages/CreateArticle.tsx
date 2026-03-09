@@ -687,6 +687,7 @@ export default function CreateArticle() {
                 setFormData({
                   title: '',
                   category: '',
+                  categoryId: '',
                   content: '',
                   tags: [],
                   status: 'draft',

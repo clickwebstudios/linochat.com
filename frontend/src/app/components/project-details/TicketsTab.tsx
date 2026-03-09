@@ -22,7 +22,6 @@ import {
   Edit,
   Trash2,
   Ticket,
-  CheckCircle,
   MoreVertical,
   Loader2,
 } from 'lucide-react';
@@ -53,9 +52,10 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
   useEffect(() => {
     const loadTickets = async () => {
       try {
-        const response = await api.get(`/projects/${projectId}/tickets`);
+        const response = await api.get<TicketItem[] | { data: TicketItem[] }>(`/projects/${projectId}/tickets`);
         if (response.success) {
-          const ticketsData = response.data?.data || response.data || [];
+          const d = response.data as any;
+          const ticketsData: TicketItem[] = d?.data || d || [];
           setTickets(ticketsData);
         }
       } catch (error) {

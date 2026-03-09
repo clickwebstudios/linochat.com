@@ -50,20 +50,13 @@ import {
   Menu,
   ChevronDown,
   Paperclip,
-  Tag,
-  History,
   UserPlus,
-  Share2,
-  Bookmark,
   AlertTriangle,
-  XCircle,
   Ticket,
+  Tag,
   User,
-  FileText,
 } from 'lucide-react';
 import { mockProjects } from '../../data/mockData';
-import { Sheet, SheetContent } from '../../components/ui/sheet';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { api } from '../../api/client';
 import { toast } from 'sonner';
@@ -97,7 +90,7 @@ export default function TicketDetails() {
     updated_at?: string;
     customer_name?: string;
     customer_email?: string;
-    project?: { id: string; name: string };
+    project?: { id: string; name: string; companyId?: string; color?: string };
     project_id?: string;
     assigned_to?: string | number;
     assigned_agent?: { first_name?: string; last_name?: string; email?: string };
@@ -155,13 +148,14 @@ export default function TicketDetails() {
     : 'Unassigned';
 
   // Build conversation from API messages, or fallback to description
+  const ticketMessages = ticket?.messages;
   const conversationHistory = ticket
-    ? (ticket.messages?.length
-        ? ticket.messages.map((m: any) => ({
+    ? (ticketMessages?.length
+        ? ticketMessages.map((m: any) => ({
             id: m.id,
-            sender: (m.sender_type === 'agent' ? 'agent' : 'customer') as const,
+            sender: m.sender_type === 'agent' ? 'agent' as const : 'customer' as const,
             name: m.sender_type === 'agent' ? assignedAgentName : (ticket.customer_name || 'Customer'),
-            avatar: (m.sender_type === 'agent' ? assignedAgentName : ticket.customer_name || 'C')
+            avatar: String(m.sender_type === 'agent' ? assignedAgentName : (ticket!.customer_name ?? 'C'))
               .substring(0, 2)
               .toUpperCase(),
             message: m.content,
@@ -734,7 +728,7 @@ export default function TicketDetails() {
                         <div className="flex-1">
                           <p className="font-medium">
                             {activity.action} {activity.user && <span className="text-blue-600">{activity.user}</span>}
-                            {activity.status && <Badge variant="outline" className="ml-2">{activity.status}</Badge>}
+                            {(activity as any).status && <Badge variant="outline" className="ml-2">{(activity as any).status}</Badge>}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
                         </div>

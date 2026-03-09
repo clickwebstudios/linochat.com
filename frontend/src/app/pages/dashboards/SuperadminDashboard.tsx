@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../lib/AuthContext';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -32,26 +32,16 @@ import {
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import {
-  Home,
-  Users,
   Settings,
-  Shield,
-  CreditCard,
-  BarChart as BarChartIcon,
-  Database,
-  Bell,
   Search,
   LogOut,
   User,
   Plus,
   MoreVertical,
-  Activity,
-  Globe,
   Headphones,
   Edit,
   Trash2,
   ChevronDown,
-  Building2,
   FolderKanban,
   Loader2,
 } from 'lucide-react';
@@ -136,6 +126,7 @@ export default function SuperadminDashboard() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
 
   // Loading states
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
@@ -192,7 +183,7 @@ export default function SuperadminDashboard() {
     setIsLoadingCompanies(true);
     try {
       const response = await api.get<{ data: Company[]; pagination: unknown }>('/superadmin/companies');
-      setCompanies(response.data);
+      setCompanies(response.data?.data ?? []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     } finally {
@@ -204,7 +195,7 @@ export default function SuperadminDashboard() {
     setIsLoadingProjects(true);
     try {
       const response = await api.get<{ data: Project[]; pagination: unknown }>('/superadmin/projects');
-      setProjects(response.data);
+      setProjects(response.data?.data ?? []);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
     } finally {
@@ -216,7 +207,7 @@ export default function SuperadminDashboard() {
     setIsLoadingAgents(true);
     try {
       const response = await api.get<{ data: Agent[]; pagination: unknown }>('/superadmin/agents');
-      setAgents(response.data);
+      setAgents(response.data?.data ?? []);
     } catch (error) {
       console.error('Failed to fetch agents:', error);
     } finally {
@@ -228,7 +219,7 @@ export default function SuperadminDashboard() {
     setIsLoadingChats(true);
     try {
       const response = await api.get<{ data: Chat[]; pagination: unknown }>('/superadmin/chats');
-      setChats(response.data);
+      setChats(response.data?.data ?? []);
     } catch (error) {
       console.error('Failed to fetch chats:', error);
     } finally {
@@ -285,8 +276,7 @@ export default function SuperadminDashboard() {
     navigate(`/superadmin/${routeSegment}`);
   };
 
-  const [selectedProject, setSelectedProject] = useState('all');
-  const [selectedCompany, setSelectedCompany] = useState('comp-1');
+  const [selectedProject] = useState('all');
   const [chatStatusFilter, setChatStatusFilter] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [viewingCompanyId, setViewingCompanyId] = useState<string | null>(null);
@@ -305,7 +295,7 @@ export default function SuperadminDashboard() {
     }
   }, [location.state, activeSection]);
 
-  const selectedChat = chats.find(c => c.id === selectedChatId) || chats[0];
+  // selectedChat is derived after superadminChats is computed below
 
   const filteredAgents = selectedProject === 'all' 
     ? agents 
@@ -355,6 +345,8 @@ export default function SuperadminDashboard() {
     })),
   }));
 
+  const selectedChat = superadminChats.find(c => c.id === selectedChatId) || superadminChats[0];
+
   return (
     <>
       {/* Header */}
@@ -381,11 +373,11 @@ export default function SuperadminDashboard() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer">
                   <div className="text-right">
-                    <div className="text-sm font-semibold">{user?.name || user?.first_name || 'Admin User'}</div>
+                    <div className="text-sm font-semibold">{user?.first_name || 'Admin User'}</div>
                     <div className="text-xs text-gray-500">{user?.role || 'Superadmin'}</div>
                   </div>
                   <Avatar>
-                    <AvatarFallback className="bg-purple-600 text-white">{(user?.name || user?.first_name || 'AD').substring(0,2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="bg-purple-600 text-white">{(user?.first_name || 'AD').substring(0,2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </button>
@@ -759,7 +751,7 @@ export default function SuperadminDashboard() {
           )}
 
           {activeSection === 'team' && (
-            <TeamSection selectedCompanyId={selectedCompanyId} />
+            <TeamSection />
           )}
 
           {activeSection === 'permissions' && (

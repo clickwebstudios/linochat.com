@@ -12,7 +12,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '../../api/client';
-import { toast } from 'sonner';
 
 interface Activity {
   id: string;
@@ -60,7 +59,7 @@ export function ActivityTab({ projectId }: ActivityTabProps) {
     const fetchActivities = async () => {
       try {
         // Try to fetch real activities from API
-        const response = await api.get(`/projects/${projectId}/activities`);
+        const response = await api.get<Activity[]>(`/projects/${projectId}/activities`);
         if (response.success && response.data) {
           setActivities(response.data);
         } else {

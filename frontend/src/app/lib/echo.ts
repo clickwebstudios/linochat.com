@@ -4,19 +4,19 @@ import Pusher from 'pusher-js';
 declare global {
   interface Window {
     Pusher: typeof Pusher;
-    Echo?: Echo;
+    Echo?: Echo<'pusher'>;
   }
 }
 
 window.Pusher = Pusher;
 
-let echoInstance: Echo | null = null;
+let echoInstance: Echo<'pusher'> | null = null;
 
-export function getEcho(): Echo | null {
+export function getEcho(): Echo<'pusher'> | null {
   return echoInstance;
 }
 
-export function initEcho(): Echo | null {
+export function initEcho(): Echo<'pusher'> | null {
   const token = localStorage.getItem('access_token');
   if (!token) return null;
 

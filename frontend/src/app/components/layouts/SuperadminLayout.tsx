@@ -4,7 +4,7 @@ import { SuperadminSidebar } from '../superadmin/SuperadminSidebar';
 import { LayoutProvider } from './LayoutContext';
 
 export default function SuperadminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen] = useState(true);
 
   return (
     <LayoutProvider role="Superadmin">

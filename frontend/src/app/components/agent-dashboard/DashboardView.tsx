@@ -134,7 +134,7 @@ const generateActivity = (tickets: Ticket[], chats: Chat[]): ActivityItem[] => {
   const activities: ActivityItem[] = [];
   
   // Add ticket activities
-  tickets.slice(0, 5).forEach((ticket, index) => {
+  tickets.slice(0, 5).forEach((ticket) => {
     const type = ticket.status === 'escalated' ? 'ticket_escalated' : 
                  ticket.status === 'open' ? 'ticket_created' : 'ticket_assigned';
     
@@ -193,7 +193,6 @@ export function DashboardView({
   getProjectById,
   existingTeamMembers,
   basePath,
-  role,
 }: DashboardViewProps) {
   const navigate = useNavigate();
   
@@ -215,7 +214,7 @@ export function DashboardView({
     { name: 'Sun', tickets: 0 },
   ]);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [_tickets, setTickets] = useState<Ticket[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasRealData, setHasRealData] = useState(false);

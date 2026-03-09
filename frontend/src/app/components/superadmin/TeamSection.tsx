@@ -63,7 +63,7 @@ export function TeamSection() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get<{ data: User[] }>('/superadmin/agents');
+      const response = await api.get<User[]>('/superadmin/agents');
       setUsers(response.data ?? []);
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -114,7 +114,7 @@ export function TeamSection() {
     try {
       const response = await api.put<{ success: boolean }>(`/superadmin/agents/${userId}`, { role: newRole.toLowerCase() });
       if (response.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole as User['role'] } : u));
         setEditRoleUserId(null);
         toast.success('Role updated');
       }

@@ -51,29 +51,20 @@ import {
   TrendingDown,
   Star,
   MessageCircle,
-  Ticket,
-  BarChart,
   User,
   Settings,
   MoreVertical,
   Edit,
-  Trash2,
   UserX,
   Shield,
-  Activity,
   Award,
-  Target,
-  Zap,
   ThumbsUp,
   MessageSquare,
   FileText,
-  Users,
-  Home,
   Bell,
   LogOut,
   Search,
   Menu,
-  X,
   FolderOpen,
   ChevronDown,
   Plus,
@@ -81,11 +72,9 @@ import {
   Inbox,
   CreditCard,
 } from 'lucide-react';
-import { AreaChart, Area, BarChart as RechartsBar, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { mockTickets, mockProjects } from '../../data/mockData';
 import { useAgentStatus, agentStatusStore } from '../../data/agentStatusStore';
-import { Sheet, SheetContent } from '../../components/ui/sheet';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { useLayout } from '../../components/layouts/LayoutContext';
 
 export default function AgentDetails() {
@@ -97,7 +86,7 @@ export default function AgentDetails() {
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [assignProjectDialogOpen, setAssignProjectDialogOpen] = useState(false);
   const [changeRoleDialogOpen, setChangeRoleDialogOpen] = useState(false);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [, setStatusDialogOpen] = useState(false);
 
   // Derive basePath from URL
   const pathSegments = location.pathname.split('/');
@@ -254,14 +243,7 @@ export default function AgentDetails() {
   };
 
   // Performance data over time
-  const performanceData = [
-    { month: 'Jul', tickets: 45, satisfaction: 94 },
-    { month: 'Aug', tickets: 52, satisfaction: 93 },
-    { month: 'Sep', tickets: 48, satisfaction: 95 },
-    { month: 'Oct', tickets: 61, satisfaction: 96 },
-    { month: 'Nov', tickets: 58, satisfaction: 97 },
-    { month: 'Dec', tickets: 67, satisfaction: 96 },
-  ];
+  // Performance data reserved for future charts
 
   // Response time data
   const responseTimeData = [
@@ -286,60 +268,6 @@ export default function AgentDetails() {
     { time: '3 hours ago', action: 'Added note', details: 'T-1015 - Escalated to technical team', icon: FileText, color: 'text-gray-600' },
     { time: '4 hours ago', action: 'Resolved ticket', details: 'T-1009 - Password reset completed', icon: CheckCircle, color: 'text-green-600' },
   ];
-
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-gray-900">
-      <div className="flex h-16 items-center justify-center border-b border-gray-800">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-            <span className="text-sm font-bold text-white">LC</span>
-          </div>
-        </Link>
-      </div>
-
-      <nav className="flex-1 space-y-2 p-3 pt-6">
-        <Link to="/agent/dashboard">
-          <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-800">
-            <Home className="h-6 w-6" />
-            <span className="text-xs">Home</span>
-          </button>
-        </Link>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors relative text-gray-400 hover:text-white hover:bg-gray-800">
-          <MessageCircle className="h-6 w-6" />
-          <span className="text-xs">Chats</span>
-          <Badge className="absolute top-2 right-2 bg-red-600 text-white h-3.5 px-1 text-[8px] min-w-[18px] flex items-center justify-center">24</Badge>
-        </button>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors relative text-gray-400 hover:text-white hover:bg-gray-800">
-          <Ticket className="h-6 w-6" />
-          <span className="text-xs">Tickets</span>
-          <Badge className="absolute top-2 right-2 bg-red-600 text-white h-3.5 px-1 text-[8px] min-w-[18px] flex items-center justify-center">156</Badge>
-        </button>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-800">
-          <FileText className="h-6 w-6" />
-          <span className="text-xs">Knowledge</span>
-        </button>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-800">
-          <BarChart className="h-6 w-6" />
-          <span className="text-xs">Reports</span>
-        </button>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors bg-blue-600 text-white">
-          <Users className="h-6 w-6" />
-          <span className="text-xs">Users</span>
-        </button>
-        <button className="w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-800">
-          <Settings className="h-6 w-6" />
-          <span className="text-xs">Settings</span>
-        </button>
-      </nav>
-
-      <div className="border-t border-gray-800 p-4">
-        <div className="flex flex-col items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-green-500"></span>
-          <span className="text-xs text-gray-400">Online</span>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -608,7 +536,7 @@ export default function AgentDetails() {
                   <CardContent>
                     <div className="space-y-3">
                       {assignedProjects.length > 0 ? (
-                        assignedProjects.map((projectName, index) => {
+                        assignedProjects.map((projectName) => {
                           const projectData = mockProjects.find(p => p.name === projectName);
                           return (
                             <div key={projectName} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

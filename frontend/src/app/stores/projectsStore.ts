@@ -63,7 +63,6 @@ export const useProjectsStore = create<ProjectsState>()(
         
         // Skip if cached data is fresh and company hasn't changed
         if (lastFetched && Date.now() - lastFetched < CACHE_DURATION && get().projects.length > 0 && targetCompanyId === currentCompanyId) {
-          console.log('Using cached projects');
           return;
         }
 

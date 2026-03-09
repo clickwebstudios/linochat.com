@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { 
   MessageCircle, 
@@ -19,7 +18,6 @@ import {
   DashboardLayout, 
   DashboardHeader, 
   DashboardStats,
-  StatCard,
   DashboardContent,
   DashboardSection 
 } from '../../components/layouts';
@@ -42,7 +40,7 @@ import {
  */
 export default function ExampleDashboard() {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [, setActiveSection] = useState('dashboard');
 
   // Sample data
   const chartData = [
@@ -144,9 +142,7 @@ export default function ExampleDashboard() {
   return (
     <DashboardLayout
       sidebar={
-        <AdminSidebar 
-          activeSection={activeSection} 
-          onNavigate={setActiveSection}
+        <AdminSidebar
           role="Admin"
         />
       }
@@ -156,7 +152,7 @@ export default function ExampleDashboard() {
           notificationsList={notifications}
           unreadCount={2}
           actions={headerActions}
-          onSearch={(query) => console.log('Searching:', query)}
+          onSearch={() => {}}
           search={
             <div className="flex items-center gap-4 flex-1">
               <div className="relative flex-1 max-w-md">
@@ -164,7 +160,7 @@ export default function ExampleDashboard() {
                 <Input
                   placeholder="Search chats, tickets, customers..."
                   className="pl-10 bg-gray-50 border-gray-200"
-                  onChange={(e) => console.log('Searching:', e.target.value)}
+                  onChange={() => {}}
                 />
               </div>
             </div>

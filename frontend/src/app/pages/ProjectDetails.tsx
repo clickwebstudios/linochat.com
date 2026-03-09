@@ -26,7 +26,7 @@ import {
   ExternalLink,
   FolderKanban,
 } from 'lucide-react';
-import { mockCompanies, mockAgents, mockChats, mockTickets } from '../data/mockData';
+import { mockCompanies, mockAgents, mockChats } from '../data/mockData';
 import { SuperadminTopbar } from '../components/superadmin/SuperadminTopbar';
 import { useLayout } from '../components/layouts/LayoutContext';
 import { useAuthStore } from '../stores/authStore';
@@ -85,7 +85,7 @@ export default function ProjectDetails() {
   
   // Load project agents from API
   const [projectAgents, setProjectAgents] = useState<any[]>([]);
-  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [, setLoadingAgents] = useState(false);
 
   const loadProjectAgents = useCallback(async () => {
     if (!projectId) return;
@@ -93,7 +93,7 @@ export default function ProjectDetails() {
     try {
       // Both regular and superadmin use the same agents endpoint (superadmin role is checked server-side)
       const agentsEndpoint = `/projects/${projectId}/agents`;
-      const response = await api.get(agentsEndpoint);
+      const response = await api.get<any[]>(agentsEndpoint);
       if (response.success) {
         setProjectAgents(response.data || []);
       }
@@ -109,7 +109,7 @@ export default function ProjectDetails() {
     loadProjectAgents();
   }, [loadProjectAgents]);
   
-  const projectChatsList = project ? mockChats.filter(c => c.project_id === project.id) : [];
+  const projectChatsList = project ? mockChats.filter(c => c.projectId === project.id) : [];
 
   const { toggleMobileSidebar } = useLayout();
   const { user, logout } = useAuthStore();

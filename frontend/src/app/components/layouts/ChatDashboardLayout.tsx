@@ -4,7 +4,6 @@ import { AdminSidebar } from '../AdminSidebar';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Card, CardContent } from '../ui/card';
 import { MessageCircle, Phone, Mail, Clock } from 'lucide-react';
 
 interface ChatDashboardLayoutProps {
@@ -75,7 +74,7 @@ interface ChatDashboardLayoutProps {
  * </ChatDashboardLayout>
  */
 export function ChatDashboardLayout({
-  activeSection = 'chats',
+  activeSection: _activeSection = 'chats',
   user = {
     name: 'Agent',
     email: 'agent@linochat.com',
@@ -88,7 +87,7 @@ export function ChatDashboardLayout({
   headerActions,
   activeChatCount = 0,
   notificationCount = 0,
-  onNavigate,
+  onNavigate: _onNavigate,
 }: ChatDashboardLayoutProps) {
   // Custom header with chat-specific actions
   const chatHeaderActions = headerActions || (
@@ -129,9 +128,7 @@ export function ChatDashboardLayout({
   return (
     <DashboardLayout
       sidebar={
-        <AdminSidebar 
-          activeSection={activeSection} 
-          onNavigate={onNavigate}
+        <AdminSidebar
           role="Admin"
         />
       }

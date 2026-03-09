@@ -18,13 +18,7 @@ interface AgentSidebarProps {
   ticketsCount?: number;
 }
 
-export function AgentSidebar({ activeSection = 'dashboard', onSectionChange, chatsCount = 0, ticketsCount = 0 }: AgentSidebarProps) {
-  const handleSectionClick = (section: Section) => {
-    if (onSectionChange) {
-      onSectionChange(section);
-    }
-  };
-
+export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, ticketsCount = 0 }: AgentSidebarProps) {
   return (
     <div className="flex h-full flex-col bg-gray-900">
       {/* Logo */}

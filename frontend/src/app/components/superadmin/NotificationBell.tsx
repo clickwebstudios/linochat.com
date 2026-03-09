@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
-import { notificationsData, type Notification, type NotificationType } from '../../data/notificationsData';
+import { notificationsData, type NotificationType } from '../../data/notificationsData';
 
 type NotificationFilter = 'all' | 'unread';
 

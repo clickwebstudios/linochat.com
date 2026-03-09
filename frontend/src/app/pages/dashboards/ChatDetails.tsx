@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
-import { Textarea } from '../../components/ui/textarea';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,22 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
   ArrowLeft,
   Send,
   Paperclip,
   MoreVertical,
   CheckCircle,
-  AlertCircle,
-  Clock,
-  Calendar,
-  User,
   Mail,
   Phone,
   MapPin,
@@ -41,18 +28,13 @@ import {
   MessageSquare,
   FileText,
   Bookmark,
-  Plus,
   Star,
-  Tag,
-  History,
   RefreshCw,
   ArrowUpRight,
   Ticket,
   X,
   Info,
 } from 'lucide-react';
-import { Sheet, SheetContent } from '../../components/ui/sheet';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { mockProjects } from '../../data/mockData';
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { api } from '../../api/client';
@@ -333,7 +315,7 @@ export default function ChatDetails() {
     isRead: boolean;
   }>>([]);
   const [chat, setChat] = useState<any>(null);
-  const [chatLoading, setChatLoading] = useState(true);
+  const [, setChatLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch real chat data from API
@@ -524,8 +506,8 @@ export default function ChatDetails() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (basePath === '/superadmin' && mockChat) {
-                        const project = mockProjects.find(p => p.id === mockChat.projectId);
+                      if (basePath === '/superadmin' && chat) {
+                        const project = mockProjects.find((p: any) => p.id === chat.projectId);
                         if (project?.companyId) {
                           navigate('/superadmin/companies', {
                             state: { viewingCompanyId: project.companyId, companyDetailTab: 'chats' },

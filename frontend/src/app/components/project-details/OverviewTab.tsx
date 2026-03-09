@@ -46,7 +46,7 @@ const chatVolumeData = [
   { hour: '5pm', chats: 18 },
 ];
 
-export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList, onAddMemberClick }: OverviewTabProps) {
+export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList: _projectChatsList, onAddMemberClick }: OverviewTabProps) {
   const navigate = useNavigate();
 
   return (

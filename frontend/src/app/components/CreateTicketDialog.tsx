@@ -10,7 +10,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import {
@@ -35,12 +34,6 @@ import { api } from '../api/client';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../stores/projectsStore';
 import { TICKET_CATEGORIES } from '../lib/constants';
 import { toast } from 'sonner';
-
-interface Project {
-  id: string;
-  name: string;
-  color: string;
-}
 
 interface NewTicket {
   subject: string;

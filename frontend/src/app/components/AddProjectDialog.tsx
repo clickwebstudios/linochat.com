@@ -168,7 +168,7 @@ export function AddProjectDialog({
         throw new Error(response.message || 'Failed to analyze website');
       }
 
-      const data = response.data;
+      const data = response.data as AnalyzedData;
       setAnalyzedData(data);
       setProjectName(data.name);
       setProjectDescription(data.description);
@@ -228,7 +228,7 @@ export function AddProjectDialog({
 
       setCreationDone(true);
       setTimeout(() => {
-        onProjectCreated?.(response.data);
+        onProjectCreated?.(response.data as { id: string; name: string; description: string; color: string; website: string });
         handleClose(false);
       }, 1500);
     } catch (error) {

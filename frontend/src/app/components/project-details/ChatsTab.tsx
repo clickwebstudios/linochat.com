@@ -53,9 +53,10 @@ export function ChatsTab({ basePath, projectId }: ChatsTabProps) {
   useEffect(() => {
     const loadChats = async () => {
       try {
-        const response = await api.get(`/projects/${projectId}/chats`);
+        const response = await api.get<ChatItem[] | { data: ChatItem[] }>(`/projects/${projectId}/chats`);
         if (response.success) {
-          const chatsData = response.data?.data || response.data || [];
+          const d = response.data as any;
+          const chatsData: ChatItem[] = d?.data || d || [];
           setChats(chatsData);
         }
       } catch (error) {
