@@ -131,11 +131,10 @@ export function ChatMessageArea({
     }
   };
 
-  // Filter and deduplicate messages
+  // Deduplicate messages by id only — never filter system messages by chat status
   const processedMessages = (() => {
-    const filtered = messages.filter((m) => !(m.sender_type === 'system' && m.content === 'Transferring to human agent...' && activeChat?.status !== 'waiting'));
     const seen = new Set<string>();
-    return filtered.filter((m) => {
+    return messages.filter((m) => {
       const key = String(m.id);
       if (seen.has(key)) return false;
       seen.add(key);
