@@ -8,6 +8,7 @@ use App\Events\HumanRequested;
 use App\Events\MessageSent;
 use App\Events\NewChatForAgent;
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\Project;
@@ -176,6 +177,18 @@ class WidgetController extends Controller
                         (string) $project->id,
                         $agentIds
                     ))->toOthers();
+
+                    // Persist a notification for each agent
+                    $customerName = $chat->customer_name ?? 'A customer';
+                    $projectName  = $project->name ?? 'your project';
+                    foreach ($agentIds as $agentId) {
+                        AppNotification::create([
+                            'user_id'     => $agentId,
+                            'type'        => 'user',
+                            'title'       => 'New chat',
+                            'description' => "{$customerName} started a chat in {$projectName}.",
+                        ]);
+                    }
                 }
             }
         }
@@ -589,6 +602,21 @@ class WidgetController extends Controller
 
         // Notify all project agents so transfer modal opens automatically
         broadcast(new HumanRequested($chat->load('project')));
+
+        // Persist a notification for all project agents
+        $project = Project::with('agents')->find($chat->project_id);
+        if ($project) {
+            $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values();
+            $customerName = $chat->customer_name ?? 'A customer';
+            foreach ($agentIds as $agentId) {
+                AppNotification::create([
+                    'user_id'     => $agentId,
+                    'type'        => 'alert',
+                    'title'       => 'Human agent requested',
+                    'description' => "{$customerName} is requesting a human agent.",
+                ]);
+            }
+        }
 
         return response()->json([
             'success' => true,

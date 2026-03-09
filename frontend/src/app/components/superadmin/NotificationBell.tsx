@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { initEcho } from '../../lib/echo';
+import { useAuthStore } from '../../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -47,30 +49,68 @@ export function getNotificationBg(type: NotificationType) {
   }
 }
 
-const POLL_INTERVAL = 30_000;
+// Fallback poll interval (5 min) — used when WebSocket is unavailable
+const FALLBACK_POLL_INTERVAL = 5 * 60_000;
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const [filter, setFilter] = useState<NotificationFilter>('all');
   const [items, setItems] = useState<Notification[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const echoChannelRef = useRef<ReturnType<typeof initEcho> | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await notificationService.getAll();
       if (res?.data) {
-        setItems((res.data as Notification[]).slice(0, 7));
+        setItems((res.data as Notification[]).slice(0, 50));
       }
     } catch {
       // Non-critical — silently fail
     }
   }, []);
 
+  // Prepend a new notification received via WebSocket
+  const prependNotification = useCallback((payload: Record<string, unknown>) => {
+    const n: Notification = {
+      id: payload.id as number,
+      user_id: user?.id ? Number(user.id) : 0,
+      type: payload.type as string,
+      title: payload.title as string,
+      message: payload.message as string,
+      is_read: false,
+      created_at: payload.created_at as string,
+    };
+    setItems((prev) => [n, ...prev].slice(0, 50));
+  }, []);
+
   useEffect(() => {
     fetchNotifications();
-    pollRef.current = setInterval(fetchNotifications, POLL_INTERVAL);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchNotifications]);
+
+    // Try to connect via WebSocket
+    const echo = initEcho();
+    if (echo && user?.id) {
+      const channel = echo.private(`agent.${user.id}`);
+      channel.listen('.notification.created', (payload: Record<string, unknown>) => {
+        prependNotification(payload);
+      });
+      echoChannelRef.current = echo;
+
+      // Fallback poll at reduced frequency in case some events are missed
+      pollRef.current = setInterval(fetchNotifications, FALLBACK_POLL_INTERVAL);
+    } else {
+      // No WebSocket — use original 30s polling
+      pollRef.current = setInterval(fetchNotifications, 30_000);
+    }
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (echoChannelRef.current && user?.id) {
+        try { echoChannelRef.current.leave(`agent.${user.id}`); } catch { /* ignore */ }
+      }
+    };
+  }, [fetchNotifications, prependNotification, user?.id]);
 
   const unreadCount = items.filter(n => !n.is_read).length;
   const filtered = filter === 'all' ? items : items.filter(n => !n.is_read);
