@@ -636,7 +636,32 @@ export function ChatsView({
           onSendMessage={handleSendMessage}
           onTakeOver={executeTakeOver}
           onShowTransferDialog={() => setShowTransferDialog(true)}
-          onShowCreateTicketDialog={() => setShowCreateTicketDialog(true)}
+          onShowCreateTicketDialog={() => {
+            // Pre-fill ticket with current chat context
+            const lastMessages = messages
+              .filter((m) => m.sender_type !== 'system')
+              .slice(-10)
+              .map((m) => {
+                const sender =
+                  m.sender_type === 'customer'
+                    ? (activeChat?.customer_name || activeChat?.customer || 'Customer')
+                    : m.sender_type === 'ai'
+                    ? 'AI'
+                    : 'Agent';
+                return `[${sender}]: ${m.content}`;
+              })
+              .join('\n');
+            setNewTicket({
+              subject: '',
+              priority: 'medium',
+              category: '',
+              description: lastMessages,
+              customerName: activeChat?.customer_name || activeChat?.customer || '',
+              customerEmail: activeChat?.customer_email || '',
+              projectId: activeChat?.project_id || activeChat?.projectId || '',
+            });
+            setShowCreateTicketDialog(true);
+          }}
           onShowTakeoverDialog={() => setShowTakeoverDialog(true)}
           sendAgentTyping={sendAgentTyping}
           formatRelativeTime={formatRelativeTime}

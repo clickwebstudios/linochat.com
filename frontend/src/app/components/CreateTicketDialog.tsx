@@ -354,7 +354,7 @@ export function CreateTicketDialog({
           <div className="space-y-2">
             <Label htmlFor="ticket-category">Category</Label>
             <Select
-              value={newTicket.category}
+              value={newTicket.category || undefined}
               onValueChange={(value) => handleFieldChange('category', value)}
             >
               <SelectTrigger id="ticket-category">

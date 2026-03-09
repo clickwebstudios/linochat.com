@@ -246,7 +246,7 @@ export function ChatDialogs({
             </div>
             <div className="space-y-2">
               <Label htmlFor="ticket-category">Category</Label>
-              <Select value={newTicket.category} onValueChange={(value) => setNewTicket({ ...newTicket, category: value })}>
+              <Select value={newTicket.category || undefined} onValueChange={(value) => setNewTicket({ ...newTicket, category: value })}>
                 <SelectTrigger id="ticket-category"><SelectValue placeholder="Select a category" /></SelectTrigger>
                 <SelectContent>
                   {TICKET_CATEGORIES.map((category) => (
