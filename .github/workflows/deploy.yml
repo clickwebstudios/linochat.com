@@ -11,16 +11,6 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Notify Slack - Deploy Started
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": ":rocket: *Deploy started* for `linochat.com`\nCommit: `${{ github.sha }}` by *${{ github.actor }}*\n>${{ github.event.head_commit.message }}"
-            }
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
