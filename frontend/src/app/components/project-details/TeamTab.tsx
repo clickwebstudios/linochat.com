@@ -24,17 +24,56 @@ import {
   UserPlus,
   Settings,
   MoreVertical,
+  Clock,
+  RefreshCw,
+  X,
+  Mail,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { api } from '../../api/client';
+
+interface Invitation {
+  id: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+}
 
 interface TeamTabProps {
   project: any;
   isSuperadmin: boolean;
   projectAgents: any[];
+  pendingInvitations: Invitation[];
   onAddMemberClick: () => void;
+  onInvitationsChange: () => void;
 }
 
-export function TeamTab({ project, isSuperadmin, projectAgents, onAddMemberClick }: TeamTabProps) {
+export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitations, onAddMemberClick, onInvitationsChange }: TeamTabProps) {
   const navigate = useNavigate();
+
+  const handleResend = async (id: number) => {
+    try {
+      await api.post(`/agent/invitations/${id}/resend`);
+      toast.success('Invitation resent');
+      onInvitationsChange();
+    } catch {
+      toast.error('Failed to resend invitation');
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    try {
+      await api.delete(`/invitations/${id}`);
+      toast.success('Invitation cancelled');
+      onInvitationsChange();
+    } catch {
+      toast.error('Failed to cancel invitation');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -197,6 +236,91 @@ export function TeamTab({ project, isSuperadmin, projectAgents, onAddMemberClick
           )}
         </CardContent>
       </Card>
+
+      {/* Pending Invitations */}
+      {pendingInvitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Mail className="h-4 w-4 text-amber-500" />
+              Pending Invitations
+              <Badge variant="secondary" className="ml-1">{pendingInvitations.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Sent</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingInvitations.map((inv) => {
+                  const isExpired = new Date(inv.expires_at) < new Date();
+                  const sentDate = new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  const expiresDate = new Date(inv.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  return (
+                    <TableRow key={inv.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-amber-100 text-amber-700">
+                              <Clock className="h-4 w-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <span className="font-medium">{inv.email}</span>
+                            {(inv.first_name || inv.last_name) && (
+                              <p className="text-xs text-gray-400">{`${inv.first_name ?? ''} ${inv.last_name ?? ''}`.trim()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{inv.role}</Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-500 text-sm">{sentDate}</TableCell>
+                      <TableCell>
+                        {isExpired ? (
+                          <Badge variant="destructive" className="text-xs">Expired</Badge>
+                        ) : (
+                          <span className="text-sm text-gray-500">{expiresDate}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => handleResend(inv.id)}
+                          >
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                            Resend
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-600"
+                            onClick={() => handleCancel(inv.id)}
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug } from 'lucide-react';
+import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -22,6 +22,11 @@ interface FrubixIntegration {
   connected_at?: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 const comingSoonIntegrations = [
   { name: 'Slack', icon: '\u{1F4AC}' },
   { name: 'Salesforce', icon: '\u{2601}\u{FE0F}' },
@@ -35,6 +40,7 @@ const comingSoonIntegrations = [
 
 export function IntegrationsView() {
   const storeProject = useAuthStore((s) => s.project);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string | null>(storeProject?.id ?? null);
   const [frubix, setFrubix] = useState<FrubixIntegration | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -42,21 +48,18 @@ export function IntegrationsView() {
 
   const isConnected = frubix?.enabled === true;
 
-  // If no project in auth store, fetch user's first project
+  // Fetch all projects for the selector
   useEffect(() => {
-    if (storeProject?.id) {
-      setProjectId(storeProject.id);
-      return;
-    }
     api.get<any[]>('/projects')
       .then((res) => {
-        const projects = (res as any)?.data ?? [];
-        if (projects.length > 0) {
-          setProjectId(projects[0].id);
+        const list: Project[] = ((res as any)?.data ?? []).map((p: any) => ({ id: String(p.id), name: p.name }));
+        setProjects(list);
+        if (!projectId && list.length > 0) {
+          setProjectId(String(list[0].id));
         }
       })
       .catch(() => {});
-  }, [storeProject?.id]);
+  }, []);
 
   // Load integration settings
   useEffect(() => {
@@ -138,9 +141,25 @@ export function IntegrationsView() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-900">Integrations</h2>
-        <p className="text-gray-500 mt-1">Connect LinoChat with your favorite tools and services.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Integrations</h2>
+          <p className="text-gray-500 mt-1">Connect LinoChat with your favorite tools and services.</p>
+        </div>
+        {projects.length > 1 && (
+          <div className="relative">
+            <select
+              value={projectId ?? ''}
+              onChange={(e) => { setProjectId(e.target.value); setFrubix(null); }}
+              className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          </div>
+        )}
       </div>
 
       {/* Frubix Integration */}

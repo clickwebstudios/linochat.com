@@ -2,6 +2,15 @@ import { Component, ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 
+function isChunkLoadError(error: Error): boolean {
+  return (
+    error.name === 'ChunkLoadError' ||
+    error.message.includes('dynamically imported module') ||
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Loading chunk')
+  );
+}
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -21,6 +30,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     console.error('[ErrorBoundary]', error, info.componentStack);
+    // Auto-reload once on chunk load failures (stale deploy)
+    if (isChunkLoadError(error) && !sessionStorage.getItem('chunk_reload')) {
+      sessionStorage.setItem('chunk_reload', '1');
+      window.location.reload();
+    }
   }
 
   reset = () => this.setState({ hasError: false, error: null });

@@ -86,12 +86,12 @@ export default function ProjectDetails() {
   // Load project agents from API
   const [projectAgents, setProjectAgents] = useState<any[]>([]);
   const [, setLoadingAgents] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
 
   const loadProjectAgents = useCallback(async () => {
     if (!projectId) return;
     setLoadingAgents(true);
     try {
-      // Both regular and superadmin use the same agents endpoint (superadmin role is checked server-side)
       const agentsEndpoint = `/projects/${projectId}/agents`;
       const response = await api.get<any[]>(agentsEndpoint);
       if (response.success) {
@@ -105,9 +105,20 @@ export default function ProjectDetails() {
     }
   }, [projectId, project?.company_id]);
 
+  const loadInvitations = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const response = await api.get<any[]>(`/projects/${projectId}/invitations`);
+      setPendingInvitations((response as any)?.data ?? []);
+    } catch {
+      setPendingInvitations([]);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     loadProjectAgents();
-  }, [loadProjectAgents]);
+    loadInvitations();
+  }, [loadProjectAgents, loadInvitations]);
   
   const projectChatsList = project ? mockChats.filter(c => c.projectId === project.id) : [];
 
@@ -379,7 +390,9 @@ export default function ProjectDetails() {
                 project={project}
                 isSuperadmin={isSuperadmin}
                 projectAgents={projectAgents}
+                pendingInvitations={pendingInvitations}
                 onAddMemberClick={() => setAddMemberDialogOpen(true)}
+                onInvitationsChange={loadInvitations}
               />
             </TabsContent>
 
@@ -418,7 +431,7 @@ export default function ProjectDetails() {
         open={addMemberDialogOpen}
         onOpenChange={setAddMemberDialogOpen}
         projectId={projectId}
-        onSuccess={loadProjectAgents}
+        onSuccess={() => { loadProjectAgents(); loadInvitations(); }}
       />
 
       <CreateTicketDialogPD
