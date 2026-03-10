@@ -56,7 +56,10 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": ":white_check_mark: <https://linochat.com|linochat.com> deployment success\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              "attachments": [{
+                "color": "#2eb886",
+                "text": ":white_check_mark: <https://linochat.com|linochat.com> deployment success\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              }]
             }
 
       - name: Notify Slack - Deploy Failed
@@ -67,5 +70,8 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": ":x: <https://linochat.com|linochat.com> deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              "attachments": [{
+                "color": "#dc3545",
+                "text": ":x: <https://linochat.com|linochat.com> deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              }]
             }
