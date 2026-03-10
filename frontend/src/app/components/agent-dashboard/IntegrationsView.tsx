@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Plug, ExternalLink, CheckCircle2, Settings, Loader2, Unplug, Mail, Lock, Globe } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -18,11 +16,9 @@ function FrubixLogo({ className }: { className?: string }) {
   );
 }
 
-interface FrubixSettings {
+interface FrubixIntegration {
   enabled?: boolean;
   url?: string;
-  email?: string;
-  password?: string;
   connected_at?: string;
 }
 
@@ -39,45 +35,72 @@ const comingSoonIntegrations = [
 
 export function IntegrationsView() {
   const project = useAuthStore((s) => s.project);
-  const [frubix, setFrubix] = useState<FrubixSettings | null>(null);
-  const [, setLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [frubix, setFrubix] = useState<FrubixIntegration | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-
-  const [formUrl, setFormUrl] = useState('https://frubix.com');
-  const [formEmail, setFormEmail] = useState('');
-  const [formPassword, setFormPassword] = useState('');
 
   const isConnected = frubix?.enabled === true;
 
+  // Load integration settings
   useEffect(() => {
     if (!project?.id) return;
-    setLoading(true);
     api.get<Record<string, any>>(`/projects/${project.id}/integrations`)
       .then((res) => {
         setFrubix((res.data as any)?.frubix ?? null);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, [project?.id]);
 
+  // Listen for OAuth callback message from popup
+  const handleMessage = useCallback((event: MessageEvent) => {
+    if (event.data?.type === 'frubix-oauth-callback') {
+      if (event.data.success) {
+        setFrubix({ enabled: true, connected_at: new Date().toISOString() });
+        toast.success('Frubix connected successfully!');
+      } else {
+        toast.error(event.data.error || 'Failed to connect Frubix');
+      }
+      setConnecting(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [handleMessage]);
+
   const handleConnect = async () => {
-    if (!project?.id || !formEmail || !formPassword) return;
-    setSaving(true);
+    if (!project?.id) return;
+    setConnecting(true);
+
     try {
-      const res = await api.put<any>(`/projects/${project.id}/integrations/frubix`, {
-        url: formUrl,
-        email: formEmail,
-        password: formPassword,
-      });
-      setFrubix({ enabled: true, ...((res as any).data ?? {}) });
-      setShowDialog(false);
-      toast.success('Frubix connected successfully!');
+      const res = await api.get<{ url: string }>(`/projects/${project.id}/integrations/frubix/authorize`);
+      const authorizeUrl = (res.data as any)?.url;
+
+      if (!authorizeUrl) {
+        toast.error('Could not get Frubix authorization URL');
+        setConnecting(false);
+        return;
+      }
+
+      // Open popup for Frubix login + consent
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      window.open(
+        authorizeUrl,
+        'frubix-oauth',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`,
+      );
+
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        setConnecting(false);
+      }, 300000);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to connect to Frubix');
-    } finally {
-      setSaving(false);
+      toast.error(err.message || 'Failed to initiate Frubix connection');
+      setConnecting(false);
     }
   };
 
@@ -93,13 +116,6 @@ export function IntegrationsView() {
     } finally {
       setDisconnecting(false);
     }
-  };
-
-  const openConnectDialog = () => {
-    setFormUrl(frubix?.url || 'https://frubix.com');
-    setFormEmail(frubix?.email || '');
-    setFormPassword('');
-    setShowDialog(true);
   };
 
   return (
@@ -138,7 +154,6 @@ export function IntegrationsView() {
                   {isConnected && frubix?.connected_at && (
                     <p className="text-xs text-gray-400 mt-1">
                       Connected {new Date(frubix.connected_at).toLocaleDateString()}
-                      {frubix.email && ` as ${frubix.email}`}
                     </p>
                   )}
                 </div>
@@ -151,10 +166,6 @@ export function IntegrationsView() {
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Open Frubix
                       </a>
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={openConnectDialog}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
                     </Button>
                     <Button
                       variant="outline"
@@ -169,9 +180,22 @@ export function IntegrationsView() {
                   </>
                 )}
                 {!isConnected && (
-                  <Button onClick={openConnectDialog} className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plug className="h-4 w-4 mr-2" />
-                    Connect
+                  <Button
+                    onClick={handleConnect}
+                    disabled={connecting}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {connecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Waiting for authorization...
+                      </>
+                    ) : (
+                      <>
+                        <Plug className="h-4 w-4 mr-2" />
+                        Connect
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
@@ -195,72 +219,6 @@ export function IntegrationsView() {
           ))}
         </div>
       </div>
-
-      {/* Connect Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FrubixLogo className="h-6 w-6" />
-              {isConnected ? 'Frubix Settings' : 'Connect Frubix'}
-            </DialogTitle>
-            <DialogDescription>
-              Enter your Frubix account credentials. Leads will be created automatically when new tickets are submitted.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Frubix URL</label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={formUrl}
-                  onChange={(e) => setFormUrl(e.target.value)}
-                  placeholder="https://frubix.com"
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="password"
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-            <Button
-              onClick={handleConnect}
-              disabled={saving || !formEmail || !formPassword}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {saving ? 'Connecting...' : isConnected ? 'Update' : 'Connect'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

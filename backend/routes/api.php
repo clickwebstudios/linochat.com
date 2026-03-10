@@ -267,10 +267,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
-    Route::put('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'saveFrubix']);
+    Route::get('/projects/{projectId}/integrations/frubix/authorize', [IntegrationsController::class, 'frubixAuthorizeUrl']);
     Route::delete('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'disconnectFrubix']);
-    Route::post('/projects/{projectId}/integrations/frubix/test', [IntegrationsController::class, 'testFrubix']);
-    Route::post('/agent/tickets/{ticketId}/frubix-lead', [IntegrationsController::class, 'createFrubixLead']);
+    Route::post('/integrations/frubix/callback', [IntegrationsController::class, 'frubixCallback']);
 });
 
 // Alternative route for messages (with 's')

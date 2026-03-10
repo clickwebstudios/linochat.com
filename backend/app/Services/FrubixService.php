@@ -3,89 +3,86 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class FrubixService
 {
-    private string $baseUrl;
-    private string $email;
-    private string $password;
-
-    public function __construct(string $baseUrl, string $email, string $password)
+    /**
+     * Create a lead using OAuth access token.
+     */
+    public static function createLead(array $integrationConfig, array $leadData): array
     {
-        $this->baseUrl = rtrim($baseUrl, '/');
-        $this->email = $email;
-        $this->password = $password;
-    }
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
 
-    public static function fromProjectIntegrations(array $integrations): ?self
-    {
-        $frubix = $integrations['frubix'] ?? null;
-
-        if (!$frubix || empty($frubix['enabled']) || empty($frubix['email']) || empty($frubix['password'])) {
-            return null;
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
         }
 
-        return new self(
-            $frubix['url'] ?? 'https://frubix.com',
-            $frubix['email'],
-            $frubix['password'],
-        );
-    }
+        // Try with current access token
+        $response = Http::withToken($accessToken)
+            ->post("{$baseUrl}/api/v1/leads", $leadData);
 
-    private function getAccessToken(): string
-    {
-        $cacheKey = 'frubix_token_' . md5($this->email);
-
-        return Cache::remember($cacheKey, now()->addMinutes(55), function () {
-            $response = Http::post("{$this->baseUrl}/api/auth/login", [
-                'email'    => $this->email,
-                'password' => $this->password,
-            ]);
-
-            if (!$response->successful()) {
-                throw new \RuntimeException('Frubix auth failed: ' . $response->body());
+        // If 401, try refreshing the token
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->post("{$baseUrl}/api/v1/leads", $leadData);
             }
-
-            return $response->json('data.token') ?? $response->json('token');
-        });
-    }
-
-    public function testConnection(): bool
-    {
-        try {
-            // Clear cached token to force fresh login
-            Cache::forget('frubix_token_' . md5($this->email));
-            $this->getAccessToken();
-            return true;
-        } catch (\Throwable $e) {
-            Log::warning('Frubix connection test failed', ['error' => $e->getMessage()]);
-            return false;
         }
-    }
-
-    public function createLead(array $data): array
-    {
-        $token = $this->getAccessToken();
-
-        $response = Http::withToken($token)
-            ->post("{$this->baseUrl}/api/leads", $data);
 
         if (!$response->successful()) {
-            // Token might be expired, clear cache and retry once
-            if ($response->status() === 401) {
-                Cache::forget('frubix_token_' . md5($this->email));
-                $token = $this->getAccessToken();
-                $response = Http::withToken($token)
-                    ->post("{$this->baseUrl}/api/leads", $data);
-            }
-
-            if (!$response->successful()) {
-                throw new \RuntimeException('Failed to create Frubix lead: ' . $response->body());
-            }
+            throw new \RuntimeException('Failed to create Frubix lead: ' . $response->body());
         }
 
         return $response->json('data') ?? $response->json();
+    }
+
+    /**
+     * Exchange authorization code for tokens.
+     */
+    public static function exchangeCode(string $baseUrl, string $clientId, string $clientSecret, string $code, string $redirectUri): array
+    {
+        $response = Http::asForm()->post(rtrim($baseUrl, '/') . '/oauth/token', [
+            'grant_type'    => 'authorization_code',
+            'client_id'     => $clientId,
+            'client_secret' => $clientSecret,
+            'redirect_uri'  => $redirectUri,
+            'code'          => $code,
+        ]);
+
+        if (!$response->successful()) {
+            Log::error('Frubix token exchange failed', ['body' => $response->body()]);
+            throw new \RuntimeException('Failed to exchange Frubix authorization code');
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Refresh an expired access token.
+     */
+    public static function refreshToken(array $integrationConfig): ?array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+
+        try {
+            $response = Http::asForm()->post("{$baseUrl}/oauth/token", [
+                'grant_type'    => 'refresh_token',
+                'refresh_token' => $integrationConfig['refresh_token'],
+                'client_id'     => config('services.frubix.client_id'),
+                'client_secret' => config('services.frubix.client_secret'),
+            ]);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            Log::error('Frubix token refresh failed', ['error' => $e->getMessage()]);
+        }
+
+        return null;
     }
 }

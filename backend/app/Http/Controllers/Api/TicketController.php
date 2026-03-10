@@ -231,19 +231,23 @@ class TicketController extends Controller
 
         // Create lead in Frubix if integration is enabled
         if ($project) {
-            try {
-                $frubix = FrubixService::fromProjectIntegrations($project->integrations ?? []);
-                if ($frubix) {
-                    $frubix->createLead([
+            $frubixConfig = $project->integrations['frubix'] ?? null;
+            if ($frubixConfig && !empty($frubixConfig['enabled']) && !empty($frubixConfig['access_token'])) {
+                try {
+                    $lead = FrubixService::createLead($frubixConfig, [
                         'name'   => $ticket->customer_name ?: explode('@', $ticket->customer_email)[0],
                         'email'  => $ticket->customer_email,
+                        'source' => 'linochat',
                         'status' => 'new',
                         'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] {$ticket->subject}\n\n{$ticket->description}",
                     ]);
-                    Log::info('Frubix lead created for ticket', ['ticket_id' => $ticket->id]);
+                    Log::info('Frubix lead created for ticket', ['ticket_id' => $ticket->id, 'lead' => $lead]);
+
+                    // If token was refreshed, update stored tokens
+                    // (handled inside FrubixService if needed)
+                } catch (\Exception $e) {
+                    Log::error('Failed to create Frubix lead', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
                 }
-            } catch (\Exception $e) {
-                Log::error('Failed to create Frubix lead', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
             }
         }
 

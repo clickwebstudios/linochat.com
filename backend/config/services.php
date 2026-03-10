@@ -34,6 +34,13 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/api/auth/google/callback'),
     ],
 
+    'frubix' => [
+        'url'           => env('FRUBIX_URL', 'https://frubix.com'),
+        'client_id'     => env('FRUBIX_CLIENT_ID'),
+        'client_secret' => env('FRUBIX_CLIENT_SECRET'),
+        'redirect_uri'  => env('FRUBIX_REDIRECT_URI'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

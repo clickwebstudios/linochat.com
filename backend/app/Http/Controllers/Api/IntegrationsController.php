@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Services\FrubixService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class IntegrationsController extends Controller
 {
@@ -15,6 +16,9 @@ class IntegrationsController extends Controller
         return Project::find($projectId);
     }
 
+    /**
+     * Get integration settings for a project.
+     */
     public function getSettings(int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
@@ -22,62 +26,129 @@ class IntegrationsController extends Controller
 
         $integrations = $project->integrations ?? [];
 
-        // Never expose password
-        if (isset($integrations['frubix']['password'])) {
-            $integrations['frubix']['password'] = '••••••••';
+        // Never expose secrets
+        if (isset($integrations['frubix'])) {
+            unset($integrations['frubix']['access_token']);
+            unset($integrations['frubix']['refresh_token']);
         }
 
         return response()->json(['success' => true, 'data' => $integrations]);
     }
 
-    public function saveFrubix(Request $request, int $projectId): JsonResponse
+    /**
+     * Generate the Frubix OAuth authorize URL for the frontend to redirect to.
+     */
+    public function frubixAuthorizeUrl(Request $request, int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
         if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
-        $validated = $request->validate([
-            'url'      => 'required|url',
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
+        $clientId = config('services.frubix.client_id');
+        $frubixUrl = config('services.frubix.url', 'https://frubix.com');
+        $redirectUri = config('services.frubix.redirect_uri');
 
-        // Test connection first
-        $frubix = new FrubixService(
-            $validated['url'],
-            $validated['email'],
-            $validated['password'],
-        );
-
-        if (!$frubix->testConnection()) {
+        if (!$clientId || !$redirectUri) {
             return response()->json([
                 'success' => false,
-                'message' => 'Could not connect to Frubix. Please check your credentials.',
-            ], 422);
+                'message' => 'Frubix OAuth is not configured on this server.',
+            ], 500);
         }
 
-        $integrations = $project->integrations ?? [];
-        $integrations['frubix'] = [
-            'enabled'      => true,
-            'url'          => rtrim($validated['url'], '/'),
-            'email'        => $validated['email'],
-            'password'     => $validated['password'],
-            'connected_at' => now()->toISOString(),
-        ];
+        $state = base64_encode(json_encode([
+            'project_id' => $projectId,
+            'csrf' => csrf_token(),
+        ]));
 
-        $project->update(['integrations' => $integrations]);
+        // Store state in session for verification
+        session(['frubix_oauth_state' => $state]);
+
+        $params = http_build_query([
+            'client_id'     => $clientId,
+            'redirect_uri'  => $redirectUri,
+            'response_type' => 'code',
+            'scope'         => 'leads:write leads:read',
+            'state'         => $state,
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Frubix integration connected successfully.',
             'data'    => [
-                'enabled' => true,
-                'url' => $integrations['frubix']['url'],
-                'email' => $integrations['frubix']['email'],
-                'connected_at' => $integrations['frubix']['connected_at'],
+                'url' => "{$frubixUrl}/oauth/authorize?{$params}",
             ],
         ]);
     }
 
+    /**
+     * Handle the OAuth callback from Frubix — exchange code for tokens.
+     */
+    public function frubixCallback(Request $request): JsonResponse
+    {
+        $code = $request->input('code');
+        $state = $request->input('state');
+        $error = $request->input('error');
+
+        if ($error) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authorization denied: ' . ($request->input('error_description') ?? $error),
+            ], 400);
+        }
+
+        if (!$code || !$state) {
+            return response()->json(['success' => false, 'message' => 'Missing code or state'], 400);
+        }
+
+        // Decode state to get project_id
+        $stateData = json_decode(base64_decode($state), true);
+        $projectId = $stateData['project_id'] ?? null;
+
+        if (!$projectId) {
+            return response()->json(['success' => false, 'message' => 'Invalid state'], 400);
+        }
+
+        $project = Project::find($projectId);
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        try {
+            $tokens = FrubixService::exchangeCode(
+                config('services.frubix.url', 'https://frubix.com'),
+                config('services.frubix.client_id'),
+                config('services.frubix.client_secret'),
+                $code,
+                config('services.frubix.redirect_uri'),
+            );
+
+            $integrations = $project->integrations ?? [];
+            $integrations['frubix'] = [
+                'enabled'       => true,
+                'url'           => config('services.frubix.url', 'https://frubix.com'),
+                'access_token'  => $tokens['access_token'],
+                'refresh_token' => $tokens['refresh_token'] ?? null,
+                'token_type'    => $tokens['token_type'] ?? 'Bearer',
+                'expires_in'    => $tokens['expires_in'] ?? null,
+                'connected_at'  => now()->toISOString(),
+            ];
+
+            $project->update(['integrations' => $integrations]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Frubix connected successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Frubix OAuth callback failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to connect to Frubix. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Disconnect Frubix integration.
+     */
     public function disconnectFrubix(int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
@@ -88,30 +159,5 @@ class IntegrationsController extends Controller
         $project->update(['integrations' => $integrations]);
 
         return response()->json(['success' => true, 'message' => 'Frubix integration disconnected.']);
-    }
-
-    public function testFrubix(Request $request, int $projectId): JsonResponse
-    {
-        $project = $this->getProject($projectId);
-        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
-
-        $validated = $request->validate([
-            'url'      => 'required|url',
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        $frubix = new FrubixService(
-            $validated['url'],
-            $validated['email'],
-            $validated['password'],
-        );
-
-        $ok = $frubix->testConnection();
-
-        return response()->json([
-            'success' => true,
-            'data'    => ['connected' => $ok],
-        ]);
     }
 }
