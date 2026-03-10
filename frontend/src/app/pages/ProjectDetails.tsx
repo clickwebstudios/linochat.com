@@ -40,6 +40,7 @@ import { ActivityTab } from '../components/project-details/ActivityTab';
 import { ChatWidgetTab } from '../components/project-details/ChatWidgetTab';
 import { AISettingsTab } from '../components/project-details/AISettingsTab';
 import { SettingsTab } from '../components/project-details/SettingsTab';
+import { IntegrationsTab } from '../components/project-details/IntegrationsTab';
 
 // Extracted dialog components
 import { InviteMemberDialog, CreateTicketDialogPD, EditProjectDialog } from '../components/project-details/ProjectDetailsDialogs';
@@ -351,6 +352,7 @@ export default function ProjectDetails() {
               <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
               <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -403,6 +405,10 @@ export default function ProjectDetails() {
                 project={project}
                 onSaved={(updated) => setProject(updated)}
               />
+            </TabsContent>
+
+            <TabsContent value="integrations" className="space-y-4">
+              <IntegrationsTab project={project} />
             </TabsContent>
           </Tabs>
         </main>

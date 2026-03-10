@@ -55,6 +55,7 @@ import {
   Ticket,
   Tag,
   User,
+  Link2,
 } from 'lucide-react';
 import { mockProjects } from '../../data/mockData';
 import { useLayout } from '../../components/layouts/LayoutContext';
@@ -109,6 +110,8 @@ export default function TicketDetails() {
   const [escalateTo, setEscalateTo] = useState('');
   const [escalateReason, setEscalateReason] = useState('');
   const [isEscalating, setIsEscalating] = useState(false);
+  const [isCreatingFrubixLead, setIsCreatingFrubixLead] = useState(false);
+  const [frubixLeadCreated, setFrubixLeadCreated] = useState(false);
 
   const loadTicket = async () => {
     if (!ticketId) return;
@@ -336,6 +339,20 @@ export default function TicketDetails() {
     }
   };
 
+  const handleCreateFrubixLead = async () => {
+    if (!ticketId || isCreatingFrubixLead || frubixLeadCreated) return;
+    setIsCreatingFrubixLead(true);
+    try {
+      await api.post(`/agent/tickets/${ticketId}/frubix-lead`, {});
+      setFrubixLeadCreated(true);
+      toast.success('Lead created in Frubix!');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create Frubix lead');
+    } finally {
+      setIsCreatingFrubixLead(false);
+    }
+  };
+
   if (ticketLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -484,6 +501,17 @@ export default function TicketDetails() {
                       Escalate Ticket
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem
+                    onClick={handleCreateFrubixLead}
+                    disabled={isCreatingFrubixLead || frubixLeadCreated}
+                  >
+                    {isCreatingFrubixLead ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Link2 className="h-4 w-4 mr-2" />
+                    )}
+                    {frubixLeadCreated ? 'Lead Created in Frubix' : 'Create Frubix Lead'}
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="text-red-600" onClick={() => setDeleteDialogOpen(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Ticket

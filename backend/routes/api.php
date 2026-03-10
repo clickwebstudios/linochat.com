@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\OAuthController;
 use App\Http\Controllers\Api\OAuthClientController;
 use App\Http\Controllers\Api\PublicTicketController;
 use App\Http\Controllers\Api\InboundEmailController;
+use App\Http\Controllers\Api\IntegrationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -262,6 +263,13 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    // Integrations
+    Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
+    Route::put('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'saveFrubix']);
+    Route::delete('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'disconnectFrubix']);
+    Route::post('/projects/{projectId}/integrations/frubix/test', [IntegrationsController::class, 'testFrubix']);
+    Route::post('/agent/tickets/{ticketId}/frubix-lead', [IntegrationsController::class, 'createFrubixLead']);
 });
 
 // Alternative route for messages (with 's')

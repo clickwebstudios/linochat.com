@@ -17,6 +17,7 @@ class Project extends Model
         'color',
         'widget_settings',
         'ai_settings',
+        'integrations',
         'settings_updated_at',
         'website',
         'status',
@@ -26,6 +27,7 @@ class Project extends Model
     protected $casts = [
         'widget_settings' => 'array',
         'ai_settings'     => 'array',
+        'integrations'    => 'array',
         'settings_updated_at' => 'datetime',
     ];
 
