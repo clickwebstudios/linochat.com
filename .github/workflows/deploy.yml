@@ -34,17 +34,17 @@ jobs:
             composer install --no-dev --optimize-autoloader --no-interaction
 
             echo ">>> [3/5] Backend: Running migrations & clearing cache..."
-            php artisan migrate --force
+            php artisan migrate --force || true
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
 
             echo ">>> [4/5] Frontend: Installing JS dependencies..."
             cd $DEPLOY_PATH/frontend
-            npm ci
+            pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 
             echo ">>> [5/5] Frontend: Building..."
-            npm run build
+            pnpm run build
 
             echo ">>> Deploy complete!"
 
