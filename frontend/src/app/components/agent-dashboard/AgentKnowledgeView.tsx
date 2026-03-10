@@ -54,6 +54,8 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   const [articles, setArticles] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
 
+  const debouncedSearch = useDebounce(kbSearchQuery, 300);
+
   // Fetch projects on mount
   useEffect(() => {
     if (user) {
@@ -171,7 +173,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   }
 
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-  
+
   // Merge API articles with dynamic AI-generated articles
   const getMergedArticles = (categoryId: string) => {
     const apiArticles = articles[categoryId] || [];
@@ -187,8 +189,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
     }));
     return [...apiArticles, ...dynamicArticles];
   };
-  
-  const debouncedSearch = useDebounce(kbSearchQuery, 300);
+
   const isSearching = debouncedSearch.trim().length > 0;
 
   // Cross-category search when a query is active

@@ -68,7 +68,7 @@
         
         <div class="ticket-info">
             <h3>Ticket Details:</h3>
-            <p><strong>Ticket ID:</strong> <span class="ticket-id">#{{ $ticket->id }}</span></p>
+            <p><strong>Ticket ID:</strong> <span class="ticket-id">{{ $ticket->ticket_number ?? ('TKT-' . $ticket->id) }}</span></p>
             <p><strong>Subject:</strong> {{ $ticket->subject }}</p>
             <p><strong>Priority:</strong> {{ ucfirst($ticket->priority) }}</p>
             <p><strong>Status:</strong> {{ ucfirst($ticket->status) }}</p>
@@ -80,7 +80,7 @@
             <a href="{{ $ticketUrl }}" class="button">View Ticket</a>
         </div>
         
-        <p>You can reply to this email to add more information to your ticket.</p>
+        <p>To add more information or check the status of your ticket, use the button above. You can reply directly from the ticket page.</p>
         
         <p>Best regards,<br>The {{ $projectName }} Support Team</p>
     </div>

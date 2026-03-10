@@ -35,7 +35,6 @@ import { api } from '../api/client';
 // Extracted tab components
 import { OverviewTab } from '../components/project-details/OverviewTab';
 import { TicketsTab } from '../components/project-details/TicketsTab';
-import { ChatsTab } from '../components/project-details/ChatsTab';
 import { TeamTab } from '../components/project-details/TeamTab';
 import { ActivityTab } from '../components/project-details/ActivityTab';
 import { ChatWidgetTab } from '../components/project-details/ChatWidgetTab';
@@ -347,7 +346,6 @@ export default function ProjectDetails() {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="tickets">Tickets</TabsTrigger>
-              <TabsTrigger value="chats">Chats</TabsTrigger>
               <TabsTrigger value="team">Team Members</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
@@ -374,10 +372,6 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            <TabsContent value="chats" className="space-y-4">
-              <ChatsTab basePath={basePath} projectId={project?.id} />
-            </TabsContent>
-
             <TabsContent value="team" className="space-y-4">
               <TeamTab
                 project={project}
@@ -401,7 +395,7 @@ export default function ProjectDetails() {
             </TabsContent>
 
             <TabsContent value="ai-settings" className="space-y-4">
-              <AISettingsTab />
+              <AISettingsTab projectId={projectId} />
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-4">

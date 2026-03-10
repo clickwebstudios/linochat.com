@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
-      const res = await api.get('/api/auth/me');
+      const res = await api.get('/auth/me');
       setUser(res.data.data ?? res.data);
     } catch {
       setUser(null);
@@ -41,14 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string, remember = false) => {
-    const res = await api.post('/api/auth/login', { email, password, remember });
+    const res = await api.post('/auth/login', { email, password, remember });
     const u = res.data.data ?? res.data;
     setUser(u);
     return u;
   };
 
   const logout = async () => {
-    await api.post('/api/auth/logout');
+    await api.post('/auth/logout');
     setUser(null);
   };
 
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password_confirmation: string;
     company_name: string;
   }) => {
-    const res = await api.post('/api/auth/register', data);
+    const res = await api.post('/auth/register', data);
     const u = res.data.data ?? res.data;
     setUser(u);
     return u;

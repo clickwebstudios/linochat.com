@@ -49,8 +49,12 @@ class WidgetSettingsController extends Controller
                 'widget_title' => $settings['widget_title'] ?? $project->name,
                 'show_agent_name' => $settings['show_agent_name'] ?? true,
                 'show_agent_avatar' => $settings['show_agent_avatar'] ?? true,
+                'widget_active' => $settings['widget_active'] ?? true,
                 'auto_open' => $settings['auto_open'] ?? false,
                 'auto_open_delay' => $settings['auto_open_delay'] ?? 5,
+                'greeting_enabled' => $settings['greeting_enabled'] ?? false,
+                'greeting_delay' => $settings['greeting_delay'] ?? 3,
+                'greeting_message' => $settings['greeting_message'] ?? '👋 Hi there! How can we help you today?',
                 'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
             ],
         ]);
@@ -91,8 +95,12 @@ class WidgetSettingsController extends Controller
             'widget_title' => 'nullable|string|max:100',
             'show_agent_name' => 'nullable|boolean',
             'show_agent_avatar' => 'nullable|boolean',
+            'widget_active' => 'nullable|boolean',
             'auto_open' => 'nullable|boolean',
-            'auto_open_delay' => 'nullable|integer|min:1|max:60',
+            'auto_open_delay'   => 'nullable|integer|min:1|max:60',
+            'greeting_enabled'  => 'nullable|boolean',
+            'greeting_delay'    => 'nullable|integer|min:0|max:3600',
+            'greeting_message'  => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -110,7 +118,8 @@ class WidgetSettingsController extends Controller
         $updatableFields = [
             'color', 'position', 'welcome_message', 'button_text',
             'widget_title', 'show_agent_name', 'show_agent_avatar',
-            'auto_open', 'auto_open_delay', 'design'
+            'widget_active', 'auto_open', 'auto_open_delay', 'design',
+            'greeting_enabled', 'greeting_delay', 'greeting_message',
         ];
 
         foreach ($updatableFields as $field) {

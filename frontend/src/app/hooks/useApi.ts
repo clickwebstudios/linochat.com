@@ -7,7 +7,7 @@ import api from '../lib/api';
  *
  * Usage:
  *   const { request, loading, error } = useApi();
- *   const data = await request(() => api.get('/api/projects'));
+ *   const data = await request(() => api.get('/projects'));
  */
 export function useApi() {
   const [loading, setLoading] = useState(false);

@@ -537,7 +537,7 @@ export default function TicketDetails() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Ticket className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600 font-mono">#{ticket.id}</span>
+                      <span className="text-gray-600 font-mono">{ticket.ticket_number || `#${ticket.id}`}</span>
                     </div>
                   </div>
 

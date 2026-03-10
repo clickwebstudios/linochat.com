@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { MessageSquare, Mail, ArrowRight, ArrowLeft, CheckCircle, X, Loader2 } from 'lucide-react';
+import { MessageSquare, Mail, ArrowRight, ArrowLeft, CheckCircle, X } from 'lucide-react';
 import { API_BASE_URL } from '../../api/client';
 
 export default function ForgotPassword() {
@@ -11,6 +11,13 @@ export default function ForgotPassword() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -25,6 +32,7 @@ export default function ForgotPassword() {
       const data = await response.json();
       if (data.success) {
         setIsSubmitted(true);
+        setCooldown(60);
       } else {
         setError(data.message || 'Failed to send reset link');
       }
@@ -99,7 +107,6 @@ export default function ForgotPassword() {
                           onChange={(e) => setEmail(e.target.value)}
                           className="pl-10"
                           required
-                          disabled={loading}
                         />
                       </div>
                     </div>
@@ -110,22 +117,12 @@ export default function ForgotPassword() {
                       </div>
                     )}
 
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-blue-600 hover:bg-blue-700"
-                      disabled={loading}
                     >
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          Send reset link
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
+                      Send reset link
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </form>
 
@@ -159,12 +156,13 @@ export default function ForgotPassword() {
                     <p className="text-sm text-gray-600 text-center">
                       Didn't receive the email? Check your spam folder or
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={() => handleSubmit()}
+                      disabled={cooldown > 0}
                     >
-                      Try again
+                      {cooldown > 0 ? `Try again in ${cooldown}s` : 'Try again'}
                     </Button>
                   </div>
 

@@ -93,6 +93,7 @@ class WidgetLoaderController extends Controller
     var CUSTOMER_TYPING_TIMEOUT = null;
     var CUSTOMER_TYPING_SENT = false;
     var CHAT_INITIALIZED = false;
+    var CHAT_INIT_PROMISE = null;
 
     // Default button icon (MessageSquare SVG)
     var DEFAULT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"><\/path><\/svg>';
@@ -624,7 +625,7 @@ class WidgetLoaderController extends Controller
         
         if (type === 'ai' || type === 'agent') {
             var name = document.createElement('div');
-            name.textContent = type === 'ai' ? 'AI Assistant' : 'Agent';
+            name.textContent = type === 'ai' ? ((CONFIG && CONFIG.ai_name) || 'Lino') : 'Agent';
             name.style.cssText = 'font-size:12px;color:#6b7280;margin-bottom:4px';
             msg.appendChild(name);
         }
@@ -721,21 +722,36 @@ class WidgetLoaderController extends Controller
         btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; });
         btn.addEventListener('click', function onFirstClick() {
             if (CHAT_INITIALIZED) return;
+            var greetBubble = document.getElementById('linochat-greeting');
+            if (greetBubble) greetBubble.remove();
             btn.style.pointerEvents = 'none';
-            btn.textContent = '...';
-            var configPromise = CONFIG ? Promise.resolve(CONFIG) : loadConfig();
-            configPromise
-                .then(function() { return initChat(); })
-                .then(function() {
-                    createWidget(true);
-                    CHAT_INITIALIZED = true;
-                    SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 120000);
-                })
-                .catch(function(err) {
-                    console.error('LinoChat Widget Error:', err);
-                    btn.innerHTML = DEFAULT_ICON;
-                    btn.style.pointerEvents = 'auto';
+
+            var doOpen = function() {
+                createWidget(true);
+                CHAT_INITIALIZED = true;
+                SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 120000);
+            };
+
+            var onError = function(err) {
+                console.error('LinoChat Widget Error:', err);
+                btn.innerHTML = DEFAULT_ICON;
+                btn.style.pointerEvents = 'auto';
+            };
+
+            if (CHAT_INIT_PROMISE) {
+                // Chat is already being initialized in background — open as soon as it resolves
+                CHAT_INIT_PROMISE.then(doOpen).catch(function() {
+                    // Pre-init failed, try again
+                    initChat().then(doOpen).catch(onError);
                 });
+            } else {
+                // Fallback: config didn't load yet, do full init now
+                btn.textContent = '...';
+                loadConfig()
+                    .then(function() { return initChat(); })
+                    .then(doOpen)
+                    .catch(onError);
+            }
         });
     }
     
@@ -987,7 +1003,8 @@ class WidgetLoaderController extends Controller
         var msg = document.createElement('div');
         var s = getMsgStyles();
         msg.style.cssText = s.base + ';' + s.ai;
-        msg.innerHTML = '<div style="font-size:12px;color:#6b7280;margin-bottom:4px">AI Assistant</div><div>All our agents are currently busy. To ensure your request is handled promptly, please leave your contact information and we\'ll get back to you via email.</div>';
+        var aiLabel = (CONFIG && CONFIG.ai_name) || 'Lino';
+        msg.innerHTML = '<div style="font-size:12px;color:#6b7280;margin-bottom:4px">' + aiLabel + '</div><div>All our agents are currently busy. To ensure your request is handled promptly, please leave your contact information and we\'ll get back to you via email.</div>';
         container.appendChild(msg);
         container.scrollTop = container.scrollHeight;
         
@@ -1056,6 +1073,50 @@ class WidgetLoaderController extends Controller
         });
     }
     
+    // Show greeting bubble above the chat button
+    function showGreeting() {
+        if (!CONFIG || !CONFIG.greeting_enabled || !CONFIG.greeting_message) return;
+        var delay = (CONFIG.greeting_delay || 0) * 1000;
+        setTimeout(function() {
+            if (CHAT_INITIALIZED) return;
+            var btn = document.getElementById('linochat-button');
+            if (!btn) return;
+            var existing = document.getElementById('linochat-greeting');
+            if (existing) return;
+
+            var bubble = document.createElement('div');
+            bubble.id = 'linochat-greeting';
+            var posStyles = POSITION_STYLES[CONFIG.position || 'bottom-right'] || POSITION_STYLES['bottom-right'];
+            var isLeft = posStyles.left !== 'auto';
+            var isTop = posStyles.top !== 'auto';
+            var sideStyle = isLeft ? 'left:' + (posStyles.left || '20px') + ';' : 'right:' + (posStyles.right || '20px') + ';';
+            var vertStyle = isTop ? 'top:' + (parseInt(posStyles.top || '20') + 74) + 'px;' : 'bottom:' + (parseInt(posStyles.bottom || '20') + 74) + 'px;';
+            var arrowSide = isLeft ? 'left:20px' : 'right:20px';
+
+            bubble.style.cssText = 'position:fixed;' + sideStyle + vertStyle + 'background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 32px 12px 14px;width:220px;font-size:13px;line-height:1.5;color:#111;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;';
+            bubble.innerHTML = '<span>' + CONFIG.greeting_message + '<\/span>' +
+                '<button id="linochat-greeting-close" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:16px;line-height:1;padding:0;" aria-label="Close">\u00d7<\/button>' +
+                '<div style="position:absolute;' + (isTop ? 'top:-6px;' : 'bottom:-6px;') + arrowSide + ';width:12px;height:12px;background:#fff;transform:rotate(45deg);box-shadow:' + (isTop ? '-2px -2px 4px' : '2px 2px 4px') + ' rgba(0,0,0,.08);"><\/div>';
+
+            document.body.appendChild(bubble);
+
+            requestAnimationFrame(function() {
+                bubble.style.opacity = '1';
+                bubble.style.transform = 'translateY(0)';
+            });
+
+            document.getElementById('linochat-greeting-close').addEventListener('click', function(e) {
+                e.stopPropagation();
+                bubble.remove();
+            });
+            bubble.addEventListener('click', function() {
+                bubble.remove();
+                var btn2 = document.getElementById('linochat-button');
+                if (btn2) btn2.click();
+            });
+        }, delay);
+    }
+
     // Initialize (guard against duplicate script loads) - only show button; full init on first click
     function init() {
         if (window.__linochat_init_done) return;
@@ -1063,7 +1124,14 @@ class WidgetLoaderController extends Controller
         injectStyles();
         // Load config first so the button appears with correct design/color immediately (no flash of default)
         loadConfig()
-            .then(function() { createButtonOnly(); updateButtonAppearance(); })
+            .then(function() {
+                if (CONFIG && CONFIG.widget_active === false) return; // Widget disabled by owner
+                createButtonOnly();
+                updateButtonAppearance();
+                showGreeting();
+                // Pre-initialize chat in background so clicking opens instantly
+                CHAT_INIT_PROMISE = initChat().catch(function() { CHAT_INIT_PROMISE = null; });
+            })
             .catch(function() { createButtonOnly(); });
     }
     

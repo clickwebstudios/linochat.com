@@ -28,6 +28,7 @@
 
   // ── State ────────────────────────────────────────────────────────────────
   var chatId        = null;
+  var customerId    = null;
   var lastId        = 0;
   var polling       = null;
   var isOpen        = false;
@@ -67,6 +68,11 @@
     '#lc-start-btn{width:100%;padding:10px;border-radius:8px;background:var(--lc-color);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}',
     '#lc-start-btn:hover{opacity:.88}',
     '@media(max-width:400px){#lc-panel{right:0;bottom:80px;width:100vw;border-radius:16px 16px 0 0}}',
+    '#lc-greeting{position:absolute;bottom:68px;right:0;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 16px;max-width:260px;font-size:13px;line-height:1.45;color:#111;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;pointer-events:none;cursor:pointer}',
+    '#lc-greeting.lc-show{opacity:1;transform:none;pointer-events:auto}',
+    '#lc-greeting-close{position:absolute;top:4px;right:8px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;line-height:1;padding:2px}',
+    '#lc-greeting-close:hover{color:#6b7280}',
+    '#lc-greeting::after{content:"";position:absolute;bottom:-6px;right:24px;width:12px;height:12px;background:#fff;transform:rotate(45deg);box-shadow:2px 2px 4px rgba(0,0,0,.08)}',
   ].join('');
 
   var styleTag = document.createElement('style');
@@ -84,6 +90,8 @@
     '  <span id="lc-badge"></span>',
     '  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
     '</button>',
+    // Greeting bubble
+    '<div id="lc-greeting"><span id="lc-greeting-text"></span><button id="lc-greeting-close" aria-label="Close greeting">&#x2715;</button></div>',
     // Panel
     '<div id="lc-panel" role="dialog" aria-label="Chat">',
     '  <div id="lc-head">',
@@ -128,6 +136,10 @@
   var foot       = document.getElementById('lc-foot');
   var input      = document.getElementById('lc-input');
   var sendBtn    = document.getElementById('lc-send');
+  var greeting   = document.getElementById('lc-greeting');
+  var greetText  = document.getElementById('lc-greeting-text');
+  var greetClose = document.getElementById('lc-greeting-close');
+  var greetTimer = null;
 
   // ── Apply position ────────────────────────────────────────────────────────
   function applyPosition(pos) {
@@ -199,6 +211,8 @@
     if (isOpen) {
       panel.classList.add('lc-open');
       badge.style.display = 'none';
+      greeting.classList.remove('lc-show');
+      if (greetTimer) { clearTimeout(greetTimer); greetTimer = null; }
       if (chatId) input.focus();
       else nameInput.focus();
     } else {
@@ -242,18 +256,21 @@
     if (polling) return;
     polling = setInterval(function () {
       if (!chatId) return;
-      api('GET', '/chat/' + chatId + '/messages?since=' + lastId)
+      api('GET', '/' + widgetId + '/messages?chat_id=' + chatId + '&customer_id=' + encodeURIComponent(customerId))
         .then(function (data) {
-          var list = Array.isArray(data) ? data : (data.data || []);
+          var d = data.data || data;
+          var list = d.messages || (Array.isArray(d) ? d : []);
           list.forEach(function (m) {
-            if (m.sender !== 'customer') {
-              addMsg(m.text, m.sender, m.created_at);
-              if (!isOpen) {
-                badge.textContent = '+1';
-                badge.style.display = 'flex';
+            if (m.id > lastId) {
+              if ((m.sender_type || m.sender) !== 'customer') {
+                addMsg(m.content || m.text, m.sender_type || m.sender, m.created_at);
+                if (!isOpen) {
+                  badge.textContent = '+1';
+                  badge.style.display = 'flex';
+                }
               }
+              lastId = m.id;
             }
-            if (m.id > lastId) lastId = m.id;
           });
         })
         .catch(function () {});
@@ -265,12 +282,23 @@
     startBtn.textContent = 'Connecting…';
     var name = (nameInput.value || '').trim() || 'Visitor';
 
-    api('POST', '/chat/start', { widget_id: widgetId, customer_name: name })
+    api('POST', '/' + widgetId + '/init', { customer_name: name })
       .then(function (data) {
         if (data.error) throw new Error(data.error);
-        chatId = data.chat_id;
+        var d = data.data || data;
+        chatId = d.chat_id;
+        customerId = d.customer_id;
         showChat();
-        addMsg(welcomeMsg, 'agent');
+        // Show existing messages or welcome message
+        var existingMsgs = d.messages || [];
+        if (existingMsgs.length > 0) {
+          existingMsgs.forEach(function (m) {
+            addMsg(m.content || m.text, m.sender_type || m.sender, m.created_at);
+            if (m.id > lastId) lastId = m.id;
+          });
+        } else {
+          addMsg(welcomeMsg, 'agent');
+        }
         startPolling();
       })
       .catch(function (err) {
@@ -288,9 +316,15 @@
 
     var tempDiv = addMsg(text, 'customer');
 
-    api('POST', '/chat/' + chatId + '/messages', { text: text })
+    api('POST', '/' + widgetId + '/message', { chat_id: chatId, customer_id: customerId, message: text })
       .then(function (data) {
-        if (data.id && data.id > lastId) lastId = data.id;
+        var d = data.data || data;
+        if (d.message && d.message.id && d.message.id > lastId) lastId = d.message.id;
+        // Show AI response if present
+        if (d.ai_response && d.ai_response.content) {
+          addMsg(d.ai_response.content, 'agent', d.ai_response.created_at);
+          if (d.ai_response.id && d.ai_response.id > lastId) lastId = d.ai_response.id;
+        }
         sendBtn.disabled = false;
         input.focus();
       })
@@ -317,16 +351,40 @@
     }
   });
 
+  // ── Greeting handlers ────────────────────────────────────────────────────
+  greetClose.addEventListener('click', function (e) {
+    e.stopPropagation();
+    greeting.classList.remove('lc-show');
+  });
+  greeting.addEventListener('click', function () {
+    greeting.classList.remove('lc-show');
+    if (!isOpen) togglePanel();
+  });
+
+  function showGreeting(message, delay) {
+    if (!message || isOpen) return;
+    greetText.textContent = message;
+    greetTimer = setTimeout(function () {
+      if (!isOpen) greeting.classList.add('lc-show');
+    }, (delay || 0) * 1000);
+  }
+
   // ── Load project settings on init ─────────────────────────────────────────
-  api('GET', '/settings/' + widgetId)
+  api('GET', '/' + widgetId + '/config')
     .then(function (data) {
       if (!data.error) {
-        primaryColor = data.project_color || primaryColor;
-        welcomeMsg   = data.welcome_message || welcomeMsg;
+        var d = data.data || data;
+        primaryColor = d.color || d.project_color || primaryColor;
+        welcomeMsg   = d.welcome_message || welcomeMsg;
         wrap.style.setProperty('--lc-color', primaryColor);
-        title.textContent = data.project_name || 'Chat with us';
-        applyPosition(data.widget_position || 'bottom-right');
-        applyDesign(data.widget_design || 'modern');
+        title.textContent = d.widget_title || d.project_name || d.company_name || 'Chat with us';
+        applyPosition(d.position || d.widget_position || 'bottom-right');
+        applyDesign(d.design || d.widget_design || 'modern');
+
+        // Show greeting bubble if enabled
+        if (d.greeting_enabled && d.greeting_message) {
+          showGreeting(d.greeting_message, d.greeting_delay || 0);
+        }
       }
       wrap.style.opacity = '1';
     })

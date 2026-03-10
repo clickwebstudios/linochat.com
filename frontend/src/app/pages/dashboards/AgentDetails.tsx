@@ -107,9 +107,9 @@ export default function AgentDetails() {
     setLoading(true);
 
     Promise.all([
-      api.get<{ success: boolean; data: AgentData[] }>('/api/agent/users'),
-      api.get<{ success: boolean; data: Project[] }>('/api/projects'),
-      api.get<{ success: boolean; data: Ticket[] }>('/api/agent/tickets', { params: { per_page: 100 } }),
+      api.get<{ success: boolean; data: AgentData[] }>('/agent/users'),
+      api.get<{ success: boolean; data: Project[] }>('/projects'),
+      api.get<{ success: boolean; data: Ticket[] }>('/agent/tickets', { params: { per_page: 100 } }),
     ])
       .then(([usersRes, projectsRes, ticketsRes]) => {
         const users: AgentData[] = (usersRes.data as any)?.data ?? (usersRes.data as any) ?? [];
@@ -157,7 +157,7 @@ export default function AgentDetails() {
     if (!agent) return;
     setSaving(true);
     try {
-      await api.put(`/api/superadmin/agents/${agent.id}`, editForm);
+      await api.put(`/superadmin/agents/${agent.id}`, editForm);
       setAgent((prev) => prev ? { ...prev, ...editForm } : prev);
       setEditOpen(false);
       toast.success('Profile updated');
@@ -170,7 +170,7 @@ export default function AgentDetails() {
     if (!agent) return;
     setSaving(true);
     try {
-      await api.put(`/api/superadmin/agents/${agent.id}`, { role: selectedRole });
+      await api.put(`/superadmin/agents/${agent.id}`, { role: selectedRole });
       setAgent((prev) => prev ? { ...prev, role: selectedRole } : prev);
       setChangeRoleOpen(false);
       toast.success('Role updated');
@@ -183,7 +183,7 @@ export default function AgentDetails() {
     if (!agent) return;
     setSaving(true);
     try {
-      await api.delete(`/api/superadmin/agents/${agent.id}`);
+      await api.delete(`/superadmin/agents/${agent.id}`);
       agentStatusStore.setStatus(agent.id, 'Deactivated');
       setAgent((prev) => prev ? { ...prev, status: 'Deactivated' } : prev);
       setDeactivateOpen(false);
@@ -204,15 +204,15 @@ export default function AgentDetails() {
 
       await Promise.all([
         ...toAdd.map((pid) =>
-          api.post(`/api/projects/${pid}/invitations`, { email: agent.email, role: agent.role })
+          api.post(`/projects/${pid}/invitations`, { email: agent.email, role: agent.role })
         ),
         ...toRemove.map((pid) =>
-          api.delete(`/api/projects/${pid}/agents/${agent.id}`)
+          api.delete(`/projects/${pid}/agents/${agent.id}`)
         ),
       ]);
 
       // Refresh agent
-      const res = await api.get<{ data: AgentData[] }>('/api/agent/users');
+      const res = await api.get<{ data: AgentData[] }>('/agent/users');
       const users: AgentData[] = (res.data as any)?.data ?? [];
       const updated = users.find((u) => String(u.id) === String(agentId));
       if (updated) setAgent(updated);

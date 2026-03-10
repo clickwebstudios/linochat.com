@@ -218,11 +218,11 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-blue-600 text-white">
-                          {agent.name.split(' ').map((n: string) => n[0]).join('')}
+                          {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{agent.name}</p>
+                        <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
                         <p className="text-xs text-gray-500">{agent.email}</p>
                       </div>
                     </div>

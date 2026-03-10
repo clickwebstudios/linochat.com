@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Chat;
 use App\Models\ChatTransfer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TransferRequestController extends Controller
 {
@@ -183,6 +184,37 @@ class TransferRequestController extends Controller
             'message' => 'Transfer request sent',
             'data' => $this->formatTransfer($transfer),
         ], 201);
+    }
+
+    /**
+     * Return chats waiting for a human agent (AI handover, no agent assigned yet).
+     * Used by frontend to poll for pending handovers on any dashboard page.
+     */
+    public function pendingHandovers()
+    {
+        $user = auth('api')->user();
+        $projectIds = $user->projects()->pluck('projects.id')
+            ->merge($user->ownedProjects()->pluck('id'))
+            ->unique();
+
+        $chats = Chat::whereIn('project_id', $projectIds)
+            ->where('status', 'waiting')
+            ->whereNull('agent_id')
+            ->with('project')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        $data = $chats->map(fn (Chat $c) => [
+            'chat_id'      => (string) $c->id,
+            'customer_name' => $c->customer_name ?? 'Customer',
+            'project_id'   => (string) $c->project_id,
+            'project_name' => $c->project?->name ?? 'Project',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
     }
 
     private function formatTransfer(ChatTransfer $t): array

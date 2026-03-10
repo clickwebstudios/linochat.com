@@ -16,6 +16,7 @@ class Project extends Model
         'widget_id',
         'color',
         'widget_settings',
+        'ai_settings',
         'settings_updated_at',
         'website',
         'status',
@@ -24,6 +25,7 @@ class Project extends Model
 
     protected $casts = [
         'widget_settings' => 'array',
+        'ai_settings'     => 'array',
         'settings_updated_at' => 'datetime',
     ];
 
@@ -56,5 +58,10 @@ class Project extends Model
     public function kbCategories()
     {
         return $this->hasMany(KbCategory::class);
+    }
+
+    public function aiSettingsVersions()
+    {
+        return $this->hasMany(AiSettingsVersion::class);
     }
 }

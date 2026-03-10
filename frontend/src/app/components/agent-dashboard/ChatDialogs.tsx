@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '../../api/client';
 import { Button } from '../ui/button';
@@ -13,13 +14,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import {
   MessageCircle,
   Ticket,
@@ -90,6 +84,166 @@ export interface ChatDialogsProps {
   setTransferReason: (reason: string) => void;
   onSubmitTransfer: () => void;
   onRefreshTeamMembers?: () => void;
+}
+
+// ── Standalone Create Ticket dialog with validation ──────────────────────────
+function CreateTicketFromChatDialog({
+  activeChat, projects, open, onOpenChange, newTicket, setNewTicket,
+  isGeneratingSubject, isCreatingTicket, setIsCreatingTicket, onGenerateSubject, onClose,
+}: {
+  activeChat: any; projects: any[]; open: boolean; onOpenChange: (v: boolean) => void;
+  newTicket: ChatDialogsProps['newTicket']; setNewTicket: ChatDialogsProps['setNewTicket'];
+  isGeneratingSubject: boolean; isCreatingTicket: boolean; setIsCreatingTicket: (v: boolean) => void;
+  onGenerateSubject: () => void; onClose: () => void;
+}) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!newTicket.subject.trim()) e.subject = 'Subject is required';
+    if (!newTicket.customerEmail.trim()) e.customerEmail = 'Customer email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newTicket.customerEmail)) e.customerEmail = 'Enter a valid email';
+    if (!newTicket.projectId) e.projectId = 'Project is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    setIsCreatingTicket(true);
+    try {
+      const res = await api.post<{ ticket_number?: string }>('/agent/tickets', {
+        project_id: newTicket.projectId,
+        subject: newTicket.subject,
+        description: newTicket.description || newTicket.subject,
+        priority: newTicket.priority,
+        category: newTicket.category || undefined,
+        customer_name: newTicket.customerName || undefined,
+        customer_email: newTicket.customerEmail,
+        chat_id: activeChat?.id,
+      });
+      const ticketNum = (res as any)?.ticket_number || (res as any)?.data?.ticket_number || '';
+      toast.success(ticketNum ? `Ticket ${ticketNum} created successfully` : 'Ticket created successfully');
+      setErrors({});
+      onClose();
+    } catch (err: any) {
+      const data = err?.response?.data;
+      if (data?.errors) {
+        // Show first validation error from API and highlight fields
+        const apiErrors: Record<string, string> = {};
+        Object.entries(data.errors).forEach(([field, msgs]: [string, any]) => {
+          apiErrors[field] = Array.isArray(msgs) ? msgs[0] : msgs;
+        });
+        setErrors(apiErrors);
+        const firstMsg = Object.values(apiErrors)[0];
+        toast.error(firstMsg);
+      } else {
+        toast.error(data?.message || 'Failed to create ticket');
+      }
+    } finally {
+      setIsCreatingTicket(false);
+    }
+  };
+
+  const field = (key: string) => errors[key]
+    ? 'border-red-500 focus:ring-red-500'
+    : '';
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Create Ticket from Chat</DialogTitle>
+          <DialogDescription>Convert this chat conversation into a support ticket for tracking and follow-up.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 mt-4">
+          {/* Subject */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-subject">Subject <span className="text-red-500">*</span></Label>
+            <div className="relative">
+              <Input id="ticket-subject" placeholder="Enter ticket subject" value={newTicket.subject}
+                onChange={(e) => { setNewTicket({ ...newTicket, subject: e.target.value }); setErrors(p => ({ ...p, subject: '' })); }}
+                className={`pr-12 ${field('subject')}`} />
+              <Button type="button" size="sm" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-blue-50" onClick={onGenerateSubject} disabled={isGeneratingSubject} title="Generate subject with AI">
+                <Sparkles className={`h-4 w-4 text-blue-600 ${isGeneratingSubject ? 'animate-pulse' : ''}`} />
+              </Button>
+            </div>
+            {errors.subject && <p className="text-xs text-red-500">{errors.subject}</p>}
+          </div>
+          {/* Priority */}
+          <div className="space-y-2">
+            <Label>Priority <span className="text-red-500">*</span></Label>
+            <div className="grid grid-cols-4 gap-2">
+              {['low', 'medium', 'high', 'urgent'].map((priority) => (
+                <button key={priority} type="button"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    newTicket.priority === priority
+                      ? priority === 'urgent' ? 'bg-red-600 text-white' : priority === 'high' ? 'bg-orange-600 text-white' : priority === 'medium' ? 'bg-yellow-600 text-white' : 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  onClick={() => setNewTicket({ ...newTicket, priority })}
+                >
+                  {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Category */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-category">Category</Label>
+            <select id="ticket-category" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" value={newTicket.category} onChange={(e) => setNewTicket({ ...newTicket, category: e.target.value })}>
+              <option value="">Select a category</option>
+              {TICKET_CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          </div>
+          {/* Customer */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customer-name">Customer Name</Label>
+              <Input id="customer-name" value={newTicket.customerName} onChange={(e) => setNewTicket({ ...newTicket, customerName: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customer-email">Customer Email <span className="text-red-500">*</span></Label>
+              <Input id="customer-email" type="email" placeholder="customer@example.com" value={newTicket.customerEmail}
+                onChange={(e) => { setNewTicket({ ...newTicket, customerEmail: e.target.value }); setErrors(p => ({ ...p, customerEmail: '', customer_email: '' })); }}
+                className={field('customerEmail') || field('customer_email')} />
+              {(errors.customerEmail || errors.customer_email) && <p className="text-xs text-red-500">{errors.customerEmail || errors.customer_email}</p>}
+            </div>
+          </div>
+          {/* Project */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-project">Project <span className="text-red-500">*</span></Label>
+            <select id="ticket-project" className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 ${errors.projectId ? 'border-red-500' : 'border-gray-300'}`} value={newTicket.projectId} onChange={(e) => { setNewTicket({ ...newTicket, projectId: e.target.value }); setErrors(p => ({ ...p, projectId: '' })); }}>
+              <option value="">Select a project</option>
+              {projects.map((project) => (<option key={project.id} value={project.id}>{project.name}</option>))}
+            </select>
+            {errors.projectId && <p className="text-xs text-red-500">{errors.projectId}</p>}
+          </div>
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-description">Description</Label>
+            <Textarea id="ticket-description" placeholder="Provide a detailed description of the issue or request..." rows={6} value={newTicket.description} onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })} />
+            <p className="text-xs text-gray-500">Include relevant details from the chat conversation to help resolve the ticket.</p>
+          </div>
+          {/* Chat Context */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-900"><MessageCircle className="h-4 w-4" />Chat Context</div>
+            <div className="text-sm text-blue-700">
+              <p><strong>Customer:</strong> {activeChat?.customer_name || activeChat?.customer || 'Guest'}</p>
+              <p><strong>Last Message:</strong> {activeChat?.preview || activeChat?.last_message || 'N/A'}</p>
+              <p><strong>Chat Time:</strong> {activeChat?.created_at ? new Date(activeChat.created_at).toLocaleString() : 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={isCreatingTicket} className="bg-blue-600 hover:bg-blue-700">
+            <Ticket className="mr-2 h-4 w-4" />{isCreatingTicket ? 'Creating...' : 'Create Ticket'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function ChatDialogs({
@@ -210,112 +364,19 @@ export function ChatDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* Create Ticket Dialog */}
-      <Dialog open={showCreateTicketDialog} onOpenChange={setShowCreateTicketDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Ticket from Chat</DialogTitle>
-            <DialogDescription>Convert this chat conversation into a support ticket for tracking and follow-up.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="ticket-subject">Subject *</Label>
-              <div className="relative">
-                <Input id="ticket-subject" placeholder="Enter ticket subject" value={newTicket.subject} onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })} className="pr-12" />
-                <Button type="button" size="sm" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-blue-50" onClick={onGenerateSubject} disabled={isGeneratingSubject} title="Generate subject with AI">
-                  <Sparkles className={`h-4 w-4 text-blue-600 ${isGeneratingSubject ? 'animate-pulse' : ''}`} />
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ticket-priority">Priority *</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {['low', 'medium', 'high', 'urgent'].map((priority) => (
-                  <button key={priority} type="button"
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      newTicket.priority === priority
-                        ? priority === 'urgent' ? 'bg-red-600 text-white' : priority === 'high' ? 'bg-orange-600 text-white' : priority === 'medium' ? 'bg-yellow-600 text-white' : 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    onClick={() => setNewTicket({ ...newTicket, priority })}
-                  >
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ticket-category">Category</Label>
-              <Select value={newTicket.category || undefined} onValueChange={(value) => setNewTicket({ ...newTicket, category: value })}>
-                <SelectTrigger id="ticket-category"><SelectValue placeholder="Select a category" /></SelectTrigger>
-                <SelectContent>
-                  {TICKET_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer-name">Customer Name</Label>
-                <Input id="customer-name" value={newTicket.customerName} onChange={(e) => setNewTicket({ ...newTicket, customerName: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer-email">Customer Email</Label>
-                <Input id="customer-email" type="email" placeholder="customer@example.com" value={newTicket.customerEmail} onChange={(e) => setNewTicket({ ...newTicket, customerEmail: e.target.value })} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ticket-project">Project</Label>
-              <select id="ticket-project" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" value={newTicket.projectId} onChange={(e) => setNewTicket({ ...newTicket, projectId: e.target.value })}>
-                {projects.map((project) => (<option key={project.id} value={project.id}>{project.name}</option>))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ticket-description">Description</Label>
-              <Textarea id="ticket-description" placeholder="Provide a detailed description of the issue or request..." rows={6} value={newTicket.description} onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })} />
-              <p className="text-xs text-gray-500">Include relevant details from the chat conversation to help resolve the ticket.</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-900"><MessageCircle className="h-4 w-4" />Chat Context</div>
-              <div className="text-sm text-blue-700">
-                <p><strong>Customer:</strong> {activeChat?.customer_name || activeChat?.customer || 'Guest'}</p>
-                <p><strong>Last Message:</strong> {activeChat?.preview || activeChat?.last_message || 'N/A'}</p>
-                <p><strong>Chat Time:</strong> {activeChat?.time || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button variant="outline" onClick={() => { setShowCreateTicketDialog(false); resetTicketForm(); }}>Cancel</Button>
-            <Button onClick={async () => {
-              if (!newTicket.subject.trim()) return;
-              setIsCreatingTicket(true);
-              try {
-                await api.post('/api/agent/tickets', {
-                  project_id: newTicket.projectId,
-                  subject: newTicket.subject,
-                  description: newTicket.description || newTicket.subject,
-                  priority: newTicket.priority,
-                  category: newTicket.category || undefined,
-                  customer_name: newTicket.customerName || undefined,
-                  customer_email: newTicket.customerEmail,
-                  chat_id: activeChat?.id,
-                });
-                toast.success('Ticket created successfully');
-                setShowCreateTicketDialog(false);
-                resetTicketForm();
-              } catch (err: any) {
-                const msg = err?.response?.data?.message || err?.response?.data?.errors ? Object.values(err.response.data.errors).flat().join(', ') : 'Failed to create ticket';
-                toast.error(typeof msg === 'string' ? msg : 'Failed to create ticket');
-              } finally {
-                setIsCreatingTicket(false);
-              }
-            }} disabled={!newTicket.subject.trim() || isCreatingTicket} className="bg-blue-600 hover:bg-blue-700">
-              <Ticket className="mr-2 h-4 w-4" />Create Ticket
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CreateTicketFromChatDialog
+        activeChat={activeChat}
+        projects={projects}
+        open={showCreateTicketDialog}
+        onOpenChange={setShowCreateTicketDialog}
+        newTicket={newTicket}
+        setNewTicket={setNewTicket}
+        isGeneratingSubject={isGeneratingSubject}
+        isCreatingTicket={isCreatingTicket}
+        setIsCreatingTicket={setIsCreatingTicket}
+        onGenerateSubject={onGenerateSubject}
+        onClose={() => { setShowCreateTicketDialog(false); }}
+      />
 
       {/* Take Over Chat Dialog */}
       <Dialog open={showTakeoverDialog} onOpenChange={(open) => { setShowTakeoverDialog(open); if (!open) setTakeoverError(null); }}>

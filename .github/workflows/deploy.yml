@@ -1,44 +1,81 @@
-name: Deploy to Server
+name: Deploy to Production
 
 on:
   push:
     branches: [master]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
+      - name: Notify Slack - Deploy Started
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":rocket: *Deploy started* for `linochat.com`\nCommit: `${{ github.sha }}` by *${{ github.actor }}*\n>${{ github.event.head_commit.message }}"
+            }
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          host: 63.250.42.183
+          username: admin2
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          port: 22
+          command_timeout: 10m
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_PATH }}
-            echo ">>> Pulling latest code..."
-            git pull origin master
-            echo ">>> Backend: Installing dependencies..."
-            cd backend && composer install --no-dev --optimize-autoloader --no-interaction
-            echo ">>> Backend: Running migrations..."
+            export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
+            DEPLOY_PATH="/home/admin2/web/linochat.com/public_html"
+
+            echo ">>> [1/5] Pulling latest code..."
+            cd $DEPLOY_PATH
+            git fetch origin master
+            git reset --hard origin/master
+
+            echo ">>> [2/5] Backend: Installing PHP dependencies..."
+            cd $DEPLOY_PATH/backend
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo ">>> [3/5] Backend: Running migrations & clearing cache..."
             php artisan migrate --force
-            echo ">>> Backend: Caching config..."
+            php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
-            php artisan view:cache
-            echo ">>> Frontend: Installing dependencies..."
-            cd ../frontend && pnpm install --frozen-lockfile
-            echo ">>> Frontend: Building..."
-            pnpm run build
-            echo ">>> Restarting services..."
-            cd ..
-            # Restart PHP-FPM (adjust for your setup: php8.2-fpm, php-fpm, etc.)
-            sudo systemctl reload php8.2-fpm 2>/dev/null || sudo systemctl reload php-fpm 2>/dev/null || true
-            # Restart queue workers if using Supervisor
-            sudo supervisorctl restart linochat-worker 2>/dev/null || true
-            # Restart Reverb if running as service
-            sudo supervisorctl restart linochat-reverb 2>/dev/null || true
+
+            echo ">>> [4/5] Frontend: Installing JS dependencies..."
+            cd $DEPLOY_PATH/frontend
+            npm ci
+
+            echo ">>> [5/5] Frontend: Building..."
+            npm run build
+
             echo ">>> Deploy complete!"
+
+      - name: Notify Slack - Deploy Success
+        if: success()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":white_check_mark: *Deploy successful* for `linochat.com`\nCommit: `${{ github.sha }}` by *${{ github.actor }}*"
+            }
+
+      - name: Notify Slack - Deploy Failed
+        if: failure()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":x: *Deploy FAILED* for `linochat.com`\nCommit: `${{ github.sha }}` by *${{ github.actor }}*\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
+            }

@@ -56,8 +56,13 @@ class WidgetController extends Controller
                     'widget_title' => $settings['widget_title'] ?? $project->name,
                     'show_agent_name' => $settings['show_agent_name'] ?? true,
                     'show_agent_avatar' => $settings['show_agent_avatar'] ?? true,
+                    'widget_active' => $settings['widget_active'] ?? true,
                     'auto_open' => $settings['auto_open'] ?? false,
                     'auto_open_delay' => $settings['auto_open_delay'] ?? 5,
+                    'greeting_enabled' => $settings['greeting_enabled'] ?? false,
+                    'greeting_delay' => $settings['greeting_delay'] ?? 3,
+                    'greeting_message' => $settings['greeting_message'] ?? '',
+                    'ai_name' => ($project->ai_settings['ai_name'] ?? null) ?: 'Lino',
                     'website' => $project->website,
                     'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
                 ],
@@ -154,10 +159,11 @@ class WidgetController extends Controller
                 'metadata' => $metadata,
             ]);
 
+            $aiName = ($project->ai_settings['ai_name'] ?? null) ?: 'Lino';
             $welcomeMessage = ChatMessage::create([
                 'chat_id' => $chat->id,
                 'sender_type' => 'ai',
-                'content' => "Hi there! I'm the AI assistant for {$project->name}. How can I help you today?",
+                'content' => "Hi there! I'm {$aiName}, the AI assistant for {$project->name}. How can I help you today?",
                 'is_ai' => true,
             ]);
 

@@ -46,7 +46,7 @@ export default function OAuthAuthorizePage() {
       return;
     }
 
-    api.get('/api/oauth/authorize', { params })
+    api.get('/oauth/authorize', { params })
       .then((res: any) => {
         if (res.data?.success) {
           setClientInfo(res.data.data);
@@ -65,7 +65,7 @@ export default function OAuthAuthorizePage() {
     setSubmitting(true);
 
     try {
-      const res: any = await api.post('/api/oauth/authorize', {
+      const res: any = await api.post('/oauth/authorize', {
         client_id:    clientInfo.client_id,
         redirect_uri: clientInfo.redirect_uri,
         scope:        params.scope,

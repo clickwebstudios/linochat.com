@@ -4,5 +4,5 @@ import type { DashboardStats } from '../types';
 
 export const statsService = {
   getDashboardStats: (): Promise<DashboardStats> =>
-    api.get('/api/stats').then((r: AxiosResponse) => r.data),
+    api.get('/stats').then((r: AxiosResponse) => r.data),
 };

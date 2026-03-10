@@ -13,10 +13,14 @@ use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\WidgetController;
 use App\Http\Controllers\Api\TransferRequestController;
+use App\Http\Controllers\Api\AISettingsController;
+use App\Http\Controllers\Api\TrainingDocumentController;
 use App\Http\Controllers\Api\WidgetSettingsController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OAuthController;
 use App\Http\Controllers\Api\OAuthClientController;
+use App\Http\Controllers\Api\PublicTicketController;
+use App\Http\Controllers\Api\InboundEmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +32,13 @@ use App\Http\Controllers\Api\OAuthClientController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+// Public ticket view (no auth — guest customers)
+Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
+Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+
+// Inbound email webhook (no auth — called by email provider)
+Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
 
 Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -136,6 +147,23 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/projects/{project_id}/embed-code', [WidgetSettingsController::class, 'embedCode']);
 });
 
+// AI Settings API (auth required)
+Route::middleware('auth:api')->group(function () {
+    Route::get('/projects/{project_id}/ai-settings', [AISettingsController::class, 'show']);
+    Route::put('/projects/{project_id}/ai-settings/draft', [AISettingsController::class, 'saveDraft']);
+    Route::post('/projects/{project_id}/ai-settings/publish', [AISettingsController::class, 'publish']);
+    Route::get('/projects/{project_id}/ai-settings/versions', [AISettingsController::class, 'versions']);
+    Route::post('/projects/{project_id}/ai-settings/restore/{version_id}', [AISettingsController::class, 'restore']);
+    Route::get('/projects/{project_id}/ai-stats', [AISettingsController::class, 'stats']);
+});
+
+// Training Documents API (auth required)
+Route::middleware('auth:api')->group(function () {
+    Route::get('/projects/{project_id}/training-documents', [TrainingDocumentController::class, 'index']);
+    Route::post('/projects/{project_id}/training-documents', [TrainingDocumentController::class, 'store']);
+    Route::delete('/projects/{project_id}/training-documents/{doc_id}', [TrainingDocumentController::class, 'destroy']);
+});
+
 // Agent Dashboard API (auth required)
 Route::middleware('auth:api')->prefix('agent')->group(function () {
     Route::get('/chats', [AgentController::class, 'chats']);
@@ -227,6 +255,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/agent/transfer-requests', [TransferRequestController::class, 'store']);
     Route::post('/agent/transfer-requests/{id}/accept', [TransferRequestController::class, 'accept']);
     Route::post('/agent/transfer-requests/{id}/reject', [TransferRequestController::class, 'reject']);
+    // Pending AI→human handovers (chats waiting for an agent)
+    Route::get('/agent/pending-handovers', [TransferRequestController::class, 'pendingHandovers']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);

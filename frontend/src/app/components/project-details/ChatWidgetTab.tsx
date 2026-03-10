@@ -18,6 +18,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '../ui/accordion';
+import { Switch } from '../ui/switch';
 import {
   Copy,
   MessageSquare,
@@ -55,6 +56,10 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const [offlineBehavior, setOfflineBehavior] = useState('hide');
   const [offlineMessage, setOfflineMessage] = useState("We're currently offline. Our team is available Mon-Fri, 9am-5pm EST.");
   const [showOfflinePreview, setShowOfflinePreview] = useState(false);
+  const [widgetActive, setWidgetActive] = useState(true);
+  const [greetingEnabled, setGreetingEnabled] = useState(false);
+  const [greetingDelay, setGreetingDelay] = useState('3');
+  const [greetingMessage, setGreetingMessage] = useState('👋 Hi there! How can we help you today?');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -72,6 +77,10 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           if (d.welcome_message) setWelcomeMessage(d.welcome_message);
           if (d.button_text) setButtonText(d.button_text);
           if (d.design) setWidgetDesign(d.design);
+          setWidgetActive(d.widget_active !== false);
+          setGreetingEnabled(d.greeting_enabled ?? false);
+          setGreetingDelay(String(d.greeting_delay ?? 3));
+          setGreetingMessage(d.greeting_message || '👋 Hi there! How can we help you today?');
         }
       } catch {
         // Use project defaults if API fails
@@ -93,6 +102,10 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         welcome_message: welcomeMessage,
         button_text: buttonText,
         design: widgetDesign,
+        widget_active: widgetActive,
+        greeting_enabled: greetingEnabled,
+        greeting_delay: parseInt(greetingDelay),
+        greeting_message: greetingMessage,
       });
       if (response.success) {
         setSaveSuccess(true);
@@ -116,6 +129,21 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             {/* Left Column - Configuration */}
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div>
+                    <p className="text-sm font-medium">Widget Status</p>
+                    <p className="text-sm text-gray-500">
+                      {widgetActive ? 'Widget is active and visible on your website' : 'Widget is disabled and hidden from visitors'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${widgetActive ? 'text-green-600' : 'text-gray-400'}`}>
+                      {widgetActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
+                  </div>
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="widget-name">Widget Title</Label>
                   <Input 
@@ -187,6 +215,66 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       placeholder="#000000"
                       className="flex-1"
                     />
+                  </div>
+                </div>
+
+                {/* Greeting Settings */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-medium mb-4">Greeting Bubble</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">Enable Greeting</p>
+                        <p className="text-sm text-gray-500">Automatically show a greeting message to visitors</p>
+                      </div>
+                      <Switch checked={greetingEnabled} onCheckedChange={setGreetingEnabled} />
+                    </div>
+
+                    {greetingEnabled && (
+                      <div className="space-y-4 pl-1">
+                        <div className="grid gap-2">
+                          <Label>Show greeting after</Label>
+                          <Select value={greetingDelay} onValueChange={setGreetingDelay}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">Immediately on page load</SelectItem>
+                              <SelectItem value="3">3 seconds after page load</SelectItem>
+                              <SelectItem value="5">5 seconds after page load</SelectItem>
+                              <SelectItem value="10">10 seconds after page load</SelectItem>
+                              <SelectItem value="15">15 seconds after page load</SelectItem>
+                              <SelectItem value="30">30 seconds after page load</SelectItem>
+                              <SelectItem value="60">1 minute after page load</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="greeting-msg">Greeting Message</Label>
+                          <Textarea
+                            id="greeting-msg"
+                            value={greetingMessage}
+                            onChange={e => setGreetingMessage(e.target.value)}
+                            placeholder="👋 Hi there! How can we help you today?"
+                            rows={3}
+                            maxLength={500}
+                          />
+                          <p className="text-xs text-gray-400">{greetingMessage.length}/500 characters</p>
+                        </div>
+
+                        {/* Greeting preview */}
+                        <div className="p-4 bg-gray-50 rounded-lg border">
+                          <p className="text-xs text-gray-500 mb-2 font-medium">Greeting Preview</p>
+                          <div className="flex items-end gap-2">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: widgetColor }}>
+                              {(widgetTitle || 'A')[0].toUpperCase()}
+                            </div>
+                            <div className="bg-white border rounded-2xl rounded-bl-sm px-3 py-2 max-w-xs shadow-sm">
+                              <p className="text-sm">{greetingMessage || '...'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -296,6 +384,8 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       showOfflinePreview={showOfflinePreview}
                       offlineBehavior={offlineBehavior}
                       offlineMessage={offlineMessage}
+                      greetingEnabled={greetingEnabled}
+                      greetingMessage={greetingMessage}
                     />
                   </div>
                 </div>
@@ -442,6 +532,8 @@ function WidgetPreview({
   showOfflinePreview,
   offlineBehavior,
   offlineMessage,
+  greetingEnabled = false,
+  greetingMessage = '',
 }: {
   design: string;
   color: string;
@@ -452,7 +544,11 @@ function WidgetPreview({
   showOfflinePreview: boolean;
   offlineBehavior: string;
   offlineMessage: string;
+  greetingEnabled?: boolean;
+  greetingMessage?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const shouldShow = !showOfflinePreview || offlineBehavior !== 'hide';
   if (!shouldShow) return null;
 
@@ -497,13 +593,24 @@ function WidgetPreview({
     </>
   );
 
+  const showPanel = isOpen;
+
+  const greetingBubble = greetingEnabled && greetingMessage && !isOpen ? (
+    <div className="absolute bottom-[72px] right-0 bg-white rounded-xl shadow-lg border px-3 py-2 w-52 text-xs leading-relaxed text-gray-800">
+      {greetingMessage}
+      <div className="absolute bottom-[-6px] right-6 w-3 h-3 bg-white border-b border-r rotate-45" />
+    </div>
+  ) : null;
+
   switch (design) {
     case 'modern':
       return (
         <div className="relative">
-          <button className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-110" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-110" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-6 w-6" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-lg shadow-xl border overflow-hidden`}>
             <div className="p-4 text-white" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between">
@@ -516,7 +623,7 @@ function WidgetPreview({
                     <p className="text-xs opacity-90">{showOfflinePreview ? "We're offline" : "We're online"}</p>
                   </div>
                 </div>
-                <button className="text-white/80 hover:text-white"><X className="h-4 w-4" /></button>
+                <button className="text-white/80 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-4 w-4" /></button>
               </div>
             </div>
             {showOfflinePreview ? offlineContent : (
@@ -538,20 +645,23 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'minimal':
       return (
         <div className="relative">
-          <button className="w-12 h-12 rounded-full shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-12 h-12 rounded-full shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-5 w-5" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-72 bg-white rounded shadow-lg border overflow-hidden`}>
             <div className="p-3 border-b">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">{showOfflinePreview ? "Chat - Offline" : "Chat"}</p>
-                <button className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+                <button className="text-gray-400 hover:text-gray-600" onClick={() => setIsOpen(false)}><X className="h-4 w-4" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && (
@@ -591,22 +701,25 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'classic':
       return (
         <div className="relative">
-          <button className="w-16 h-12 rounded shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-16 h-12 rounded shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-5 w-5" /><span className="ml-1 text-xs">Chat</span>
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-none shadow-xl border-2 overflow-hidden`} style={{ borderColor: color }}>
             <div className="p-3 text-white flex items-center justify-between" style={{ backgroundColor: color }}>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${showOfflinePreview ? 'bg-red-400' : 'bg-green-400'}`}></div>
                 <p className="text-sm font-medium">{showOfflinePreview ? "Support Chat - Offline" : "Support Chat"}</p>
               </div>
-              <button className="text-white/80 hover:text-white"><X className="h-4 w-4" /></button>
+              <button className="text-white/80 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-4 w-4" /></button>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-4 bg-gray-50 h-48 flex items-center justify-center"><p className="text-sm text-gray-700 text-center">{offlineMessage}</p></div>}
             {showOfflinePreview && offlineBehavior === 'form' && (
@@ -636,15 +749,18 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'bubble':
       return (
         <div className="relative">
-          <button className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white border-4 border-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white border-4 border-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-7 w-7" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-3xl shadow-2xl overflow-hidden`}>
             <div className="p-5 text-white rounded-t-3xl" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between">
@@ -655,7 +771,7 @@ function WidgetPreview({
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently offline" : "Always here to help"}</p>
                   </div>
                 </div>
-                <button className="text-white/80 hover:text-white"><X className="h-5 w-5" /></button>
+                <button className="text-white/80 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-5 w-5" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-4 bg-gradient-to-b from-gray-50 to-white h-48 flex items-center justify-center"><p className="text-sm text-gray-700 text-center px-4">{offlineMessage}</p></div>}
@@ -686,20 +802,23 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'compact':
       return (
         <div className="relative">
-          <button className="w-11 h-11 rounded-lg shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-11 h-11 rounded-lg shadow-md flex items-center justify-center text-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-5 w-5" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-64 bg-white rounded-lg shadow-lg border overflow-hidden`}>
             <div className="p-2.5 text-white text-xs font-medium" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between">
                 <span>{showOfflinePreview ? "Offline" : "Chat Support"}</span>
-                <button className="text-white/80 hover:text-white"><X className="h-3.5 w-3.5" /></button>
+                <button className="text-white/80 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-3.5 w-3.5" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-3 bg-gray-50 h-40 flex items-center justify-center"><p className="text-xs text-gray-700 text-center">{offlineMessage}</p></div>}
@@ -730,15 +849,18 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'professional':
       return (
         <div className="relative">
-          <button className="w-14 h-14 rounded-sm shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-14 h-14 rounded-sm shadow-lg flex items-center justify-center text-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-6 w-6" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-96 bg-white rounded-sm shadow-2xl border overflow-hidden`}>
             <div className="p-4 bg-gray-50 border-b">
               <div className="flex items-center justify-between">
@@ -749,7 +871,7 @@ function WidgetPreview({
                     <p className="text-xs text-gray-500">{showOfflinePreview ? "Currently Offline" : "Typical response time: < 2 min"}</p>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+                <button className="text-gray-400 hover:text-gray-600" onClick={() => setIsOpen(false)}><X className="h-5 w-5" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-4 bg-white h-48 flex items-center justify-center"><p className="text-sm text-gray-700 text-center px-4">{offlineMessage}</p></div>}
@@ -783,15 +905,18 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'friendly':
       return (
         <div className="relative">
-          <button className="w-16 h-16 rounded-2xl shadow-xl flex flex-col items-center justify-center text-white" style={{ backgroundColor: color }}>
+          {greetingBubble}
+          <button className="w-16 h-16 rounded-2xl shadow-xl flex flex-col items-center justify-center text-white" style={{ backgroundColor: color }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-6 w-6" /><span className="text-xs mt-0.5">Help</span>
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-2xl shadow-2xl overflow-hidden border-2`} style={{ borderColor: color }}>
             <div className="p-4 text-white relative overflow-hidden" style={{ backgroundColor: color }}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
@@ -805,7 +930,7 @@ function WidgetPreview({
                     <p className="text-xs opacity-90">{showOfflinePreview ? "But we'll be back soon!" : "We're here to help"}</p>
                   </div>
                 </div>
-                <button className="text-white/80 hover:text-white"><X className="h-5 w-5" /></button>
+                <button className="text-white/80 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-5 w-5" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-4 bg-gradient-to-b from-blue-50/50 to-white h-48 flex items-center justify-center"><p className="text-sm text-gray-700 text-center px-4">{offlineMessage}</p></div>}
@@ -836,15 +961,18 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 
     case 'gradient':
       return (
         <div className="relative">
-          <button className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
+          {greetingBubble}
+          <button className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-6 w-6" />
           </button>
+          {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-xl shadow-2xl overflow-hidden`}>
             <div className="p-4 text-white bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
               <div className="flex items-center justify-between">
@@ -855,7 +983,7 @@ function WidgetPreview({
                     <p className="text-xs opacity-90">{showOfflinePreview ? "Currently Offline" : "Online now"}</p>
                   </div>
                 </div>
-                <button className="text-white/90 hover:text-white"><X className="h-5 w-5" /></button>
+                <button className="text-white/90 hover:text-white" onClick={() => setIsOpen(false)}><X className="h-5 w-5" /></button>
               </div>
             </div>
             {showOfflinePreview && offlineBehavior === 'message' && <div className="p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 h-48 flex items-center justify-center"><p className="text-sm text-gray-700 text-center px-4">{offlineMessage}</p></div>}
@@ -888,6 +1016,7 @@ function WidgetPreview({
               </>
             )}
           </div>
+          )}
         </div>
       );
 

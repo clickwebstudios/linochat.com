@@ -6,6 +6,8 @@ use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TicketResource;
 use App\Mail\TicketCreatedMail;
+use App\Models\Chat;
+use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -165,6 +167,7 @@ class TicketController extends Controller
             'priority' => 'nullable|in:low,medium,high,urgent',
             'category' => 'nullable|string',
             'assigned_to' => 'nullable|exists:users,id',
+            'chat_id' => 'nullable|exists:chats,id',
         ]);
 
         if ($validator->fails()) {
@@ -176,8 +179,10 @@ class TicketController extends Controller
         }
 
         $assignedTo = $request->input('assigned_to');
+        $chatId     = $request->input('chat_id');
         $ticket = Ticket::create([
             'project_id' => $request->input('project_id'),
+            'chat_id' => $chatId,
             'customer_email' => $request->input('customer_email'),
             'customer_name' => $request->input('customer_name'),
             'subject' => $request->input('subject'),
@@ -187,6 +192,24 @@ class TicketController extends Controller
             'status' => $assignedTo ? 'in_progress' : 'open',
             'assigned_to' => $assignedTo,
         ]);
+
+        // Ticket number is set by model booted() hook; refresh to get it
+        $ticket->refresh();
+
+        // Post a system message to the linked chat so agents/customers see the ticket reference
+        if ($chatId) {
+            $chat = Chat::find($chatId);
+            if ($chat) {
+                $ticketNumber = $ticket->ticket_number ?? ('TKT-' . $ticket->id);
+                $systemMessage = ChatMessage::create([
+                    'chat_id'     => $chat->id,
+                    'sender_type' => 'system',
+                    'content'     => "Ticket {$ticketNumber} created: {$ticket->subject}",
+                ]);
+                $chat->update(['last_message_at' => now()]);
+                broadcast(new MessageSent($systemMessage))->toOthers();
+            }
+        }
 
         // Create initial message
         TicketMessage::create([
@@ -199,7 +222,7 @@ class TicketController extends Controller
         // Send confirmation email to customer
         try {
             $project = Project::find($request->input('project_id'));
-            $ticketUrl = env('FRONTEND_URL', 'http://localhost:5174') . '/tickets/' . $ticket->id;
+            $ticketUrl = env('FRONTEND_URL', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
             Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name, $ticketUrl));
         } catch (\Exception $e) {
             Log::error('Failed to send ticket created email', ['error' => $e->getMessage()]);
@@ -209,6 +232,7 @@ class TicketController extends Controller
             'success' => true,
             'message' => 'Ticket created',
             'data' => $ticket,
+            'ticket_number' => $ticket->ticket_number,
         ], 201);
     }
 

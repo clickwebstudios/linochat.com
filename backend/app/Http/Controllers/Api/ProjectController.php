@@ -23,11 +23,13 @@ class ProjectController extends Controller
         $type = $request->input('type', 'all');
         $companyId = $request->input('company_id');
         
-        // Superadmin filtering by company
-        if ($companyId && $user->role === 'superadmin') {
-            $projects = Project::where('user_id', $companyId)
-                ->withCount(['agents', 'chats', 'tickets'])
-                ->paginate(20);
+        // Superadmin: all projects or filtered by company
+        if ($user->role === 'superadmin') {
+            $query = Project::query();
+            if ($companyId) {
+                $query->where('user_id', $companyId);
+            }
+            $projects = $query->withCount(['agents', 'chats', 'tickets'])->paginate(100);
         } elseif ($type === 'owned') {
             $projects = $user->ownedProjects()
                 ->withCount(['agents', 'chats', 'tickets'])
@@ -112,6 +114,17 @@ class ProjectController extends Controller
 
         $user = auth('api')->user();
 
+        // Normalize website URL for comparison (lowercase, strip trailing slash)
+        $website = rtrim(strtolower($request->input('website')), '/');
+        $duplicate = Project::whereRaw('LOWER(TRIM(TRAILING \'/\' FROM website)) = ?', [$website])->first();
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A project with this website URL already exists.',
+                'errors' => ['website' => ['A project with this website URL already exists.']],
+            ], 422);
+        }
+
         $project = Project::create([
             'user_id' => $user->id,
             'name' => $request->input('name'),
@@ -173,6 +186,21 @@ class ProjectController extends Controller
                 'success' => false,
                 'message' => 'Unauthorized',
             ], 403);
+        }
+
+        // Check for duplicate website URL (excluding current project)
+        if ($request->has('website')) {
+            $website = rtrim(strtolower($request->input('website')), '/');
+            $duplicate = Project::whereRaw('LOWER(TRIM(TRAILING \'/\' FROM website)) = ?', [$website])
+                ->where('id', '!=', $project_id)
+                ->first();
+            if ($duplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A project with this website URL already exists.',
+                    'errors' => ['website' => ['A project with this website URL already exists.']],
+                ], 422);
+            }
         }
 
         $updatable = ['name', 'website', 'color', 'description', 'status'];
@@ -261,6 +289,12 @@ class ProjectController extends Controller
         $agents = $project->agents()
             ->with(['availabilitySettings', 'notificationPreferences'])
             ->get();
+
+        // Include the project owner if not already in the agents list
+        $owner = \App\Models\User::find($project->user_id);
+        if ($owner && $agents->where('id', $owner->id)->isEmpty()) {
+            $agents->prepend($owner);
+        }
 
         return response()->json([
             'success' => true,

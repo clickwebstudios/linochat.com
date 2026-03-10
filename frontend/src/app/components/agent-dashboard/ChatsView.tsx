@@ -556,18 +556,19 @@ export function ChatsView({
     if (!activeChat) return;
     setIsGeneratingSubject(true);
     setTimeout(() => {
-      const chatContext = (activeChat.preview || '').toLowerCase();
+      const customerName = activeChat.customer_name || activeChat.customer || 'Customer';
+      const chatContext = (activeChat.preview || activeChat.last_message || '').toLowerCase();
       let generatedSubject = '';
       if (chatContext.includes('payment') || chatContext.includes('billing')) {
-        generatedSubject = `Payment Issue - ${activeChat.customer}`;
+        generatedSubject = `Payment Issue - ${customerName}`;
       } else if (chatContext.includes('login') || chatContext.includes('access')) {
-        generatedSubject = `Login/Access Request - ${activeChat.customer}`;
+        generatedSubject = `Login/Access Request - ${customerName}`;
       } else if (chatContext.includes('bug') || chatContext.includes('error')) {
-        generatedSubject = `Technical Issue - ${activeChat.customer}`;
+        generatedSubject = `Technical Issue - ${customerName}`;
       } else if (chatContext.includes('feature') || chatContext.includes('request')) {
-        generatedSubject = `Feature Request - ${activeChat.customer}`;
+        generatedSubject = `Feature Request - ${customerName}`;
       } else {
-        generatedSubject = `Support Request - ${activeChat.customer}`;
+        generatedSubject = `Support Request - ${customerName}`;
       }
       setNewTicket({ ...newTicket, subject: generatedSubject });
       setIsGeneratingSubject(false);

@@ -50,7 +50,7 @@ export default function OAuthAppsPage() {
 
   const fetchApps = async () => {
     try {
-      const res: any = await api.get('/api/oauth/clients');
+      const res: any = await api.get('/oauth/clients');
       setApps(res.data?.data ?? []);
     } catch { /* ignore */ }
     finally { setLoading(false); }
@@ -63,7 +63,7 @@ export default function OAuthAppsPage() {
     }
     setCreating(true);
     try {
-      const res: any = await api.post('/api/oauth/clients', form);
+      const res: any = await api.post('/oauth/clients', form);
       setApps(prev => [res.data.data, ...prev]);
       setShowCreate(false);
       setForm({ name: '', redirect_uri: '', scopes: ['chats:read'] });
@@ -75,7 +75,7 @@ export default function OAuthAppsPage() {
 
   const rotateSecret = async (app: OAuthApp) => {
     try {
-      const res: any = await api.post(`/api/oauth/clients/${app.id}/rotate-secret`);
+      const res: any = await api.post(`/oauth/clients/${app.id}/rotate-secret`);
       setApps(prev => prev.map(a => a.id === app.id ? res.data.data : a));
       toast.success('Secret rotated — all existing tokens revoked');
     } catch {
@@ -85,7 +85,7 @@ export default function OAuthAppsPage() {
 
   const deleteApp = async (app: OAuthApp) => {
     try {
-      await api.delete(`/api/oauth/clients/${app.id}`);
+      await api.delete(`/oauth/clients/${app.id}`);
       setApps(prev => prev.filter(a => a.id !== app.id));
       setDeleteTarget(null);
       toast.success('App deleted');

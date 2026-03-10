@@ -132,7 +132,7 @@ export function CreateTicketDialog({
         description: newTicket.description.trim(),
         priority: newTicket.priority,
         category: newTicket.category || undefined,
-        assigned_to: newTicket.assignTo || undefined,
+        assigned_to: (newTicket.assignTo && newTicket.assignTo !== 'unassigned') ? newTicket.assignTo : undefined,
       });
       if (response.success) {
         onTicketCreated?.(response.data as any);
@@ -164,7 +164,7 @@ export function CreateTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ticket className="h-5 w-5 text-blue-600" />
@@ -392,6 +392,7 @@ export function CreateTicketDialog({
                 {teamMembers
                   .filter(
                     (member) =>
+                      member.role === 'agent' || member.role === 'admin' ||
                       member.role === 'Agent' || member.role === 'Admin'
                   )
                   .map((member) => (

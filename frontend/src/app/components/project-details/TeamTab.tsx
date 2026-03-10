@@ -79,12 +79,12 @@ export function TeamTab({ project, isSuperadmin, projectAgents, onAddMemberClick
                           <div className="relative">
                             <Avatar className="h-9 w-9">
                               <AvatarFallback className="bg-blue-600 text-white">
-                                {agent.name.split(' ').map((n: string) => n[0]).join('')}
+                                {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
                             <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${i % 3 === 0 ? 'bg-green-500' : i % 3 === 1 ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
                           </div>
-                          <span className="font-medium">{agent.name}</span>
+                          <span className="font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-500">{agent.email}</TableCell>
@@ -138,55 +138,60 @@ export function TeamTab({ project, isSuperadmin, projectAgents, onAddMemberClick
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...Array(project.members)].map((_, i) => (
-                  <TableRow key={i} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-blue-600 text-white">
-                            {String.fromCharCode(65 + i)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">Team Member {i + 1}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>member{i + 1}@example.com</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {i === 0 ? 'Admin' : i === 1 ? 'Senior Agent' : 'Agent'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {i === 0 ? 'Dec 1, 2024' : i === 1 ? 'Dec 5, 2024' : 'Dec 10, 2024'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-green-600">Active</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Role
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remove Member
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {projectAgents.length > 0 ? projectAgents.map((member) => {
+                  const name = member.name ?? (`${member.first_name ?? ''} ${member.last_name ?? ''}`.trim() || member.email);
+                  const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                  const joinedDate = member.created_at ? new Date(member.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                  return (
+                    <TableRow key={member.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-blue-600 text-white">{initials}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{member.email ?? '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{member.role ?? 'Agent'}</Badge>
+                      </TableCell>
+                      <TableCell>{joinedDate}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-600">Active</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Role
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Settings className="h-4 w-4 mr-2" />
+                              Permissions
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove Member
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                      No team members yet. Invite someone to get started.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           )}

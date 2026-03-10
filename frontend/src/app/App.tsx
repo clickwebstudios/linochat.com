@@ -45,6 +45,7 @@ const OAuthAppsPage = lazy(() => import('./pages/oauth/OAuthAppsPage'));
 // Lazy-loaded standalone pages
 const ExampleChatDashboard = lazy(() => import('./components/layouts').then(m => ({ default: m.ExampleChatDashboard })));
 const HelpCenter = lazy(() => import('./pages/customer/HelpCenter'));
+const PublicTicketPage = lazy(() => import('./pages/PublicTicketPage').then(m => ({ default: m.PublicTicketPage })));
 
 // Legacy Auth Pages
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
@@ -216,6 +217,7 @@ export default function App() {
 
               {/* Customer-facing */}
               <Route path="/help" element={<HelpCenter />} />
+              <Route path="/ticket/:token" element={<PublicTicketPage />} />
 
               {/* Default redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />

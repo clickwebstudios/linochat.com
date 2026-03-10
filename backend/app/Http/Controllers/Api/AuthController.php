@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\ApiController;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Mail\PasswordResetMail;
 use App\Mail\VerificationCodeMail;
@@ -18,36 +18,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Illuminate\Support\Str;
-use OpenApi\Annotations as OA;
 
-/**
- * @OA\Tag(
- *     name="Authentication",
- *     description="User authentication, registration, and password management"
- * )
- */
-class AuthController extends ApiController
+class AuthController extends Controller
 {
     /**
-     * Create a new AuthController instance.
-     */
-    public function __construct()
-    {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'forgotPassword', 'resetPassword', 'sendVerificationCode', 'verifyEmailCode']]);
-    }
-
-    /**
-     * Get a JWT via given credentials.
+     * Login and return a Sanctum token with the same shape the frontend expects.
      */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|string|min:6',
         ]);
 
@@ -55,20 +36,21 @@ class AuthController extends ApiController
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $request->input('email'))->first();
 
-        if (!$token = auth('api')->attempt($credentials)) {
+        if (!$user || !Hash::check($request->input('password'), $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',
+                'errors'  => ['email' => ['Invalid credentials']],
             ], 401);
         }
 
-        return $this->respondWithToken($token);
+        return $this->respondWithToken($user);
     }
 
     /**
@@ -77,148 +59,138 @@ class AuthController extends ApiController
     public function register(Request $request, WebsiteAnalyzerService $analyzer)
     {
         $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'website' => 'required|url|max:255',
+            'first_name'   => 'required|string|max:100',
+            'last_name'    => 'required|string|max:100',
+            'email'        => 'required|string|email|max:255|unique:users',
+            'password'     => 'required|string|min:6|confirmed',
+            'website'      => 'required|url|max:255',
             'company_name' => 'required|string|max:255',
-            'role' => 'sometimes|string|in:admin,agent,superadmin',
+            'role'         => 'sometimes|string|in:admin,agent,superadmin',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         $role = $request->input('role', 'admin');
 
         $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
+            'first_name'   => $request->first_name,
+            'last_name'    => $request->last_name,
             'company_name' => $request->company_name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $role,
-            'status' => 'Active',
-            'join_date' => now(),
+            'email'        => $request->email,
+            'password'     => Hash::make($request->password),
+            'role'         => $role,
+            'status'       => 'Active',
+            'join_date'    => now(),
         ]);
 
-        // Create notification preferences
         $user->notificationPreferences()->create([
-            'email_notifications' => true,
-            'desktop_notifications' => true,
-            'sound_alerts' => false,
-            'weekly_summary' => true,
+            'email_notifications'  => true,
+            'desktop_notifications'=> true,
+            'sound_alerts'         => false,
+            'weekly_summary'       => true,
         ]);
 
-        // Create availability settings
         $user->availabilitySettings()->create([
-            'auto_accept_chats' => true,
+            'auto_accept_chats'    => true,
             'max_concurrent_chats' => 5,
         ]);
 
-        // Create project with website
         $project = Project::create([
-            'user_id' => $user->id,
-            'name' => $request->company_name,
-            'slug' => Str::slug($request->company_name) . '-' . Str::random(6),
-            'widget_id' => 'wc_' . Str::random(32),
-            'website' => $request->website,
-            'color' => '#4F46E5',
-            'status' => 'active',
+            'user_id'     => $user->id,
+            'name'        => $request->company_name,
+            'slug'        => Str::slug($request->company_name) . '-' . Str::random(6),
+            'widget_id'   => 'wc_' . Str::random(32),
+            'website'     => $request->website,
+            'color'       => '#4F46E5',
+            'status'      => 'active',
             'description' => 'Auto-generated from website analysis',
         ]);
 
-        // Analyze website and create KB
         $analysisResult = $analyzer->analyze($request->website);
-        
+
         if ($analysisResult['success']) {
             $this->createKbFromAnalysis($project, $analysisResult['data'], $user->id);
         }
 
-        // Send welcome email
         try {
             Mail::to($user->email)->send(new WelcomeMail($user, $project));
         } catch (\Exception $e) {
             Log::error('Failed to send welcome email', ['error' => $e->getMessage()]);
         }
 
-        $token = auth('api')->login($user);
+        $accessToken  = $user->createToken('access-token')->plainTextToken;
+        $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Registration successful',
-            'data' => [
-                'access_token' => $token,
-                'refresh_token' => auth('api')->claims(['refresh' => true])->fromUser($user),
-                'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
-                'user' => $user,
-                'project' => $project,
-                'analysis' => $analysisResult['success'] ? 'completed' : 'failed',
-                'kb_articles_count' => $analysisResult['success'] 
-                    ? collect($analysisResult['data']['categories'] ?? [])->pluck('articles')->flatten()->count() 
+            'data'    => [
+                'access_token'      => $accessToken,
+                'refresh_token'     => $refreshToken,
+                'token_type'        => 'bearer',
+                'expires_in'        => 3600,
+                'user'              => $user,
+                'project'           => $project,
+                'analysis'          => $analysisResult['success'] ? 'completed' : 'failed',
+                'kb_articles_count' => $analysisResult['success']
+                    ? collect($analysisResult['data']['categories'] ?? [])->pluck('articles')->flatten()->count()
                     : 0,
             ],
         ]);
     }
 
-    /**
-     * Create KB categories and articles from AI analysis
-     */
     protected function createKbFromAnalysis(Project $project, array $data, string $userId): void
     {
-        // Update project description if AI found better info
         if (!empty($data['description'])) {
             $project->update(['description' => $data['description']]);
         }
 
-        // Create categories and articles
         foreach ($data['categories'] ?? [] as $categoryData) {
             $category = KbCategory::create([
-                'project_id' => $project->id,
-                'name' => $categoryData['name'],
-                'slug' => Str::slug($categoryData['name']),
+                'project_id'  => $project->id,
+                'name'        => $categoryData['name'],
+                'slug'        => Str::slug($categoryData['name']),
                 'description' => null,
             ]);
 
             foreach ($categoryData['articles'] ?? [] as $articleData) {
                 KbArticle::create([
-                    'category_id' => $category->id,
-                    'project_id' => $project->id,
-                    'author_id' => $userId,
-                    'title' => $articleData['title'],
-                    'slug' => Str::slug($articleData['title']) . '-' . Str::random(4),
-                    'content' => $articleData['content'],
+                    'category_id'  => $category->id,
+                    'project_id'   => $project->id,
+                    'author_id'    => $userId,
+                    'title'        => $articleData['title'],
+                    'slug'         => Str::slug($articleData['title']) . '-' . Str::random(4),
+                    'content'      => $articleData['content'],
                     'is_published' => true,
-                    'views' => 0,
+                    'views'        => 0,
                 ]);
             }
         }
 
-        // Create FAQ category if there are FAQs
         if (!empty($data['faq'])) {
             $faqCategory = KbCategory::create([
-                'project_id' => $project->id,
-                'name' => 'FAQ',
-                'slug' => 'faq',
+                'project_id'  => $project->id,
+                'name'        => 'FAQ',
+                'slug'        => 'faq',
                 'description' => 'Frequently asked questions',
             ]);
 
             foreach ($data['faq'] as $faq) {
                 KbArticle::create([
-                    'category_id' => $faqCategory->id,
-                    'project_id' => $project->id,
-                    'author_id' => $userId,
-                    'title' => $faq['question'],
-                    'slug' => Str::slug(substr($faq['question'], 0, 50)) . '-' . Str::random(4),
-                    'content' => $faq['answer'],
+                    'category_id'  => $faqCategory->id,
+                    'project_id'   => $project->id,
+                    'author_id'    => $userId,
+                    'title'        => $faq['question'],
+                    'slug'         => Str::slug(substr($faq['question'], 0, 50)) . '-' . Str::random(4),
+                    'content'      => $faq['answer'],
                     'is_published' => true,
-                    'views' => 0,
+                    'views'        => 0,
                 ]);
             }
         }
@@ -237,13 +209,12 @@ class AuthController extends ApiController
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         $email = $request->input('email');
 
-        // Check if email is already registered
         if (User::where('email', $email)->exists()) {
             return response()->json([
                 'success' => false,
@@ -251,7 +222,6 @@ class AuthController extends ApiController
             ], 422);
         }
 
-        // Rate limit: max 1 code per email per 60 seconds
         $recent = EmailVerificationCode::where('email', $email)
             ->where('created_at', '>', now()->subSeconds(60))
             ->first();
@@ -263,15 +233,13 @@ class AuthController extends ApiController
             ], 429);
         }
 
-        // Delete old codes for this email
         EmailVerificationCode::where('email', $email)->delete();
 
-        // Generate 6-digit code
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         EmailVerificationCode::create([
-            'email' => $email,
-            'code' => $code,
+            'email'      => $email,
+            'code'       => $code,
             'expires_at' => now()->addMinutes(15),
         ]);
 
@@ -298,14 +266,14 @@ class AuthController extends ApiController
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
-            'code' => 'required|string|size:6',
+            'code'  => 'required|string|size:6',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -328,7 +296,6 @@ class AuthController extends ApiController
             ], 422);
         }
 
-        // Code is valid — delete it so it can't be reused
         $record->delete();
 
         return response()->json([
@@ -340,11 +307,12 @@ class AuthController extends ApiController
     /**
      * Get the authenticated User.
      */
-    public function me()
+    public function me(Request $request)
     {
+        $user = $request->user();
         return response()->json([
             'success' => true,
-            'data' => new UserResource(auth('api')->user()),
+            'data'    => new UserResource($user),
         ]);
     }
 
@@ -353,33 +321,33 @@ class AuthController extends ApiController
      */
     public function updateProfile(Request $request)
     {
-        $user = auth('api')->user();
-        
+        $user = $request->user();
+
         $validated = $request->validate([
             'first_name' => 'nullable|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:10',
-            'bio' => 'nullable|string|max:2000',
-            'location' => 'nullable|string|max:255',
+            'last_name'  => 'nullable|string|max:255',
+            'phone'      => 'nullable|string|max:50',
+            'company'    => 'nullable|string|max:255',
+            'country'    => 'nullable|string|max:10',
+            'bio'        => 'nullable|string|max:2000',
+            'location'   => 'nullable|string|max:255',
         ]);
-        
+
         $user->update($validated);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully',
-            'data' => $user->fresh(),
+            'data'    => $user->fresh(),
         ]);
     }
 
     /**
-     * Log the user out (Invalidate the token).
+     * Log the user out (revoke all tokens).
      */
-    public function logout()
+    public function logout(Request $request)
     {
-        auth('api')->logout();
+        $request->user()->tokens()->delete();
 
         return response()->json([
             'success' => true,
@@ -388,51 +356,36 @@ class AuthController extends ApiController
     }
 
     /**
-     * Refresh a token.
+     * Refresh token — revoke current and issue new ones.
      */
     public function refresh(Request $request)
     {
-        try {
-            $refreshToken = $request->input('refresh_token');
-            
-            if (!$refreshToken) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Refresh token is required',
-                ], 422);
-            }
+        $refreshToken = $request->input('refresh_token');
 
-            // Parse the refresh token and get new access token
-            $token = JWTAuth::setToken($refreshToken);
-            $user = $token->toUser();
-            
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid refresh token',
-                ], 401);
-            }
-
-            // Generate new tokens
-            $newToken = auth('api')->login($user);
-            
-            return $this->respondWithToken($newToken);
-        } catch (TokenExpiredException $e) {
+        if (!$refreshToken) {
             return response()->json([
                 'success' => false,
-                'message' => 'Refresh token expired',
-            ], 401);
-        } catch (TokenInvalidException $e) {
+                'message' => 'Refresh token is required',
+            ], 422);
+        }
+
+        // Find the token hash in personal_access_tokens
+        [$id, $token] = array_pad(explode('|', $refreshToken, 2), 2, null);
+
+        $pat = \Laravel\Sanctum\PersonalAccessToken::find($id);
+
+        if (!$pat || !hash_equals($pat->token, hash('sha256', $token))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid refresh token',
             ], 401);
-        } catch (JWTException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Could not refresh token',
-            ], 500);
         }
+
+        $user = $pat->tokenable;
+        // Revoke old tokens and issue fresh ones
+        $user->tokens()->delete();
+
+        return $this->respondWithToken($user);
     }
 
     /**
@@ -448,25 +401,29 @@ class AuthController extends ApiController
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        $user = User::where('email', $request->input('email'))->first();
-
-        // Generate reset token
+        $user  = User::where('email', $request->input('email'))->first();
         $token = Str::random(64);
 
-        // Store token in password_resets table
         \DB::table('password_resets')->updateOrInsert(
             ['email' => $user->email],
             ['token' => Hash::make($token), 'created_at' => now()]
         );
 
-        $resetUrl = rtrim(config('app.frontend_url', 'http://localhost:5174'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+        $resetUrl = rtrim(config('app.frontend_url', 'https://linochat.com'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
-        // Send password reset email
-        Mail::to($user->email)->send(new PasswordResetMail($user, $resetUrl));
+        try {
+            Mail::to($user->email)->send(new PasswordResetMail($user->first_name . ' ' . $user->last_name, $user->email, $resetUrl));
+        } catch (\Exception $e) {
+            Log::error('Failed to send password reset email', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send reset email. Please try again later.',
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
@@ -480,8 +437,8 @@ class AuthController extends ApiController
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'token' => 'required|string',
-            'email' => 'required|email',
+            'token'    => 'required|string',
+            'email'    => 'required|email',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -489,11 +446,10 @@ class AuthController extends ApiController
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        // Find the reset record
         $resetRecord = \DB::table('password_resets')
             ->where('email', $request->input('email'))
             ->first();
@@ -505,7 +461,6 @@ class AuthController extends ApiController
             ], 400);
         }
 
-        // Check if token is expired (60 minutes)
         if (now()->diffInMinutes($resetRecord->created_at) > 60) {
             \DB::table('password_resets')->where('email', $request->input('email'))->delete();
             return response()->json([
@@ -514,7 +469,6 @@ class AuthController extends ApiController
             ], 400);
         }
 
-        // Verify the token
         if (!Hash::check($request->input('token'), $resetRecord->token)) {
             return response()->json([
                 'success' => false,
@@ -522,13 +476,8 @@ class AuthController extends ApiController
             ], 400);
         }
 
-        // Update user password
         $user = User::where('email', $request->input('email'))->first();
-        $user->update([
-            'password' => Hash::make($request->input('password')),
-        ]);
-
-        // Delete the reset token
+        $user->update(['password' => Hash::make($request->input('password'))]);
         \DB::table('password_resets')->where('email', $request->input('email'))->delete();
 
         return response()->json([
@@ -538,26 +487,22 @@ class AuthController extends ApiController
     }
 
     /**
-     * Get the token array structure.
+     * Build the standard token response the frontend expects.
      */
-    protected function respondWithToken($token)
+    protected function respondWithToken(User $user)
     {
-        $user = auth('api')->user();
-        
-        // Generate refresh token (longer lived)
-        $refreshToken = auth('api')->claims([
-            'refresh' => true,
-        ])->fromUser($user);
+        $accessToken  = $user->createToken('access-token')->plainTextToken;
+        $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Success',
-            'data' => [
-                'access_token' => $token,
+            'data'    => [
+                'access_token'  => $accessToken,
                 'refresh_token' => $refreshToken,
-                'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
-                'user' => $user,
+                'token_type'    => 'bearer',
+                'expires_in'    => 3600,
+                'user'          => $user,
             ],
         ]);
     }

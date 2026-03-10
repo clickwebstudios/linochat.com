@@ -231,12 +231,12 @@ export function AddProjectDialog({
         onProjectCreated?.(response.data as { id: string; name: string; description: string; color: string; website: string });
         handleClose(false);
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       clearInterval(stepTimer);
       console.error('Create project failed:', error);
       setIsCreatingKB(false);
       setCreationDone(false);
-      setUrlError('Failed to create project. Please try again.');
+      setUrlError(error?.message || 'Failed to create project. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

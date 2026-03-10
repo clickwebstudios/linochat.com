@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -33,8 +34,11 @@ class TicketCreatedMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $ref      = $this->ticket->ticket_number ?? ('TKT-' . $this->ticket->id);
+        $replyTo  = env('INBOUND_EMAIL_ADDRESS', 'linochat.tickets@gmail.com');
         return new Envelope(
-            subject: "Support Ticket Created - #{$this->ticket->id}",
+            subject: "[{$ref}] Support Ticket Created - {$this->ticket->subject}",
+            replyTo: [new Address($replyTo, $this->projectName . ' Support')],
         );
     }
 

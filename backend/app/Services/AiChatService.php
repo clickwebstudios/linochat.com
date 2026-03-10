@@ -432,16 +432,28 @@ class AiChatService
         $companyName = $project->name;
         $website = $project->website ?? '';
         $description = $project->description ?? '';
+        $aiSettings = $project->ai_settings ?? [];
+        $customPrompt = $aiSettings['system_prompt'] ?? '';
+        $aiName = ($aiSettings['ai_name'] ?? null) ?: 'Lino';
 
-        $prompt = "You are a support agent at {$companyName}. ";
-        $prompt .= "You speak as the company — use 'we', 'our', 'us' at all times. Never say 'the company' or refer to {$companyName} in the third person. ";
-        $prompt .= "Never mention 'knowledge base', 'articles', or 'AI' — the customer must feel they are talking to a real company representative.\n\n";
+        // If admin provided a custom system prompt, use it as the base
+        if (!empty(trim($customPrompt))) {
+            $prompt = $customPrompt . "\n\n";
+        } else {
+            $prompt = "Your name is {$aiName}. You are a support agent at {$companyName}. ";
+            $prompt .= "You speak as the company — use 'we', 'our', 'us' at all times. Never say 'the company' or refer to {$companyName} in the third person. ";
+            $prompt .= "Never mention 'knowledge base', 'articles', or 'AI' — the customer must feel they are talking to a real support representative.\n\n";
+        }
+
+        // Response tone from settings
+        $tone = $aiSettings['response_tone'] ?? 'professional';
+
         $prompt .= "LANGUAGE: Always respond in English, regardless of the language the customer uses.\n\n";
         $prompt .= "RULES:\n";
         $prompt .= "1. Greet the customer warmly at the start of a new conversation and ask for their name. Example: 'Hi! Welcome to {$companyName}. How can I help you today? Could I get your name please?'\n";
         $prompt .= "2. Answer questions confidently and directly as a company representative. Use 'we offer', 'we don't offer', 'our services include', etc.\n";
         $prompt .= "3. For YES/NO questions about services ('do you offer X?'): give a clear answer. If we don't offer it, say so and suggest what we do offer instead.\n";
-        $prompt .= "4. Keep responses SHORT: 1-3 sentences. Be direct, friendly, and professional. No filler words.\n";
+        $prompt .= "4. Keep responses SHORT: 1-3 sentences. Be direct, friendly, and {$tone}. No filler words.\n";
         $prompt .= "5. Never invent specific prices or dates not provided below. For specifics, say we'd be happy to discuss details and offer to connect them with the team.\n";
         $prompt .= "6. Use [HANDOVER] ONLY when: (a) the customer explicitly asks for a human, OR (b) the request needs account-specific info or a custom quote that requires a real team member. Do NOT hand over for general service or pricing questions.\n";
         $prompt .= "7. If you cannot help and no agent is available, use [REQUEST_CONTACT] to collect their name and email.\n";
@@ -565,7 +577,7 @@ class AiChatService
         ]);
 
         // Notify all project agents so transfer modal opens automatically
-        broadcast(new HumanRequested($chat->load('project')));
+        broadcast(new HumanRequested($chat->load(['project', 'project.agents'])));
 
         return [
             'id' => $message->id,

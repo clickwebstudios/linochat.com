@@ -6,17 +6,18 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { MessageSquare, Mail, Lock, ArrowRight, Chrome, X, Loader2, AlertCircle } from 'lucide-react';
+import { MessageSquare, Mail, Lock, ArrowRight, Chrome, X, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, error, clearError } = useAuthStore();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   // Get redirect path from location state or default based on role
   const from = (location.state as any)?.from?.pathname || '/';
@@ -24,6 +25,24 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setValidationError('');
+
+    if (!email.trim()) {
+      setValidationError('Please enter your email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidationError('Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setValidationError('Please enter your password.');
+      return;
+    }
+    if (password.length < 6) {
+      setValidationError('Password must be at least 6 characters.');
+      return;
+    }
 
     try {
       await login(email, password);
@@ -90,10 +109,10 @@ export default function Login() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Error Alert */}
-              {error && (
+              {(validationError || error) && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>{validationError || error}</AlertDescription>
                 </Alert>
               )}
 
@@ -112,7 +131,6 @@ export default function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
-                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -136,7 +154,6 @@ export default function Login() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
                       required
-                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -146,7 +163,6 @@ export default function Login() {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    disabled={isLoading}
                   />
                   <label
                     htmlFor="remember"
@@ -156,22 +172,12 @@ export default function Login() {
                   </label>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
+                  Sign in
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
 
@@ -185,7 +191,7 @@ export default function Login() {
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                <Button variant="outline" className="w-full" disabled={isLoading}>
+                <Button variant="outline" className="w-full">
                   <Chrome className="mr-2 h-4 w-4" />
                   Google
                 </Button>
