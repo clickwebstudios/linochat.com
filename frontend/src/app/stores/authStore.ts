@@ -13,6 +13,7 @@ interface AuthState {
   
   // Actions
   login: (email: string, password: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
   register: (data: RegisterData) => Promise<{ analysisStatus: string; kbCount: number }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -64,6 +65,33 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({
             error: error.message || 'Login failed',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Google Login
+      googleLogin: async (credential: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.googleLogin(credential);
+          if (response.success) {
+            setToken(response.data.access_token);
+            setRefreshToken(response.data.refresh_token);
+            set({
+              user: response.data.user,
+              project: response.data.project || null,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            if (response.data.user?.id) {
+              agentStatusStore.setStatus(String(response.data.user.id), 'Active');
+            }
+          }
+        } catch (error: any) {
+          set({
+            error: error.message || 'Google login failed',
             isLoading: false,
           });
           throw error;

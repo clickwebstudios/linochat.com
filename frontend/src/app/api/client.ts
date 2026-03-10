@@ -167,6 +167,9 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     api.post<AuthResponse>('/auth/refresh', { refresh_token: refreshToken }),
+
+  googleLogin: (credential: string) =>
+    api.post<AuthResponse>('/auth/google', { credential }),
 };
 
 // Export token helpers for use in other modules

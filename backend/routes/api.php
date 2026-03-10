@@ -49,6 +49,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('google', [AuthController::class, 'googleCallback']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);

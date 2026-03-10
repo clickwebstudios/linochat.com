@@ -27,6 +27,7 @@ class User extends Authenticatable
         'two_factor_enabled',
         'last_active_at',
         'join_date',
+        'google_id',
     ];
 
     protected $hidden = [

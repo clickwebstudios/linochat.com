@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { HelmetProvider } from 'react-helmet-async';
 import { lazy, Suspense, useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // New Auth System
 import { useAuthStore } from './stores/authStore';
@@ -76,6 +77,7 @@ function DashboardPage() {
 
 export default function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <HelmetProvider>
       <AuthInitializer>
         <BrowserRouter>
@@ -227,5 +229,6 @@ export default function App() {
         </BrowserRouter>
       </AuthInitializer>
     </HelmetProvider>
+    </GoogleOAuthProvider>
   );
 }

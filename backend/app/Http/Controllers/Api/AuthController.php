@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
+use Google\Client as GoogleClient;
 
 class AuthController extends Controller
 {
@@ -484,6 +486,77 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Password reset successfully',
         ]);
+    }
+
+    /**
+     * Handle Google login/register via ID token from frontend.
+     */
+    public function googleCallback(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'credential' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Google credential is required',
+            ], 422);
+        }
+
+        try {
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->userFromToken($request->input('credential'));
+        } catch (\Exception $e) {
+            Log::error('Google auth failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Google credentials',
+            ], 401);
+        }
+
+        $user = User::where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
+
+        if ($user) {
+            // Existing user — link Google ID if not set
+            if (!$user->google_id) {
+                $user->update(['google_id' => $googleUser->getId()]);
+            }
+            if ($googleUser->getAvatar() && !$user->avatar_url) {
+                $user->update(['avatar_url' => $googleUser->getAvatar()]);
+            }
+        } else {
+            // New user — register
+            $nameParts = explode(' ', $googleUser->getName(), 2);
+            $user = User::create([
+                'first_name'   => $nameParts[0] ?? '',
+                'last_name'    => $nameParts[1] ?? '',
+                'email'        => $googleUser->getEmail(),
+                'google_id'    => $googleUser->getId(),
+                'avatar_url'   => $googleUser->getAvatar(),
+                'password'     => Hash::make(Str::random(32)),
+                'role'         => 'admin',
+                'status'       => 'Active',
+                'join_date'    => now(),
+            ]);
+
+            $user->notificationPreferences()->create([
+                'email_notifications'  => true,
+                'desktop_notifications'=> true,
+                'sound_alerts'         => false,
+                'weekly_summary'       => true,
+            ]);
+
+            $user->availabilitySettings()->create([
+                'auto_accept_chats'    => true,
+                'max_concurrent_chats' => 5,
+            ]);
+        }
+
+        return $this->respondWithToken($user);
     }
 
     /**
