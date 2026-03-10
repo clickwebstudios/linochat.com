@@ -50,7 +50,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::put('me', [AuthController::class, 'updateProfile']);
@@ -80,7 +80,7 @@ if (app()->environment('local')) {
             ]);
         }
     });
-    Route::middleware('auth:api')->get('/debug/auth-test', function (Request $request) {
+    Route::middleware('auth:sanctum')->get('/debug/auth-test', function (Request $request) {
         return response()->json([
             'success' => true,
             'user_id' => auth('api')->id(),
@@ -141,7 +141,7 @@ Route::group([
 });
 
 // Widget Settings API (auth required)
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{project_id}/widget-settings', [WidgetSettingsController::class, 'show']);
     Route::put('/projects/{project_id}/widget-settings', [WidgetSettingsController::class, 'update']);
     Route::delete('/projects/{project_id}/widget-settings', [WidgetSettingsController::class, 'reset']);
@@ -149,7 +149,7 @@ Route::middleware('auth:api')->group(function () {
 });
 
 // AI Settings API (auth required)
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{project_id}/ai-settings', [AISettingsController::class, 'show']);
     Route::put('/projects/{project_id}/ai-settings/draft', [AISettingsController::class, 'saveDraft']);
     Route::post('/projects/{project_id}/ai-settings/publish', [AISettingsController::class, 'publish']);
@@ -159,14 +159,14 @@ Route::middleware('auth:api')->group(function () {
 });
 
 // Training Documents API (auth required)
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{project_id}/training-documents', [TrainingDocumentController::class, 'index']);
     Route::post('/projects/{project_id}/training-documents', [TrainingDocumentController::class, 'store']);
     Route::delete('/projects/{project_id}/training-documents/{doc_id}', [TrainingDocumentController::class, 'destroy']);
 });
 
 // Agent Dashboard API (auth required)
-Route::middleware('auth:api')->prefix('agent')->group(function () {
+Route::middleware('auth:sanctum')->prefix('agent')->group(function () {
     Route::get('/chats', [AgentController::class, 'chats']);
     Route::get('/chats/{chat_id}', [AgentController::class, 'show']);
     Route::get('/chats/{chat_id}/activity', [AgentController::class, 'activity']);
@@ -194,7 +194,7 @@ Route::middleware('auth:api')->prefix('agent')->group(function () {
 });
 
 // Dashboard API (auth required)
-Route::middleware('auth:api')->prefix('dashboard')->group(function () {
+Route::middleware('auth:sanctum')->prefix('dashboard')->group(function () {
     Route::get('/stats', [DashboardController::class, 'stats']);
     Route::get('/ticket-volume', [DashboardController::class, 'ticketVolume']);
 });
@@ -204,7 +204,7 @@ Route::get('/invitations/{token}', [InvitationController::class, 'show']);
 Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept']);
 Route::post('/invitations/{token}/reject', [InvitationController::class, 'reject']);
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Projects API
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects/analyze', [ProjectController::class, 'analyze']);
@@ -273,7 +273,7 @@ Route::middleware('auth:api')->group(function () {
 });
 
 // Alternative route for messages (with 's')
-Route::middleware('auth:api')->post('/agent/chats/{chat_id}/messages', [AgentController::class, 'sendMessage']);
+Route::middleware('auth:sanctum')->post('/agent/chats/{chat_id}/messages', [AgentController::class, 'sendMessage']);
 
 // AI Chat API (public with rate limiting)
 Route::prefix('ai')->group(function () {
@@ -283,7 +283,7 @@ Route::prefix('ai')->group(function () {
 });
 
 // Superadmin API (requires superadmin role)
-Route::middleware('auth:api')->prefix('superadmin')->group(function () {
+Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::get('/companies', [SuperadminController::class, 'companies']);
     Route::get('/companies/{companyId}', [SuperadminController::class, 'companyDetails']);
     Route::put('/companies/{companyId}', [SuperadminController::class, 'updateCompany']);
@@ -312,7 +312,7 @@ Route::middleware('auth:api')->prefix('superadmin')->group(function () {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Authorization endpoints (user must be logged in with JWT to use these)
-Route::middleware('auth:api')->prefix('oauth')->group(function () {
+Route::middleware('auth:sanctum')->prefix('oauth')->group(function () {
     // Show consent page data (GET) and handle approve/deny (POST)
     Route::get('/authorize', [OAuthController::class, 'authorizeForm']);
     Route::post('/authorize', [OAuthController::class, 'approveAuthorize']);
@@ -328,7 +328,7 @@ Route::middleware('throttle:30,1')->post('/oauth/token', [OAuthController::class
 Route::post('/oauth/revoke', [OAuthController::class, 'revoke']);
 
 // OAuth client management (authenticated users managing their own apps)
-Route::middleware('auth:api')->prefix('oauth/clients')->group(function () {
+Route::middleware('auth:sanctum')->prefix('oauth/clients')->group(function () {
     Route::get('/', [OAuthClientController::class, 'index']);
     Route::post('/', [OAuthClientController::class, 'store']);
     Route::get('/{client}', [OAuthClientController::class, 'show']);

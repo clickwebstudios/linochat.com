@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     protected $fillable = [
         'first_name',
@@ -41,25 +41,6 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'two_factor_enabled' => 'boolean',
             'last_active_at' => 'datetime',
-        ];
-    }
-
-    /**
-     * Get the identifier that will be stored in the subject claim of the JWT.
-     */
-    public function getJWTIdentifier(): mixed
-    {
-        return $this->getKey();
-    }
-
-    /**
-     * Return a key value array, containing any custom claims to be added to the JWT.
-     */
-    public function getJWTCustomClaims(): array
-    {
-        return [
-            'role' => $this->role,
-            'email' => $this->email,
         ];
     }
 
