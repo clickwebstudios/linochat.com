@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Services\FrubixService;
 
 class TicketController extends Controller
 {
@@ -220,12 +221,30 @@ class TicketController extends Controller
         ]);
 
         // Send confirmation email to customer
+        $project = Project::find($request->input('project_id'));
         try {
-            $project = Project::find($request->input('project_id'));
-            $ticketUrl = env('FRONTEND_URL', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
+            $ticketUrl = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
             Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name, $ticketUrl));
         } catch (\Exception $e) {
             Log::error('Failed to send ticket created email', ['error' => $e->getMessage()]);
+        }
+
+        // Create lead in Frubix if integration is enabled
+        if ($project) {
+            try {
+                $frubix = FrubixService::fromProjectIntegrations($project->integrations ?? []);
+                if ($frubix) {
+                    $frubix->createLead([
+                        'name'   => $ticket->customer_name ?: explode('@', $ticket->customer_email)[0],
+                        'email'  => $ticket->customer_email,
+                        'status' => 'new',
+                        'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] {$ticket->subject}\n\n{$ticket->description}",
+                    ]);
+                    Log::info('Frubix lead created for ticket', ['ticket_id' => $ticket->id]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to create Frubix lead', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
+            }
         }
 
         return response()->json([

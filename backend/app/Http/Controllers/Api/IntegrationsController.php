@@ -1,17 +1,15 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
-use App\Models\Ticket;
 use App\Services\FrubixService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class IntegrationsController extends Controller
 {
-    public function __construct(private FrubixService $frubix) {}
-
     private function getProject(int $projectId): ?Project
     {
         return Project::find($projectId);
@@ -20,102 +18,100 @@ class IntegrationsController extends Controller
     public function getSettings(int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
-        if (!$project) return response()->json(['error' => 'Project not found'], 404);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
         $integrations = $project->integrations ?? [];
 
-        // Never expose the secret
-        if (isset($integrations['frubix']['client_secret'])) {
-            $integrations['frubix']['client_secret'] = '••••••••';
-            $integrations['frubix']['connected'] = true;
+        // Never expose password
+        if (isset($integrations['frubix']['password'])) {
+            $integrations['frubix']['password'] = '••••••••';
         }
 
-        return response()->json(['data' => $integrations]);
+        return response()->json(['success' => true, 'data' => $integrations]);
     }
 
     public function saveFrubix(Request $request, int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
-        if (!$project) return response()->json(['error' => 'Project not found'], 404);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
         $validated = $request->validate([
-            'url'           => 'required|url',
-            'client_id'     => 'required|string',
-            'client_secret' => 'required|string',
+            'url'      => 'required|url',
+            'email'    => 'required|email',
+            'password' => 'required|string',
         ]);
+
+        // Test connection first
+        $frubix = new FrubixService(
+            $validated['url'],
+            $validated['email'],
+            $validated['password'],
+        );
+
+        if (!$frubix->testConnection()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not connect to Frubix. Please check your credentials.',
+            ], 422);
+        }
 
         $integrations = $project->integrations ?? [];
         $integrations['frubix'] = [
-            'url'           => rtrim($validated['url'], '/'),
-            'client_id'     => $validated['client_id'],
-            'client_secret' => $validated['client_secret'],
-            'connected_at'  => now()->toISOString(),
+            'enabled'      => true,
+            'url'          => rtrim($validated['url'], '/'),
+            'email'        => $validated['email'],
+            'password'     => $validated['password'],
+            'connected_at' => now()->toISOString(),
         ];
 
         $project->update(['integrations' => $integrations]);
 
-        return response()->json(['data' => ['connected' => true, 'url' => $integrations['frubix']['url']]]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Frubix integration connected successfully.',
+            'data'    => [
+                'enabled' => true,
+                'url' => $integrations['frubix']['url'],
+                'email' => $integrations['frubix']['email'],
+                'connected_at' => $integrations['frubix']['connected_at'],
+            ],
+        ]);
     }
 
     public function disconnectFrubix(int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
-        if (!$project) return response()->json(['error' => 'Project not found'], 404);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
         $integrations = $project->integrations ?? [];
         unset($integrations['frubix']);
         $project->update(['integrations' => $integrations]);
 
-        return response()->json(['data' => ['connected' => false]]);
+        return response()->json(['success' => true, 'message' => 'Frubix integration disconnected.']);
     }
 
     public function testFrubix(Request $request, int $projectId): JsonResponse
     {
         $project = $this->getProject($projectId);
-        if (!$project) return response()->json(['error' => 'Project not found'], 404);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
         $validated = $request->validate([
-            'url'           => 'required|url',
-            'client_id'     => 'required|string',
-            'client_secret' => 'required|string',
+            'url'      => 'required|url',
+            'email'    => 'required|email',
+            'password' => 'required|string',
         ]);
 
-        $ok = $this->frubix->testConnection(
+        $frubix = new FrubixService(
             $validated['url'],
-            $validated['client_id'],
-            $validated['client_secret']
+            $validated['email'],
+            $validated['password'],
         );
 
-        return response()->json(['data' => ['success' => $ok]]);
-    }
+        $ok = $frubix->testConnection();
 
-    public function createFrubixLead(Request $request, int $ticketId): JsonResponse
-    {
-        $ticket = Ticket::with('project')->find($ticketId);
-        if (!$ticket) return response()->json(['error' => 'Ticket not found'], 404);
-
-        $frubix = $ticket->project->integrations['frubix'] ?? null;
-        if (!$frubix) {
-            return response()->json(['error' => 'Frubix integration not configured for this project'], 422);
-        }
-
-        try {
-            $lead = $this->frubix->createLead(
-                $frubix['url'],
-                $frubix['client_id'],
-                $frubix['client_secret'],
-                [
-                    'name'   => $ticket->customer_name ?: $ticket->customer_email,
-                    'email'  => $ticket->customer_email,
-                    'source' => 'linochat',
-                    'notes'  => "Ticket #{$ticket->ticket_number}: {$ticket->subject}\n\n{$ticket->description}",
-                    'status' => 'new',
-                ]
-            );
-
-            return response()->json(['data' => $lead], 201);
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data'    => ['connected' => $ok],
+        ]);
     }
 }
