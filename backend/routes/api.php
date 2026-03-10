@@ -111,17 +111,17 @@ Route::get('widget-assets/widget.js', [\App\Http\Controllers\WidgetLoaderControl
 Route::get('widget-assets/style.css', [\App\Http\Controllers\WidgetLoaderController::class, 'style'])
     ->middleware(\App\Http\Middleware\WidgetCorsHeaders::class);
 
-// Widget Public API (no auth required)
-Route::options('widget/{widget_id}/{path?}', fn () => response('', 204)->withHeaders([
-    'Access-Control-Allow-Origin' => '*',
-    'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers' => 'Content-Type, ngrok-skip-browser-warning',
-    'Access-Control-Max-Age' => '86400',
-]))->where('path', '(config|init|message|messages|typing|handover|check-ticket-needed|create-ticket|status)');
+// Widget Public API — preflight OPTIONS handled by WidgetApiCors middleware
+Route::options('widget/{widget_id}/{path?}', fn () => response('', 204))
+    ->where('path', '(config|init|message|messages|typing|handover|check-ticket-needed|create-ticket|status)')
+    ->middleware(\App\Http\Middleware\WidgetApiCors::class);
 
 Route::group([
     'prefix' => 'widget/{widget_id}',
-    'middleware' => [\App\Http\Middleware\WidgetApiCors::class],
+    'middleware' => [
+        \App\Http\Middleware\WidgetApiCors::class,
+        \App\Http\Middleware\ValidateWidgetDomain::class,
+    ],
 ], function () {
     // Read-only endpoints — generous limit (120 req/min per IP)
     Route::middleware('throttle:120,1')->group(function () {
