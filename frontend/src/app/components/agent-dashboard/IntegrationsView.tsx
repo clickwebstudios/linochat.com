@@ -34,22 +34,39 @@ const comingSoonIntegrations = [
 ];
 
 export function IntegrationsView() {
-  const project = useAuthStore((s) => s.project);
+  const storeProject = useAuthStore((s) => s.project);
+  const [projectId, setProjectId] = useState<string | null>(storeProject?.id ?? null);
   const [frubix, setFrubix] = useState<FrubixIntegration | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
   const isConnected = frubix?.enabled === true;
 
+  // If no project in auth store, fetch user's first project
+  useEffect(() => {
+    if (storeProject?.id) {
+      setProjectId(storeProject.id);
+      return;
+    }
+    api.get<any[]>('/projects')
+      .then((res) => {
+        const projects = (res as any)?.data ?? [];
+        if (projects.length > 0) {
+          setProjectId(projects[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [storeProject?.id]);
+
   // Load integration settings
   useEffect(() => {
-    if (!project?.id) return;
-    api.get<Record<string, any>>(`/projects/${project.id}/integrations`)
+    if (!projectId) return;
+    api.get<Record<string, any>>(`/projects/${projectId}/integrations`)
       .then((res) => {
         setFrubix((res.data as any)?.frubix ?? null);
       })
       .catch(() => {});
-  }, [project?.id]);
+  }, [projectId]);
 
   // Listen for OAuth callback message from popup
   const handleMessage = useCallback((event: MessageEvent) => {
@@ -70,11 +87,11 @@ export function IntegrationsView() {
   }, [handleMessage]);
 
   const handleConnect = async () => {
-    if (!project?.id) return;
+    if (!projectId) return;
     setConnecting(true);
 
     try {
-      const res = await api.get<{ url: string }>(`/projects/${project.id}/integrations/frubix/authorize`);
+      const res = await api.get<{ url: string }>(`/projects/${projectId}/integrations/frubix/authorize`);
       const authorizeUrl = (res.data as any)?.url;
 
       if (!authorizeUrl) {
@@ -105,10 +122,10 @@ export function IntegrationsView() {
   };
 
   const handleDisconnect = async () => {
-    if (!project?.id) return;
+    if (!projectId) return;
     setDisconnecting(true);
     try {
-      await api.delete(`/projects/${project.id}/integrations/frubix`);
+      await api.delete(`/projects/${projectId}/integrations/frubix`);
       setFrubix(null);
       toast.success('Frubix disconnected');
     } catch (err: any) {
