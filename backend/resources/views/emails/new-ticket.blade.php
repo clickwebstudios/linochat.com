@@ -2,7 +2,7 @@
 
 @section('content')
   <h1>New Support Ticket</h1>
-  <p>A new ticket has been submitted{{ $ticket->project ? ' for project <strong>' . $ticket->project->name . '</strong>' : '' }}.</p>
+  <p>A new ticket has been submitted{!! $ticket->project ? ' for project <strong>' . e($ticket->project->name) . '</strong>' : '' !!}.</p>
 
   <table class="meta-table">
     <tr><td>Ticket #</td><td><strong>#{{ $ticket->id }}</strong></td></tr>
@@ -24,7 +24,7 @@
       </td>
     </tr>
     @if($ticket->customer_name)
-    <tr><td>Customer</td><td>{{ $ticket->customer_name }}{{ $ticket->customer_email ? ' &lt;' . $ticket->customer_email . '&gt;' : '' }}</td></tr>
+    <tr><td>Customer</td><td>{{ $ticket->customer_name }}{{ $ticket->customer_email ? ' (' . $ticket->customer_email . ')' : '' }}</td></tr>
     @endif
     @if($ticket->assignedTo)
     <tr><td>Assigned To</td><td>{{ $ticket->assignedTo->name }}</td></tr>
@@ -35,7 +35,7 @@
   @if($ticket->description)
   <p><strong>Description:</strong></p>
   <div class="reply-box">
-    <p>{{ $ticket->description }}</p>
+    <p>{!! nl2br(e($ticket->description)) !!}</p>
   </div>
   @endif
 
