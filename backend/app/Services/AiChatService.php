@@ -482,7 +482,7 @@ class AiChatService
         $prompt .= "3. For YES/NO questions about services ('do you offer X?'): give a clear answer. If we don't offer it, say so and suggest what we do offer instead.\n";
         $prompt .= "4. Keep responses SHORT: 1-3 sentences. Be direct, friendly, and {$tone}. No filler words.\n";
         $prompt .= "5. Never invent specific prices or dates not provided below. For specifics, say we'd be happy to discuss details and offer to connect them with the team.\n";
-        $prompt .= "6. Use [HANDOVER] ONLY when: (a) the customer explicitly asks for a human, OR (b) the request needs account-specific info or a custom quote that requires a real team member. Do NOT hand over for general service or pricing questions.\n";
+        $prompt .= "6. Use [HANDOVER] ONLY when: (a) the customer explicitly asks for a human, OR (b) the request needs account-specific info or a custom quote that requires a real team member. Do NOT hand over for general service or pricing questions." . ($this->getFrubixIntegration($project) ? " Do NOT hand over for appointment/schedule/booking inquiries — you can look those up yourself (see rules 12-13)." : "") . "\n";
         $prompt .= "7. If you cannot help and no agent is available, use [REQUEST_CONTACT] to collect their name and email.\n";
         $prompt .= "8. When the customer gives their name, append [CUSTOMER_NAME: Name] at the end of your reply (properly capitalized, e.g. John, Jane Doe).\n";
         $prompt .= "9. No Markdown. No [text](url) links. Plain text only (e.g. info@example.com, https://example.com).\n";
@@ -499,10 +499,10 @@ class AiChatService
         // Add Frubix integration rules if connected
         $frubixConfig = $this->getFrubixIntegration($project);
         if ($frubixConfig) {
-            $prompt .= "11. FRUBIX CLIENT LOOKUP: When a customer provides their phone number or email, you can look up their account in our system by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. Replace phone_or_email with the actual phone number or email. The system will return client details which you can use to address the customer by name and reference their account.\n";
-            $prompt .= "12. FRUBIX SCHEDULE CHECK: When a customer asks about their upcoming appointments or schedule, append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their scheduled appointments which you can share with them.\n";
-            $prompt .= "    You can use LOOKUP_CLIENT proactively when the customer shares their phone or email during the booking flow.\n";
-            $prompt .= "13. APPOINTMENT BOOKING: Since we have scheduling integration, also collect the customer's preferred date and time during the booking flow. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags when creating the booking. Ask for their preferred date and time naturally, e.g. 'What date and time works best for you?'\n";
+            $prompt .= "11. IMPORTANT — CUSTOMER ACCOUNT ACCESS: You have access to our scheduling and client system. Do NOT hand over to a human agent for appointment lookups, schedule checks, or client information. You can handle these yourself using the tools below.\n";
+            $prompt .= "12. CLIENT LOOKUP: When a customer provides their phone number or email (or you already have it from earlier in the conversation), look up their account by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. The system will return their client details. Use this proactively whenever a customer shares contact info.\n";
+            $prompt .= "13. SCHEDULE / APPOINTMENT CHECK: When a customer asks about their appointments, schedule, or booking status, ask for their phone number or email if you don't have it yet, then append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their upcoming appointments. Do NOT use [HANDOVER] for appointment questions — use [CHECK_SCHEDULE] instead.\n";
+            $prompt .= "14. APPOINTMENT BOOKING: Since we have scheduling integration, also collect the customer's preferred date and time during the booking flow. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags when creating the booking. Ask for their preferred date and time naturally, e.g. 'What date and time works best for you?'\n";
         }
 
         $prompt .= "\n";
