@@ -502,6 +502,7 @@ class AiChatService
             $prompt .= "11. FRUBIX CLIENT LOOKUP: When a customer provides their phone number or email, you can look up their account in our system by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. Replace phone_or_email with the actual phone number or email. The system will return client details which you can use to address the customer by name and reference their account.\n";
             $prompt .= "12. FRUBIX SCHEDULE CHECK: When a customer asks about their upcoming appointments or schedule, append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their scheduled appointments which you can share with them.\n";
             $prompt .= "    You can use LOOKUP_CLIENT proactively when the customer shares their phone or email during the booking flow.\n";
+            $prompt .= "13. APPOINTMENT BOOKING: Since we have scheduling integration, also collect the customer's preferred date and time during the booking flow. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags when creating the booking. Ask for their preferred date and time naturally, e.g. 'What date and time works best for you?'\n";
         }
 
         $prompt .= "\n";
@@ -684,7 +685,7 @@ class AiChatService
     {
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
-        $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE):\s*[^\]]*\]/i', '', $cleaned);
+        $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE|DATE|TIME):\s*[^\]]*\]/i', '', $cleaned);
         $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
@@ -785,9 +786,49 @@ class AiChatService
             'content' => "Booking request created from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}" . ($issue ? "\n\nIssue Details: {$issue}" : ''),
         ]);
 
+        // Create Frubix appointment if integration is connected
+        $frubixBooked = false;
+        $bookingDate = null;
+        $bookingTime = null;
+        $frubixConfig = $this->getFrubixIntegration($chat->project);
+        if ($frubixConfig) {
+            if (preg_match('/\[BOOKING_DATE:\s*([^\]]+)\]/i', $aiContent, $m)) {
+                $bookingDate = trim($m[1]);
+            }
+            if (preg_match('/\[BOOKING_TIME:\s*([^\]]+)\]/i', $aiContent, $m)) {
+                $bookingTime = trim($m[1]);
+            }
+
+            try {
+                $appointmentData = array_filter([
+                    'customer_name' => $name,
+                    'customer_phone' => $phone,
+                    'customer_email' => $email,
+                    'address' => $address,
+                    'job_type' => $issue ? Str::limit($issue, 100) : 'Service Request',
+                    'notes' => $issue ?? 'Booked via LinoChat',
+                    'scheduled_date' => $bookingDate,
+                    'scheduled_time' => $bookingTime,
+                    'duration' => 60,
+                ]);
+                FrubixService::createAppointment($frubixConfig, $appointmentData);
+                $frubixBooked = true;
+                Log::info('Frubix appointment created from booking', [
+                    'chat_id' => $chat->id,
+                    'ticket_id' => $ticket->id,
+                    'date' => $bookingDate,
+                    'time' => $bookingTime,
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to create Frubix appointment', ['error' => $e->getMessage()]);
+            }
+        }
+
         // Clean the AI content for display (remove tags)
         $cleanContent = $this->cleanAiResponse($aiContent);
-        $confirmationNote = "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
+        $confirmationNote = $frubixBooked
+            ? "\n\nYour appointment has been booked" . ($bookingDate ? " for {$bookingDate}" . ($bookingTime ? " at {$bookingTime}" : '') : '') . " (Ticket #{$ticket->ticket_number}). We'll see you then!"
+            : "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
 
         $message = ChatMessage::create([
             'chat_id' => $chat->id,
