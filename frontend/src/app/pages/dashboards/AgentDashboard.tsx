@@ -174,9 +174,9 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const existingTeamMembers = teamMembers.map(({ id, name, email, avatar, role }) => ({ id, name, email, avatar, role }));
 
   // Load chats from API
-  const loadChats = useCallback(async (options?: { setFirstAsActive?: boolean; companyId?: string | null }): Promise<any[]> => {
+  const loadChats = useCallback(async (options?: { setFirstAsActive?: boolean; companyId?: string | null; silent?: boolean }): Promise<any[]> => {
     if (!user) return [];
-    setChatsLoading(true);
+    if (!options?.silent) setChatsLoading(true);
     try {
       // Build URL with company_id filter for superadmin
       const targetCompanyId = options?.companyId !== undefined ? options.companyId : selectedCompanyId;
@@ -187,7 +187,13 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       const data = await api.get<any>(endpoint);
       if (data.success) {
         const chatsData = data.data?.data || data.data || [];
-        setChats(chatsData);
+        // Merge: keep any WebSocket-added chats that aren't in the API response yet
+        setChats(prev => {
+          if (!options?.silent) return chatsData;
+          const apiIds = new Set(chatsData.map((c: any) => String(c.id)));
+          const kept = prev.filter((c: any) => !apiIds.has(String(c.id)) && Date.now() - (c._addedAt || 0) < 30000);
+          return [...chatsData, ...kept];
+        });
         if (options?.setFirstAsActive !== false && chatsData.length > 0) {
           setActiveChat((prev: any) => prev ?? chatsData[0]);
         }
@@ -198,7 +204,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       console.error('Failed to load chats:', error);
       return [];
     } finally {
-      setChatsLoading(false);
+      if (!options?.silent) setChatsLoading(false);
     }
   }, [user]);
 
@@ -211,7 +217,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   // Polling fallback for new chats when WebSocket may not be available
   useEffect(() => {
     if (!user?.id || activeSection !== 'chats') return;
-    const interval = setInterval(() => loadChats({ setFirstAsActive: false, companyId: selectedCompanyId }), 15000);
+    const interval = setInterval(() => loadChats({ setFirstAsActive: false, companyId: selectedCompanyId, silent: true }), 15000);
     return () => clearInterval(interval);
   }, [user?.id, activeSection, loadChats, selectedCompanyId]);
 
@@ -253,10 +259,10 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       const chat = event?.chat;
       if (!chat?.id) return;
 
-      // Add new chat to the list
+      // Add new chat to the list (with timestamp so polling merge can preserve it briefly)
       setChats(prev => {
         if (prev.find(c => String(c.id) === String(chat.id))) return prev;
-        return [chat, ...prev];
+        return [{ ...chat, _addedAt: Date.now() }, ...prev];
       });
       // Refresh team members (active chat counts changed)
       loadTeamMembers();
@@ -468,13 +474,13 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       ticket.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.id?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProject = selectedProjects.length === 0 || selectedProjects.includes(ticket.project_id);
+    const matchesProject = selectedProjects.length === 0 || selectedProjects.map(String).includes(String(ticket.project_id));
     return matchesFilter && matchesSearch && matchesProject;
   });
 
   const filteredChats = chats.filter(chat => {
-    const matchesProject = selectedProjects.length === 0 || selectedProjects.includes(chat.project_id);
-    const matchesStatus = chatFilter === 'all' || 
+    const matchesProject = selectedProjects.length === 0 || selectedProjects.map(String).includes(String(chat.project_id));
+    const matchesStatus = chatFilter === 'all' ||
       (chatFilter === 'active' && (chat.status === 'active' || chat.status === 'waiting' || chat.status === 'ai_handling')) ||
       (chatFilter === 'closed' && chat.status === 'closed');
     const matchesSearch = searchQuery === '' ||
