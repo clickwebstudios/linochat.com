@@ -836,7 +836,7 @@ class AiChatService
         $bookingTime = null;
         $project = $project ?? $chat->project ?? Project::find($chat->project_id);
         $frubixConfig = $project ? $this->getFrubixIntegration($project) : null;
-        Log::info('Frubix booking check', [
+        Log::error('Frubix booking check', [
             'chat_id' => $chat->id,
             'project_id' => $chat->project_id,
             'project_loaded' => $project ? true : false,
@@ -865,14 +865,15 @@ class AiChatService
                 ]);
                 FrubixService::createAppointment($frubixConfig, $appointmentData);
                 $frubixBooked = true;
-                Log::info('Frubix appointment created from booking', [
+                Log::error('Frubix appointment CREATED', [
                     'chat_id' => $chat->id,
                     'ticket_id' => $ticket->id,
                     'date' => $bookingDate,
                     'time' => $bookingTime,
+                    'data' => $appointmentData,
                 ]);
             } catch (\Exception $e) {
-                Log::warning('Failed to create Frubix appointment', ['error' => $e->getMessage()]);
+                Log::error('Frubix appointment FAILED', ['error' => $e->getMessage()]);
             }
         }
 
