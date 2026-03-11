@@ -12,7 +12,12 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Mail\TicketCreatedMail;
+use App\Mail\NewTicketMail;
+use App\Models\ActivityLog;
+use App\Models\NotificationLog;
 use OpenAI;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Exceptions\TimeoutException;
@@ -772,8 +777,53 @@ class AiChatService
             ],
         ]);
 
-        // Notify agents
+        // Send email notifications
+        $ticket->refresh();
         $project = $chat->project()->with('agents')->first();
+
+        $companyId = $project->company_id ?? null;
+
+        // Email to customer
+        if ($email) {
+            try {
+                $ticketUrl = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
+                Mail::to($email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl));
+                NotificationLog::record('email', 'Ticket Created — Customer', "Booking ticket #{$ticket->ticket_number} created for {$name}. Subject: {$ticket->subject}" . ($issue ? "\nIssue: {$issue}" : ''), $email, 'sent', $companyId);
+            } catch (\Exception $e) {
+                Log::error('Failed to send ticket email to customer', ['error' => $e->getMessage()]);
+                NotificationLog::record('email', 'Ticket Created — Customer', "Booking ticket #{$ticket->ticket_number} for {$name}", $email, 'failed', $companyId);
+            }
+        }
+
+        // Email to company admin(s)
+        if ($project) {
+            $adminEmails = User::where('company_id', $project->company_id)
+                ->where('role', 'admin')
+                ->pluck('email')
+                ->filter()
+                ->toArray();
+            if ($project->user && $project->user->email) {
+                $adminEmails[] = $project->user->email;
+            }
+            $adminEmails = array_unique($adminEmails);
+            foreach ($adminEmails as $adminEmail) {
+                try {
+                    Mail::to($adminEmail)->send(new NewTicketMail($ticket));
+                    NotificationLog::record('email', 'New Ticket — Admin', "New booking ticket #{$ticket->ticket_number} from {$name}. Subject: {$ticket->subject}" . ($issue ? "\nIssue: {$issue}" : ''), $adminEmail, 'sent', $companyId);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send ticket email to admin', ['email' => $adminEmail, 'error' => $e->getMessage()]);
+                    NotificationLog::record('email', 'New Ticket — Admin', "Booking ticket #{$ticket->ticket_number} from {$name}", $adminEmail, 'failed', $companyId);
+                }
+            }
+        }
+
+        // Log activity
+        ActivityLog::log('ticket_created', "Booking ticket #{$ticket->ticket_number} created", ($name ?? 'Customer') . " requested a booking" . ($issue ? ": {$issue}" : '') . ". Phone: {$phone}, Email: {$email}", [
+            'company_id' => $companyId,
+            'project_id' => $chat->project_id,
+        ]);
+
+        // Notify agents in-app
         if ($project) {
             $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values();
             foreach ($agentIds as $agentId) {

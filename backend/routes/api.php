@@ -270,6 +270,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
+    // Settings: notification log & activity log
+    Route::get('/notifications/log', [App\Http\Controllers\Api\SettingsController::class, 'notificationLog']);
+    Route::get('/activity-log', [App\Http\Controllers\Api\SettingsController::class, 'activityLog']);
+
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
     Route::get('/projects/{projectId}/integrations/frubix/authorize', [IntegrationsController::class, 'frubixAuthorizeUrl']);

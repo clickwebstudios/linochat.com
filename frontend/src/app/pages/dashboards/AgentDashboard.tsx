@@ -51,7 +51,7 @@ import { AgentKnowledgeView } from '../../components/agent-dashboard/AgentKnowle
 import { UsersView } from '../../components/agent-dashboard/UsersView';
 import { ProjectsView } from '../../components/agent-dashboard/ProjectsView';
 import { ReportsView } from '../../components/agent-dashboard/ReportsView';
-import { IntegrationsView } from '../../components/agent-dashboard/IntegrationsView';
+import { SettingsView } from '../../components/agent-dashboard/SettingsView';
 import { useHumanRequestedStore } from '../../stores/humanRequestedStore';
 import { useTransferRequestsStore } from '../../stores/transferRequestsStore';
 import { api } from '../../api/client';
@@ -59,7 +59,7 @@ import { initEcho } from '../../lib/echo';
 import { playNotificationSound, playTransferRequestSound } from '../../lib/notificationSound';
 import type { HumanRequestedPayload } from '../../components/HumanRequestedModal';
 
-type Section = 'dashboard' | 'chats' | 'tickets' | 'knowledge' | 'reports' | 'users' | 'projects' | 'integrations';
+type Section = 'dashboard' | 'chats' | 'tickets' | 'knowledge' | 'reports' | 'users' | 'projects' | 'settings';
 
 // Import CompanySwitcher for Superadmin
 import { CompanySwitcher } from '../../components/superadmin/CompanySwitcher';
@@ -85,14 +85,14 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   // Derive active section from URL path: /agent/tickets -> 'tickets'
   const pathSegments = location.pathname.split('/');
   const urlSection = pathSegments[2] || 'dashboard';
-  const activeSection: Section = (['dashboard', 'chats', 'tickets', 'knowledge', 'reports', 'users', 'projects', 'integrations'].includes(urlSection)
+  const activeSection: Section = (['dashboard', 'chats', 'tickets', 'knowledge', 'reports', 'users', 'projects', 'settings'].includes(urlSection)
     ? urlSection
     : 'dashboard') as Section;
 
   // Legacy ?section= query param support - redirect to proper route
   useEffect(() => {
     const section = searchParams.get('section');
-    if (section && ['dashboard', 'chats', 'tickets', 'knowledge', 'reports', 'users', 'projects', 'integrations'].includes(section)) {
+    if (section && ['dashboard', 'chats', 'tickets', 'knowledge', 'reports', 'users', 'projects', 'settings'].includes(section)) {
       navigate(`${basePath}/${section}`, { replace: true });
     }
   }, [searchParams, basePath, navigate]);
@@ -580,8 +580,8 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             onAddProjectClick={() => setAddProjectDialogOpen(true)}
           />
         );
-      case 'integrations':
-        return <IntegrationsView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return (
           <DashboardView

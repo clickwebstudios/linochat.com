@@ -8,7 +8,7 @@ import {
   Users,
   FolderOpen,
   BarChart,
-  Plug,
+  Settings,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -53,7 +53,7 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
     { section: 'knowledge', icon: <FileText className="h-6 w-6" />, label: 'Knowledge', badge: undefined, showFor: ['Agent', 'Admin'] },
     { section: 'users', icon: <Users className="h-6 w-6" />, label: 'Users', badge: undefined, showFor: ['Admin'] },
     { section: 'reports', icon: <BarChart className="h-6 w-6" />, label: 'Reports', badge: undefined, showFor: ['Admin'] },
-    { section: 'integrations', icon: <Plug className="h-6 w-6" />, label: 'Integrations', badge: undefined, showFor: ['Admin'] },
+    { section: 'settings', icon: <Settings className="h-6 w-6" />, label: 'Settings', badge: undefined, showFor: ['Admin'] },
   ];
 
   return (

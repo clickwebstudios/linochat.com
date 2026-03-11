@@ -152,7 +152,7 @@ export default function App() {
                 <Route path="/admin/knowledge" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminDashboard />} />
                 <Route path="/admin/reports" element={<AdminDashboard />} />
-                <Route path="/admin/integrations" element={<AdminDashboard />} />
+                <Route path="/admin/settings" element={<AdminDashboard />} />
                 <Route path="/admin/chats/:chatId" element={<ChatDetails />} />
                 <Route path="/admin/tickets/:ticketId" element={<TicketDetails />} />
                 <Route path="/admin/users/:agentId" element={<AgentDetails />} />
@@ -174,7 +174,7 @@ export default function App() {
                 <Route path="/superadmin/projects" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/users" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/reports" element={<AgentDashboard role="Superadmin" />} />
-                <Route path="/superadmin/integrations" element={<AgentDashboard role="Superadmin" />} />
+                <Route path="/superadmin/settings" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/chats/:chatId" element={<ChatDetails />} />
                 <Route path="/superadmin/tickets/:ticketId" element={<TicketDetails />} />
                 <Route path="/superadmin/users/:agentId" element={<AgentDetails />} />

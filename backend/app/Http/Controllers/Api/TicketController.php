@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\NewTicketMail;
+use App\Models\ActivityLog;
+use App\Models\NotificationLog;
+use App\Models\User;
 use App\Services\FrubixService;
 
 class TicketController extends Controller
@@ -222,12 +226,44 @@ class TicketController extends Controller
 
         // Send confirmation email to customer
         $project = Project::find($request->input('project_id'));
+        $companyId = $project->company_id ?? null;
         try {
             $ticketUrl = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
-            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name, $ticketUrl));
+            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl));
+            NotificationLog::record('email', 'Ticket Created — Customer', "Ticket #{$ticket->ticket_number} created. Subject: {$ticket->subject}\n\n{$ticket->description}", $ticket->customer_email, 'sent', $companyId);
         } catch (\Exception $e) {
             Log::error('Failed to send ticket created email', ['error' => $e->getMessage()]);
+            NotificationLog::record('email', 'Ticket Created — Customer', "Ticket #{$ticket->ticket_number}: {$ticket->subject}", $ticket->customer_email, 'failed', $companyId);
         }
+
+        // Send notification email to company admin(s)
+        if ($project) {
+            $adminEmails = User::where('company_id', $project->company_id)
+                ->where('role', 'admin')
+                ->pluck('email')
+                ->filter()
+                ->toArray();
+            if ($project->user && $project->user->email) {
+                $adminEmails[] = $project->user->email;
+            }
+            $adminEmails = array_unique($adminEmails);
+            foreach ($adminEmails as $adminEmail) {
+                try {
+                    Mail::to($adminEmail)->send(new NewTicketMail($ticket));
+                    NotificationLog::record('email', 'New Ticket — Admin', "New ticket #{$ticket->ticket_number} from {$ticket->customer_name}. Subject: {$ticket->subject}\n\n{$ticket->description}", $adminEmail, 'sent', $companyId);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send new ticket email to admin', ['email' => $adminEmail, 'error' => $e->getMessage()]);
+                    NotificationLog::record('email', 'New Ticket — Admin', "Ticket #{$ticket->ticket_number}: {$ticket->subject}", $adminEmail, 'failed', $companyId);
+                }
+            }
+        }
+
+        // Log activity
+        ActivityLog::log('ticket_created', "Ticket #{$ticket->ticket_number} created", "{$ticket->customer_name} — {$ticket->subject}", [
+            'company_id' => $companyId,
+            'user_id' => $request->user()?->id,
+            'project_id' => $request->input('project_id'),
+        ]);
 
         // Create lead in Frubix if integration is enabled
         if ($project) {
