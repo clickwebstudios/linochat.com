@@ -527,6 +527,12 @@ class AiChatService
             $prompt .= "12. CLIENT LOOKUP: When a customer provides their phone number or email (or you already have it from earlier in the conversation), look up their account by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. The system will return their client details. Use this proactively whenever a customer shares contact info.\n";
             $prompt .= "13. SCHEDULE / APPOINTMENT CHECK: When a customer asks about their appointments, schedule, or booking status, ask for their phone number or email if you don't have it yet, then append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their upcoming appointments. Do NOT use [HANDOVER] for appointment questions — use [CHECK_SCHEDULE] instead.\n";
             $prompt .= "14. APPOINTMENT BOOKING: Since we have scheduling integration, also collect the customer's preferred date and time during the booking flow. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags when creating the booking. Ask for their preferred date and time naturally, e.g. 'What date and time works best for you?'\n";
+            $prompt .= "15. RESCHEDULE / REBOOK: When a customer wants to reschedule, rebook, or change an existing appointment:\n";
+            $prompt .= "    a) First look up their appointments using [CHECK_SCHEDULE: phone_or_email] if you haven't already.\n";
+            $prompt .= "    b) Once you can see their appointments (from system data), ask which appointment they want to change and what new date/time they prefer.\n";
+            $prompt .= "    c) Once confirmed, append [RESCHEDULE_APPOINTMENT: appointment_id][NEW_DATE: YYYY-MM-DD][NEW_TIME: HH:MM] at the end of your reply. Use the appointment ID number from the schedule data.\n";
+            $prompt .= "    d) The system will update the appointment and you'll get a confirmation.\n";
+            $prompt .= "    Do NOT hand over for rescheduling — you can do it yourself.\n";
         }
 
         $prompt .= "\n";
@@ -710,7 +716,7 @@ class AiChatService
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
         $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE|DATE|TIME):\s*[^\]]*\]/i', '', $cleaned);
-        $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE):\s*[^\]]*\]/i', '', $cleaned);
+        $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT|NEW_DATE|NEW_TIME):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
 
@@ -956,7 +962,8 @@ class AiChatService
         $keywords = [
             'appointment', 'schedule', 'booking', 'booked', 'book',
             'when is my', 'check my', 'upcoming', 'next visit',
-            'date of my', 'time of my', 'reschedule',
+            'date of my', 'time of my', 'reschedule', 'rebook', 'change my',
+            'move my', 'cancel my', 'update my',
             'book a', 'book an', 'make an appointment', 'set up',
             'available time', 'available slot', 'free slot',
             'service call', 'technician', 'visit',
@@ -975,7 +982,7 @@ class AiChatService
      */
     protected function isFrubixLookup(string $response): bool
     {
-        return preg_match('/\[(LOOKUP_CLIENT|CHECK_SCHEDULE):\s*[^\]]+\]/i', $response) === 1;
+        return preg_match('/\[(LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT):\s*[^\]]+\]/i', $response) === 1;
     }
 
     /**
@@ -1056,11 +1063,40 @@ class AiChatService
             }
         }
 
+        // Handle reschedule
+        if (preg_match('/\[RESCHEDULE_APPOINTMENT:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $appointmentId = trim($m[1]);
+            $newDate = null;
+            $newTime = null;
+            if (preg_match('/\[NEW_DATE:\s*([^\]]+)\]/i', $aiContent, $dm)) {
+                $newDate = trim($dm[1]);
+            }
+            if (preg_match('/\[NEW_TIME:\s*([^\]]+)\]/i', $aiContent, $tm)) {
+                $newTime = trim($tm[1]);
+            }
+
+            try {
+                $updateData = array_filter([
+                    'scheduled_date' => $newDate,
+                    'scheduled_time' => $newTime,
+                ]);
+                if (!empty($updateData)) {
+                    FrubixService::updateAppointment($frubixConfig, (int) $appointmentId, $updateData);
+                    $results[] = "RESCHEDULE CONFIRMED: Appointment #{$appointmentId} has been successfully rescheduled" . ($newDate ? " to {$newDate}" : '') . ($newTime ? " at {$newTime}" : '') . ". Confirm this to the customer.";
+                } else {
+                    $results[] = "RESCHEDULE: No new date or time was provided. Ask the customer for their preferred new date and time.";
+                }
+            } catch (\Exception $e) {
+                Log::warning('Frubix reschedule failed', ['error' => $e->getMessage(), 'appointment_id' => $appointmentId]);
+                $results[] = "RESCHEDULE FAILED: Unable to reschedule appointment #{$appointmentId} at this time. Apologize and offer to have a team member help.";
+            }
+        }
+
         if (empty($results)) {
             return null;
         }
 
-        return "The following information was retrieved from our system. Use it to respond to the customer naturally (do NOT mention 'Frubix' or 'system lookup' to the customer — present the info as if you already know it). Remove any [LOOKUP_CLIENT] or [CHECK_SCHEDULE] tags from your response.\n\n" . implode("\n\n", $results);
+        return "The following information was retrieved from our system. Use it to respond to the customer naturally (do NOT mention 'Frubix' or 'system lookup' to the customer — present the info as if you already know it). Remove any [LOOKUP_CLIENT], [CHECK_SCHEDULE], [RESCHEDULE_APPOINTMENT], [NEW_DATE], or [NEW_TIME] tags from your response.\n\n" . implode("\n\n", $results);
     }
 
     /**
