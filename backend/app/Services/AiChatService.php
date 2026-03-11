@@ -178,7 +178,7 @@ class AiChatService
             // Check if AI collected all booking details and wants to create a ticket
             if ($this->isBookingRequest($aiContent)) {
                 broadcast(new AiTyping($chat->id, false, $this->model));
-                return $this->createBookingTicket($chat, $aiContent);
+                return $this->createBookingTicket($chat, $aiContent, $project);
             }
 
             // Extract and save customer name if AI detected it
@@ -749,7 +749,7 @@ class AiChatService
     /**
      * Extract booking details from AI response and create a ticket
      */
-    protected function createBookingTicket(Chat $chat, string $aiContent): array
+    protected function createBookingTicket(Chat $chat, string $aiContent, ?Project $project = null): array
     {
         $name = null;
         $phone = null;
@@ -820,7 +820,15 @@ class AiChatService
         $frubixBooked = false;
         $bookingDate = null;
         $bookingTime = null;
-        $frubixConfig = $this->getFrubixIntegration($chat->project);
+        $project = $project ?? $chat->project ?? Project::find($chat->project_id);
+        $frubixConfig = $project ? $this->getFrubixIntegration($project) : null;
+        Log::info('Frubix booking check', [
+            'chat_id' => $chat->id,
+            'project_id' => $chat->project_id,
+            'project_loaded' => $project ? true : false,
+            'frubix_config' => $frubixConfig ? 'FOUND' : 'NULL',
+            'ai_content_has_booking_date' => str_contains($aiContent, '[BOOKING_DATE'),
+        ]);
         if ($frubixConfig) {
             if (preg_match('/\[BOOKING_DATE:\s*([^\]]+)\]/i', $aiContent, $m)) {
                 $bookingDate = trim($m[1]);
