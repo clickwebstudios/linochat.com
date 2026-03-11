@@ -12,8 +12,8 @@ export interface ChatConversationsListProps {
   filteredChats: any[];
   activeChat: any;
   setActiveChat: (chat: any) => void;
-  chatFilter: 'all' | 'active' | 'closed';
-  setChatFilter: (filter: 'all' | 'active' | 'closed') => void;
+  chatFilter: 'all' | 'active' | 'closed' | 'archived';
+  setChatFilter: (filter: 'all' | 'active' | 'closed' | 'archived') => void;
   getProjectById: (id: string) => any;
   formatRelativeTime: (dateString: string) => string;
 }
@@ -71,12 +71,12 @@ export function ChatConversationsList({
           </button>
           <button
             type="button"
-            onClick={() => setChatFilter('closed')}
+            onClick={() => setChatFilter('archived')}
             className={`flex-1 rounded-lg text-sm font-medium flex items-center justify-center transition-colors ${
-              chatFilter === 'closed' ? 'bg-[#030213] text-white' : 'bg-white border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-gray-50'
+              chatFilter === 'archived' ? 'bg-[#030213] text-white' : 'bg-white border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-gray-50'
             }`}
           >
-            Closed
+            Archived
           </button>
         </div>
       </div>
@@ -91,6 +91,7 @@ export function ChatConversationsList({
                 ? 'No matching conversations'
                 : chatFilter === 'all' ? 'No conversations yet'
                 : chatFilter === 'active' ? 'No active conversations'
+                : chatFilter === 'archived' ? 'No archived conversations'
                 : 'No closed conversations'}
             </h3>
             <p className="text-xs text-[#6a7282] max-w-[200px]">
@@ -100,6 +101,8 @@ export function ChatConversationsList({
                 ? "Customer chats will appear here when they start a conversation."
                 : chatFilter === 'active'
                 ? "No active chats at the moment. Check back soon!"
+                : chatFilter === 'archived'
+                ? "No archived chats yet. Ended chats will appear here."
                 : "No closed chats yet. They'll appear here once resolved."}
             </p>
           </div>

@@ -24,6 +24,8 @@ class Ticket extends Model
         'resolved_at',
         'ticket_number',
         'access_token',
+        'customer_phone',
+        'service_address',
     ];
 
     protected static function booted(): void

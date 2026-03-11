@@ -360,7 +360,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const [, setChatsLoading] = useState(true);
   const [, setTicketsLoading] = useState(true);
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'pending' | 'closed'>('all');
-  const [chatFilter, setChatFilter] = useState<'all' | 'active' | 'closed'>('all');
+  const [chatFilter, setChatFilter] = useState<'all' | 'active' | 'closed' | 'archived'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [projectPopoverOpen, setProjectPopoverOpen] = useState(false);
@@ -480,8 +480,9 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const filteredChats = chats.filter(chat => {
     const matchesProject = selectedProjects.length === 0 || selectedProjects.map(String).includes(String(chat.project_id));
-    const matchesStatus = chatFilter === 'all' ||
-      (chatFilter === 'active' && (chat.status === 'active' || chat.status === 'waiting' || chat.status === 'ai_handling')) ||
+    const matchesStatus = chatFilter === 'all' ? chat.status !== 'closed' :
+      chatFilter === 'active' ? (chat.status === 'active' || chat.status === 'waiting' || chat.status === 'ai_handling') :
+      chatFilter === 'archived' ? chat.status === 'closed' :
       (chatFilter === 'closed' && chat.status === 'closed');
     const matchesSearch = searchQuery === '' ||
       chat.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

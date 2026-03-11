@@ -130,6 +130,12 @@ class AiChatService
                 return $this->createContactRequestResponse($chat, $aiContent);
             }
 
+            // Check if AI collected all booking details and wants to create a ticket
+            if ($this->isBookingRequest($aiContent)) {
+                broadcast(new AiTyping($chat->id, false, $this->model));
+                return $this->createBookingTicket($chat, $aiContent);
+            }
+
             // Extract and save customer name if AI detected it
             $cleanedContent = $this->cleanAiResponse($aiContent);
             $customerName = $this->extractCustomerName($aiContent);
@@ -212,7 +218,7 @@ class AiChatService
                     'model' => $this->model,
                     'messages' => $messages,
                     'temperature' => 0.7,
-                    'max_tokens' => 150,
+                    'max_tokens' => 300,
                 ]);
 
                 return [
@@ -458,7 +464,15 @@ class AiChatService
         $prompt .= "6. Use [HANDOVER] ONLY when: (a) the customer explicitly asks for a human, OR (b) the request needs account-specific info or a custom quote that requires a real team member. Do NOT hand over for general service or pricing questions.\n";
         $prompt .= "7. If you cannot help and no agent is available, use [REQUEST_CONTACT] to collect their name and email.\n";
         $prompt .= "8. When the customer gives their name, append [CUSTOMER_NAME: Name] at the end of your reply (properly capitalized, e.g. John, Jane Doe).\n";
-        $prompt .= "9. No Markdown. No [text](url) links. Plain text only (e.g. info@example.com, https://example.com).\n\n";
+        $prompt .= "9. No Markdown. No [text](url) links. Plain text only (e.g. info@example.com, https://example.com).\n";
+        $prompt .= "10. BOOKING FLOW: When a customer wants to book, schedule, or make an appointment, you MUST collect ALL of the following details one at a time before creating the booking:\n";
+        $prompt .= "    - Full name\n";
+        $prompt .= "    - Phone number\n";
+        $prompt .= "    - Email address\n";
+        $prompt .= "    - Service address (where the service will be performed)\n";
+        $prompt .= "    Ask for each missing piece naturally in conversation. Once you have ALL four details, confirm them with the customer and append [CREATE_BOOKING] followed by the details in this exact format:\n";
+        $prompt .= "    [CREATE_BOOKING][BOOKING_NAME: Full Name][BOOKING_PHONE: Phone][BOOKING_EMAIL: Email][BOOKING_ADDRESS: Address]\n";
+        $prompt .= "    Do NOT use [CREATE_BOOKING] until you have confirmed all four details with the customer.\n\n";
 
         if ($website || $description) {
             $prompt .= "ABOUT US:\n";
@@ -637,7 +651,8 @@ class AiChatService
     protected function cleanAiResponse(string $response): string
     {
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
-        $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]'], '', $cleaned);
+        $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
+        $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
 
@@ -657,6 +672,127 @@ class AiChatService
         }
 
         return null;
+    }
+
+    /**
+     * Check if AI response contains a booking creation request
+     */
+    protected function isBookingRequest(string $response): bool
+    {
+        return strpos($response, '[CREATE_BOOKING]') !== false;
+    }
+
+    /**
+     * Extract booking details from AI response and create a ticket
+     */
+    protected function createBookingTicket(Chat $chat, string $aiContent): array
+    {
+        $name = null;
+        $phone = null;
+        $email = null;
+        $address = null;
+
+        if (preg_match('/\[BOOKING_NAME:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $name = trim($m[1]);
+        }
+        if (preg_match('/\[BOOKING_PHONE:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $phone = trim($m[1]);
+        }
+        if (preg_match('/\[BOOKING_EMAIL:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $email = trim($m[1]);
+        }
+        if (preg_match('/\[BOOKING_ADDRESS:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $address = trim($m[1]);
+        }
+
+        // Update chat with customer details
+        $chat->update(array_filter([
+            'customer_name' => $name,
+            'customer_email' => $email,
+        ]));
+
+        // Build description from chat history
+        $messages = $chat->messages()->orderBy('created_at', 'asc')->get();
+        $description = "Booking Request — Chat Transcript:\n\n";
+        foreach ($messages as $msg) {
+            $sender = $msg->sender_type === 'customer' ? 'Customer'
+                : ($msg->sender_type === 'agent' ? 'Agent' : 'AI');
+            $description .= "[{$sender}]: {$msg->content}\n\n";
+        }
+
+        // Create ticket with full booking details
+        $ticket = Ticket::create([
+            'project_id' => $chat->project_id,
+            'chat_id' => $chat->id,
+            'customer_name' => $name ?? $chat->customer_name ?? 'Unknown',
+            'customer_email' => $email,
+            'customer_phone' => $phone,
+            'service_address' => $address,
+            'subject' => 'Booking Request — ' . ($name ?? 'Customer') . ' — ' . now()->format('M d, Y H:i'),
+            'description' => $description,
+            'status' => 'open',
+            'priority' => 'high',
+            'category' => 'Booking',
+        ]);
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'sender_type' => 'customer',
+            'sender_id' => $email ?? $chat->customer_id,
+            'content' => "Booking request created from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}",
+        ]);
+
+        // Clean the AI content for display (remove tags)
+        $cleanContent = $this->cleanAiResponse($aiContent);
+        $confirmationNote = "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
+
+        $message = ChatMessage::create([
+            'chat_id' => $chat->id,
+            'sender_type' => 'ai',
+            'content' => $cleanContent . $confirmationNote,
+            'is_ai' => true,
+            'metadata' => [
+                'model' => $this->model,
+                'booking_created' => true,
+                'ticket_id' => $ticket->id,
+                'ticket_number' => $ticket->ticket_number,
+                'booking_details' => compact('name', 'phone', 'email', 'address'),
+            ],
+        ]);
+
+        // Notify agents
+        $project = $chat->project()->with('agents')->first();
+        if ($project) {
+            $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values();
+            foreach ($agentIds as $agentId) {
+                \App\Models\AppNotification::create([
+                    'user_id' => $agentId,
+                    'type' => 'alert',
+                    'title' => 'New booking request',
+                    'description' => ($name ?? 'A customer') . ' submitted a booking request.',
+                ]);
+            }
+        }
+
+        Log::info('Booking ticket created from AI chat', [
+            'chat_id' => $chat->id,
+            'ticket_id' => $ticket->id,
+            'customer_name' => $name,
+            'customer_phone' => $phone,
+            'customer_email' => $email,
+            'service_address' => $address,
+        ]);
+
+        return [
+            'id' => $message->id,
+            'content' => $message->content,
+            'sender_type' => 'ai',
+            'created_at' => $message->created_at,
+            'model' => $this->model,
+            'booking_created' => true,
+            'ticket_id' => $ticket->id,
+            'ticket_number' => $ticket->ticket_number,
+        ];
     }
 
     /**
@@ -764,7 +900,7 @@ class AiChatService
     /**
      * Create ticket from chat
      */
-    public function createTicketFromChat(Chat $chat, string $customerEmail, ?string $customerName = null): array
+    public function createTicketFromChat(Chat $chat, string $customerEmail, ?string $customerName = null, ?string $customerPhone = null, ?string $serviceAddress = null): array
     {
         // Get chat messages for ticket description
         $messages = $chat->messages()
@@ -774,7 +910,7 @@ class AiChatService
         // Build description from chat history
         $description = "Chat Transcript:\n\n";
         foreach ($messages as $msg) {
-            $sender = $msg->sender_type === 'customer' ? 'Customer' : 
+            $sender = $msg->sender_type === 'customer' ? 'Customer' :
                      ($msg->sender_type === 'agent' ? 'Agent' : 'AI');
             $description .= "[{$sender}]: {$msg->content}\n\n";
         }
@@ -784,6 +920,8 @@ class AiChatService
             'project_id' => $chat->project_id,
             'customer_email' => $customerEmail,
             'customer_name' => $customerName ?? $chat->customer_name ?? 'Unknown',
+            'customer_phone' => $customerPhone,
+            'service_address' => $serviceAddress,
             'subject' => 'Support Request from Chat - ' . now()->format('M d, Y H:i'),
             'description' => $description,
             'status' => 'open',

@@ -91,6 +91,9 @@ export default function TicketDetails() {
     updated_at?: string;
     customer_name?: string;
     customer_email?: string;
+    customer_phone?: string;
+    service_address?: string;
+    ticket_number?: string;
     project?: { id: string; name: string; companyId?: string; color?: string };
     project_id?: string;
     assigned_to?: string | number;
@@ -210,8 +213,8 @@ export default function TicketDetails() {
     ? {
         name: ticket.customer_name || ticket.customer_email || 'Customer',
         email: ticket.customer_email || '',
-        phone: '—',
-        location: '—',
+        phone: ticket.customer_phone || '—',
+        location: ticket.service_address || '—',
         totalTickets: 0,
         openTickets: 0,
         satisfaction: 0,

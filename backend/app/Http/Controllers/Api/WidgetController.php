@@ -713,6 +713,8 @@ class WidgetController extends Controller
             'customer_id' => 'required|string',
             'email' => 'required|email',
             'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'service_address' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -752,9 +754,11 @@ class WidgetController extends Controller
 
         // Create ticket
         $ticketInfo = $this->aiService->createTicketFromChat(
-            $chat, 
+            $chat,
             $request->input('email'),
-            $request->input('name')
+            $request->input('name'),
+            $request->input('phone'),
+            $request->input('service_address')
         );
 
         // Send confirmation message

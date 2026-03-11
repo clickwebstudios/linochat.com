@@ -68,6 +68,7 @@ export interface ChatMessageAreaProps {
   onShowTransferDialog: () => void;
   onShowCreateTicketDialog: () => void;
   onShowTakeoverDialog: () => void;
+  onEndChat: () => void;
   sendAgentTyping: (isTyping: boolean) => void;
   formatRelativeTime: (dateString: string) => string;
 }
@@ -95,6 +96,7 @@ export function ChatMessageArea({
   onShowTransferDialog,
   onShowCreateTicketDialog,
   onShowTakeoverDialog,
+  onEndChat,
   sendAgentTyping,
   formatRelativeTime,
 }: ChatMessageAreaProps) {
@@ -243,7 +245,7 @@ export function ChatMessageArea({
                 <Ticket className="mr-2 h-4 w-4" />
                 Create Ticket
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-red-600" onClick={onEndChat}>
                 <X className="mr-2 h-4 w-4" />
                 End Chat
               </DropdownMenuItem>

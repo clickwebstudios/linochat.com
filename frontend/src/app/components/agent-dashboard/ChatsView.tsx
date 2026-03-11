@@ -33,8 +33,8 @@ interface ChatsViewProps {
   activeChat: any;
   setActiveChat: (chat: any) => void;
   filteredChats: any[];
-  chatFilter: 'all' | 'active' | 'closed';
-  setChatFilter: (filter: 'all' | 'active' | 'closed') => void;
+  chatFilter: 'all' | 'active' | 'closed' | 'archived';
+  setChatFilter: (filter: 'all' | 'active' | 'closed' | 'archived') => void;
   getProjectById: (id: string) => any;
   projects?: any[];
   role: string;
@@ -543,6 +543,33 @@ export function ChatsView({
     }
   };
 
+  const handleEndChat = async () => {
+    if (!activeChat?.id) return;
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const response = await fetch(`/api/agent/chats/${activeChat.id}/close`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to close chat');
+      // Update chat status in the list
+      onChatsUpdate?.((prevChats) =>
+        prevChats.map((c) =>
+          c.id === activeChat.id ? { ...c, status: 'closed' } : c
+        )
+      );
+      // Clear active chat so it disappears from view
+      setActiveChat(null);
+    } catch (error) {
+      console.error('Failed to end chat:', error);
+    }
+  };
+
   const handleSubmitTransfer = () => {
     if (selectedOperatorForTransfer && transferReason.trim()) {
       setShowTransferDialog(false);
@@ -664,6 +691,7 @@ export function ChatsView({
             setShowCreateTicketDialog(true);
           }}
           onShowTakeoverDialog={() => setShowTakeoverDialog(true)}
+          onEndChat={handleEndChat}
           sendAgentTyping={sendAgentTyping}
           formatRelativeTime={formatRelativeTime}
         />
