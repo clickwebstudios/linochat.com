@@ -19,6 +19,7 @@ import {
   AccordionTrigger,
 } from '../ui/accordion';
 import { Switch } from '../ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import {
   Copy,
   MessageSquare,
@@ -121,16 +122,39 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     }
   };
 
+  const saveButton = (
+    <div className="flex gap-2 items-center pt-2">
+      <Button
+        className="bg-blue-600 hover:bg-blue-700"
+        onClick={handleSaveSettings}
+        disabled={saving}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save Widget Settings
+      </Button>
+      {saveSuccess && (
+        <span className="text-sm text-green-600">Saved! Changes will appear on your website within 30 seconds.</span>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Chat Widget Configuration</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Configuration */}
-            <div className="lg:col-span-2 space-y-6">
+        <CardContent>
+          <Tabs defaultValue="appearance">
+            <TabsList className="mb-6 w-full">
+              <TabsTrigger value="appearance" className="flex-1">Appearance</TabsTrigger>
+              <TabsTrigger value="greeting" className="flex-1">Greeting</TabsTrigger>
+              <TabsTrigger value="embed" className="flex-1">Embed Code</TabsTrigger>
+              <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
+            </TabsList>
+
+            {/* ── Appearance Tab ── */}
+            <TabsContent value="appearance">
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                   <div>
@@ -149,8 +173,8 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
 
                 <div className="grid gap-2">
                   <Label htmlFor="widget-name">Widget Title</Label>
-                  <Input 
-                    id="widget-name" 
+                  <Input
+                    id="widget-name"
                     value={widgetTitle}
                     onChange={(e) => setWidgetTitle(e.target.value)}
                     placeholder="Enter widget title"
@@ -159,8 +183,8 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
 
                 <div className="grid gap-2">
                   <Label htmlFor="welcome-message">Welcome Message</Label>
-                  <Textarea 
-                    id="welcome-message" 
+                  <Textarea
+                    id="welcome-message"
                     value={welcomeMessage}
                     onChange={(e) => setWelcomeMessage(e.target.value)}
                     placeholder="Enter welcome message"
@@ -205,14 +229,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                 <div className="grid gap-2">
                   <Label htmlFor="widget-color">Widget Color</Label>
                   <div className="flex items-center gap-2">
-                    <Input 
-                      id="widget-color" 
+                    <Input
+                      id="widget-color"
                       type="color"
                       value={widgetColor}
                       onChange={(e) => setWidgetColor(e.target.value)}
                       className="w-20 h-10"
                     />
-                    <Input 
+                    <Input
                       value={widgetColor}
                       onChange={(e) => setWidgetColor(e.target.value)}
                       placeholder="#000000"
@@ -235,67 +259,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Select>
                 </div>
 
-                {/* Greeting Settings */}
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="text-sm font-medium mb-4">Greeting Bubble</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium">Enable Greeting</p>
-                        <p className="text-sm text-gray-500">Automatically show a greeting message to visitors</p>
-                      </div>
-                      <Switch checked={greetingEnabled} onCheckedChange={setGreetingEnabled} />
-                    </div>
-
-                    {greetingEnabled && (
-                      <div className="space-y-4 pl-1">
-                        <div className="grid gap-2">
-                          <Label>Show greeting after</Label>
-                          <Select value={greetingDelay} onValueChange={setGreetingDelay}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">Immediately on page load</SelectItem>
-                              <SelectItem value="3">3 seconds after page load</SelectItem>
-                              <SelectItem value="5">5 seconds after page load</SelectItem>
-                              <SelectItem value="10">10 seconds after page load</SelectItem>
-                              <SelectItem value="15">15 seconds after page load</SelectItem>
-                              <SelectItem value="30">30 seconds after page load</SelectItem>
-                              <SelectItem value="60">1 minute after page load</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="greeting-msg">Greeting Message</Label>
-                          <Textarea
-                            id="greeting-msg"
-                            value={greetingMessage}
-                            onChange={e => setGreetingMessage(e.target.value)}
-                            placeholder="👋 Hi there! How can we help you today?"
-                            rows={3}
-                            maxLength={500}
-                          />
-                          <p className="text-xs text-gray-400">{greetingMessage.length}/500 characters</p>
-                        </div>
-
-                        {/* Greeting preview */}
-                        <div className="p-4 bg-gray-50 rounded-lg border">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Greeting Preview</p>
-                          <div className="flex items-end gap-2">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: widgetColor }}>
-                              {(widgetTitle || 'A')[0].toUpperCase()}
-                            </div>
-                            <div className="bg-white border rounded-2xl rounded-bl-sm px-3 py-2 max-w-xs shadow-sm">
-                              <p style={{ fontSize: `${fontSize}px` }}>{greetingMessage || '...'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t pt-4 mt-4">
+                <div className="border-t pt-4 mt-2">
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="schedule">
                       <AccordionTrigger>
@@ -318,26 +282,79 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Accordion>
                 </div>
 
-                <div className="flex gap-2 items-center">
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700"
-                    onClick={handleSaveSettings}
-                    disabled={saving}
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Save Widget Settings
-                  </Button>
-                  {saveSuccess && (
-                    <span className="text-sm text-green-600">Saved! Changes will appear on your website within 30 seconds.</span>
-                  )}
-                </div>
+                {saveButton}
               </div>
+            </TabsContent>
 
-                <div className="border-t pt-6">
-                <h3 className="text-sm font-medium mb-4">Installation Code</h3>
+            {/* ── Greeting Tab ── */}
+            <TabsContent value="greeting">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">Enable Greeting Bubble</p>
+                    <p className="text-sm text-gray-500">Automatically show a greeting message to visitors</p>
+                  </div>
+                  <Switch checked={greetingEnabled} onCheckedChange={setGreetingEnabled} />
+                </div>
+
+                {greetingEnabled && (
+                  <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label>Show greeting after</Label>
+                      <Select value={greetingDelay} onValueChange={setGreetingDelay}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Immediately on page load</SelectItem>
+                          <SelectItem value="3">3 seconds after page load</SelectItem>
+                          <SelectItem value="5">5 seconds after page load</SelectItem>
+                          <SelectItem value="10">10 seconds after page load</SelectItem>
+                          <SelectItem value="15">15 seconds after page load</SelectItem>
+                          <SelectItem value="30">30 seconds after page load</SelectItem>
+                          <SelectItem value="60">1 minute after page load</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="greeting-msg">Greeting Message</Label>
+                      <Textarea
+                        id="greeting-msg"
+                        value={greetingMessage}
+                        onChange={e => setGreetingMessage(e.target.value)}
+                        placeholder="👋 Hi there! How can we help you today?"
+                        rows={3}
+                        maxLength={500}
+                      />
+                      <p className="text-xs text-gray-400">{greetingMessage.length}/500 characters</p>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 rounded-lg border">
+                      <p className="text-xs text-gray-500 mb-2 font-medium">Greeting Preview</p>
+                      <div className="flex items-end gap-2">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: widgetColor }}>
+                          {(widgetTitle || 'A')[0].toUpperCase()}
+                        </div>
+                        <div className="bg-white border rounded-2xl rounded-bl-sm px-3 py-2 max-w-xs shadow-sm">
+                          <p style={{ fontSize: `${fontSize}px` }}>{greetingMessage || '...'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {saveButton}
+              </div>
+            </TabsContent>
+
+            {/* ── Embed Code Tab ── */}
+            <TabsContent value="embed">
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Copy the snippet below and paste it before the closing <code className="bg-gray-100 px-1 rounded text-xs">&lt;/body&gt;</code> tag on every page where you want the widget to appear.
+                </p>
                 <div className="bg-gray-50 rounded-lg p-4 border">
                   <Label className="text-xs font-medium text-gray-700 mb-2 block">
-                    Add this code before the closing &lt;/body&gt; tag
+                    Installation snippet
                   </Label>
                   <pre className="text-xs text-gray-800 overflow-x-auto bg-gray-900 text-green-400 p-3 rounded">
 {`<script>
@@ -355,9 +372,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       Note: HTTP URLs are blocked on HTTPS sites (mixed content). Use a URL starting with https:// for production.
                     </p>
                   )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="mt-3"
                     onClick={() => {
                       const code = `<script>
@@ -377,14 +394,13 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Button>
                 </div>
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Right Column - Preview */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-6">
-                <h3 className="text-sm font-medium mb-4">Widget Preview</h3>
-                <div className="bg-gray-100 rounded-lg p-6 border-2 border-gray-200 min-h-[500px] relative">
-                  {/* Preview Container - position matches widget setting */}
+            {/* ── Preview Tab ── */}
+            <TabsContent value="preview">
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">This is how your widget will look on a visitor's page. Click the widget button to open the chat panel.</p>
+                <div className="bg-gray-100 rounded-lg border-2 border-gray-200 relative" style={{ minHeight: '600px' }}>
                   <div className={`absolute ${
                     widgetPosition === 'bottom-right' ? 'bottom-6 right-6' :
                     widgetPosition === 'bottom-left' ? 'bottom-6 left-6' :
@@ -408,8 +424,8 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

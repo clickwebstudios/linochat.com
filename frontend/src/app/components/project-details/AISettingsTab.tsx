@@ -505,7 +505,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 <Textarea
                   id="system-prompt"
                   placeholder="You are a helpful customer support assistant for {company}..."
-                  rows={12}
+                  rows={28}
                   value={settings.system_prompt || ''}
                   onChange={e => updateSetting('system_prompt', e.target.value)}
                 />

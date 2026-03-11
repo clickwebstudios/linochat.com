@@ -38,7 +38,7 @@
   // ── Inject CSS ────────────────────────────────────────────────────────────
   var css = [
     '#lc-widget{position:fixed;bottom:20px;right:20px;z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px}',
-    '#lc-btn{width:56px;height:56px;border-radius:50%;background:var(--lc-color);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;outline:none}',
+    '#lc-btn{width:67px;height:67px;border-radius:50%;background:var(--lc-color);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;outline:none}',
     '#lc-btn:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.3)}',
     '#lc-btn svg{pointer-events:none}',
     '#lc-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px}',
@@ -88,7 +88,7 @@
     // Float button
     '<button id="lc-btn" aria-label="Open chat">',
     '  <span id="lc-badge"></span>',
-    '  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
+    '  <svg width="29" height="29" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
     '</button>',
     // Greeting bubble
     '<div id="lc-greeting"><span id="lc-greeting-text"></span><button id="lc-greeting-close" aria-label="Close greeting">&#x2715;</button></div>',
