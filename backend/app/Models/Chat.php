@@ -21,11 +21,13 @@ class Chat extends Model
         'subject',
         'priority',
         'last_message_at',
+        'customer_last_seen_at',
         'metadata',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
+        'customer_last_seen_at' => 'datetime',
         'metadata' => 'array',
         'ai_enabled' => 'boolean',
     ];

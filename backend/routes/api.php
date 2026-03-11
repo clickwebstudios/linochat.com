@@ -129,12 +129,17 @@ Route::group([
         Route::get('/status', [WidgetController::class, 'agentStatus']);
         Route::get('/messages', [WidgetController::class, 'messages']);
         Route::match(['get', 'post'], '/init', [WidgetController::class, 'init']);
+        Route::match(['get', 'post'], '/heartbeat', [WidgetController::class, 'heartbeat']);
     });
 
-    // Write/AI endpoints — strict limit (20 req/min per IP) to prevent spam & abuse
-    Route::middleware('throttle:20,1')->group(function () {
-        Route::match(['get', 'post'], '/message', [WidgetController::class, 'sendMessage']);
+    // Typing/lightweight write — generous limit (shared with reads)
+    Route::middleware('throttle:120,1')->group(function () {
         Route::post('/typing', [WidgetController::class, 'typing']);
+    });
+
+    // Message/AI endpoints — moderate limit (60 req/min per IP)
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::match(['get', 'post'], '/message', [WidgetController::class, 'sendMessage']);
         Route::post('/handover', [WidgetController::class, 'requestHuman']);
         Route::post('/check-ticket-needed', [WidgetController::class, 'checkTicketNeeded']);
         Route::post('/create-ticket', [WidgetController::class, 'submitContactAndCreateTicket']);

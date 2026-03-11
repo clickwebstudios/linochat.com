@@ -161,8 +161,16 @@ export function ChatMessageArea({
             </h4>
             <div className="flex items-center gap-2 text-xs text-[#6a7282] leading-4">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-[#00c950]" />
-                Online
+                {(() => {
+                  const lastSeen = activeChat?.customer_last_seen_at ? new Date(activeChat.customer_last_seen_at).getTime() : 0;
+                  const online = lastSeen > 0 && (Date.now() - lastSeen) < 30000;
+                  return (
+                    <>
+                      <span className={`h-2 w-2 rounded-full ${online ? 'bg-[#00c950]' : 'bg-gray-400'}`} />
+                      {online ? 'Online' : 'Offline'}
+                    </>
+                  );
+                })()}
               </span>
               <span>&bull;</span>
               <span>ID: C-{activeChat?.id || '-'}</span>

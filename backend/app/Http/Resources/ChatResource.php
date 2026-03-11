@@ -33,6 +33,7 @@ class ChatResource extends JsonResource
             'priority' => $this->priority ?? 'medium',
             'metadata' => $this->metadata ?? [],
             'last_message_at' => $this->last_message_at,
+            'customer_last_seen_at' => $this->customer_last_seen_at?->toIso8601String(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'unread_count' => $unreadCount,

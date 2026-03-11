@@ -94,6 +94,7 @@ class WidgetLoaderController extends Controller
     var CUSTOMER_TYPING_SENT = false;
     var CHAT_INITIALIZED = false;
     var CHAT_INIT_PROMISE = null;
+    var HEARTBEAT_INTERVAL = null;
 
     // Default button icon (MessageSquare SVG)
     var DEFAULT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"><\/path><\/svg>';
@@ -376,6 +377,29 @@ class WidgetLoaderController extends Controller
         POLL_MESSAGES_INTERVAL = setInterval(pollChatState, 8000);
     }
     
+    // Send heartbeat to signal customer is still online
+    function sendHeartbeat() {
+        if (!CHAT_ID || !CUSTOMER_ID) return;
+        fetch(API_URL + '/api/widget/' + WIDGET_ID + '/heartbeat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+            body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID })
+        }).catch(function() {});
+    }
+
+    function startHeartbeat() {
+        if (HEARTBEAT_INTERVAL) return;
+        sendHeartbeat();
+        HEARTBEAT_INTERVAL = setInterval(sendHeartbeat, 15000);
+    }
+
+    function stopHeartbeat() {
+        if (HEARTBEAT_INTERVAL) {
+            clearInterval(HEARTBEAT_INTERVAL);
+            HEARTBEAT_INTERVAL = null;
+        }
+    }
+
     // Check for settings updates
     function checkSettingsUpdate() {
         fetch(API_URL + '/api/widget/' + WIDGET_ID + '/config', { headers: FETCH_HEADERS, cache: 'no-store' })
@@ -733,6 +757,7 @@ class WidgetLoaderController extends Controller
                 createWidget(true);
                 CHAT_INITIALIZED = true;
                 SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 120000);
+                startHeartbeat();
             };
 
             var onError = function(err) {
@@ -1141,6 +1166,7 @@ class WidgetLoaderController extends Controller
     // Cleanup
     window.addEventListener('beforeunload', function() {
         if (SETTINGS_CHECK_INTERVAL) clearInterval(SETTINGS_CHECK_INTERVAL);
+        stopHeartbeat();
         if (PUSHER) PUSHER.disconnect();
     });
     

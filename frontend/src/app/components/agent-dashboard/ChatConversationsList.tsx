@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import {
@@ -28,6 +28,12 @@ export function ChatConversationsList({
   formatRelativeTime,
 }: ChatConversationsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  // Re-render every 15s so online/offline status updates based on customer_last_seen_at
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const displayedChats = searchQuery.trim()
     ? filteredChats.filter((chat) => {
@@ -110,7 +116,8 @@ export function ChatConversationsList({
           displayedChats.map((chat) => {
             const project = getProjectById(chat.project_id || chat.projectId);
             const isSelected = activeChat?.id === chat.id;
-            const isOnline = chat.status !== 'closed' && chat.status !== 'offline';
+            const lastSeen = chat.customer_last_seen_at ? new Date(chat.customer_last_seen_at).getTime() : 0;
+            const isOnline = lastSeen > 0 && (Date.now() - lastSeen) < 30000;
             const agentName = chat.agent || (chat.ai_enabled || chat.isAIBot ? 'AI Bot' : null);
             return (
               <div
@@ -158,7 +165,7 @@ export function ChatConversationsList({
                             : 'bg-gray-100 border border-gray-200 text-[#6a7282]'
                         }`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-[#00a63e]' : 'bg-gray-400'}`} />
-                          {chat.status === 'closed' ? 'Closed' : chat.status === 'offline' ? 'Offline' : 'Online'}
+                          {isOnline ? 'Online' : 'Offline'}
                         </span>
                         {project && (
                           <span

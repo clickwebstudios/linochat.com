@@ -168,7 +168,7 @@ class WidgetController extends Controller
                 'is_ai' => true,
             ]);
 
-            $chat->update(['last_message_at' => now()]);
+            $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
             broadcast(new MessageSent($welcomeMessage))->toOthers();
 
             // Notify agents about new chat in real time (broadcast immediately, no queue)
@@ -364,7 +364,7 @@ class WidgetController extends Controller
                 'is_ai' => false,
             ]);
 
-            $chat->update(['last_message_at' => now()]);
+            $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
             broadcast(new MessageSent($message))->toOthers();
 
             $aiResponse = null;
@@ -521,6 +521,26 @@ class WidgetController extends Controller
         return response()->json([
             'success' => true,
         ]);
+    }
+
+    /**
+     * Customer heartbeat — widget calls this every ~15s to signal the customer is still online.
+     */
+    public function heartbeat(Request $request, string $widget_id)
+    {
+        $chatId = $request->input('chat_id') ?? $request->query('chat_id');
+        $customerId = $request->input('customer_id') ?? $request->query('customer_id');
+
+        if (!$chatId || !$customerId) {
+            return response()->json(['success' => false], 422);
+        }
+
+        $updated = Chat::where('id', $chatId)
+            ->where('customer_id', $customerId)
+            ->whereHas('project', fn ($q) => $q->where('widget_id', $widget_id))
+            ->update(['customer_last_seen_at' => now()]);
+
+        return response()->json(['success' => $updated > 0]);
     }
 
     /**
