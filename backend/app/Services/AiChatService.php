@@ -123,7 +123,22 @@ class AiChatService
 
             $aiContent = $response['content'];
             $tokensUsed = $response['tokens_used'] ?? 0;
-            
+
+            // Check if AI wants to look up a Frubix client or schedule
+            if ($this->isFrubixLookup($aiContent)) {
+                $frubixResult = $this->handleFrubixLookup($aiContent, $project);
+                if ($frubixResult) {
+                    // Re-call OpenAI with Frubix data injected as context
+                    $messages[] = ['role' => 'assistant', 'content' => $aiContent];
+                    $messages[] = ['role' => 'system', 'content' => $frubixResult];
+                    $followUp = $this->callOpenAIWithRetry($apiKey, $messages);
+                    if ($followUp) {
+                        $aiContent = $followUp['content'];
+                        $tokensUsed += $followUp['tokens_used'] ?? 0;
+                    }
+                }
+            }
+
             // Check if AI wants to handover
             if ($this->isHandoverRequest($aiContent)) {
                 broadcast(new AiTyping($chat->id, false, $this->model));
@@ -479,7 +494,17 @@ class AiChatService
         $prompt .= "    Ask for each missing piece naturally in conversation. Once you have ALL four details, confirm them with the customer and append [CREATE_BOOKING] followed by the details in this exact format:\n";
         $prompt .= "    [CREATE_BOOKING][BOOKING_NAME: Full Name][BOOKING_PHONE: Phone][BOOKING_EMAIL: Email][BOOKING_ADDRESS: Address][BOOKING_ISSUE: Brief summary of the issue/service requested, including any appliance details, model numbers, or symptoms the customer mentioned during the conversation]\n";
         $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem or request earlier in the conversation — appliance type, brand, model, symptoms, urgency, etc.\n";
-        $prompt .= "    Do NOT use [CREATE_BOOKING] until you have confirmed all four details with the customer.\n\n";
+        $prompt .= "    Do NOT use [CREATE_BOOKING] until you have confirmed all four details with the customer.\n";
+
+        // Add Frubix integration rules if connected
+        $frubixConfig = $this->getFrubixIntegration($project);
+        if ($frubixConfig) {
+            $prompt .= "11. FRUBIX CLIENT LOOKUP: When a customer provides their phone number or email, you can look up their account in our system by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. Replace phone_or_email with the actual phone number or email. The system will return client details which you can use to address the customer by name and reference their account.\n";
+            $prompt .= "12. FRUBIX SCHEDULE CHECK: When a customer asks about their upcoming appointments or schedule, append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their scheduled appointments which you can share with them.\n";
+            $prompt .= "    You can use LOOKUP_CLIENT proactively when the customer shares their phone or email during the booking flow.\n";
+        }
+
+        $prompt .= "\n";
 
         if ($website || $description) {
             $prompt .= "ABOUT US:\n";
@@ -660,6 +685,7 @@ class AiChatService
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
         $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE):\s*[^\]]*\]/i', '', $cleaned);
+        $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
 
@@ -855,6 +881,99 @@ class AiChatService
             'ticket_id' => $ticket->id,
             'ticket_number' => $ticket->ticket_number,
         ];
+    }
+
+    /**
+     * Check if AI response contains a Frubix lookup request
+     */
+    protected function isFrubixLookup(string $response): bool
+    {
+        return preg_match('/\[(LOOKUP_CLIENT|CHECK_SCHEDULE):\s*[^\]]+\]/i', $response) === 1;
+    }
+
+    /**
+     * Get active Frubix integration config for a project
+     */
+    protected function getFrubixIntegration(Project $project): ?array
+    {
+        $integrations = $project->integrations ?? [];
+        $frubix = $integrations['frubix'] ?? null;
+
+        if (!$frubix || empty($frubix['access_token'])) {
+            return null;
+        }
+
+        return $frubix;
+    }
+
+    /**
+     * Handle Frubix lookup tokens and return context string for AI
+     */
+    protected function handleFrubixLookup(string $aiContent, Project $project): ?string
+    {
+        $frubixConfig = $this->getFrubixIntegration($project);
+        if (!$frubixConfig) {
+            return null;
+        }
+
+        $results = [];
+
+        // Handle client lookup
+        if (preg_match('/\[LOOKUP_CLIENT:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $query = trim($m[1]);
+            try {
+                $params = filter_var($query, FILTER_VALIDATE_EMAIL)
+                    ? ['email' => $query]
+                    : ['phone' => $query];
+                $clients = FrubixService::searchClients($frubixConfig, $params);
+                if (!empty($clients)) {
+                    $results[] = "FRUBIX CLIENT FOUND:\n" . collect($clients)->map(function ($c) {
+                        $info = "- Name: " . ($c['name'] ?? 'N/A');
+                        if (!empty($c['email'])) $info .= ", Email: {$c['email']}";
+                        if (!empty($c['phone'])) $info .= ", Phone: {$c['phone']}";
+                        if (!empty($c['address'])) $info .= ", Address: {$c['address']}";
+                        if (!empty($c['company_name'])) $info .= ", Company: {$c['company_name']}";
+                        return $info;
+                    })->implode("\n");
+                } else {
+                    $results[] = "FRUBIX CLIENT LOOKUP: No client found for '{$query}'.";
+                }
+            } catch (\Exception $e) {
+                Log::warning('Frubix client lookup failed', ['error' => $e->getMessage()]);
+                $results[] = "FRUBIX CLIENT LOOKUP: Unable to look up client at this time.";
+            }
+        }
+
+        // Handle schedule check
+        if (preg_match('/\[CHECK_SCHEDULE:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $query = trim($m[1]);
+            try {
+                $params = ['phone' => $query, 'date_from' => now()->toDateString(), 'date_to' => now()->addDays(30)->toDateString()];
+                $schedule = FrubixService::getSchedule($frubixConfig, $params);
+                if (!empty($schedule)) {
+                    $results[] = "FRUBIX SCHEDULE:\n" . collect($schedule)->map(function ($s) {
+                        $info = "- " . ($s['scheduled_at'] ?? $s['scheduled_date'] ?? 'TBD');
+                        if (!empty($s['customer_name'])) $info .= ", Customer: {$s['customer_name']}";
+                        if (!empty($s['job_type'])) $info .= ", Type: {$s['job_type']}";
+                        if (!empty($s['status'])) $info .= ", Status: {$s['status']}";
+                        if (!empty($s['address'])) $info .= ", Address: {$s['address']}";
+                        if (!empty($s['duration'])) $info .= ", Duration: {$s['duration']} min";
+                        return $info;
+                    })->implode("\n");
+                } else {
+                    $results[] = "FRUBIX SCHEDULE: No upcoming appointments found for '{$query}'.";
+                }
+            } catch (\Exception $e) {
+                Log::warning('Frubix schedule check failed', ['error' => $e->getMessage()]);
+                $results[] = "FRUBIX SCHEDULE: Unable to check schedule at this time.";
+            }
+        }
+
+        if (empty($results)) {
+            return null;
+        }
+
+        return "The following information was retrieved from our system. Use it to respond to the customer naturally (do NOT mention 'Frubix' or 'system lookup' to the customer — present the info as if you already know it). Remove any [LOOKUP_CLIENT] or [CHECK_SCHEDULE] tags from your response.\n\n" . implode("\n\n", $results);
     }
 
     /**
