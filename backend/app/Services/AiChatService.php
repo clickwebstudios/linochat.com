@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use OpenAI;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Exceptions\TimeoutException;
@@ -471,7 +472,8 @@ class AiChatService
         $prompt .= "    - Email address\n";
         $prompt .= "    - Service address (where the service will be performed)\n";
         $prompt .= "    Ask for each missing piece naturally in conversation. Once you have ALL four details, confirm them with the customer and append [CREATE_BOOKING] followed by the details in this exact format:\n";
-        $prompt .= "    [CREATE_BOOKING][BOOKING_NAME: Full Name][BOOKING_PHONE: Phone][BOOKING_EMAIL: Email][BOOKING_ADDRESS: Address]\n";
+        $prompt .= "    [CREATE_BOOKING][BOOKING_NAME: Full Name][BOOKING_PHONE: Phone][BOOKING_EMAIL: Email][BOOKING_ADDRESS: Address][BOOKING_ISSUE: Brief summary of the issue/service requested, including any appliance details, model numbers, or symptoms the customer mentioned during the conversation]\n";
+        $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem or request earlier in the conversation — appliance type, brand, model, symptoms, urgency, etc.\n";
         $prompt .= "    Do NOT use [CREATE_BOOKING] until you have confirmed all four details with the customer.\n\n";
 
         if ($website || $description) {
@@ -652,7 +654,7 @@ class AiChatService
     {
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
-        $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS):\s*[^\]]*\]/i', '', $cleaned);
+        $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
 
@@ -691,6 +693,7 @@ class AiChatService
         $phone = null;
         $email = null;
         $address = null;
+        $issue = null;
 
         if (preg_match('/\[BOOKING_NAME:\s*([^\]]+)\]/i', $aiContent, $m)) {
             $name = trim($m[1]);
@@ -704,6 +707,9 @@ class AiChatService
         if (preg_match('/\[BOOKING_ADDRESS:\s*([^\]]+)\]/i', $aiContent, $m)) {
             $address = trim($m[1]);
         }
+        if (preg_match('/\[BOOKING_ISSUE:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $issue = trim($m[1]);
+        }
 
         // Update chat with customer details
         $chat->update(array_filter([
@@ -711,9 +717,15 @@ class AiChatService
             'customer_email' => $email,
         ]));
 
-        // Build description from chat history
+        // Build description with issue summary and chat history
+        $description = '';
+        if ($issue) {
+            $description .= "Issue Details: {$issue}\n\n";
+        }
+        $description .= "Customer Details:\n";
+        $description .= "Name: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}\n\n";
+        $description .= "Chat Transcript:\n\n";
         $messages = $chat->messages()->orderBy('created_at', 'asc')->get();
-        $description = "Booking Request — Chat Transcript:\n\n";
         foreach ($messages as $msg) {
             $sender = $msg->sender_type === 'customer' ? 'Customer'
                 : ($msg->sender_type === 'agent' ? 'Agent' : 'AI');
@@ -728,7 +740,7 @@ class AiChatService
             'customer_email' => $email,
             'customer_phone' => $phone,
             'service_address' => $address,
-            'subject' => 'Booking Request — ' . ($name ?? 'Customer') . ' — ' . now()->format('M d, Y H:i'),
+            'subject' => 'Booking: ' . ($issue ? Str::limit($issue, 60) . ' — ' : '') . ($name ?? 'Customer') . ' — ' . now()->format('M d, Y H:i'),
             'description' => $description,
             'status' => 'open',
             'priority' => 'high',
@@ -739,7 +751,7 @@ class AiChatService
             'ticket_id' => $ticket->id,
             'sender_type' => 'customer',
             'sender_id' => $email ?? $chat->customer_id,
-            'content' => "Booking request created from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}",
+            'content' => "Booking request created from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}" . ($issue ? "\n\nIssue Details: {$issue}" : ''),
         ]);
 
         // Clean the AI content for display (remove tags)
