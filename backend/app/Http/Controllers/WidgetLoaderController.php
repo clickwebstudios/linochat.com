@@ -531,7 +531,7 @@ class WidgetLoaderController extends Controller
     function sendMessageFetch(content) {
         return fetch(API_URL + '/api/widget/' + WIDGET_ID + '/message', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+            headers: Object.assign({ 'Content-Type': 'application/json' }, FETCH_HEADERS),
             body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, message: content })
         })
         .then(function(r) {
@@ -912,7 +912,7 @@ class WidgetLoaderController extends Controller
             if (!CHAT_ID || !CUSTOMER_ID) return;
             fetch(API_URL + '/api/widget/' + WIDGET_ID + '/typing', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+                headers: Object.assign({ 'Content-Type': 'application/json' }, FETCH_HEADERS),
                 body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, is_typing: isTyping })
             }).catch(function() {});
             CUSTOMER_TYPING_SENT = isTyping;
@@ -980,7 +980,7 @@ class WidgetLoaderController extends Controller
         
         fetch(API_URL + '/api/widget/' + WIDGET_ID + '/check-ticket-needed', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+            headers: Object.assign({ 'Content-Type': 'application/json' }, FETCH_HEADERS),
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 customer_id: CUSTOMER_ID
@@ -1045,7 +1045,7 @@ class WidgetLoaderController extends Controller
     function submitTicketRequest(email, name) {
         fetch(API_URL + '/api/widget/' + WIDGET_ID + '/create-ticket', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+            headers: Object.assign({ 'Content-Type': 'application/json' }, FETCH_HEADERS),
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 customer_id: CUSTOMER_ID,
