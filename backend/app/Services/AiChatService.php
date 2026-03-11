@@ -145,7 +145,10 @@ class AiChatService
                 // override handover — ask for phone/email to look up instead
                 $frubixConfig = $this->getFrubixIntegration($project);
                 if ($frubixConfig && $this->isAppointmentRelated($customerMessage)) {
-                    $overrideContent = "Sure, I can check that for you! Could you please provide your phone number or email address so I can look up your appointment details?";
+                    $isBookingIntent = (bool) preg_match('/\b(book|schedule|make|set up|need).*(appointment|service|visit|call|time|slot)\b/i', $customerMessage);
+                    $overrideContent = $isBookingIntent
+                        ? "I'd be happy to help you book an appointment! Could I get your full name to get started?"
+                        : "Sure, I can check that for you! Could you please provide your phone number or email address so I can look up your appointment details?";
                     $aiMessage = ChatMessage::create([
                         'chat_id' => $chat->id,
                         'sender_type' => 'ai',
@@ -951,9 +954,12 @@ class AiChatService
     protected function isAppointmentRelated(string $message): bool
     {
         $keywords = [
-            'appointment', 'schedule', 'booking', 'booked',
+            'appointment', 'schedule', 'booking', 'booked', 'book',
             'when is my', 'check my', 'upcoming', 'next visit',
             'date of my', 'time of my', 'reschedule',
+            'book a', 'book an', 'make an appointment', 'set up',
+            'available time', 'available slot', 'free slot',
+            'service call', 'technician', 'visit',
         ];
         $lower = strtolower($message);
         foreach ($keywords as $kw) {
