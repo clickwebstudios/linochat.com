@@ -508,7 +508,7 @@ class WidgetLoaderController extends Controller
         return sendMessageFetch(content).catch(function() {
             return sendMessageJsonp(content);
         }).catch(function() {
-            addMessage('Sorry, we could not send your message. Please check your connection and try again.', 'ai');
+            addMessage('Sorry, we could not send your message. Please check your connection and try again.', 'system');
         });
     }
     
@@ -525,7 +525,7 @@ class WidgetLoaderController extends Controller
             return;
         }
         var errMsg = data.message || (data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null) || 'Sorry, something went wrong. Please try again.';
-        addMessage(errMsg, 'ai');
+        addMessage(errMsg, 'system');
     }
     
     function sendMessageFetch(content) {

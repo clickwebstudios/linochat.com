@@ -330,6 +330,7 @@
       })
       .catch(function () {
         tempDiv.style.opacity = '0.5';
+        addMsg('Sorry, we couldn\'t send your message. Please try again.', 'system');
         sendBtn.disabled = false;
       });
   }
