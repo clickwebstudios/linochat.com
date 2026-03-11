@@ -181,6 +181,20 @@ class AiChatService
                 return $this->createBookingTicket($chat, $aiContent, $project);
             }
 
+            // Safety net: AI said "booked/confirmed/scheduled" but forgot [CREATE_BOOKING]
+            // Re-prompt to get the proper tags
+            if ($this->looksLikeBookingConfirmation($aiContent) && !$this->isBookingRequest($aiContent)) {
+                Log::info('AI forgot [CREATE_BOOKING] tag, re-prompting', ['chat_id' => $chat->id]);
+                $messages[] = ['role' => 'assistant', 'content' => $aiContent];
+                $messages[] = ['role' => 'system', 'content' => 'IMPORTANT: You just confirmed a booking but FORGOT to include the [CREATE_BOOKING] tag. The booking was NOT created. You MUST re-send your response with the [CREATE_BOOKING][BOOKING_NAME: ...][BOOKING_PHONE: ...][BOOKING_EMAIL: ...][BOOKING_ADDRESS: ...][BOOKING_ISSUE: ...] tags appended at the end. Do it now.'];
+                $retry = $this->callOpenAIWithRetry($apiKey, $messages);
+                if ($retry && $this->isBookingRequest($retry['content'])) {
+                    $tokensUsed += $retry['tokens_used'] ?? 0;
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return $this->createBookingTicket($chat, $retry['content'], $project);
+                }
+            }
+
             // Extract and save customer name if AI detected it
             $cleanedContent = $this->cleanAiResponse($aiContent);
             $customerName = $this->extractCustomerName($aiContent);
@@ -510,15 +524,15 @@ class AiChatService
         $prompt .= "7. If you cannot help and no agent is available, use [REQUEST_CONTACT] to collect their name and email.\n";
         $prompt .= "8. When the customer gives their name, append [CUSTOMER_NAME: Name] at the end of your reply (properly capitalized, e.g. John, Jane Doe).\n";
         $prompt .= "9. No Markdown. No [text](url) links. Plain text only (e.g. info@example.com, https://example.com).\n";
-        $prompt .= "10. BOOKING FLOW: When a customer wants to book, schedule, or make an appointment, you MUST collect ALL of the following details one at a time before creating the booking:\n";
+        $prompt .= "10. BOOKING FLOW — CRITICAL: When a customer wants to book, schedule, or make an appointment, you MUST collect ALL of the following details one at a time:\n";
         $prompt .= "    - Full name\n";
         $prompt .= "    - Phone number\n";
         $prompt .= "    - Email address\n";
         $prompt .= "    - Service address (where the service will be performed)\n";
-        $prompt .= "    Ask for each missing piece naturally in conversation. Once you have ALL four details, confirm them with the customer and append [CREATE_BOOKING] followed by the details in this exact format:\n";
-        $prompt .= "    [CREATE_BOOKING][BOOKING_NAME: Full Name][BOOKING_PHONE: Phone][BOOKING_EMAIL: Email][BOOKING_ADDRESS: Address][BOOKING_ISSUE: Brief summary of the issue/service requested, including any appliance details, model numbers, or symptoms the customer mentioned during the conversation]\n";
-        $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem or request earlier in the conversation — appliance type, brand, model, symptoms, urgency, etc.\n";
-        $prompt .= "    Do NOT use [CREATE_BOOKING] until you have confirmed all four details with the customer.\n";
+        $prompt .= "    Once you have ALL details confirmed, you MUST append the [CREATE_BOOKING] tag and ALL booking tags at the END of your reply. This is NOT optional — without these tags, the booking will NOT be created in our system. Example:\n";
+        $prompt .= "    'Great, your booking is confirmed! [CREATE_BOOKING][BOOKING_NAME: John Doe][BOOKING_PHONE: 555-1234][BOOKING_EMAIL: john@example.com][BOOKING_ADDRESS: 123 Main St][BOOKING_ISSUE: Fix dishwasher — leaking water from bottom]'\n";
+        $prompt .= "    NEVER say 'booked', 'scheduled', or 'confirmed' without including [CREATE_BOOKING] and all the booking tags. If you say it's booked without the tags, the booking will be LOST.\n";
+        $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem — appliance type, brand, model, symptoms, urgency, etc.\n";
 
         // Add Frubix integration rules if connected
         $frubixConfig = $this->getFrubixIntegration($project);
@@ -965,6 +979,17 @@ class AiChatService
     /**
      * Check if customer message is about appointments/schedule
      */
+    /**
+     * Detect if AI response looks like a booking confirmation without the proper tag
+     */
+    protected function looksLikeBookingConfirmation(string $response): bool
+    {
+        $lower = strtolower($response);
+        $hasConfirmation = preg_match('/\b(booked|confirmed|scheduled|appointment.*(created|set up|has been))\b/i', $response);
+        $hasDetails = preg_match('/\b(name|phone|email|address)\b.*\b(name|phone|email|address)\b/is', $response);
+        return $hasConfirmation && $hasDetails;
+    }
+
     protected function isAppointmentRelated(string $message): bool
     {
         $keywords = [
