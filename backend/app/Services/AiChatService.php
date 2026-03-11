@@ -540,7 +540,7 @@ class AiChatService
             $prompt .= "11. IMPORTANT — CUSTOMER ACCOUNT ACCESS: You have access to our scheduling and client system. Do NOT hand over to a human agent for appointment lookups, schedule checks, or client information. You can handle these yourself using the tools below.\n";
             $prompt .= "12. CLIENT LOOKUP: When a customer provides their phone number or email (or you already have it from earlier in the conversation), look up their account by appending [LOOKUP_CLIENT: phone_or_email] at the end of your reply. The system will return their client details. Use this proactively whenever a customer shares contact info.\n";
             $prompt .= "13. SCHEDULE / APPOINTMENT CHECK: When a customer asks about their appointments, schedule, or booking status, ask for their phone number or email if you don't have it yet, then append [CHECK_SCHEDULE: phone_or_email] at the end of your reply. The system will return their upcoming appointments. Do NOT use [HANDOVER] for appointment questions — use [CHECK_SCHEDULE] instead.\n";
-            $prompt .= "14. APPOINTMENT BOOKING: Since we have scheduling integration, also collect the customer's preferred date and time during the booking flow. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags when creating the booking. Ask for their preferred date and time naturally, e.g. 'What date and time works best for you?'\n";
+            $prompt .= "14. APPOINTMENT BOOKING WITH AVAILABILITY CHECK: During the booking flow, also collect the customer's preferred date and time. BEFORE confirming the booking, you MUST check availability by appending [CHECK_SCHEDULE: ALL] with the date. The system will return existing appointments for that period. If the requested time slot overlaps with an existing appointment, tell the customer that slot is taken and suggest nearby available times. Only proceed with [CREATE_BOOKING] once a free slot is confirmed. Add [BOOKING_DATE: YYYY-MM-DD] and [BOOKING_TIME: HH:MM] (24h format) alongside the other booking tags.\n";
             $prompt .= "15. RESCHEDULE / REBOOK: When a customer wants to reschedule, rebook, or change an existing appointment:\n";
             $prompt .= "    a) First look up their appointments using [CHECK_SCHEDULE: phone_or_email] if you haven't already.\n";
             $prompt .= "    b) Once you can see their appointments (from system data), ask which appointment they want to change and what new date/time they prefer.\n";
@@ -1075,11 +1075,16 @@ class AiChatService
         if (preg_match('/\[CHECK_SCHEDULE:\s*([^\]]+)\]/i', $aiContent, $m)) {
             $query = trim($m[1]);
             try {
-                $params = ['phone' => $query, 'date_from' => now()->toDateString(), 'date_to' => now()->addDays(30)->toDateString()];
+                $params = ['date_from' => now()->toDateString(), 'date_to' => now()->addDays(30)->toDateString()];
+                // If not "ALL", filter by phone/email
+                if (strtoupper($query) !== 'ALL') {
+                    $params['phone'] = $query;
+                }
                 $schedule = FrubixService::getSchedule($frubixConfig, $params);
                 if (!empty($schedule)) {
-                    $results[] = "FRUBIX SCHEDULE:\n" . collect($schedule)->map(function ($s) {
-                        $info = "- " . ($s['scheduled_at'] ?? $s['scheduled_date'] ?? 'TBD');
+                    $results[] = "FRUBIX SCHEDULE (use appointment IDs for rescheduling):\n" . collect($schedule)->map(function ($s) {
+                        $info = "- ID #{$s['id']}: " . ($s['scheduled_at'] ?? $s['scheduled_date'] ?? 'TBD');
+                        if (!empty($s['scheduled_time'])) $info .= " at {$s['scheduled_time']}";
                         if (!empty($s['customer_name'])) $info .= ", Customer: {$s['customer_name']}";
                         if (!empty($s['job_type'])) $info .= ", Type: {$s['job_type']}";
                         if (!empty($s['status'])) $info .= ", Status: {$s['status']}";
