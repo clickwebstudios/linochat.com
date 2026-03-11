@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown } from 'lucide-react';
+import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
+import { FrubixPanel } from '../frubix/FrubixPanel';
 
 function FrubixLogo({ className }: { className?: string }) {
   return (
@@ -46,6 +47,7 @@ export function IntegrationsView() {
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
+  const [showPanel, setShowPanel] = useState(false);
   const isConnected = frubix?.enabled === true;
 
   // Fetch all projects for the selector
@@ -205,6 +207,14 @@ export function IntegrationsView() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setShowPanel(!showPanel)}
+                    >
+                      {showPanel ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                      {showPanel ? 'Hide' : 'Clients & Schedule'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={handleDisconnect}
                       disabled={disconnecting}
@@ -237,6 +247,9 @@ export function IntegrationsView() {
             </div>
           </CardContent>
         </Card>
+        {isConnected && showPanel && projectId && (
+          <FrubixPanel projectId={projectId} />
+        )}
       </div>
 
       {/* Coming Soon */}

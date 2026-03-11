@@ -41,6 +41,130 @@ class FrubixService
     }
 
     /**
+     * Search clients by phone or email.
+     */
+    public static function searchClients(array $integrationConfig, array $params): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
+
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = Http::withToken($accessToken)
+            ->get("{$baseUrl}/api/v1/clients", $params);
+
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->get("{$baseUrl}/api/v1/clients", $params);
+            }
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to search Frubix clients: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
+     * Get schedule entries with optional filters.
+     */
+    public static function getSchedule(array $integrationConfig, array $params): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
+
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = Http::withToken($accessToken)
+            ->get("{$baseUrl}/api/v1/schedule", $params);
+
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->get("{$baseUrl}/api/v1/schedule", $params);
+            }
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to get Frubix schedule: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
+     * Create a new appointment.
+     */
+    public static function createAppointment(array $integrationConfig, array $data): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
+
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = Http::withToken($accessToken)
+            ->post("{$baseUrl}/api/v1/schedule", $data);
+
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->post("{$baseUrl}/api/v1/schedule", $data);
+            }
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to create Frubix appointment: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
+     * Update an existing appointment.
+     */
+    public static function updateAppointment(array $integrationConfig, int $id, array $data): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
+
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = Http::withToken($accessToken)
+            ->patch("{$baseUrl}/api/v1/schedule/{$id}", $data);
+
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->patch("{$baseUrl}/api/v1/schedule/{$id}", $data);
+            }
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to update Frubix appointment: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
      * Exchange authorization code for tokens.
      */
     public static function exchangeCode(string $baseUrl, string $clientId, string $clientSecret, string $code, string $redirectUri): array

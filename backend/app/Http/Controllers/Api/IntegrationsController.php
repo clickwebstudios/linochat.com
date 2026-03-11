@@ -66,7 +66,7 @@ class IntegrationsController extends Controller
             'client_id'     => $clientId,
             'redirect_uri'  => $redirectUri,
             'response_type' => 'code',
-            'scope'         => 'leads:write leads:read',
+            'scope'         => 'leads:write leads:read clients:read schedule:read schedule:write',
             'state'         => $state,
         ]);
 
@@ -143,6 +143,109 @@ class IntegrationsController extends Controller
                 'success' => false,
                 'message' => 'Failed to connect to Frubix. Please try again.',
             ], 500);
+        }
+    }
+
+    /**
+     * Get the active Frubix integration config for a project, or return an error response.
+     */
+    private function getFrubixConfig(int $projectId): array|JsonResponse
+    {
+        $project = $this->getProject($projectId);
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        $frubix = $project->integrations['frubix'] ?? null;
+        if (!$frubix || empty($frubix['enabled'])) {
+            return response()->json(['success' => false, 'message' => 'Frubix integration is not active for this project'], 400);
+        }
+
+        return $frubix;
+    }
+
+    /**
+     * Persist refreshed tokens back to the project if they were rotated.
+     */
+    private function persistRefreshedTokens(int $projectId, array $frubixConfig): void
+    {
+        // After a service call the token may have been refreshed.
+        // Re-read from DB is not needed here — token persistence happens inside
+        // FrubixService::refreshToken via the caller if needed in the future.
+        // For now this is a no-op hook for later enhancement.
+    }
+
+    /**
+     * Search Frubix clients by phone or email.
+     */
+    public function frubixClients(Request $request, int $projectId): JsonResponse
+    {
+        $config = $this->getFrubixConfig($projectId);
+        if ($config instanceof JsonResponse) return $config;
+
+        try {
+            $params = $request->only(['phone', 'email']);
+            $data = FrubixService::searchClients($config, $params);
+
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            Log::error('Frubix client search failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get Frubix schedule entries.
+     */
+    public function frubixSchedule(Request $request, int $projectId): JsonResponse
+    {
+        $config = $this->getFrubixConfig($projectId);
+        if ($config instanceof JsonResponse) return $config;
+
+        try {
+            $params = $request->only(['date_from', 'date_to', 'phone']);
+            $data = FrubixService::getSchedule($config, $params);
+
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            Log::error('Frubix schedule fetch failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Create a Frubix appointment.
+     */
+    public function frubixCreateAppointment(Request $request, int $projectId): JsonResponse
+    {
+        $config = $this->getFrubixConfig($projectId);
+        if ($config instanceof JsonResponse) return $config;
+
+        try {
+            $data = FrubixService::createAppointment($config, $request->all());
+
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            Log::error('Frubix appointment creation failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update a Frubix appointment.
+     */
+    public function frubixUpdateAppointment(Request $request, int $projectId, int $appointmentId): JsonResponse
+    {
+        $config = $this->getFrubixConfig($projectId);
+        if ($config instanceof JsonResponse) return $config;
+
+        try {
+            $data = FrubixService::updateAppointment($config, $appointmentId, $request->all());
+
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            Log::error('Frubix appointment update failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

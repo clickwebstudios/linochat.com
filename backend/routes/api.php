@@ -279,6 +279,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
     Route::get('/projects/{projectId}/integrations/frubix/authorize', [IntegrationsController::class, 'frubixAuthorizeUrl']);
+    Route::get('/projects/{projectId}/integrations/frubix/clients', [IntegrationsController::class, 'frubixClients']);
+    Route::get('/projects/{projectId}/integrations/frubix/schedule', [IntegrationsController::class, 'frubixSchedule']);
+    Route::post('/projects/{projectId}/integrations/frubix/schedule', [IntegrationsController::class, 'frubixCreateAppointment']);
+    Route::patch('/projects/{projectId}/integrations/frubix/schedule/{appointmentId}', [IntegrationsController::class, 'frubixUpdateAppointment']);
     Route::delete('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'disconnectFrubix']);
     Route::post('/integrations/frubix/callback', [IntegrationsController::class, 'frubixCallback']);
 });
