@@ -140,11 +140,42 @@ class WidgetController extends Controller
             ], 404);
         }
 
-        // Find existing active chat for this customer
+        // Find existing chat for this customer (active or archived/closed)
         $chat = Chat::where('project_id', $project->id)
             ->where('customer_id', $customerId)
             ->whereIn('status', ['active', 'waiting', 'ai_handling'])
             ->first();
+
+        // If no active chat, check for a recently closed/archived one to reactivate
+        if (!$chat) {
+            $archivedChat = Chat::where('project_id', $project->id)
+                ->where('customer_id', $customerId)
+                ->where('status', 'closed')
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if ($archivedChat) {
+                $archivedChat->update([
+                    'status' => 'ai_handling',
+                    'ai_enabled' => true,
+                    'agent_id' => null,
+                    'customer_last_seen_at' => now(),
+                ]);
+
+                // Add system message indicating chat was reopened
+                $systemMsg = ChatMessage::create([
+                    'chat_id' => $archivedChat->id,
+                    'sender_type' => 'system',
+                    'content' => 'Customer returned — chat reopened.',
+                ]);
+
+                // Notify agents in real-time
+                broadcast(new ChatStatusUpdated($archivedChat->id, 'ai_handling'));
+                broadcast(new MessageSent($systemMsg))->toOthers();
+
+                $chat = $archivedChat;
+            }
+        }
 
         if (!$chat) {
             $metadata = $this->buildSessionMetadata($request);
