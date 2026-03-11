@@ -1,58 +1,130 @@
 import { useState, useEffect } from 'react';
-import { Mail, Smartphone, Loader2, Building2, ChevronDown, ChevronRight } from 'lucide-react';
-import { Badge } from '../../components/ui/badge';
+import { Mail, Smartphone, Loader2, Ticket, MessageCircle, UserPlus, ArrowRightLeft, Bell, Bot } from 'lucide-react';
+import { toast } from 'sonner';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 import { api } from '../../api/client';
 
-interface NotificationLog {
-  id: number;
-  type: 'email' | 'sms';
+interface NotificationEvent {
+  key: string;
   title: string;
-  body: string;
-  recipient: string;
-  company_name: string;
-  company_id: number;
-  status: 'sent' | 'failed' | 'pending';
-  created_at: string;
+  description: string;
+  icon: React.ReactNode;
+  email: boolean;
+  sms: boolean;
 }
 
-type FilterType = 'all' | 'email' | 'sms';
+const defaultEvents: NotificationEvent[] = [
+  {
+    key: 'ticket_created_admin',
+    title: 'Ticket Created — Admin',
+    description: 'Send notification to company admin when a new ticket is created (manual or via AI booking)',
+    icon: <Ticket className="h-5 w-5 text-purple-600" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'ticket_created_customer',
+    title: 'Ticket Created — Customer',
+    description: 'Send confirmation to the customer when their ticket is created with a link to view it',
+    icon: <Ticket className="h-5 w-5 text-blue-600" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'ticket_reply',
+    title: 'Ticket Reply',
+    description: 'Notify the customer when an agent replies to their ticket',
+    icon: <MessageCircle className="h-5 w-5 text-green-600" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'ticket_closed',
+    title: 'Ticket Resolved',
+    description: 'Notify the customer when their ticket is marked as resolved',
+    icon: <Ticket className="h-5 w-5 text-gray-500" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'chat_handover',
+    title: 'Chat Handover to Agent',
+    description: 'Notify admin/agents when AI transfers a conversation to a human agent',
+    icon: <ArrowRightLeft className="h-5 w-5 text-orange-600" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'new_chat',
+    title: 'New Chat Started',
+    description: 'Notify agents when a new customer chat is initiated',
+    icon: <MessageCircle className="h-5 w-5 text-cyan-600" />,
+    email: false,
+    sms: false,
+  },
+  {
+    key: 'booking_created',
+    title: 'Booking Request Created',
+    description: 'Notify admin when AI creates a booking ticket from customer conversation',
+    icon: <Bot className="h-5 w-5 text-indigo-600" />,
+    email: true,
+    sms: false,
+  },
+  {
+    key: 'agent_assigned',
+    title: 'Agent Assigned to Ticket',
+    description: 'Notify the agent when they are assigned to a ticket',
+    icon: <UserPlus className="h-5 w-5 text-amber-600" />,
+    email: true,
+    sms: false,
+  },
+];
 
 export function NotificationsSettingsView() {
-  const [notifications, setNotifications] = useState<NotificationLog[]>([]);
+  const [events, setEvents] = useState<NotificationEvent[]>(defaultEvents);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get<{ data: NotificationLog[] }>('/notifications/log')
+    api.get<{ data: Record<string, { email?: boolean; sms?: boolean }> }>('/settings/notifications')
       .then((res) => {
-        const data = (res as any)?.data?.data ?? (res as any)?.data ?? [];
-        setNotifications(Array.isArray(data) ? data : []);
-        // Auto-expand all companies
-        const companyIds = new Set((Array.isArray(data) ? data : []).map((n: NotificationLog) => n.company_id));
-        setExpandedCompanies(companyIds);
+        const data = (res as any)?.data?.data ?? (res as any)?.data;
+        if (data && typeof data === 'object') {
+          setEvents((prev) =>
+            prev.map((ev) => ({
+              ...ev,
+              email: data[ev.key]?.email ?? ev.email,
+              sms: data[ev.key]?.sms ?? ev.sms,
+            }))
+          );
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleCompany = (companyId: number) => {
-    setExpandedCompanies((prev) => {
-      const next = new Set(prev);
-      if (next.has(companyId)) next.delete(companyId);
-      else next.add(companyId);
-      return next;
-    });
+  const toggle = (key: string, channel: 'email' | 'sms') => {
+    setEvents((prev) =>
+      prev.map((ev) => (ev.key === key ? { ...ev, [channel]: !ev[channel] } : ev))
+    );
   };
 
-  const filtered = filter === 'all' ? notifications : notifications.filter((n) => n.type === filter);
-
-  // Group by company
-  const grouped = filtered.reduce<Record<number, { name: string; items: NotificationLog[] }>>((acc, n) => {
-    if (!acc[n.company_id]) acc[n.company_id] = { name: n.company_name, items: [] };
-    acc[n.company_id].items.push(n);
-    return acc;
-  }, {});
+  const handleSave = async () => {
+    setSaving(true);
+    const payload: Record<string, { email: boolean; sms: boolean }> = {};
+    events.forEach((ev) => {
+      payload[ev.key] = { email: ev.email, sms: ev.sms };
+    });
+    try {
+      await api.put('/settings/notifications', payload);
+      toast.success('Notification settings saved');
+    } catch {
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -64,97 +136,77 @@ export function NotificationsSettingsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Notification Log</h2>
-          <p className="text-sm text-gray-500 mt-1">All sent notifications across companies.</p>
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Outgoing Notifications</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Configure which events trigger Email and SMS notifications.
+        </p>
+      </div>
+
+      {/* Column headers */}
+      <div className="flex items-center justify-end gap-6 pr-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <div className="flex items-center gap-1.5 w-16 justify-center">
+          <Mail className="h-3.5 w-3.5" />
+          Email
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {(['all', 'email', 'sms'] as FilterType[]).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {f === 'email' && <Mail className="h-3.5 w-3.5" />}
-              {f === 'sms' && <Smartphone className="h-3.5 w-3.5" />}
-              {f === 'all' ? 'All' : f === 'email' ? 'Email' : 'SMS'}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 w-16 justify-center">
+          <Smartphone className="h-3.5 w-3.5" />
+          SMS
         </div>
       </div>
 
-      {Object.keys(grouped).length === 0 ? (
-        <div className="text-center py-12">
-          <Mail className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">No notifications yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {Object.entries(grouped).map(([companyId, group]) => (
-            <div key={companyId} className="border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleCompany(Number(companyId))}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-              >
-                {expandedCompanies.has(Number(companyId)) ? (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                )}
-                <Building2 className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-900">{group.name}</span>
-                <Badge variant="secondary" className="ml-auto text-xs">{group.items.length}</Badge>
-              </button>
-              {expandedCompanies.has(Number(companyId)) && (
-                <div className="divide-y divide-gray-100">
-                  {group.items.map((n) => (
-                    <div key={n.id} className="px-4 py-3 flex gap-3">
-                      <div className="pt-0.5">
-                        {n.type === 'email' ? (
-                          <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
-                            <Mail className="h-4 w-4 text-blue-600" />
-                          </div>
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
-                            <Smartphone className="h-4 w-4 text-green-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-medium text-gray-900 truncate">{n.title}</span>
-                          <Badge
-                            className={`text-[10px] px-1.5 py-0 ${
-                              n.status === 'sent'
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : n.status === 'failed'
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                            }`}
-                            variant="outline"
-                          >
-                            {n.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-1 line-clamp-2">{n.body}</p>
-                        <div className="flex items-center gap-3 text-[11px] text-gray-400">
-                          <span>To: {n.recipient}</span>
-                          <span>{new Date(n.created_at).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="space-y-2">
+        {events.map((ev) => (
+          <Card key={ev.key} className="border border-gray-200">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="shrink-0">{ev.icon}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-gray-900">{ev.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{ev.description}</p>
+              </div>
+              <div className="flex items-center gap-6 shrink-0">
+                {/* Email toggle */}
+                <button
+                  type="button"
+                  onClick={() => toggle(ev.key, 'email')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    ev.email ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}
+                  title="Email"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                      ev.email ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                {/* SMS toggle */}
+                <button
+                  type="button"
+                  onClick={() => toggle(ev.key, 'sms')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    ev.sms ? 'bg-green-600' : 'bg-gray-200'
+                  }`}
+                  title="SMS"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                      ev.sms ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Save Settings
+        </Button>
+      </div>
     </div>
   );
 }

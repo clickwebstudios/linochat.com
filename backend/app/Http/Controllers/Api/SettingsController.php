@@ -4,11 +4,35 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Company;
 use App\Models\NotificationLog;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
+    public function getNotificationSettings(Request $request)
+    {
+        $user = $request->user();
+        $company = Company::find($user->company_id);
+        $settings = $company?->notification_settings ?? [];
+
+        return response()->json(['data' => $settings]);
+    }
+
+    public function updateNotificationSettings(Request $request)
+    {
+        $user = $request->user();
+        $company = Company::find($user->company_id);
+
+        if (!$company) {
+            return response()->json(['message' => 'Company not found'], 404);
+        }
+
+        $company->update(['notification_settings' => $request->all()]);
+
+        return response()->json(['message' => 'Settings saved', 'data' => $company->notification_settings]);
+    }
+
     public function notificationLog(Request $request)
     {
         $user = $request->user();

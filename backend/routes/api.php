@@ -270,7 +270,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
-    // Settings: notification log & activity log
+    // Settings: notification preferences, notification log & activity log
+    Route::get('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'getNotificationSettings']);
+    Route::put('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'updateNotificationSettings']);
     Route::get('/notifications/log', [App\Http\Controllers\Api\SettingsController::class, 'notificationLog']);
     Route::get('/activity-log', [App\Http\Controllers\Api\SettingsController::class, 'activityLog']);
 
