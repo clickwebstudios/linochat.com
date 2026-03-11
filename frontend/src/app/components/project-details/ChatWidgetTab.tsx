@@ -60,6 +60,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const [greetingEnabled, setGreetingEnabled] = useState(false);
   const [greetingDelay, setGreetingDelay] = useState('3');
   const [greetingMessage, setGreetingMessage] = useState('👋 Hi there! How can we help you today?');
+  const [fontSize, setFontSize] = useState('14');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -68,7 +69,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     if (!project?.id) return;
     const loadSettings = async () => {
       try {
-        const response = await api.get<{ color?: string; position?: string; widget_title?: string; welcome_message?: string; button_text?: string; design?: string }>(`/projects/${project.id}/widget-settings`);
+        const response = await api.get<{ color?: string; position?: string; widget_title?: string; welcome_message?: string; button_text?: string; design?: string; font_size?: number }>(`/projects/${project.id}/widget-settings`);
         if (response.success && response.data) {
           const d = response.data;
           if (d.color) setWidgetColor(d.color);
@@ -81,6 +82,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           setGreetingEnabled(d.greeting_enabled ?? false);
           setGreetingDelay(String(d.greeting_delay ?? 3));
           setGreetingMessage(d.greeting_message || '👋 Hi there! How can we help you today?');
+          if (d.font_size) setFontSize(String(d.font_size));
         }
       } catch {
         // Use project defaults if API fails
@@ -106,6 +108,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         greeting_enabled: greetingEnabled,
         greeting_delay: parseInt(greetingDelay),
         greeting_message: greetingMessage,
+        font_size: parseInt(fontSize),
       });
       if (response.success) {
         setSaveSuccess(true);
@@ -218,6 +221,20 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </div>
                 </div>
 
+                <div className="grid gap-2">
+                  <Label htmlFor="font-size">Font Size</Label>
+                  <Select value={fontSize} onValueChange={setFontSize}>
+                    <SelectTrigger id="font-size">
+                      <SelectValue placeholder="Select font size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">Small (12px)</SelectItem>
+                      <SelectItem value="14">Medium (14px)</SelectItem>
+                      <SelectItem value="16">Large (16px)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Greeting Settings */}
                 <div className="border-t pt-4 mt-4">
                   <h3 className="text-sm font-medium mb-4">Greeting Bubble</h3>
@@ -269,7 +286,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                               {(widgetTitle || 'A')[0].toUpperCase()}
                             </div>
                             <div className="bg-white border rounded-2xl rounded-bl-sm px-3 py-2 max-w-xs shadow-sm">
-                              <p className="text-sm">{greetingMessage || '...'}</p>
+                              <p style={{ fontSize: `${fontSize}px` }}>{greetingMessage || '...'}</p>
                             </div>
                           </div>
                         </div>
@@ -386,6 +403,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       offlineMessage={offlineMessage}
                       greetingEnabled={greetingEnabled}
                       greetingMessage={greetingMessage}
+                      fontSize={fontSize}
                     />
                   </div>
                 </div>
@@ -534,6 +552,7 @@ function WidgetPreview({
   offlineMessage,
   greetingEnabled = false,
   greetingMessage = '',
+  fontSize = '14',
 }: {
   design: string;
   color: string;
@@ -546,6 +565,7 @@ function WidgetPreview({
   offlineMessage: string;
   greetingEnabled?: boolean;
   greetingMessage?: string;
+  fontSize?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -595,8 +615,10 @@ function WidgetPreview({
 
   const showPanel = isOpen;
 
+  const fontSizePx = `${fontSize}px`;
+
   const greetingBubble = greetingEnabled && greetingMessage && !isOpen ? (
-    <div className="absolute bottom-[72px] right-0 bg-white rounded-xl shadow-lg border px-3 py-2 w-52 text-xs leading-relaxed text-gray-800">
+    <div className="absolute bottom-[72px] right-0 bg-white rounded-xl shadow-lg border px-3 py-2 w-52 leading-relaxed text-gray-800" style={{ fontSize: fontSizePx }}>
       {greetingMessage}
       <div className="absolute bottom-[-6px] right-6 w-3 h-3 bg-white border-b border-r rotate-45" />
     </div>
@@ -632,7 +654,7 @@ function WidgetPreview({
                   <div className="flex gap-2">
                     <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0"></div>
                     <div className="bg-white rounded-lg rounded-tl-none p-3 shadow-sm max-w-[80%]">
-                      <p className="text-xs">{welcomeMessage}</p>
+                      <p style={{ fontSize: fontSizePx }}>{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
@@ -688,7 +710,7 @@ function WidgetPreview({
                 <div className="p-3 space-y-2 bg-white h-48">
                   <div className="flex gap-2">
                     <div className="bg-gray-100 rounded p-2 max-w-[80%]">
-                      <p className="text-xs text-gray-700">{welcomeMessage}</p>
+                      <p className="text-gray-700" style={{ fontSize: fontSizePx }}>{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
@@ -737,7 +759,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gray-50 h-48">
                   <div className="flex gap-2">
                     <div className="w-7 h-7 rounded bg-gray-300 flex-shrink-0"></div>
-                    <div className="bg-white rounded p-2.5 shadow-sm border max-w-[80%]"><p className="text-xs">{welcomeMessage}</p></div>
+                    <div className="bg-white rounded p-2.5 shadow-sm border max-w-[80%]"><p style={{ fontSize: fontSizePx }}>{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-3 bg-white border-t-2" style={{ borderColor: color }}>
@@ -790,7 +812,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white h-48">
                   <div className="flex gap-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0"></div>
-                    <div className="bg-white rounded-3xl rounded-tl-sm p-3 shadow-md max-w-[80%]"><p className="text-xs">{welcomeMessage}</p></div>
+                    <div className="bg-white rounded-3xl rounded-tl-sm p-3 shadow-md max-w-[80%]"><p style={{ fontSize: fontSizePx }}>{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-4 bg-white">
@@ -837,7 +859,7 @@ function WidgetPreview({
                 <div className="p-2.5 space-y-2 bg-gray-50 h-40">
                   <div className="flex gap-1.5">
                     <div className="w-5 h-5 rounded-full bg-gray-300 flex-shrink-0"></div>
-                    <div className="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[85%]"><p className="text-xs">{welcomeMessage}</p></div>
+                    <div className="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[85%]"><p style={{ fontSize: fontSizePx }}>{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-2 bg-white border-t">
@@ -891,7 +913,7 @@ function WidgetPreview({
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-sm bg-gray-200 flex-shrink-0"></div>
                     <div>
-                      <div className="bg-gray-100 rounded-sm p-3 max-w-[85%]"><p className="text-xs text-gray-800">{welcomeMessage}</p></div>
+                      <div className="bg-gray-100 rounded-sm p-3 max-w-[85%]"><p className="text-gray-800" style={{ fontSize: fontSizePx }}>{welcomeMessage}</p></div>
                       <p className="text-xs text-gray-400 mt-1">Support Agent &bull; Now</p>
                     </div>
                   </div>
@@ -949,7 +971,7 @@ function WidgetPreview({
                 <div className="p-4 space-y-3 bg-gradient-to-b from-blue-50/50 to-white h-48">
                   <div className="flex gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-300 to-pink-400 flex items-center justify-center flex-shrink-0"><span>{"\uD83D\uDE0A"}</span></div>
-                    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-md max-w-[80%] border border-gray-100"><p className="text-xs">{welcomeMessage}</p></div>
+                    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-md max-w-[80%] border border-gray-100"><p style={{ fontSize: fontSizePx }}>{welcomeMessage}</p></div>
                   </div>
                 </div>
                 <div className="p-3 bg-white border-t">
@@ -1003,7 +1025,7 @@ function WidgetPreview({
                   <div className="flex gap-2">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex-shrink-0"></div>
                     <div className="bg-white rounded-xl rounded-tl-sm p-3 shadow-lg max-w-[80%] border border-purple-100">
-                      <p className="text-xs bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium">{welcomeMessage}</p>
+                      <p className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium" style={{ fontSize: fontSizePx }}>{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>

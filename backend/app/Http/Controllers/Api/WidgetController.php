@@ -62,6 +62,7 @@ class WidgetController extends Controller
                     'greeting_enabled' => $settings['greeting_enabled'] ?? false,
                     'greeting_delay' => $settings['greeting_delay'] ?? 3,
                     'greeting_message' => $settings['greeting_message'] ?? '',
+                    'font_size' => $settings['font_size'] ?? 14,
                     'ai_name' => ($project->ai_settings['ai_name'] ?? null) ?: 'Lino',
                     'website' => $project->website,
                     'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),

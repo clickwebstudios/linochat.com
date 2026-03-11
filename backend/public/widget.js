@@ -50,7 +50,7 @@
     '#lc-close{background:none;border:none;color:#fff;cursor:pointer;opacity:.8;padding:4px;line-height:1;font-size:20px}',
     '#lc-close:hover{opacity:1}',
     '#lc-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f9fafb}',
-    '.lc-msg{max-width:80%;padding:9px 13px;border-radius:12px;line-height:1.45;word-break:break-word;font-size:13px}',
+    '.lc-msg{max-width:80%;padding:9px 13px;border-radius:12px;line-height:1.45;word-break:break-word;font-size:var(--lc-font-size,13px)}',
     '.lc-msg.lc-agent{background:#fff;border:1px solid #e5e7eb;color:#111;align-self:flex-start;border-bottom-left-radius:3px}',
     '.lc-msg.lc-customer{background:var(--lc-color);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}',
     '.lc-msg.lc-system{background:transparent;color:#9ca3af;font-size:11px;align-self:center;text-align:center;border:none;padding:2px 0}',
@@ -68,7 +68,7 @@
     '#lc-start-btn{width:100%;padding:10px;border-radius:8px;background:var(--lc-color);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}',
     '#lc-start-btn:hover{opacity:.88}',
     '@media(max-width:400px){#lc-panel{right:0;bottom:80px;width:100vw;border-radius:16px 16px 0 0}}',
-    '#lc-greeting{position:absolute;bottom:68px;right:0;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 16px;max-width:260px;font-size:13px;line-height:1.45;color:#111;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;pointer-events:none;cursor:pointer}',
+    '#lc-greeting{position:absolute;bottom:68px;right:0;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 16px;max-width:260px;font-size:var(--lc-font-size,13px);line-height:1.45;color:#111;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;pointer-events:none;cursor:pointer}',
     '#lc-greeting.lc-show{opacity:1;transform:none;pointer-events:auto}',
     '#lc-greeting-close{position:absolute;top:4px;right:8px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;line-height:1;padding:2px}',
     '#lc-greeting-close:hover{color:#6b7280}',
@@ -380,6 +380,10 @@
         title.textContent = d.widget_title || d.project_name || d.company_name || 'Chat with us';
         applyPosition(d.position || d.widget_position || 'bottom-right');
         applyDesign(d.design || d.widget_design || 'modern');
+
+        // Apply font size to messages and greeting
+        var fs = d.font_size || 14;
+        wrap.style.setProperty('--lc-font-size', fs + 'px');
 
         // Show greeting bubble if enabled
         if (d.greeting_enabled && d.greeting_message) {

@@ -55,6 +55,7 @@ class WidgetSettingsController extends Controller
                 'greeting_enabled' => $settings['greeting_enabled'] ?? false,
                 'greeting_delay' => $settings['greeting_delay'] ?? 3,
                 'greeting_message' => $settings['greeting_message'] ?? '👋 Hi there! How can we help you today?',
+                'font_size' => $settings['font_size'] ?? 14,
                 'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
             ],
         ]);
@@ -101,6 +102,7 @@ class WidgetSettingsController extends Controller
             'greeting_enabled'  => 'nullable|boolean',
             'greeting_delay'    => 'nullable|integer|min:0|max:3600',
             'greeting_message'  => 'nullable|string|max:500',
+            'font_size'         => 'nullable|integer|in:12,14,16',
         ]);
 
         if ($validator->fails()) {
@@ -119,7 +121,7 @@ class WidgetSettingsController extends Controller
             'color', 'position', 'welcome_message', 'button_text',
             'widget_title', 'show_agent_name', 'show_agent_avatar',
             'widget_active', 'auto_open', 'auto_open_delay', 'design',
-            'greeting_enabled', 'greeting_delay', 'greeting_message',
+            'greeting_enabled', 'greeting_delay', 'greeting_message', 'font_size',
         ];
 
         foreach ($updatableFields as $field) {

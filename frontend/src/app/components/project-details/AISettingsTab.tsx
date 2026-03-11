@@ -506,10 +506,10 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                   id="system-prompt"
                   placeholder="You are a helpful customer support assistant for {company}..."
                   rows={12}
-                  value={settings.system_prompt}
+                  value={settings.system_prompt || ''}
                   onChange={e => updateSetting('system_prompt', e.target.value)}
                 />
-                <p className="text-xs text-gray-400">{settings.system_prompt.length} / 5000 characters</p>
+                <p className="text-xs text-gray-400">{(settings.system_prompt || '').length} / 5000 characters</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex gap-2">
