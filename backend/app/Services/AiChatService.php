@@ -141,6 +141,27 @@ class AiChatService
 
             // Check if AI wants to handover
             if ($this->isHandoverRequest($aiContent)) {
+                // If Frubix is connected and message is about appointments/schedule,
+                // override handover — ask for phone/email to look up instead
+                $frubixConfig = $this->getFrubixIntegration($project);
+                if ($frubixConfig && $this->isAppointmentRelated($customerMessage)) {
+                    $overrideContent = "Sure, I can check that for you! Could you please provide your phone number or email address so I can look up your appointment details?";
+                    $aiMessage = ChatMessage::create([
+                        'chat_id' => $chat->id,
+                        'sender_type' => 'ai',
+                        'content' => $overrideContent,
+                        'is_ai' => true,
+                        'metadata' => ['model' => $this->model, 'frubix_override' => true],
+                    ]);
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return [
+                        'id' => $aiMessage->id,
+                        'content' => $overrideContent,
+                        'sender_type' => 'ai',
+                        'created_at' => $aiMessage->created_at,
+                        'model' => $this->model,
+                    ];
+                }
                 broadcast(new AiTyping($chat->id, false, $this->model));
                 return $this->createHandoverResponse($chat, $aiContent);
             }
@@ -922,6 +943,25 @@ class AiChatService
             'ticket_id' => $ticket->id,
             'ticket_number' => $ticket->ticket_number,
         ];
+    }
+
+    /**
+     * Check if customer message is about appointments/schedule
+     */
+    protected function isAppointmentRelated(string $message): bool
+    {
+        $keywords = [
+            'appointment', 'schedule', 'booking', 'booked',
+            'when is my', 'check my', 'upcoming', 'next visit',
+            'date of my', 'time of my', 'reschedule',
+        ];
+        $lower = strtolower($message);
+        foreach ($keywords as $kw) {
+            if (strpos($lower, $kw) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
