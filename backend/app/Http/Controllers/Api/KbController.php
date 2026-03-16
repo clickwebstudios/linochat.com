@@ -84,8 +84,8 @@ class KbController extends Controller
                     'is_published' => (bool) $article->is_published,
                     'views_count' => $article->views_count,
                     'helpful_count' => $article->helpful_count,
-                    'created_at' => $article->created_at?->toISOString(),
-                    'updated_at' => $article->updated_at?->toISOString(),
+                    'created_at' => $article->created_at?->toIso8601String(),
+                    'updated_at' => $article->updated_at?->toIso8601String(),
                 ];
             });
 
@@ -312,8 +312,8 @@ class KbController extends Controller
                 'is_published' => (bool) $article->is_published,
                 'views_count' => $article->views_count,
                 'helpful_count' => $article->helpful_count,
-                'created_at' => $article->created_at?->toISOString(),
-                'updated_at' => $article->updated_at?->toISOString(),
+                'created_at' => $article->created_at?->toIso8601String(),
+                'updated_at' => $article->updated_at?->toIso8601String(),
             ],
         ]);
     }

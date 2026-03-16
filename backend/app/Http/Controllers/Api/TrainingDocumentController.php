@@ -251,7 +251,7 @@ class TrainingDocumentController extends Controller
             'status'        => $doc->status,
             'kb_article_id' => $doc->kb_article_id,
             'error_message' => $doc->error_message,
-            'created_at'    => $doc->created_at?->toISOString(),
+            'created_at'    => $doc->created_at?->toIso8601String(),
         ];
     }
 }

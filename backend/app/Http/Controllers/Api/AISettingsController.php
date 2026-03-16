@@ -275,7 +275,7 @@ class AISettingsController extends Controller
                 'id'           => $a->id,
                 'title'        => $a->title,
                 'is_published' => (bool) $a->is_published,
-                'created_at'   => $a->created_at?->toISOString(),
+                'created_at'   => $a->created_at?->toIso8601String(),
             ]);
 
         return response()->json([

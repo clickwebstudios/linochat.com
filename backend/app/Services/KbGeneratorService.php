@@ -483,7 +483,7 @@ PROMPT;
                     'category_id' => $categoryId,
                     'status' => 'draft',
                     'is_published' => false,
-                    'created_at' => $savedArticle->created_at?->toISOString(),
+                    'created_at' => $savedArticle->created_at?->toIso8601String(),
                 ],
             ];
 

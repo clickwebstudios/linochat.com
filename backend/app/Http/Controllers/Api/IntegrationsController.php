@@ -128,7 +128,7 @@ class IntegrationsController extends Controller
                 'refresh_token' => $tokens['refresh_token'] ?? null,
                 'token_type'    => $tokens['token_type'] ?? 'Bearer',
                 'expires_in'    => $tokens['expires_in'] ?? null,
-                'connected_at'  => now()->toISOString(),
+                'connected_at'  => now()->toIso8601String(),
             ];
 
             $project->update(['integrations' => $integrations]);

@@ -214,8 +214,8 @@ class InvitationController extends Controller
         $user = User::where('email', $invitation->email)->first();
 
         if ($user) {
-            // User exists, just link to project
-            $user->projects()->attach($invitation->project_id);
+            // User exists, link to project (syncWithoutDetaching avoids duplicate-key error)
+            $user->projects()->syncWithoutDetaching([$invitation->project_id]);
         } else {
             // Create new user
             $user = User::create([
