@@ -41,6 +41,10 @@ return [
         'redirect_uri'  => env('FRUBIX_REDIRECT_URI'),
     ],
 
+    'inbound_email' => [
+        'secret' => env('INBOUND_EMAIL_SECRET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

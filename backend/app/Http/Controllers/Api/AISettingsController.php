@@ -263,7 +263,7 @@ class AISettingsController extends Controller
         $aiHandledChats = $project->chats()->where('ai_enabled', true)->count();
 
         $closedChats = $project->chats()->where('status', 'closed')->count();
-        $humanTakenChats = $project->chats()->where('status', 'closed')->whereNotNull('assigned_to')->count();
+        $humanTakenChats = $project->chats()->where('status', 'closed')->whereNotNull('agent_id')->count();
         $aiResolved = $closedChats > 0 ? $closedChats - $humanTakenChats : 0;
         $resolutionRate = $closedChats > 0 ? round(($aiResolved / $closedChats) * 100) : 0;
 

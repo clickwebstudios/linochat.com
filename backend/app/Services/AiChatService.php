@@ -1288,7 +1288,7 @@ class AiChatService
 
         return [
             'ticket_id' => $ticket->id,
-            'ticket_number' => $ticket->id,
+            'ticket_number' => $ticket->ticket_number,
         ];
     }
 
@@ -1327,7 +1327,7 @@ class AiChatService
         $message = ChatMessage::create([
             'chat_id' => $chat->id,
             'sender_type' => 'ai',
-            'content' => "Thank you! I've created a support ticket for you (Ticket #{$ticketInfo['ticket_id']}).\n\nOur team will review your request and get back to you via email as soon as possible. You should receive a confirmation email shortly.\n\nIs there anything else I can help you with?",
+            'content' => "Thank you! I've created a support ticket for you (Ticket #{$ticketInfo['ticket_number']}).\n\nOur team will review your request and get back to you via email as soon as possible. You should receive a confirmation email shortly.\n\nIs there anything else I can help you with?",
             'is_ai' => true,
             'metadata' => [
                 'model' => $this->model,
