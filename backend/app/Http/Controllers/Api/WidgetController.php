@@ -865,7 +865,7 @@ class WidgetController extends Controller
                 'sender_phone' => $chat->customer_phone ?? null,
                 'sender_email' => $chat->customer_email ?? null,
                 'sender_type' => $senderType,
-                'channel' => 'chat',
+                'channel' => 'linochat',
                 'source' => 'linochat',
                 'external_id' => (string) $message->id,
                 'external_conversation_id' => (string) $chat->id,
