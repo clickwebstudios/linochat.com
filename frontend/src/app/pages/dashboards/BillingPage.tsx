@@ -189,7 +189,7 @@ function isValidExpiry(value: string): boolean {
 }
 
 const brandColors: Record<CardBrand, string> = {
-  visa: 'from-blue-600 to-blue-800',
+  visa: 'from-primary to-primary/85',
   mastercard: 'from-red-500 to-orange-500',
   amex: 'from-blue-400 to-cyan-600',
   discover: 'from-orange-400 to-orange-600',
@@ -410,7 +410,7 @@ export default function BillingPage() {
     <TooltipProvider>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+        <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -422,7 +422,7 @@ export default function BillingPage() {
             </Button>
             <Link
               to={`${basePath}/dashboard`}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
               <span className="hidden md:inline">Back to Dashboard</span>
@@ -431,7 +431,7 @@ export default function BillingPage() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-blue-600 text-white">SC</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground">SC</AvatarFallback>
               </Avatar>
               <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
                 userStatus === 'online' ? 'bg-green-500' :
@@ -441,7 +441,7 @@ export default function BillingPage() {
             </div>
             <div className="hidden md:block">
               <div className="text-sm font-semibold">Sarah Chen</div>
-              <div className="text-xs text-gray-500 capitalize">{role}</div>
+              <div className="text-xs text-muted-foreground capitalize">{role}</div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -476,13 +476,13 @@ export default function BillingPage() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        <div className="flex-1 overflow-auto bg-muted/50 p-6">
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Page Title */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h1 className="text-2xl text-gray-900">Billing & Subscription</h1>
-                <p className="text-gray-500 mt-1">
+                <h1 className="text-2xl text-foreground">Billing & Subscription</h1>
+                <p className="text-muted-foreground mt-1">
                   {isReadOnly
                     ? 'View your organization\'s plan and invoice history'
                     : 'Manage your plan, payment method, and invoices'}
@@ -516,12 +516,12 @@ export default function BillingPage() {
               <CardHeader className="flex flex-row items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-blue-600" />
+                    <Zap className="h-5 w-5 text-primary" />
                     Current Plan
                   </CardTitle>
                   <CardDescription>Your subscription details and billing</CardDescription>
                 </div>
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
                   {currentPlan.name}
                 </Badge>
               </CardHeader>
@@ -530,26 +530,26 @@ export default function BillingPage() {
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl text-gray-900">
+                      <span className="text-4xl text-foreground">
                         {pricing.isCustom ? 'Custom' : `$${pricing.perUser}`}
                       </span>
                       {!pricing.isCustom && !pricing.isFree && (
-                        <span className="text-gray-500">/ user / month</span>
+                        <span className="text-muted-foreground">/ user / month</span>
                       )}
                     </div>
 
                     {!pricing.isCustom && !pricing.isFree && (
                       <div className="mt-1 space-y-0.5">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {agentCount} agents &times; ${pricing.perUser}/mo
                           {billingCycle === 'annual'
-                            ? <> &times; 12 months = <span className="text-gray-900">${typeof pricing.totalPeriod === 'number' ? pricing.totalPeriod.toLocaleString() : pricing.totalPeriod}{pricing.periodLabel}</span></>
-                            : <> = <span className="text-gray-900">${pricing.totalPeriod}{pricing.periodLabel}</span></>
+                            ? <> &times; 12 months = <span className="text-foreground">${typeof pricing.totalPeriod === 'number' ? pricing.totalPeriod.toLocaleString() : pricing.totalPeriod}{pricing.periodLabel}</span></>
+                            : <> = <span className="text-foreground">${pricing.totalPeriod}{pricing.periodLabel}</span></>
                           }
                         </p>
                         {billingCycle === 'annual' && pricing.monthlyEquivalent !== null && (
-                          <p className="text-sm text-gray-500">
-                            Effective monthly cost: <span className="text-gray-900">${pricing.monthlyEquivalent}/month</span>
+                          <p className="text-sm text-muted-foreground">
+                            Effective monthly cost: <span className="text-foreground">${pricing.monthlyEquivalent}/month</span>
                           </p>
                         )}
                         {billingCycle === 'annual' && pricing.savingsAnnual !== null && pricing.savingsAnnual > 0 && (
@@ -560,15 +560,15 @@ export default function BillingPage() {
                       </div>
                     )}
 
-                    <p className="text-sm text-gray-500 mt-1">
-                      Next billing date: <span className="text-gray-700">{pricing.nextBillingDate}</span>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Next billing date: <span className="text-foreground">{pricing.nextBillingDate}</span>
                     </p>
                   </div>
 
                   {!isReadOnly && (
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="billing-toggle" className="text-sm text-gray-600">Monthly</Label>
+                        <Label htmlFor="billing-toggle" className="text-sm text-muted-foreground">Monthly</Label>
                         <Switch
                           id="billing-toggle"
                           checked={billingCycle === 'annual'}
@@ -580,7 +580,7 @@ export default function BillingPage() {
                             );
                           }}
                         />
-                        <Label htmlFor="billing-toggle" className="text-sm text-gray-600">
+                        <Label htmlFor="billing-toggle" className="text-sm text-muted-foreground">
                           Annual
                           <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700 hover:bg-green-100">
                             Save 20%
@@ -596,7 +596,7 @@ export default function BillingPage() {
                 {/* Feature highlights */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {currentPlan.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-sm text-gray-600">
+                    <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Check className="h-4 w-4 text-green-500 shrink-0" />
                       {feature}
                     </div>
@@ -625,7 +625,7 @@ export default function BillingPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-blue-600" />
+                  <Shield className="h-5 w-5 text-primary" />
                   Usage This Period
                 </CardTitle>
                 <CardDescription>Feb 1 – Feb 28, 2026</CardDescription>
@@ -635,11 +635,11 @@ export default function BillingPage() {
                   {/* Agents */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600">
+                      <span className="flex items-center gap-2 text-muted-foreground">
                         <Users className="h-4 w-4" />
                         Agents
                       </span>
-                      <span className="text-gray-900">
+                      <span className="text-foreground">
                         {usage.agents.current}
                         {usage.agents.limit !== -1 ? ` / ${usage.agents.limit}` : ' / Unlimited'}
                       </span>
@@ -653,11 +653,11 @@ export default function BillingPage() {
                   {/* Tickets */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600">
+                      <span className="flex items-center gap-2 text-muted-foreground">
                         <Ticket className="h-4 w-4" />
                         Tickets
                       </span>
-                      <span className="text-gray-900">
+                      <span className="text-foreground">
                         {usage.tickets.current.toLocaleString()}
                         {usage.tickets.limit !== -1 ? ` / ${usage.tickets.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
@@ -671,11 +671,11 @@ export default function BillingPage() {
                   {/* Chats */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600">
+                      <span className="flex items-center gap-2 text-muted-foreground">
                         <MessageCircle className="h-4 w-4" />
                         Chats
                       </span>
-                      <span className="text-gray-900">
+                      <span className="text-foreground">
                         {usage.chats.current.toLocaleString()}
                         {usage.chats.limit !== -1 ? ` / ${usage.chats.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
@@ -689,11 +689,11 @@ export default function BillingPage() {
                   {/* Storage */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600">
+                      <span className="flex items-center gap-2 text-muted-foreground">
                         <Receipt className="h-4 w-4" />
                         Storage
                       </span>
-                      <span className="text-gray-900">
+                      <span className="text-foreground">
                         {usage.storage.current} GB / {usage.storage.limit} GB
                       </span>
                     </div>
@@ -712,18 +712,18 @@ export default function BillingPage() {
               <Card className="lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    <CreditCard className="h-5 w-5 text-primary" />
                     Payment Method
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
                     <div className={`h-10 w-14 rounded bg-gradient-to-r ${brandColors[savedCard.brand]} flex items-center justify-center`}>
                       <CreditCard className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-900">{brandLabels[savedCard.brand]} ending in {savedCard.last4}</p>
-                      <p className="text-xs text-gray-500">Expires {savedCard.expiry}</p>
+                      <p className="text-sm text-foreground">{brandLabels[savedCard.brand]} ending in {savedCard.last4}</p>
+                      <p className="text-xs text-muted-foreground">Expires {savedCard.expiry}</p>
                     </div>
                   </div>
 
@@ -754,8 +754,8 @@ export default function BillingPage() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-600">Billing Address</p>
-                    <div className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">Billing Address</p>
+                    <div className="text-sm text-muted-foreground">
                       <p>{savedCard.name}</p>
                       <p>Acme Corporation</p>
                       <p>123 Business Ave, Suite 400</p>
@@ -766,8 +766,8 @@ export default function BillingPage() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-600">Billing Email</p>
-                    <p className="text-sm text-gray-500">billing@acmecorp.com</p>
+                    <p className="text-sm text-muted-foreground">Billing Email</p>
+                    <p className="text-sm text-muted-foreground">billing@acmecorp.com</p>
                   </div>
                 </CardContent>
               </Card>
@@ -777,7 +777,7 @@ export default function BillingPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Receipt className="h-5 w-5 text-blue-600" />
+                      <Receipt className="h-5 w-5 text-primary" />
                       Invoice History
                     </CardTitle>
                     <CardDescription>Download past invoices and receipts</CardDescription>
@@ -807,9 +807,9 @@ export default function BillingPage() {
                     <TableBody>
                       {filteredInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
-                          <TableCell className="text-gray-900">{invoice.id}</TableCell>
-                          <TableCell className="text-gray-500">{invoice.date}</TableCell>
-                          <TableCell className="text-gray-900">{invoice.amount}</TableCell>
+                          <TableCell className="text-foreground">{invoice.id}</TableCell>
+                          <TableCell className="text-muted-foreground">{invoice.date}</TableCell>
+                          <TableCell className="text-foreground">{invoice.amount}</TableCell>
                           <TableCell>
                             <Badge
                               variant="secondary"
@@ -854,12 +854,12 @@ export default function BillingPage() {
 
             {/* Billing toggle inside dialog */}
             <div className="flex items-center justify-center gap-3 py-2">
-              <span className={`text-sm ${billingCycle === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>Monthly</span>
+              <span className={`text-sm ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
               <Switch
                 checked={billingCycle === 'annual'}
                 onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
               />
-              <span className={`text-sm ${billingCycle === 'annual' ? 'text-gray-900' : 'text-gray-500'}`}>
+              <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Annual
                 <Badge variant="secondary" className="ml-1.5 bg-green-100 text-green-700 hover:bg-green-100">
                   -20%
@@ -879,32 +879,32 @@ export default function BillingPage() {
                     key={plan.id}
                     className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50 shadow-sm'
+                        ? 'border-primary bg-primary/10 shadow-sm'
                         : isCurrentPlan
-                          ? 'border-gray-300 bg-gray-50'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                          ? 'border-border bg-muted/50'
+                          : 'border-border hover:border-border hover:shadow-sm'
                     }`}
                     onClick={() => {
                       if (!isCurrentPlan) setSelectedUpgradePlan(plan.id);
                     }}
                   >
                     {plan.popular && !isCurrentPlan && (
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white hover:bg-blue-600">
+                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground hover:bg-primary">
                         Popular
                       </Badge>
                     )}
                     {isCurrentPlan && (
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gray-600 text-white hover:bg-gray-600">
+                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-foreground text-primary-foreground hover:bg-foreground">
                         Current
                       </Badge>
                     )}
-                    <h3 className="text-gray-900 mt-1">{plan.name}</h3>
+                    <h3 className="text-foreground mt-1">{plan.name}</h3>
                     <div className="mt-2">
-                      <span className="text-2xl text-gray-900">
+                      <span className="text-2xl text-foreground">
                         {price === -1 ? 'Custom' : `$${price}`}
                       </span>
                       {price !== -1 && price !== 0 && (
-                        <span className="text-sm text-gray-500">/mo</span>
+                        <span className="text-sm text-muted-foreground">/mo</span>
                       )}
                     </div>
                     {billingCycle === 'annual' && monthlyPrice > 0 && price !== -1 && (
@@ -914,13 +914,13 @@ export default function BillingPage() {
                     )}
                     <ul className="mt-3 space-y-1.5">
                       {plan.features.slice(0, 4).map((feature) => (
-                        <li key={feature} className="flex items-start gap-1.5 text-xs text-gray-600">
+                        <li key={feature} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                           <Check className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
                           {feature}
                         </li>
                       ))}
                       {plan.features.length > 4 && (
-                        <li className="text-xs text-blue-600">
+                        <li className="text-xs text-primary">
                           +{plan.features.length - 4} more
                         </li>
                       )}
@@ -936,15 +936,15 @@ export default function BillingPage() {
               const newPrice = billingCycle === 'monthly' ? newPlan.priceMonthly : newPlan.priceAnnual;
               const isUpgrade = plans.indexOf(newPlan) > plans.indexOf(currentPlan);
               return (
-                <div className={`p-3 rounded-lg border text-sm ${isUpgrade ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+                <div className={`p-3 rounded-lg border text-sm ${isUpgrade ? 'bg-primary/10 border-primary/20' : 'bg-amber-50 border-amber-200'}`}>
                   <div className="flex items-start gap-2">
-                    <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isUpgrade ? 'text-blue-600' : 'text-amber-600'}`} />
+                    <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`} />
                     <div>
-                      <p className={isUpgrade ? 'text-blue-800' : 'text-amber-800'}>
+                      <p className={isUpgrade ? 'text-primary' : 'text-amber-800'}>
                         {isUpgrade ? 'Upgrade' : 'Downgrade'} from <span className="font-medium">{currentPlan.name}</span> to <span className="font-medium">{newPlan.name}</span>
                       </p>
                       {newPrice !== -1 && (
-                        <p className={`mt-0.5 ${isUpgrade ? 'text-blue-600' : 'text-amber-600'}`}>
+                        <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
                           New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` &times; 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} agents
                         </p>
                       )}
@@ -1097,7 +1097,7 @@ export default function BillingPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setShowCvc(v => !v);
@@ -1113,17 +1113,17 @@ export default function BillingPage() {
               </div>
 
               {/* Security info */}
-              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-                <Shield className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg">
+                <Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-primary">
                     Your payment is processed securely via Stripe. LinoChat never stores your full card number, CVC, or sensitive card data on our servers.
                   </p>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-[10px] text-blue-500 flex items-center gap-1">
+                    <span className="text-[10px] text-primary flex items-center gap-1">
                       <Lock className="h-3 w-3" /> 256-bit SSL
                     </span>
-                    <span className="text-[10px] text-blue-500 flex items-center gap-1">
+                    <span className="text-[10px] text-primary flex items-center gap-1">
                       <Shield className="h-3 w-3" /> PCI DSS Compliant
                     </span>
                   </div>

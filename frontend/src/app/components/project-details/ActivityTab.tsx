@@ -30,12 +30,12 @@ interface ActivityTabProps {
 }
 
 const activityIcons: Record<string, { icon: any; color: string; bg: string }> = {
-  ticket_created: { icon: Ticket, color: 'text-blue-600', bg: 'bg-blue-50' },
+  ticket_created: { icon: Ticket, color: 'text-primary', bg: 'bg-primary/10' },
   ticket_resolved: { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
   ticket_assigned: { icon: User, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  member_added: { icon: UserPlus, color: 'text-purple-600', bg: 'bg-purple-50' },
+  member_added: { icon: UserPlus, color: 'text-secondary', bg: 'bg-secondary/10' },
   chat_started: { icon: MessageSquare, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-  note_added: { icon: TrendingUp, color: 'text-gray-600', bg: 'bg-gray-50' },
+  note_added: { icon: TrendingUp, color: 'text-muted-foreground', bg: 'bg-muted/50' },
   default: { icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
 };
 
@@ -86,7 +86,7 @@ export function ActivityTab({ projectId }: ActivityTabProps) {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
           </CardContent>
         </Card>
@@ -104,11 +104,11 @@ export function ActivityTab({ projectId }: ActivityTabProps) {
           </CardHeader>
           <CardContent>
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
-              <p className="text-sm text-gray-500 max-w-sm mx-auto">
+              <h3 className="text-lg font-medium text-foreground mb-2">No activity yet</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                 Activity will appear here when tickets are created, resolved, or team members join the project.
               </p>
             </div>
@@ -135,9 +135,9 @@ export function ActivityTab({ projectId }: ActivityTabProps) {
                   <div className="flex-1 flex justify-between items-start">
                     <div>
                       <p className="text-sm font-medium">{activity.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                     </div>
-                    <p className="text-xs text-gray-400">{formatTimeAgo(activity.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{formatTimeAgo(activity.createdAt)}</p>
                   </div>
                 </div>
               );

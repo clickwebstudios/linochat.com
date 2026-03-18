@@ -44,34 +44,34 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       {/* Logo in top left */}
       <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-blue-600 p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-white" />
+        <div className="bg-primary p-2 rounded-lg">
+          <MessageSquare className="h-6 w-6 text-primary-foreground" />
         </div>
-        <h1 className="text-xl text-blue-600">LinoChat</h1>
+        <h1 className="text-xl text-primary">LinoChat</h1>
       </div>
 
       {/* Close button in top right */}
-      <Link 
-        to="/" 
-        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+      <Link
+        to="/"
+        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-muted/50 transition-colors"
         aria-label="Close"
       >
-        <X className="h-6 w-6 text-gray-600" />
+        <X className="h-6 w-6 text-muted-foreground" />
       </Link>
 
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Branding */}
         <div className="hidden lg:block space-y-6">
           <div className="space-y-4">
-            <h2 className="text-4xl text-gray-900">
+            <h2 className="text-4xl text-foreground">
               Don't worry,
               <br />
-              <span className="text-blue-600">We've got you covered</span>
+              <span className="text-primary">We've got you covered</span>
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground">
               Enter your email address and we'll send you instructions to reset your password.
             </p>
           </div>
@@ -98,7 +98,7 @@ export default function ForgotPassword() {
                         Email address
                       </label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           id="email"
                           type="email"
@@ -119,7 +119,7 @@ export default function ForgotPassword() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       Send reset link
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -129,7 +129,7 @@ export default function ForgotPassword() {
                   <div className="pt-4">
                     <Link 
                       to="/login" 
-                      className="flex items-center justify-center text-sm text-blue-600 hover:underline"
+                      className="flex items-center justify-center text-sm text-primary hover:underline"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back to login
@@ -143,17 +143,17 @@ export default function ForgotPassword() {
                       <CheckCircle className="h-12 w-12 text-green-600" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-lg text-gray-900">Check your email</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="text-lg text-foreground">Check your email</h3>
+                      <p className="text-sm text-muted-foreground">
                         We've sent password reset instructions to
                         <br />
-                        <span className="font-medium text-gray-900">{email}</span>
+                        <span className="font-medium text-foreground">{email}</span>
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-600 text-center">
+                    <p className="text-sm text-muted-foreground text-center">
                       Didn't receive the email? Check your spam folder or
                     </p>
                     <Button
@@ -169,7 +169,7 @@ export default function ForgotPassword() {
                   <div className="pt-4">
                     <Link 
                       to="/login" 
-                      className="flex items-center justify-center text-sm text-blue-600 hover:underline"
+                      className="flex items-center justify-center text-sm text-primary hover:underline"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back to login
@@ -179,8 +179,8 @@ export default function ForgotPassword() {
               )}
 
               <div className="text-center text-sm pt-4 border-t">
-                <span className="text-gray-600">Don't have an account? </span>
-                <Link to="/signup" className="text-blue-600 hover:underline">
+                <span className="text-muted-foreground">Don't have an account? </span>
+                <Link to="/signup" className="text-primary hover:underline">
                   Sign up for free
                 </Link>
               </div>

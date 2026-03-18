@@ -121,7 +121,7 @@ export function ChatsTab({ basePath, projectId }: ChatsTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -138,7 +138,7 @@ export function ChatsTab({ basePath, projectId }: ChatsTabProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <MessageSquare className="h-4 w-4 mr-2" />
               New Chat
             </Button>
@@ -147,9 +147,9 @@ export function ChatsTab({ basePath, projectId }: ChatsTabProps) {
         <CardContent>
           {filteredChats.length === 0 ? (
             <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
-              <p className="text-gray-500">Chats will appear here when customers start conversations</p>
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No chats yet</h3>
+              <p className="text-muted-foreground">Chats will appear here when customers start conversations</p>
             </div>
           ) : (
             <Table>
@@ -169,7 +169,7 @@ export function ChatsTab({ basePath, projectId }: ChatsTabProps) {
                 {filteredChats.map((chat) => (
                   <TableRow 
                     key={chat.id} 
-                    className="cursor-pointer hover:bg-gray-50" 
+                    className="cursor-pointer hover:bg-muted/50" 
                     onClick={() => navigate(`${basePath}/chats/${chat.id}`)}
                   >
                     <TableCell className="font-medium">CHAT-{chat.id}</TableCell>

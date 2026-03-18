@@ -93,14 +93,14 @@ export function ChatDashboardLayout({
   const chatHeaderActions = headerActions || (
     <div className="flex items-center gap-2">
       <Badge variant="outline" className="gap-1.5">
-        <div className={`h-2 w-2 rounded-full ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+        <div className={`h-2 w-2 rounded-full ${user.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
         {user.status === 'online' ? 'Available' : 'Offline'}
       </Badge>
       <Button variant="outline" size="sm">
         <Phone className="mr-2 h-4 w-4" />
         Start Call
       </Button>
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+      <Button size="sm" className="bg-primary hover:bg-primary/90">
         <Mail className="mr-2 h-4 w-4" />
         Email Customer
       </Button>
@@ -112,7 +112,7 @@ export function ChatDashboardLayout({
     <div className="p-4">
       <div className="mb-4">
         <h3 className="font-semibold mb-2">Active Chats ({activeChatCount})</h3>
-        <p className="text-sm text-gray-500">No active chats</p>
+        <p className="text-sm text-muted-foreground">No active chats</p>
       </div>
     </div>
   );
@@ -121,7 +121,7 @@ export function ChatDashboardLayout({
   const defaultCustomerDetails = customerDetails || (
     <div className="p-4">
       <h3 className="font-semibold mb-4">Customer Details</h3>
-      <p className="text-sm text-gray-500">Select a chat to view details</p>
+      <p className="text-sm text-muted-foreground">Select a chat to view details</p>
     </div>
   );
 
@@ -144,17 +144,17 @@ export function ChatDashboardLayout({
       {/* Three-column chat layout */}
       <div className="flex h-full overflow-hidden">
         {/* Left: Chat List (25%) */}
-        <aside className="w-80 flex-shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
+        <aside className="w-80 flex-shrink-0 border-r border-border bg-card overflow-y-auto">
           {defaultChatList}
         </aside>
 
         {/* Center: Chat Window (50%) */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+        <main className="flex-1 flex flex-col overflow-hidden bg-muted/50">
           {children}
         </main>
 
         {/* Right: Customer Details (25%) */}
-        <aside className="w-80 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto">
+        <aside className="w-80 flex-shrink-0 border-l border-border bg-card overflow-y-auto">
           {defaultCustomerDetails}
         </aside>
       </div>
@@ -181,15 +181,15 @@ export function CustomerInfoCard({ customer }: CustomerInfoCardProps) {
     <div className="p-4 space-y-4">
       <div className="flex flex-col items-center text-center pb-4 border-b">
         <Avatar className="h-20 w-20 mb-3">
-          <AvatarFallback className="bg-blue-600 text-white text-xl">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xl">
             {customer.avatar}
           </AvatarFallback>
         </Avatar>
         <h3 className="font-semibold text-lg">{customer.name}</h3>
-        <p className="text-sm text-gray-600">{customer.email}</p>
+        <p className="text-sm text-muted-foreground">{customer.email}</p>
         <div className="flex items-center gap-2 mt-2">
-          <div className={`h-2 w-2 rounded-full ${customer.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
-          <span className="text-xs text-gray-600">
+          <div className={`h-2 w-2 rounded-full ${customer.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+          <span className="text-xs text-muted-foreground">
             {customer.status === 'online' ? 'Online now' : customer.lastSeen}
           </span>
         </div>
@@ -261,9 +261,9 @@ export function ExampleChatDashboard() {
       customerDetails={<CustomerInfoCard customer={mockCustomer} />}
     >
       {/* Chat window content */}
-      <div className="flex-1 flex items-center justify-center text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
         <div className="text-center">
-          <MessageCircle className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+          <MessageCircle className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
           <p>Select a chat to start messaging</p>
         </div>
       </div>

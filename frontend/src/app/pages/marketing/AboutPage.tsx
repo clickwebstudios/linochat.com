@@ -30,10 +30,10 @@ export default function AboutPage() {
       />
       <MarketingHeader />
 
-      <section className="bg-gradient-to-br from-blue-50 to-white py-16">
+      <section className="bg-gradient-to-br from-primary/10 to-card py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-4 text-[48px] font-bold">About LinoChat</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             We're on a mission to make exceptional customer support accessible to every business.
           </p>
         </div>
@@ -42,30 +42,30 @@ export default function AboutPage() {
       <section className="py-16">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="mb-6 text-center">Our Story</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             Founded in 2020, LinoChat was born from a simple observation: customer support shouldn't be complicated. Our founders, having experienced the frustrations of clunky support tools firsthand, set out to build something better.
           </p>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             Today, we serve over 10,000 companies worldwide, from startups to enterprises. Our platform handles millions of customer conversations every month, helping businesses deliver exceptional support at scale.
           </p>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             We're backed by leading investors and continuously innovating to stay ahead of customer expectations.
           </p>
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
           <h2 className="text-center mb-12">Our Values</h2>
           <div className="grid md:grid-cols-4 gap-6">
             {values.map((value, i) => (
               <Card key={i} className="text-center">
                 <CardContent className="p-6">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {value.icon}
                   </div>
                   <h4 className="mb-2">{value.title}</h4>
-                  <p className="text-sm text-gray-600">{value.desc}</p>
+                  <p className="text-sm text-muted-foreground">{value.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -80,11 +80,11 @@ export default function AboutPage() {
             {team.map((member, i) => (
               <Card key={i} className="text-center">
                 <CardContent className="p-6">
-                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-2xl font-bold">
+                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
                     {member.avatar}
                   </div>
                   <h4 className="mb-1">{member.name}</h4>
-                  <p className="text-sm text-gray-600">{member.role}</p>
+                  <p className="text-sm text-muted-foreground">{member.role}</p>
                 </CardContent>
               </Card>
             ))}
@@ -92,13 +92,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-blue-600 text-white" id="careers">
+      <section className="py-16 bg-primary text-primary-foreground" id="careers">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-white">Join Our Team</h2>
-          <p className="text-xl text-blue-100 mb-6">
+          <h2 className="mb-4 text-primary-foreground">Join Our Team</h2>
+          <p className="text-xl text-primary-foreground/80 mb-6">
             We're always looking for talented people who share our mission
           </p>
-          <a href="/contact" className="inline-block px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors">
+          <a href="/contact" className="inline-block px-6 py-3 bg-card text-primary rounded-lg hover:bg-muted/50 transition-colors">
             View Open Positions
           </a>
         </div>

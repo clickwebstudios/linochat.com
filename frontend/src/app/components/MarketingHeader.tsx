@@ -41,23 +41,23 @@ export default function MarketingHeader() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-              <span className="text-xl text-white">LC</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+              <span className="text-xl text-primary-foreground">LC</span>
             </div>
             <div className="flex flex-col">
               <span className="font-bold">LinoChat</span>
-              <span className="text-xs text-gray-500">Seamless Customer Conversations</span>
+              <span className="text-xs text-muted-foreground">Seamless Customer Conversations</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-6 md:flex">
-            <Link to="/" className="hover:text-blue-600 transition-colors">
+            <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors">
                 Features <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -76,12 +76,12 @@ export default function MarketingHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link to="/pricing" className="hover:text-blue-600 transition-colors">
+            <Link to="/pricing" className="hover:text-primary transition-colors">
               Pricing
             </Link>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors">
                 Resources <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -97,11 +97,11 @@ export default function MarketingHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link to="/about" className="hover:text-blue-600 transition-colors">
+            <Link to="/about" className="hover:text-primary transition-colors">
               About Us
             </Link>
 
-            <Link to="/contact" className="hover:text-blue-600 transition-colors">
+            <Link to="/contact" className="hover:text-primary transition-colors">
               Contact
             </Link>
           </nav>
@@ -114,7 +114,7 @@ export default function MarketingHeader() {
             {user ? (
               <div className="flex items-center gap-2 pl-2 border-l">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-600 text-white">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
                     {`${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` || '?'}
                   </AvatarFallback>
                 </Avatar>
@@ -156,7 +156,7 @@ export default function MarketingHeader() {
                 <Button variant="ghost" asChild>
                   <Link to="/login">Login</Link>
                 </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+                <Button className="bg-primary hover:bg-primary/90" asChild>
                   <Link to="/signup">Sign Up Free</Link>
                 </Button>
               </>
@@ -183,28 +183,28 @@ export default function MarketingHeader() {
                     <>
                       <div className="flex items-center gap-2 py-2">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-blue-600 text-white">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                             {`${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">{user.first_name} {user.last_name}</div>
-                          <div className="text-xs text-gray-500 capitalize">{user.role}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
                         </div>
                       </div>
-                      <Link to={dashboardPath} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-gray-100 flex items-center gap-2">
+                      <Link to={dashboardPath} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-muted flex items-center gap-2">
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
                       </Link>
-                      <Link to={`${basePath}/profile-settings`} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-gray-100 flex items-center gap-2">
+                      <Link to={`${basePath}/profile-settings`} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-muted flex items-center gap-2">
                         <Settings className="h-4 w-4" />
                         Profile Settings
                       </Link>
-                      <Link to={`${basePath}/billing`} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-gray-100 flex items-center gap-2">
+                      <Link to={`${basePath}/billing`} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-muted flex items-center gap-2">
                         <CreditCard className="h-4 w-4" />
                         Billing
                       </Link>
-                      <button onClick={handleLogout} className="rounded-md px-3 py-2 hover:bg-gray-100 flex items-center gap-2 text-red-600 text-left w-full">
+                      <button onClick={handleLogout} className="rounded-md px-3 py-2 hover:bg-muted flex items-center gap-2 text-red-600 text-left w-full">
                         <LogOut className="h-4 w-4" />
                         Log Out
                       </button>
@@ -214,7 +214,7 @@ export default function MarketingHeader() {
                       <Button variant="outline" asChild>
                         <Link to="/login" onClick={() => setMobileOpen(false)}>Login</Link>
                       </Button>
-                      <Button className="bg-blue-600" asChild>
+                      <Button className="bg-primary" asChild>
                         <Link to="/signup" onClick={() => setMobileOpen(false)}>Sign Up Free</Link>
                       </Button>
                     </>

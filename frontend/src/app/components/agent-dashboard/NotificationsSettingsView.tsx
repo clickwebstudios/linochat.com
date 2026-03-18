@@ -19,7 +19,7 @@ const defaultEvents: NotificationEvent[] = [
     key: 'ticket_created_admin',
     title: 'Ticket Created — Admin',
     description: 'Send notification to company admin when a new ticket is created (manual or via AI booking)',
-    icon: <Ticket className="h-5 w-5 text-purple-600" />,
+    icon: <Ticket className="h-5 w-5 text-secondary" />,
     email: true,
     sms: false,
   },
@@ -27,7 +27,7 @@ const defaultEvents: NotificationEvent[] = [
     key: 'ticket_created_customer',
     title: 'Ticket Created — Customer',
     description: 'Send confirmation to the customer when their ticket is created with a link to view it',
-    icon: <Ticket className="h-5 w-5 text-blue-600" />,
+    icon: <Ticket className="h-5 w-5 text-primary" />,
     email: true,
     sms: false,
   },
@@ -43,7 +43,7 @@ const defaultEvents: NotificationEvent[] = [
     key: 'ticket_closed',
     title: 'Ticket Resolved',
     description: 'Notify the customer when their ticket is marked as resolved',
-    icon: <Ticket className="h-5 w-5 text-gray-500" />,
+    icon: <Ticket className="h-5 w-5 text-muted-foreground" />,
     email: true,
     sms: false,
   },
@@ -129,7 +129,7 @@ export function NotificationsSettingsView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -137,14 +137,14 @@ export function NotificationsSettingsView() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Outgoing Notifications</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-lg font-semibold text-foreground">Outgoing Notifications</h2>
+        <p className="text-sm text-muted-foreground mt-1">
           Configure which events trigger Email and SMS notifications.
         </p>
       </div>
 
       {/* Column headers */}
-      <div className="flex items-center justify-end gap-6 pr-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+      <div className="flex items-center justify-end gap-6 pr-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <div className="flex items-center gap-1.5 w-16 justify-center">
           <Mail className="h-3.5 w-3.5" />
           Email
@@ -157,12 +157,12 @@ export function NotificationsSettingsView() {
 
       <div className="space-y-2">
         {events.map((ev) => (
-          <Card key={ev.key} className="border border-gray-200">
+          <Card key={ev.key} className="border border-border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="shrink-0">{ev.icon}</div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-gray-900">{ev.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{ev.description}</p>
+                <h3 className="text-sm font-medium text-foreground">{ev.title}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{ev.description}</p>
               </div>
               <div className="flex items-center gap-6 shrink-0">
                 {/* Email toggle */}
@@ -170,12 +170,12 @@ export function NotificationsSettingsView() {
                   type="button"
                   onClick={() => toggle(ev.key, 'email')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    ev.email ? 'bg-blue-600' : 'bg-gray-200'
+                    ev.email ? 'bg-primary' : 'bg-muted'
                   }`}
                   title="Email"
                 >
                   <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                    className={`inline-block h-4 w-4 rounded-full bg-card transition-transform ${
                       ev.email ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
@@ -185,12 +185,12 @@ export function NotificationsSettingsView() {
                   type="button"
                   onClick={() => toggle(ev.key, 'sms')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    ev.sms ? 'bg-green-600' : 'bg-gray-200'
+                    ev.sms ? 'bg-green-600' : 'bg-muted'
                   }`}
                   title="SMS"
                 >
                   <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                    className={`inline-block h-4 w-4 rounded-full bg-card transition-transform ${
                       ev.sms ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
@@ -202,7 +202,7 @@ export function NotificationsSettingsView() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
           Save Settings
         </Button>

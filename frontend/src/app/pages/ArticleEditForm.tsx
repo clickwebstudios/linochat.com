@@ -35,7 +35,7 @@ export default function ArticleEditForm({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
+            <FileText className="h-5 w-5 text-primary" />
             Article Details
           </CardTitle>
         </CardHeader>
@@ -86,7 +86,7 @@ export default function ArticleEditForm({
             rows={30}
             className="font-mono text-sm min-h-[500px]"
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             Supports Markdown formatting. Use # for headings, ** for bold, * for italic, etc.
           </p>
         </CardContent>

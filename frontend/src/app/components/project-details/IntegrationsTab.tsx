@@ -100,8 +100,8 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Integrations</h2>
-        <p className="text-sm text-gray-500 mt-1">Connect external platforms to sync data with this project.</p>
+        <h2 className="text-lg font-semibold text-foreground">Integrations</h2>
+        <p className="text-sm text-muted-foreground mt-1">Connect external platforms to sync data with this project.</p>
       </div>
 
       {/* Frubix Card */}
@@ -109,12 +109,12 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <Link2 className="h-5 w-5 text-secondary" />
               </div>
               <div>
                 <CardTitle className="text-base">Frubix</CardTitle>
-                <p className="text-xs text-gray-500 mt-0.5">Field service management — sync leads, jobs, and clients</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Field service management — sync leads, jobs, and clients</p>
               </div>
             </div>
             {isConnected ? (
@@ -122,7 +122,7 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
                 <CheckCircle2 className="h-3 w-3" /> Connected
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-gray-500 gap-1">
+              <Badge variant="outline" className="text-muted-foreground gap-1">
                 <XCircle className="h-3 w-3" /> Not connected
               </Badge>
             )}
@@ -132,10 +132,10 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
         <CardContent>
           {isConnected && !showForm ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Connected to <span className="font-medium">{frubix.url}</span>
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Agents can create Frubix leads directly from tickets.
               </p>
               <div className="flex gap-2">

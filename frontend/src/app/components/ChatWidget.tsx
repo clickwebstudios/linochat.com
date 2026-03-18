@@ -277,21 +277,21 @@ export default function ChatWidget({
             className="mb-4 w-[360px] rounded-lg border bg-white shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b p-4 text-white rounded-t-lg" style={{ backgroundColor: '#155dfc' }}>
+            <div className="flex items-center justify-between border-b p-4 text-primary-foreground rounded-t-lg bg-primary">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8 border-2 border-white">
-                  <AvatarFallback style={{ backgroundColor: '#1447e6' }}>LC</AvatarFallback>
+                  <AvatarFallback className="bg-primary/90 text-primary-foreground">LC</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">LinoChat</h3>
-                  <p className="text-xs text-blue-100">Online • AI Powered</p>
+                  <p className="text-xs text-primary-foreground/70">Online • AI Powered</p>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-blue-700"
+                className="text-primary-foreground hover:bg-primary/90"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -315,7 +315,7 @@ export default function ChatWidget({
             {/* Messages */}
             <div className="h-[400px] overflow-y-auto p-4 space-y-4">
               {messages.length === 0 && !error && (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-muted-foreground py-8">
                   <p>How can we help you today?</p>
                 </div>
               )}
@@ -329,21 +329,20 @@ export default function ChatWidget({
                     {/* AI Assistant Label */}
                     {message.sender_type === 'ai' && (
                       <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#7c3aed' }}>
-                          <Bot className="h-3 w-3 text-white" />
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center bg-secondary">
+                          <Bot className="h-3 w-3 text-secondary-foreground" />
                         </div>
-                        <span className="text-xs font-medium" style={{ color: '#7c3aed' }}>AI Assistant</span>
+                        <span className="text-xs font-medium text-secondary">AI Assistant</span>
                       </div>
                     )}
                     <div
                       className={`rounded-lg p-3 ${
                         message.sender_type === 'customer'
-                          ? 'text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : message.sender_type === 'ai'
-                          ? 'text-gray-900 border'
-                          : 'bg-gray-100 text-gray-900'
+                          ? 'text-foreground border bg-secondary/10 border-secondary/20'
+                          : 'bg-muted text-foreground'
                       }`}
-                      style={message.sender_type === 'customer' ? { backgroundColor: '#155dfc' } : message.sender_type === 'ai' ? { backgroundColor: '#faf5ff', borderColor: '#f3e8ff' } : undefined}
                     >
                       <p className="text-sm">{message.content}</p>
                     </div>                  </div>
@@ -358,23 +357,22 @@ export default function ChatWidget({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-blue-200 bg-blue-50 p-4 mt-2 flex items-start gap-3"
+                  className="rounded-xl border border-primary/20 bg-primary/10 p-4 mt-2 flex items-start gap-3"
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#155dfc' }}>
-                    <UserCheck className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-primary">
+                    <UserCheck className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-blue-900">Connecting you to an agent</p>
-                    <p className="text-xs text-blue-700 mt-0.5">
+                    <p className="text-sm font-semibold text-primary">Connecting you to an agent</p>
+                    <p className="text-xs text-primary mt-0.5">
                       A human agent will join the chat shortly. Please hold on…
                     </p>
                     <div className="flex gap-1 mt-2">
                       {[0, 1, 2].map((i) => (
                         <span
                           key={i}
-                          className="inline-block w-2 h-2 rounded-full animate-bounce"
+                          className="inline-block w-2 h-2 rounded-full animate-bounce bg-primary"
                           style={{
-                            backgroundColor: '#155dfc',
                             animationDelay: `${i * 0.15}s`,
                           }}
                         />
@@ -391,7 +389,7 @@ export default function ChatWidget({
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4"
                 >
-                  <p className="text-sm text-gray-700 mb-3">
+                  <p className="text-sm text-foreground mb-3">
                     Please provide your contact info to create a support ticket:
                   </p>
                   <div className="space-y-2">
@@ -411,8 +409,7 @@ export default function ChatWidget({
                     <Button
                       onClick={handleCreateTicket}
                       disabled={!contactInfo.name || !contactInfo.email || isLoading}
-                      className="w-full text-white"
-                      style={{ backgroundColor: '#155dfc' }}
+                      className="w-full bg-primary text-primary-foreground"
                       size="sm"
                     >
                       {isLoading ? (
@@ -459,8 +456,7 @@ export default function ChatWidget({
                     size="icon"
                     onClick={handleSend}
                     disabled={!inputValue.trim() || isLoading}
-                    className="shrink-0 text-white"
-                    style={{ backgroundColor: '#155dfc' }}
+                    className="shrink-0 bg-primary text-primary-foreground"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -480,8 +476,7 @@ export default function ChatWidget({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-colors"
-        style={{ backgroundColor: '#155dfc' }}
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors"
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </motion.button>

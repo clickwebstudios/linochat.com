@@ -291,33 +291,33 @@ export default function Signup() {
       : ((analysisStep + 1) / ANALYSIS_STEPS.length) * 100;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
         <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <MessageSquare className="h-6 w-6 text-white" />
+          <div className="bg-primary p-2 rounded-lg">
+            <MessageSquare className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-xl text-blue-600">LinoChat</h1>
+          <h1 className="text-xl text-primary">LinoChat</h1>
         </div>
 
         <div className="w-full max-w-md">
           <Card className="shadow-xl border-0">
             <CardContent className="p-8 space-y-6">
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold text-gray-900">Setting up your account...</h2>
-                <p className="text-gray-600">
+                <h2 className="text-2xl font-semibold text-foreground">Setting up your account...</h2>
+                <p className="text-muted-foreground">
                   Our AI is scanning your website to create a knowledge base.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 space-y-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-blue-900">Analyzing...</span>
-                    <span className="text-blue-600 font-medium">{Math.round(progressPercent)}%</span>
+                    <span className="font-medium text-primary">Analyzing...</span>
+                    <span className="text-primary font-medium">{Math.round(progressPercent)}%</span>
                   </div>
-                  <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -334,17 +334,17 @@ export default function Signup() {
                       {index < analysisStep ? (
                         <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                       ) : index === analysisStep ? (
-                        <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                        <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                       ) : (
-                        <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                        <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
                       )}
                       <span
                         className={
                           index === analysisStep
-                            ? 'text-blue-900 font-medium'
+                            ? 'text-primary font-medium'
                             : index < analysisStep
                             ? 'text-green-700'
-                            : 'text-gray-400'
+                            : 'text-muted-foreground'
                         }
                       >
                         {stepLabel}
@@ -354,7 +354,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+              <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Sparkles className="h-4 w-4" />
                 <span>AI is analyzing your content...</span>
               </div>
@@ -367,13 +367,13 @@ export default function Signup() {
 
   // ─── Main wizard UI ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       {/* Logo */}
       <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-blue-600 p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-white" />
+        <div className="bg-primary p-2 rounded-lg">
+          <MessageSquare className="h-6 w-6 text-primary-foreground" />
         </div>
-        <h1 className="text-xl text-blue-600">LinoChat</h1>
+        <h1 className="text-xl text-primary">LinoChat</h1>
       </div>
 
       <div className="w-full max-w-4xl">
@@ -389,8 +389,8 @@ export default function Signup() {
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                         isCompleted || isActive
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-400'
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'bg-card border-border text-muted-foreground'
                       }`}
                     >
                       {isCompleted ? (
@@ -402,7 +402,7 @@ export default function Signup() {
                     <div className="mt-2 text-center hidden md:block">
                       <p
                         className={`text-xs ${
-                          isActive || isCompleted ? 'text-gray-900' : 'text-gray-500'
+                          isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground'
                         }`}
                       >
                         {step.label}
@@ -412,7 +412,7 @@ export default function Signup() {
                   {index < steps.length - 1 && (
                     <div
                       className={`flex-1 h-0.5 mx-2 ${
-                        isCompleted ? 'bg-blue-600' : 'bg-gray-300'
+                        isCompleted ? 'bg-primary' : 'bg-border'
                       }`}
                     />
                   )}
@@ -444,7 +444,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="fullName" className="text-sm">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="fullName"
                       placeholder="John Doe"
@@ -459,7 +459,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
@@ -476,7 +476,7 @@ export default function Signup() {
                   <div className="space-y-2">
                     <label htmlFor="companyName" className="text-sm">Company</label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="companyName"
                         placeholder="Acme Inc."
@@ -489,7 +489,7 @@ export default function Signup() {
                   <div className="space-y-2">
                     <label htmlFor="country" className="text-sm">Country</label>
                     <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10 pointer-events-none" />
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
                       <Select
                         value={formData.country}
                         onValueChange={(value) => setFormData({ ...formData, country: value })}
@@ -512,7 +512,7 @@ export default function Signup() {
                   <div className="space-y-2">
                     <label htmlFor="password" className="text-sm">Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="password"
                         type="password"
@@ -522,12 +522,12 @@ export default function Signup() {
                         className="pl-10"
                       />
                     </div>
-                    <p className="text-xs text-gray-500">At least 8 characters with letters and numbers</p>
+                    <p className="text-xs text-muted-foreground">At least 8 characters with letters and numbers</p>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="confirmPassword" className="text-sm">Confirm Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="confirmPassword"
                         type="password"
@@ -546,7 +546,7 @@ export default function Signup() {
                     <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">Or sign up with</span>
+                    <span className="bg-card px-2 text-muted-foreground">Or sign up with</span>
                   </div>
                 </div>
 
@@ -563,7 +563,7 @@ export default function Signup() {
                   </Button>
                 </div>
 
-                <Button onClick={handleStep1Continue} className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSendingCode}>
+                <Button onClick={handleStep1Continue} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSendingCode}>
                   {isSendingCode ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -577,9 +577,9 @@ export default function Signup() {
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-muted-foreground">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
+                  <Link to="/login" className="text-primary hover:underline">Sign in</Link>
                 </p>
               </div>
             )}
@@ -588,11 +588,11 @@ export default function Signup() {
             {currentStep === 'verify' && (
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                    <Mail className="h-8 w-8 text-blue-600" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <Mail className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-lg">Check your email</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     We sent a verification code to <strong>{formData.email}</strong>
                   </p>
                 </div>
@@ -612,10 +612,10 @@ export default function Signup() {
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-center text-gray-500">
+                  <p className="text-xs text-center text-muted-foreground">
                     Didn't receive the code?{' '}
                     <button
-                      className="text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleResendCode}
                       disabled={resendCooldown > 0 || isSendingCode}
                     >
@@ -629,7 +629,7 @@ export default function Signup() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={handleVerifyCode} className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={isVerifying || verificationCode.join('').length !== 6}>
+                  <Button onClick={handleVerifyCode} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isVerifying || verificationCode.join('').length !== 6}>
                     {isVerifying ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -653,7 +653,7 @@ export default function Signup() {
                   <div className="space-y-2">
                     <label htmlFor="website" className="text-sm">Website URL</label>
                     <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="website"
                         type="url"
@@ -668,7 +668,7 @@ export default function Signup() {
                         disabled={websiteAnalyzed}
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Our AI will analyze your website to create a knowledge base and set up your project
                     </p>
                   </div>
@@ -676,7 +676,7 @@ export default function Signup() {
                   {!websiteAnalyzed && (
                     <Button
                       onClick={handleRegister}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                       disabled={!formData.website.trim() || isLoading}
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
@@ -694,38 +694,38 @@ export default function Signup() {
                           <div className="flex-1 space-y-3">
                             <div>
                               <h4 className="text-sm font-medium mb-1">Account created & website analyzed!</h4>
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-muted-foreground">
                                 We've created {kbArticlesCount} knowledge base articles from your website.
                               </p>
                             </div>
 
                             <div className="space-y-3">
-                              <div className="bg-white rounded-lg p-3 space-y-2">
+                              <div className="bg-card rounded-lg p-3 space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <Building2 className="h-4 w-4 text-gray-400" />
-                                  <label className="text-xs text-gray-500">Company Name</label>
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <label className="text-xs text-muted-foreground">Company Name</label>
                                 </div>
                                 <Input
                                   value={formData.companyName}
                                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                  className="border-gray-200"
+                                  className="border-border"
                                 />
                               </div>
 
-                              <div className="bg-white rounded-lg p-3 space-y-2">
+                              <div className="bg-card rounded-lg p-3 space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <Sparkles className="h-4 w-4 text-gray-400" />
-                                  <label className="text-xs text-gray-500">Project Name</label>
+                                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                                  <label className="text-xs text-muted-foreground">Project Name</label>
                                 </div>
                                 <Input
                                   value={formData.projectName}
                                   onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
-                                  className="border-gray-200"
+                                  className="border-border"
                                 />
                               </div>
                             </div>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               You can edit these details now or later from your dashboard
                             </p>
                           </div>
@@ -742,7 +742,7 @@ export default function Signup() {
                   </Button>
                   <Button
                     onClick={handleNext}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={!websiteAnalyzed}
                   >
                     Continue
@@ -756,11 +756,11 @@ export default function Signup() {
             {currentStep === 'team' && (
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                    <Users className="h-8 w-8 text-blue-600" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <Users className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-lg">Invite your team</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Collaborate with your team members to provide better support
                   </p>
                 </div>
@@ -769,7 +769,7 @@ export default function Signup() {
                   {formData.teamEmails.map((email, index) => (
                     <div key={index} className="flex gap-2">
                       <div className="relative flex-1">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           placeholder="teammate@company.com"
                           value={email}
@@ -789,8 +789,8 @@ export default function Signup() {
                   </Button>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-xs text-gray-600">
+                <div className="bg-muted/50 border border-border rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground">
                     💡 Don't worry, you can always invite team members later from your dashboard
                   </p>
                 </div>
@@ -803,7 +803,7 @@ export default function Signup() {
                   <Button onClick={handleNext} variant="outline" className="flex-1">
                     Skip for now
                   </Button>
-                  <Button onClick={handleNext} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleNext} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
                     Send Invites
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -815,11 +815,11 @@ export default function Signup() {
             {currentStep === 'customize' && (
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                    <Palette className="h-8 w-8 text-blue-600" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <Palette className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-lg">Customize your chat widget</h3>
-                  <p className="text-sm text-gray-600">Make the widget match your brand</p>
+                  <p className="text-sm text-muted-foreground">Make the widget match your brand</p>
                 </div>
 
                 <div className="space-y-4">
@@ -842,9 +842,9 @@ export default function Signup() {
                   </div>
 
                   {/* Live widget preview */}
-                  <div className="border rounded-lg p-4 bg-gray-50">
+                  <div className="border rounded-lg p-4 bg-muted/50">
                     <h4 className="text-sm font-medium mb-3">Widget Preview</h4>
-                    <div className="bg-white rounded-lg p-4 shadow-lg max-w-sm">
+                    <div className="bg-card rounded-lg p-4 shadow-lg max-w-sm">
                       <div className="flex items-center gap-3 mb-3">
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
@@ -854,11 +854,11 @@ export default function Signup() {
                         </div>
                         <div>
                           <h5 className="text-sm font-medium">{formData.companyName || 'Your Company'}</h5>
-                          <p className="text-xs text-gray-500">We typically reply in a few minutes</p>
+                          <p className="text-xs text-muted-foreground">We typically reply in a few minutes</p>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="bg-gray-100 rounded-lg p-2 text-xs">
+                        <div className="bg-muted rounded-lg p-2 text-xs">
                           Hi! How can we help you today?
                         </div>
                         <button
@@ -871,8 +871,8 @@ export default function Signup() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-xs text-gray-600">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground">
                       ℹ️ You can customize more settings including welcome message, avatar, and position
                       from your dashboard
                     </p>
@@ -884,7 +884,7 @@ export default function Signup() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={handleNext} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleNext} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
                     Complete Setup
                     <Check className="ml-2 h-4 w-4" />
                   </Button>
@@ -900,19 +900,19 @@ export default function Signup() {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">You're all set!</h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Welcome to LinoChat{formData.fullName ? `, ${formData.fullName.split(' ')[0]}` : ''}!
                   </p>
                 </div>
 
                 <div className="space-y-3">
-                  <Badge className="bg-blue-600 text-white px-4 py-1">🎁 14-day free trial activated</Badge>
+                  <Badge className="bg-primary text-primary-foreground px-4 py-1">🎁 14-day free trial activated</Badge>
                 </div>
 
-                <p className="text-xs text-gray-500">Redirecting to your dashboard in a moment...</p>
+                <p className="text-xs text-muted-foreground">Redirecting to your dashboard in a moment...</p>
 
                 <div className="flex flex-col gap-2 pt-4">
-                  <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Link to="/agent/dashboard">
                       Go to Dashboard
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -929,7 +929,7 @@ export default function Signup() {
 
         {/* Security badge */}
         {currentStep !== 'complete' && (
-          <div className="text-center mt-6 text-xs text-gray-500">
+          <div className="text-center mt-6 text-xs text-muted-foreground">
             <p>🔒 Your data is encrypted and secure</p>
           </div>
         )}

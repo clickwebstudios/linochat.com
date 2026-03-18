@@ -85,14 +85,14 @@ const getActivityIcon = (type: string) => {
   switch (type) {
     case 'ticket_assigned':
     case 'ticket_created':
-      return { icon: Ticket, color: 'bg-blue-100 text-blue-600' };
+      return { icon: Ticket, color: 'bg-primary/10 text-primary' };
     case 'chat_resolved':
     case 'chat_started':
       return { icon: MessageCircle, color: 'bg-green-100 text-green-600' };
     case 'ticket_escalated':
       return { icon: Ticket, color: 'bg-orange-100 text-orange-600' };
     default:
-      return { icon: Ticket, color: 'bg-gray-100 text-gray-600' };
+      return { icon: Ticket, color: 'bg-muted text-muted-foreground' };
   }
 };
 
@@ -300,10 +300,10 @@ export function DashboardView({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Chats</p>
+                <p className="text-sm text-muted-foreground">Active Chats</p>
                 <p className="text-3xl font-bold">{stats.activeChats}</p>
               </div>
-              <MessageCircle className="h-8 w-8 text-blue-600" />
+              <MessageCircle className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -311,7 +311,7 @@ export function DashboardView({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Open Tickets</p>
+                <p className="text-sm text-muted-foreground">Open Tickets</p>
                 <p className="text-3xl font-bold">{stats.openTickets}</p>
               </div>
               <Ticket className="h-8 w-8 text-orange-600" />
@@ -322,7 +322,7 @@ export function DashboardView({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Response</p>
+                <p className="text-sm text-muted-foreground">Avg Response</p>
                 <p className="text-3xl font-bold">{stats.avgResponseTime}</p>
               </div>
               <BarChart className="h-8 w-8 text-green-600" />
@@ -333,7 +333,7 @@ export function DashboardView({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Satisfaction</p>
+                <p className="text-sm text-muted-foreground">Satisfaction</p>
                 <p className="text-3xl font-bold">{stats.satisfaction}</p>
               </div>
               <span className="text-4xl">😊</span>
@@ -351,7 +351,7 @@ export function DashboardView({
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="h-[200px] flex items-center justify-center text-gray-400">
+                <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                   Loading...
                 </div>
               ) : (
@@ -361,7 +361,7 @@ export function DashboardView({
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Area type="monotone" dataKey="tickets" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                    <Area type="monotone" dataKey="tickets" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.3} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -375,7 +375,7 @@ export function DashboardView({
             <CardContent>
               <div className="space-y-4">
                 {loading ? (
-                  <div className="text-center py-6 text-gray-400">Loading...</div>
+                  <div className="text-center py-6 text-muted-foreground">Loading...</div>
                 ) : recentActivity.length > 0 ? (
                   recentActivity.map((activity) => {
                     const { icon: Icon, color } = getActivityIcon(activity.type);
@@ -386,13 +386,13 @@ export function DashboardView({
                         </div>
                         <div className="flex-1">
                           <p className="text-sm">{activity.message}</p>
-                          <p className="text-xs text-gray-500">{formatRelativeTime(activity.timestamp)}</p>
+                          <p className="text-xs text-muted-foreground">{formatRelativeTime(activity.timestamp)}</p>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-center py-6 text-gray-500">
+                  <div className="text-center py-6 text-muted-foreground">
                     <p className="text-sm">No recent activity</p>
                   </div>
                 )}
@@ -408,10 +408,10 @@ export function DashboardView({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-blue-600" />
+                  <MessageCircle className="h-5 w-5 text-primary" />
                   Active Chats
                 </CardTitle>
-                <Badge className="bg-blue-600">{displayChats.filter(chat => chat.status === 'active').length}</Badge>
+                <Badge className="bg-primary">{displayChats.filter(chat => chat.status === 'active').length}</Badge>
               </div>
             </CardHeader>
             <CardContent>
@@ -419,16 +419,16 @@ export function DashboardView({
                 {displayChats.filter(chat => chat.status === 'active').slice(0, 4).map((chat) => {
                   const project = getProjectById(chat.projectId);
                   return (
-                    <div key={chat.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={chat.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-100 text-blue-700">{chat.avatar}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary">{chat.avatar}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-semibold text-sm">{chat.customer}</p>
-                          <span className="text-xs text-gray-500 ml-auto text-right">{chat.time}</span>
+                          <span className="text-xs text-muted-foreground ml-auto text-right">{chat.time}</span>
                         </div>
-                        <p className="text-sm text-gray-600 truncate">{chat.preview}</p>
+                        <p className="text-sm text-muted-foreground truncate">{chat.preview}</p>
                         {project && (
                           <div className="mt-1 flex items-center gap-1">
                             <div 
@@ -442,21 +442,21 @@ export function DashboardView({
                         )}
                       </div>
                       {chat.unread > 0 && (
-                        <Badge className="bg-blue-600 text-xs">{chat.unread}</Badge>
+                        <Badge className="bg-primary text-xs">{chat.unread}</Badge>
                       )}
                     </div>
                   );
                 })}
                 {displayChats.filter(chat => chat.status === 'active').length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <div className="text-center py-6 text-muted-foreground">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2 text-muted" />
                     <p className="text-sm">No active chats</p>
                   </div>
                 )}
               </div>
               <Button 
                 variant="ghost" 
-                className="w-full mt-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                className="w-full mt-4 text-primary hover:text-primary hover:bg-primary/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`${basePath}/chats`);
@@ -485,7 +485,7 @@ export function DashboardView({
                   .filter(member => member.role === 'Agent' || member.role === 'Admin')
                   .slice(0, 4)
                   .map((agent) => (
-                    <div key={agent.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={agent.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="relative">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback className="bg-green-100 text-green-700">{agent.avatar}</AvatarFallback>
@@ -494,7 +494,7 @@ export function DashboardView({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm">{agent.name}</p>
-                        <p className="text-xs text-gray-500">{agent.email}</p>
+                        <p className="text-xs text-muted-foreground">{agent.email}</p>
                       </div>
                       <Badge variant="secondary" className="text-xs">
                         {agent.role}
@@ -502,8 +502,8 @@ export function DashboardView({
                     </div>
                   ))}
                 {existingTeamMembers.filter(m => m.role === 'Agent' || m.role === 'Admin').length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    <Users className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-muted" />
                     <p className="text-sm">No active agents</p>
                   </div>
                 )}

@@ -330,7 +330,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -348,11 +348,11 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 key={item.id}
                 onClick={() => setActive(item.id)}
                 className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${
-                  isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                  isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </div>
               </button>
@@ -363,7 +363,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         {/* Draft status indicator */}
         <div className="mt-4 px-3">
           {draftStatus === 'saving' && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" /> Saving draft...
             </div>
           )}
@@ -397,7 +397,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 size="sm"
                 onClick={publishSettings}
                 disabled={publishing}
-                className="bg-blue-600 hover:bg-blue-700 text-xs"
+                className="bg-primary hover:bg-primary/90 text-xs"
               >
                 {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : 'Publish Changes'}
               </Button>
@@ -413,19 +413,19 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="border rounded-lg p-4">
-                    <div className="text-sm text-gray-500 mb-1">Resolution Rate</div>
+                    <div className="text-sm text-muted-foreground mb-1">Resolution Rate</div>
                     <div className="text-2xl font-bold text-green-600">{stats ? `${stats.resolution_rate}%` : '—'}</div>
-                    <p className="text-xs text-gray-500 mt-1">Conversations resolved by AI</p>
+                    <p className="text-xs text-muted-foreground mt-1">Conversations resolved by AI</p>
                   </div>
                   <div className="border rounded-lg p-4">
-                    <div className="text-sm text-gray-500 mb-1">Total Chats</div>
-                    <div className="text-2xl font-bold text-blue-600">{stats ? stats.total_chats : '—'}</div>
-                    <p className="text-xs text-gray-500 mt-1">All conversations</p>
+                    <div className="text-sm text-muted-foreground mb-1">Total Chats</div>
+                    <div className="text-2xl font-bold text-primary">{stats ? stats.total_chats : '—'}</div>
+                    <p className="text-xs text-muted-foreground mt-1">All conversations</p>
                   </div>
                   <div className="border rounded-lg p-4">
-                    <div className="text-sm text-gray-500 mb-1">AI-Handled Chats</div>
+                    <div className="text-sm text-muted-foreground mb-1">AI-Handled Chats</div>
                     <div className="text-2xl font-bold text-orange-600">{stats ? stats.ai_handled_chats : '—'}</div>
-                    <p className="text-xs text-gray-500 mt-1">With AI enabled</p>
+                    <p className="text-xs text-muted-foreground mt-1">With AI enabled</p>
                   </div>
                 </div>
               </CardContent>
@@ -438,35 +438,35 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">Published Articles</span>
+                        <span className="text-sm text-muted-foreground">Published Articles</span>
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </div>
                       <div className="text-2xl font-bold">{stats?.articles_indexed ?? '—'}</div>
-                      <p className="text-xs text-gray-500 mt-1">In knowledge base</p>
+                      <p className="text-xs text-muted-foreground mt-1">In knowledge base</p>
                     </div>
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">Total Articles</span>
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm text-muted-foreground">Total Articles</span>
+                        <TrendingUp className="h-4 w-4 text-primary" />
                       </div>
                       <div className="text-2xl font-bold">{stats?.total_articles ?? '—'}</div>
-                      <p className="text-xs text-gray-500 mt-1">Including drafts</p>
+                      <p className="text-xs text-muted-foreground mt-1">Including drafts</p>
                     </div>
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">Current Version</span>
-                        <History className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm text-muted-foreground">Current Version</span>
+                        <History className="h-4 w-4 text-primary" />
                       </div>
                       <div className="text-2xl font-bold">{currentVersion || '—'}</div>
-                      <p className="text-xs text-gray-500 mt-1">{lastPublishedAt ? `Published ${new Date(lastPublishedAt).toLocaleDateString()}` : 'Not published yet'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{lastPublishedAt ? `Published ${new Date(lastPublishedAt).toLocaleDateString()}` : 'Not published yet'}</p>
                     </div>
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">AI Status</span>
+                        <span className="text-sm text-muted-foreground">AI Status</span>
                         <TrendingUp className="h-4 w-4 text-green-600" />
                       </div>
                       <div className="text-lg font-bold">{settings.ai_enabled ? 'Active' : 'Disabled'}</div>
-                      <p className="text-xs text-gray-500 mt-1">Bot status</p>
+                      <p className="text-xs text-muted-foreground mt-1">Bot status</p>
                     </div>
                   </div>
 
@@ -475,11 +475,11 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                       <Label className="mb-3 block">Recent Knowledge Base Activity</Label>
                       <div className="space-y-2">
                         {stats.recent_articles.map(a => (
-                          <div key={a.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <div key={a.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                             {a.is_published ? <CheckCircle className="h-4 w-4 text-green-600 shrink-0" /> : <AlertCircle className="h-4 w-4 text-orange-400 shrink-0" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{a.title}</p>
-                              <p className="text-xs text-gray-500">{a.is_published ? 'Published' : 'Draft'} &bull; {new Date(a.created_at).toLocaleDateString()}</p>
+                              <p className="text-xs text-muted-foreground">{a.is_published ? 'Published' : 'Draft'} &bull; {new Date(a.created_at).toLocaleDateString()}</p>
                             </div>
                           </div>
                         ))}
@@ -497,7 +497,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
           <Card>
             <CardHeader><CardTitle>System Prompt</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 This prompt is sent to the AI at the start of every chat conversation. Changes are auto-saved as draft — click "Publish Changes" to go live.
               </p>
               <div className="grid gap-2">
@@ -509,12 +509,12 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                   value={settings.system_prompt || ''}
                   onChange={e => updateSetting('system_prompt', e.target.value)}
                 />
-                <p className="text-xs text-gray-400">{(settings.system_prompt || '').length} / 5000 characters</p>
+                <p className="text-xs text-muted-foreground">{(settings.system_prompt || '').length} / 5000 characters</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <div className="flex gap-2">
-                  <BookOpen className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-700">
+                  <BookOpen className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div className="text-sm text-primary">
                     <strong>Tips:</strong> Mention your company name, what topics the AI should handle, escalation rules, and any phrases to avoid.
                   </div>
                 </div>
@@ -531,7 +531,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-1">
                   <Label className="text-base">Enable AI Bot</Label>
-                  <p className="text-sm text-gray-500">Allow AI to automatically respond to customer inquiries</p>
+                  <p className="text-sm text-muted-foreground">Allow AI to automatically respond to customer inquiries</p>
                 </div>
                 <Checkbox checked={settings.ai_enabled} onCheckedChange={v => updateSetting('ai_enabled', !!v)} />
               </div>
@@ -539,7 +539,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <div className="grid gap-2">
                 <Label htmlFor="ai-name">AI Assistant Name</Label>
                 <Input id="ai-name" value={settings.ai_name} onChange={e => updateSetting('ai_name', e.target.value)} placeholder="AI Assistant" maxLength={50} />
-                <p className="text-sm text-gray-500">The name customers will see when the AI responds</p>
+                <p className="text-sm text-muted-foreground">The name customers will see when the AI responds</p>
               </div>
 
               <div className="grid gap-2">
@@ -598,7 +598,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-1">
                   <Label className="text-base">Auto-learn from Conversations</Label>
-                  <p className="text-sm text-gray-500">AI learns from resolved tickets and approved responses</p>
+                  <p className="text-sm text-muted-foreground">AI learns from resolved tickets and approved responses</p>
                 </div>
                 <Checkbox checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', !!v)} />
               </div>
@@ -625,10 +625,10 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
             <CardContent>
               {versionsLoading ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : versions.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">
+                <div className="text-center py-10 text-muted-foreground">
                   <History className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No published versions yet. Make changes and publish to create your first version.</p>
                 </div>
@@ -638,7 +638,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                     <div key={v.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                          v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                          v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
                         }`}>
                           v{v.version_number}
                         </div>
@@ -649,11 +649,11 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                               <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Live</span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Published {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                             {' '}by {v.published_by}
                           </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {v.ai_name} &bull; {v.response_tone}
                           </p>
                         </div>
@@ -686,25 +686,25 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 <CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5" />Upload Documents</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-500">Upload documents and AI will learn from them. Supported: PDF, DOC, DOCX, TXT, CSV (max 10MB each).</p>
+                <p className="text-sm text-muted-foreground">Upload documents and AI will learn from them. Supported: PDF, DOC, DOCX, TXT, CSV (max 10MB each).</p>
                 <div
                   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleFileDrop}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-border'}`}
                 >
                   {uploading ? (
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                      <p className="text-sm text-gray-500">Uploading and processing...</p>
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Uploading and processing...</p>
                     </div>
                   ) : (
                     <>
                       <Upload className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm text-gray-600 mb-1">Drag & drop files here, or click to browse</p>
-                      <p className="text-xs text-gray-400 mb-3">PDF, DOC, DOCX, TXT, CSV — max 10MB</p>
+                      <p className="text-sm text-muted-foreground mb-1">Drag & drop files here, or click to browse</p>
+                      <p className="text-xs text-muted-foreground mb-3">PDF, DOC, DOCX, TXT, CSV — max 10MB</p>
                       <label className="cursor-pointer">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50 transition-colors">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-md hover:bg-muted/50 transition-colors">
                           <Upload className="h-3.5 w-3.5" /> Choose Files
                         </span>
                         <input type="file" className="hidden" multiple accept=".pdf,.doc,.docx,.txt,.csv" onChange={handleFileInput} />
@@ -721,12 +721,12 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                         <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className={`w-9 h-9 rounded flex items-center justify-center text-xs font-bold shrink-0 ${
-                              doc.file_type === 'pdf' ? 'bg-red-100 text-red-600' : doc.file_type === 'csv' ? 'bg-green-100 text-green-600' : doc.file_type === 'txt' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-600'
+                              doc.file_type === 'pdf' ? 'bg-red-100 text-red-600' : doc.file_type === 'csv' ? 'bg-green-100 text-green-600' : doc.file_type === 'txt' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'
                             }`}>{doc.file_type.toUpperCase()}</div>
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{doc.original_name}</p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-xs text-gray-400">{formatBytes(doc.file_size)}</span>
+                                <span className="text-xs text-muted-foreground">{formatBytes(doc.file_size)}</span>
                                 <span className="text-gray-300">·</span>
                                 {doc.status === 'completed' && <span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle className="h-3 w-3" /> Processed</span>}
                                 {doc.status === 'processing' && <span className="flex items-center gap-1 text-xs text-orange-500"><Loader2 className="h-3 w-3 animate-spin" /> Processing</span>}
@@ -748,7 +748,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5" />Website Crawl</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-500">AI will index all public pages from your website.</p>
+                <p className="text-sm text-muted-foreground">AI will index all public pages from your website.</p>
                 <div className="grid gap-2">
                   <Label>Website URL</Label>
                   <div className="flex gap-2">
@@ -760,7 +760,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                   </div>
                 </div>
                 {generationStatus && (
-                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${generationStatus === 'completed' ? 'bg-green-50 text-green-700' : generationStatus === 'processing' ? 'bg-orange-50 text-orange-700' : 'bg-gray-50 text-gray-600'}`}>
+                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${generationStatus === 'completed' ? 'bg-green-50 text-green-700' : generationStatus === 'processing' ? 'bg-orange-50 text-orange-700' : 'bg-muted/50 text-muted-foreground'}`}>
                     {generationStatus === 'completed' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                     Status: <strong className="capitalize">{generationStatus}</strong>
                   </div>
@@ -772,24 +772,24 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5" />Knowledge Base Articles</CardTitle>
-                  <span className="text-sm text-gray-500">{articles.length} total</span>
+                  <span className="text-sm text-muted-foreground">{articles.length} total</span>
                 </div>
               </CardHeader>
               <CardContent>
                 {articles.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-muted-foreground">
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No articles yet. Upload documents or crawl your website.</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-72 overflow-y-auto">
                     {articles.map((article: KbArticle) => (
-                      <div key={article.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={article.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${article.is_published ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${article.is_published ? 'bg-green-500' : 'bg-muted'}`} />
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate">{article.title}</p>
-                            <p className="text-xs text-gray-500">{article.is_published ? 'Published' : 'Draft'} · {article.category?.name ?? 'Uncategorized'}</p>
+                            <p className="text-xs text-muted-foreground">{article.is_published ? 'Published' : 'Draft'} · {article.category?.name ?? 'Uncategorized'}</p>
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" className="shrink-0" onClick={() => deleteArticle(article.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>

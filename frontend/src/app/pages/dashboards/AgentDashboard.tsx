@@ -598,7 +598,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -693,7 +693,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                   <div className="pt-2 border-t">
                     <Button 
                       size="sm"
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-primary hover:bg-primary/90"
                       onClick={() => {
                         setSelectedProjects(tempSelectedProjects);
                         setProjectPopoverOpen(false);
@@ -734,7 +734,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             )}
             
             <div className="relative w-96 hidden md:block">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search tickets, chats, customers..."
                 className="pl-10"
@@ -772,51 +772,51 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                 </div>
                 <div className="flex items-center justify-between px-4 py-3 border-b">
                   <h3 className="font-semibold text-sm">Notifications</h3>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
                     {notifications.filter((n: any) => !n.read).length} New
                   </Badge>
                 </div>
                 <div className="max-h-96 overflow-y-auto">
                   {notificationsLoading ? (
                     <div className="px-4 py-8 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
-                      <p className="text-sm text-gray-500">Loading notifications...</p>
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
+                      <p className="text-sm text-muted-foreground">Loading notifications...</p>
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="px-4 py-8 text-center">
-                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p className="text-sm text-gray-500">No notifications yet</p>
+                      <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No notifications yet</p>
                     </div>
                   ) : (
                     <div className="py-1">
                       {notifications.map((notification: any) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-2 ${
-                            notification.read ? 'border-transparent' : 'border-blue-600 bg-blue-50/50'
+                          className={`px-4 py-3 hover:bg-muted/50 cursor-pointer border-l-2 ${
+                            notification.read ? 'border-transparent' : 'border-primary bg-primary/10'
                           }`}
                         >
                           <div className="flex items-start gap-3">
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                notification.type === 'chat' ? 'bg-blue-100' :
+                                notification.type === 'chat' ? 'bg-primary/10' :
                                 notification.type === 'ticket' ? 'bg-orange-100' :
                                 notification.type === 'transfer' ? 'bg-green-100' :
-                                'bg-purple-100'
+                                'bg-secondary/10'
                               }`}
                             >
-                              {notification.type === 'chat' && <MessageCircle className="h-4 w-4 text-blue-600" />}
+                              {notification.type === 'chat' && <MessageCircle className="h-4 w-4 text-primary" />}
                               {notification.type === 'ticket' && <Ticket className="h-4 w-4 text-orange-600" />}
                               {notification.type === 'transfer' && <ArrowRightLeft className="h-4 w-4 text-green-600" />}
-                              {notification.type === 'article' && <FileText className="h-4 w-4 text-purple-600" />}
+                              {notification.type === 'article' && <FileText className="h-4 w-4 text-secondary" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                              <p className="text-xs text-gray-600 mt-0.5">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{notification.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                             </div>
                             {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-600 rounded-full shrink-0 mt-1"></div>
+                              <div className="w-2 h-2 bg-primary rounded-full shrink-0 mt-1"></div>
                             )}
                           </div>
                         </div>
@@ -827,7 +827,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                 <div className="px-4 py-3 border-t">
                   <Link
                     to={`${basePath}/notifications`}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-sm text-primary hover:text-primary/90 font-medium"
                   >
                     View all notifications
                   </Link>
@@ -860,7 +860,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
               </Button>
             </div>
             <Button 
-              className="bg-blue-600 hover:bg-blue-700 hidden md:inline-flex"
+              className="bg-primary hover:bg-primary/90 hidden md:inline-flex"
               onClick={() => setCreateTicketDialogOpen(true)}
             >
               + New Ticket
@@ -869,21 +869,21 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             <div className="hidden md:flex items-center gap-3 pl-4 border-l">
               <div className="relative">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-600 text-white">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
                     {user ? `${user.first_name[0]}${user.last_name[0]}` : '??'}
                   </AvatarFallback>
                 </Avatar>
                 <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
                   userStatus === 'online' ? 'bg-green-500' :
                   userStatus === 'away' ? 'bg-yellow-500' :
-                  'bg-gray-400'
-                }`}></span>
+                  'bg-muted-foreground'
+                }`} />
               </div>
               <div>
                 <div className="text-sm font-semibold">
                   {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                 </div>
-                <div className="text-xs text-gray-500 capitalize">{user?.role || role}</div>
+                <div className="text-xs text-muted-foreground capitalize">{user?.role || role}</div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -919,7 +919,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
         </header>
 
         {/* Content */}
-        <main className={`flex-1 overflow-y-auto bg-gray-50 ${activeSection === 'chats' ? 'p-0' : 'p-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-muted/50 ${activeSection === 'chats' ? 'p-0' : 'p-6'}`}>
           {renderContent()}
         </main>
 

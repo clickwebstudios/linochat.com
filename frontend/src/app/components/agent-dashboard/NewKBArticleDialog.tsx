@@ -154,7 +154,7 @@ export function NewKBArticleDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
+            <FileText className="h-5 w-5 text-primary" />
             New Knowledge Base Article
           </DialogTitle>
           <DialogDescription>
@@ -171,35 +171,35 @@ export function NewKBArticleDialog({
           {/* Step 1: Project */}
           <div className="flex items-center gap-1.5">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step === 1 ? 'bg-blue-600 text-white' : 'bg-green-100 text-green-700'
+              step === 1 ? 'bg-primary text-primary-foreground' : 'bg-green-100 text-green-700'
             }`}>
               {step > 1 ? <Check className="h-4 w-4" /> : '1'}
             </div>
-            <span className={`text-sm ${step === 1 ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+            <span className={`text-sm ${step === 1 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
               Project
             </span>
           </div>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-border" />
           {/* Step 2: Category */}
           <div className="flex items-center gap-1.5">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step === 2 ? 'bg-blue-600 text-white' : step > 2 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+              step === 2 ? 'bg-primary text-primary-foreground' : step > 2 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
             }`}>
               {step > 2 ? <Check className="h-4 w-4" /> : '2'}
             </div>
-            <span className={`text-sm ${step === 2 ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+            <span className={`text-sm ${step === 2 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
               Category
             </span>
           </div>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-border" />
           {/* Step 3: Creation Method */}
           <div className="flex items-center gap-1.5">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step === 3 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+              step === 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
             }`}>
               3
             </div>
-            <span className={`text-sm ${step === 3 ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+            <span className={`text-sm ${step === 3 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
               Method
             </span>
           </div>
@@ -220,7 +220,7 @@ export function NewKBArticleDialog({
             >
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {projects.length === 0 ? (
-                  <div className="text-center py-4 text-sm text-gray-500">
+                  <div className="text-center py-4 text-sm text-muted-foreground">
                     No projects available.
                   </div>
                 ) : (
@@ -232,8 +232,8 @@ export function NewKBArticleDialog({
                         htmlFor={`proj-${project.id}`}
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           selectedProjectId === project.id
-                            ? 'border-blue-300 bg-blue-50'
-                            : 'border-gray-200 hover:bg-gray-50'
+                            ? 'border-primary/30 bg-primary/10'
+                            : 'border-border hover:bg-muted/50'
                         }`}
                       >
                         <RadioGroupItem value={project.id} id={`proj-${project.id}`} />
@@ -243,7 +243,7 @@ export function NewKBArticleDialog({
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{project.name}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {projectCategoryCount} categor{projectCategoryCount !== 1 ? 'ies' : 'y'}
                           </p>
                         </div>
@@ -259,7 +259,7 @@ export function NewKBArticleDialog({
                 Cancel
               </Button>
               <Button
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 disabled={!canProceedToStep2}
                 onClick={handleNext}
               >
@@ -275,12 +275,12 @@ export function NewKBArticleDialog({
           <div className="space-y-4 py-2">
             {/* Selected project summary */}
             {selectedProject && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-gray-50 border text-sm">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 border text-sm">
                 <div
                   className="h-3 w-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: selectedProject.color }}
                 />
-                <span className="text-gray-600">Project:</span>
+                <span className="text-muted-foreground">Project:</span>
                 <span className="font-medium">{selectedProject.name}</span>
               </div>
             )}
@@ -306,24 +306,24 @@ export function NewKBArticleDialog({
                       htmlFor={`cat-${category.id}`}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                         selectedCategoryId === category.id && !isCreatingNew
-                          ? 'border-blue-300 bg-blue-50'
-                          : 'border-gray-200 hover:bg-gray-50'
+                          ? 'border-primary/30 bg-primary/10'
+                          : 'border-border hover:bg-muted/50'
                       }`}
                     >
                       <RadioGroupItem value={category.id} id={`cat-${category.id}`} />
-                      <div className="h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <FolderOpen className="h-4 w-4 text-blue-600" />
+                      <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FolderOpen className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{category.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {category.articleCount} article{category.articleCount !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </label>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-sm text-gray-500">
+                  <div className="text-center py-4 text-sm text-muted-foreground">
                     No categories yet for this project. Create one below.
                   </div>
                 )}
@@ -335,8 +335,8 @@ export function NewKBArticleDialog({
                   htmlFor="cat-new"
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                     isCreatingNew
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-dashed border-gray-300 hover:bg-gray-50'
+                      ? 'border-primary/30 bg-primary/10'
+                      : 'border-dashed border-border hover:bg-muted/50'
                   }`}
                 >
                   <RadioGroupItem value="__new__" id="cat-new" />
@@ -348,7 +348,7 @@ export function NewKBArticleDialog({
 
                 {isCreatingNew && (
                   <div className="mt-3 ml-11">
-                    <Label htmlFor="new-cat-name" className="text-sm text-gray-600">
+                    <Label htmlFor="new-cat-name" className="text-sm text-muted-foreground">
                       Category Name
                     </Label>
                     <Input
@@ -374,7 +374,7 @@ export function NewKBArticleDialog({
                   Cancel
                 </Button>
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                   disabled={!canProceedToStep3}
                   onClick={handleNext}
                 >
@@ -390,21 +390,21 @@ export function NewKBArticleDialog({
         {step === 3 && (
           <div className="space-y-4 py-2">
             {/* Selected project & category summary */}
-            <div className="flex items-center gap-3 px-3 py-2 rounded-md bg-gray-50 border text-sm flex-wrap">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/50 border text-sm flex-wrap">
               {selectedProject && (
                 <div className="flex items-center gap-1.5">
                   <div
                     className="h-3 w-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: selectedProject.color }}
                   />
-                  <span className="text-gray-600">Project:</span>
+                  <span className="text-muted-foreground">Project:</span>
                   <span className="font-medium">{selectedProject.name}</span>
                 </div>
               )}
-              <span className="text-gray-300">|</span>
+              <span className="text-border">|</span>
               <div className="flex items-center gap-1.5">
-                <FolderOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                <span className="text-gray-600">Category:</span>
+                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-muted-foreground">Category:</span>
                 <span className="font-medium">{getSelectedCategoryName()}</span>
               </div>
             </div>
@@ -416,24 +416,24 @@ export function NewKBArticleDialog({
                 type="button"
                 className={`relative flex flex-col items-center gap-3 p-5 rounded-xl border-2 cursor-pointer transition-all text-center ${
                   creationMethod === 'scratch'
-                    ? 'border-blue-500 bg-blue-50 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-primary bg-primary/10 shadow-sm'
+                    : 'border-border hover:border-border hover:bg-muted/50'
                 }`}
                 onClick={() => setCreationMethod('scratch')}
               >
                 {creationMethod === 'scratch' && (
-                  <div className="absolute top-2 right-2 h-5 w-5 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Check className="h-3 w-3 text-white" />
+                  <div className="absolute top-2 right-2 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="h-3 w-3 text-primary-foreground" />
                   </div>
                 )}
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                  creationMethod === 'scratch' ? 'bg-blue-200' : 'bg-gray-100'
+                  creationMethod === 'scratch' ? 'bg-primary/20' : 'bg-muted'
                 }`}>
-                  <PenLine className={`h-6 w-6 ${creationMethod === 'scratch' ? 'text-blue-700' : 'text-gray-500'}`} />
+                  <PenLine className={`h-6 w-6 ${creationMethod === 'scratch' ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
                   <p className="font-medium text-sm">Create from Scratch</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Write your article manually using the editor
                   </p>
                 </div>
@@ -444,24 +444,24 @@ export function NewKBArticleDialog({
                 type="button"
                 className={`relative flex flex-col items-center gap-3 p-5 rounded-xl border-2 cursor-pointer transition-all text-center ${
                   creationMethod === 'ai'
-                    ? 'border-purple-500 bg-purple-50 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-secondary bg-secondary/10 shadow-sm'
+                    : 'border-border hover:border-border hover:bg-muted/50'
                 }`}
                 onClick={() => setCreationMethod('ai')}
               >
                 {creationMethod === 'ai' && (
-                  <div className="absolute top-2 right-2 h-5 w-5 bg-purple-600 rounded-full flex items-center justify-center">
-                    <Check className="h-3 w-3 text-white" />
+                  <div className="absolute top-2 right-2 h-5 w-5 bg-secondary rounded-full flex items-center justify-center">
+                    <Check className="h-3 w-3 text-secondary-foreground" />
                   </div>
                 )}
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                  creationMethod === 'ai' ? 'bg-purple-200' : 'bg-gray-100'
+                  creationMethod === 'ai' ? 'bg-secondary/20' : 'bg-muted'
                 }`}>
-                  <Bot className={`h-6 w-6 ${creationMethod === 'ai' ? 'text-purple-700' : 'text-gray-500'}`} />
+                  <Bot className={`h-6 w-6 ${creationMethod === 'ai' ? 'text-secondary' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
                   <p className="font-medium text-sm">Generate with AI</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Auto-generate from a website page or section
                   </p>
                 </div>
@@ -470,15 +470,15 @@ export function NewKBArticleDialog({
 
             {/* AI Source Input */}
             {creationMethod === 'ai' && (
-              <div className="space-y-3 rounded-lg border border-purple-200 bg-purple-50/50 p-4">
+              <div className="space-y-3 rounded-lg border border-secondary/20 bg-secondary/5 p-4">
                 {/* Source type toggle */}
-                <div className="flex rounded-lg bg-purple-100/60 p-0.5">
+                <div className="flex rounded-lg bg-secondary/10 p-0.5">
                   <button
                     type="button"
                     className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${
                       aiSourceType === 'url'
-                        ? 'bg-white text-purple-700 shadow-sm font-medium'
-                        : 'text-purple-600 hover:text-purple-700'
+                        ? 'bg-white text-secondary shadow-sm font-medium'
+                        : 'text-secondary/70 hover:text-secondary'
                     }`}
                     onClick={() => setAiSourceType('url')}
                   >
@@ -489,8 +489,8 @@ export function NewKBArticleDialog({
                     type="button"
                     className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${
                       aiSourceType === 'description'
-                        ? 'bg-white text-purple-700 shadow-sm font-medium'
-                        : 'text-purple-600 hover:text-purple-700'
+                        ? 'bg-white text-secondary shadow-sm font-medium'
+                        : 'text-secondary/70 hover:text-secondary'
                     }`}
                     onClick={() => setAiSourceType('description')}
                   >
@@ -503,7 +503,7 @@ export function NewKBArticleDialog({
                 {aiSourceType === 'url' && (
                   <div className="space-y-2">
                     <Label htmlFor="ai-url" className="flex items-center gap-2 text-sm font-medium">
-                      <Globe className="h-4 w-4 text-purple-600" />
+                      <Globe className="h-4 w-4 text-secondary" />
                       Website URL
                     </Label>
                     <Input
@@ -515,7 +515,7 @@ export function NewKBArticleDialog({
                       className="bg-white"
                       autoFocus
                     />
-                    <p className="text-xs text-purple-600 flex items-center gap-1">
+                    <p className="text-xs text-secondary flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       AI will extract and structure content from this page into a KB article
                     </p>
@@ -526,7 +526,7 @@ export function NewKBArticleDialog({
                 {aiSourceType === 'description' && (
                   <div className="space-y-2">
                     <Label htmlFor="ai-description" className="flex items-center gap-2 text-sm font-medium">
-                      <AlignLeft className="h-4 w-4 text-purple-600" />
+                      <AlignLeft className="h-4 w-4 text-secondary" />
                       Describe Your Article
                     </Label>
                     <Textarea
@@ -537,7 +537,7 @@ export function NewKBArticleDialog({
                       className="bg-white min-h-[100px] resize-none"
                       autoFocus
                     />
-                    <p className="text-xs text-purple-600 flex items-center gap-1">
+                    <p className="text-xs text-secondary flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       AI will generate a full article based on your description
                     </p>
@@ -557,7 +557,7 @@ export function NewKBArticleDialog({
                 </Button>
                 {creationMethod === 'scratch' && (
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                     onClick={handleFinish}
                   >
                     <PenLine className="h-4 w-4 mr-2" />
@@ -566,7 +566,7 @@ export function NewKBArticleDialog({
                 )}
                 {creationMethod === 'ai' && (
                   <Button
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-secondary hover:bg-secondary/90"
                     disabled={
                       (aiSourceType === 'url' ? !websiteUrl.trim() : !description.trim()) || isGenerating
                     }

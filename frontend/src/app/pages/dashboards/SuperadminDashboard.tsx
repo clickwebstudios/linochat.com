@@ -327,7 +327,7 @@ export default function SuperadminDashboard() {
     id: chat.id,
     name: chat.customer_name,
     initials: chat.customer_name.substring(0, 2).toUpperCase(),
-    avatarColor: 'bg-blue-600',
+    avatarColor: 'bg-primary',
     status: chat.status as 'active' | 'waiting' | 'resolved',
     company: chat.company,
     chatId: chat.chat_id,
@@ -337,7 +337,7 @@ export default function SuperadminDashboard() {
     msgs: chat.messages_count,
     duration: '5m',
     respTime: '1m',
-    borderColor: chat.status === 'active' ? 'border-green-500' : chat.status === 'waiting' ? 'border-orange-500' : chat.status === 'ai_handling' ? 'border-purple-500' : 'border-blue-500',
+    borderColor: chat.status === 'active' ? 'border-green-500' : chat.status === 'waiting' ? 'border-orange-500' : chat.status === 'ai_handling' ? 'border-purple-500' : 'border-primary',
     messages: (chat.messages || []).map(m => ({
       from: m.from,
       text: m.text,
@@ -350,7 +350,7 @@ export default function SuperadminDashboard() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
           <div className="flex items-center gap-4">
             <CompanySwitcher 
               selectedCompanyId={selectedCompanyId}
@@ -363,7 +363,7 @@ export default function SuperadminDashboard() {
             />
             {!['overview', 'companies', 'team', 'permissions', 'settings', 'analytics', 'logs'].includes(activeSection) && <ProjectSelector />}
             <div className="relative w-96">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search users, settings..." className="pl-10" />
             </div>
           </div>
@@ -371,15 +371,15 @@ export default function SuperadminDashboard() {
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer">
+                <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-muted/50 rounded-lg p-2 transition-colors cursor-pointer">
                   <div className="text-right">
                     <div className="text-sm font-semibold">{user?.first_name || 'Admin User'}</div>
-                    <div className="text-xs text-gray-500">{user?.role || 'Superadmin'}</div>
+                    <div className="text-xs text-muted-foreground">{user?.role || 'Superadmin'}</div>
                   </div>
                   <Avatar>
-                    <AvatarFallback className="bg-purple-600 text-white">{(user?.first_name || 'AD').substring(0,2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="bg-secondary text-primary-foreground">{(user?.first_name || 'AD').substring(0,2).toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -403,7 +403,7 @@ export default function SuperadminDashboard() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 px-6 pt-6">
+        <main className="flex-1 overflow-y-auto bg-muted/50 px-6 pt-6">
           {activeSection === 'overview' && (
             <OverviewSection
               revenueData={platformStats?.revenue_data || []}
@@ -435,7 +435,7 @@ export default function SuperadminDashboard() {
                 <CardTitle>Company Management</CardTitle>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="bg-blue-600">
+                    <Button className="bg-primary">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Company
                     </Button>
@@ -458,7 +458,7 @@ export default function SuperadminDashboard() {
                           <option>Enterprise</option>
                         </select>
                       </div>
-                      <Button className="w-full bg-blue-600">Create Company</Button>
+                      <Button className="w-full bg-primary">Create Company</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -466,7 +466,7 @@ export default function SuperadminDashboard() {
               <CardContent>
                 {isLoadingCompanies ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <Table>
@@ -484,19 +484,19 @@ export default function SuperadminDashboard() {
                       {filteredCompanies.map((company) => (
                         <TableRow 
                           key={company.id} 
-                          className="hover:bg-gray-50 cursor-pointer"
+                          className="hover:bg-muted/50 cursor-pointer"
                           onClick={() => { setViewingCompanyId(company.id); setCompanyDetailTab('overview'); }}
                         >
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-blue-600 text-white">
+                                <AvatarFallback className="bg-primary text-primary-foreground">
                                   {company.name.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
                                 <p className="font-semibold">{company.name}</p>
-                                <p className="text-xs text-gray-500 font-normal">ID: {company.id}</p>
+                                <p className="text-xs text-muted-foreground font-normal">ID: {company.id}</p>
                               </div>
                             </div>
                           </TableCell>
@@ -505,10 +505,10 @@ export default function SuperadminDashboard() {
                               variant="outline"
                               className={
                                 company.plan === 'Enterprise' 
-                                  ? 'border-purple-600 text-purple-600'
+                                  ? 'border-secondary text-secondary'
                                   : company.plan === 'Pro'
-                                  ? 'border-blue-600 text-blue-600'
-                                  : 'border-gray-600 text-gray-600'
+                                  ? 'border-primary text-primary'
+                                  : 'border-muted-foreground text-muted-foreground'
                               }
                             >
                               {company.plan}
@@ -517,7 +517,7 @@ export default function SuperadminDashboard() {
                           <TableCell>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <FolderKanban className="h-4 w-4 text-blue-600" />
+                                <FolderKanban className="h-4 w-4 text-primary" />
                                 <span className="font-semibold">{company.projects_count}</span>
                               </div>
                             </div>
@@ -583,7 +583,7 @@ export default function SuperadminDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Project Management</CardTitle>
-                <Button className="bg-blue-600" onClick={() => setAddProjectDialogOpen(true)}>
+                <Button className="bg-primary" onClick={() => setAddProjectDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Project
                 </Button>
@@ -602,7 +602,7 @@ export default function SuperadminDashboard() {
               <CardContent>
                 {isLoadingProjects ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <Table>
@@ -619,9 +619,9 @@ export default function SuperadminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {filteredProjects.map((project) => (
-                        <TableRow key={project.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/superadmin/project/${project.id}`)}>
+                        <TableRow key={project.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/superadmin/project/${project.id}`)}>
                           <TableCell>
-                            <Link to={`/superadmin/project/${project.id}`} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                            <Link to={`/superadmin/project/${project.id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback>{project.name[0].toUpperCase()}</AvatarFallback>
                               </Avatar>
@@ -655,7 +655,7 @@ export default function SuperadminDashboard() {
                 <CardTitle>Agent Management</CardTitle>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="bg-blue-600">
+                    <Button className="bg-primary">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Agent
                     </Button>
@@ -682,7 +682,7 @@ export default function SuperadminDashboard() {
                           ))}
                         </select>
                       </div>
-                      <Button className="w-full bg-blue-600">Add Agent</Button>
+                      <Button className="w-full bg-primary">Add Agent</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -690,7 +690,7 @@ export default function SuperadminDashboard() {
               <CardContent>
                 {isLoadingAgents ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <Table>
@@ -708,13 +708,13 @@ export default function SuperadminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {filteredAgents.map((agent) => (
-                        <TableRow key={agent.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/superadmin/agent/${agent.id}`)}>
+                        <TableRow key={agent.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/superadmin/agent/${agent.id}`)}>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback>{agent.name[0].toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <span className="hover:text-blue-600 transition-colors font-bold">{agent.name}</span>
+                              <span className="hover:text-primary transition-colors font-bold">{agent.name}</span>
                             </div>
                           </TableCell>
                           <TableCell>{agent.email}</TableCell>
@@ -727,7 +727,7 @@ export default function SuperadminDashboard() {
                                   ? 'text-green-600 border-green-600' 
                                   : agent.status === 'Away' 
                                   ? 'text-yellow-600 border-yellow-600' 
-                                  : 'text-gray-600 border-gray-600'
+                                  : 'text-muted-foreground border-muted-foreground'
                               }
                             >
                               {agent.status}
@@ -770,9 +770,9 @@ export default function SuperadminDashboard() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold">Starter Plan</h4>
-                            <p className="text-sm text-gray-500">Basic features for small teams</p>
+                            <p className="text-sm text-muted-foreground">Basic features for small teams</p>
                           </div>
-                          <Badge variant="outline" className="text-gray-600 border-gray-600">Active</Badge>
+                          <Badge variant="outline" className="text-muted-foreground border-muted-foreground">Active</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -791,28 +791,28 @@ export default function SuperadminDashboard() {
                         <div>
                           <label className="text-sm mb-2 block font-semibold">Plan Benefits</label>
                           <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Up to 5 team members</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Basic chat widget</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Email support</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <Input placeholder="Add new benefit..." className="flex-1" />
-                            <Button size="sm" className="bg-blue-600">
+                            <Button size="sm" className="bg-primary">
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
@@ -823,9 +823,9 @@ export default function SuperadminDashboard() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold">Pro Plan</h4>
-                            <p className="text-sm text-gray-500">Advanced features for growing teams</p>
+                            <p className="text-sm text-muted-foreground">Advanced features for growing teams</p>
                           </div>
-                          <Badge variant="outline" className="text-blue-600 border-blue-600">Active</Badge>
+                          <Badge variant="outline" className="text-primary border-primary">Active</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -844,34 +844,34 @@ export default function SuperadminDashboard() {
                         <div>
                           <label className="text-sm mb-2 block font-semibold">Plan Benefits</label>
                           <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Up to 25 team members</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Advanced chat widget with customization</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Priority email & chat support</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Advanced analytics</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <Input placeholder="Add new benefit..." className="flex-1" />
-                            <Button size="sm" className="bg-blue-600">
+                            <Button size="sm" className="bg-primary">
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
@@ -882,9 +882,9 @@ export default function SuperadminDashboard() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold">Enterprise Plan</h4>
-                            <p className="text-sm text-gray-500">Full features for large organizations</p>
+                            <p className="text-sm text-muted-foreground">Full features for large organizations</p>
                           </div>
-                          <Badge variant="outline" className="text-purple-600 border-purple-600">Active</Badge>
+                          <Badge variant="outline" className="text-secondary border-secondary">Active</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -903,40 +903,40 @@ export default function SuperadminDashboard() {
                         <div>
                           <label className="text-sm mb-2 block font-semibold">Plan Benefits</label>
                           <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Unlimited team members</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">White-label solution</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">24/7 phone & email support</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Custom integrations</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                               <span className="text-sm">Dedicated account manager</span>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <Trash2 className="h-3 w-3 text-gray-500" />
+                                <Trash2 className="h-3 w-3 text-muted-foreground" />
                               </Button>
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <Input placeholder="Add new benefit..." className="flex-1" />
-                            <Button size="sm" className="bg-blue-600">
+                            <Button size="sm" className="bg-primary">
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
@@ -947,7 +947,7 @@ export default function SuperadminDashboard() {
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h4 className="font-semibold">Trial Period</h4>
-                            <p className="text-sm text-gray-500">Free trial duration for new users</p>
+                            <p className="text-sm text-muted-foreground">Free trial duration for new users</p>
                           </div>
                           <Switch defaultChecked />
                         </div>
@@ -957,7 +957,7 @@ export default function SuperadminDashboard() {
                         </div>
                       </div>
 
-                      <Button className="bg-blue-600 w-full">Save Pricing Changes</Button>
+                      <Button className="bg-primary w-full">Save Pricing Changes</Button>
                 </div>
               </CardContent>
             </Card>
@@ -972,23 +972,23 @@ export default function SuperadminDashboard() {
                 <CardContent>
                   {isLoadingStats ? (
                     <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 bg-blue-50 rounded-lg">
-                          <p className="text-sm text-gray-600 mb-1">Total Tickets</p>
+                        <div className="p-4 bg-primary/10 rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">Total Tickets</p>
                           <p className="text-2xl font-bold">{platformStats?.total_tickets || 0}</p>
                           <p className="text-xs text-green-600 mt-1">+8% this month</p>
                         </div>
                         <div className="p-4 bg-green-50 rounded-lg">
-                          <p className="text-sm text-gray-600 mb-1">Avg Response Time</p>
+                          <p className="text-sm text-muted-foreground mb-1">Avg Response Time</p>
                           <p className="text-2xl font-bold">{platformStats?.avg_response_time || '0h'}</p>
                           <p className="text-xs text-green-600 mt-1">-12% improvement</p>
                         </div>
-                        <div className="p-4 bg-purple-50 rounded-lg">
-                          <p className="text-sm text-gray-600 mb-1">CSAT Score</p>
+                        <div className="p-4 bg-secondary/10 rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">CSAT Score</p>
                           <p className="text-2xl font-bold">{platformStats?.csat_score || '0%'}</p>
                           <p className="text-xs text-green-600 mt-1">+2% this month</p>
                         </div>
@@ -999,7 +999,7 @@ export default function SuperadminDashboard() {
                           <XAxis dataKey="month" />
                           <YAxis />
                           <Tooltip />
-                          <Line type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2} />
+                          <Line type="monotone" dataKey="users" stroke="var(--primary)" strokeWidth={2} />
                         </LineChart>
                       </ResponsiveContainer>
                     </>
@@ -1032,13 +1032,13 @@ export default function SuperadminDashboard() {
                         <TableCell>Direct</TableCell>
                         <TableCell>8,320</TableCell>
                         <TableCell>890</TableCell>
-                        <TableCell><Badge className="bg-blue-600">10.7%</Badge></TableCell>
+                        <TableCell><Badge className="bg-primary">10.7%</Badge></TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell>Referral</TableCell>
                         <TableCell>4,680</TableCell>
                         <TableCell>420</TableCell>
-                        <TableCell><Badge className="bg-purple-600">8.97%</Badge></TableCell>
+                        <TableCell><Badge className="bg-secondary">8.97%</Badge></TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -1054,33 +1054,33 @@ export default function SuperadminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 14:32:18</span>
-                    <Badge variant="outline" className="text-blue-600 border-blue-600">INFO</Badge>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 14:32:18</span>
+                    <Badge variant="outline" className="text-primary border-primary">INFO</Badge>
                     <span>User authentication successful: admin@chatsupport.com</span>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 14:28:45</span>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 14:28:45</span>
                     <Badge variant="outline" className="text-green-600 border-green-600">SUCCESS</Badge>
                     <span>Database backup completed: backup_20241220.sql</span>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 14:15:03</span>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 14:15:03</span>
                     <Badge variant="outline" className="text-yellow-600 border-yellow-600">WARNING</Badge>
                     <span>High CPU usage detected: 85% utilization</span>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 13:59:22</span>
-                    <Badge variant="outline" className="text-blue-600 border-blue-600">INFO</Badge>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 13:59:22</span>
+                    <Badge variant="outline" className="text-primary border-primary">INFO</Badge>
                     <span>Email notification sent to 45 users</span>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 13:42:11</span>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 13:42:11</span>
                     <Badge variant="outline" className="text-red-600 border-red-600">ERROR</Badge>
                     <span>Failed to connect to external API: timeout after 30s</span>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg font-mono text-xs">
-                    <span className="text-gray-500">2024-12-20 13:30:55</span>
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg font-mono text-xs">
+                    <span className="text-muted-foreground">2024-12-20 13:30:55</span>
                     <Badge variant="outline" className="text-green-600 border-green-600">SUCCESS</Badge>
                     <span>Scheduled task completed: ticket_cleanup_job</span>
                   </div>

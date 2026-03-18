@@ -162,26 +162,26 @@ export function InviteMemberDialog({ open, onOpenChange, projectId, onSuccess }:
                 <DropdownMenuItem onClick={() => setNewInviteRole('Admin')}>Admin</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button onClick={handleAddEmailInvite} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleAddEmailInvite} className="bg-primary hover:bg-primary/90">
               <Mail className="h-4 w-4 mr-2" />
               Add
             </Button>
           </div>
 
           {emailInvites.length > 0 && (
-            <div className="border rounded-lg p-3 space-y-2 bg-gray-50">
-              <Label className="text-xs text-gray-600">Pending Invitations ({emailInvites.length})</Label>
+            <div className="border rounded-lg p-3 space-y-2 bg-muted/50">
+              <Label className="text-xs text-muted-foreground">Pending Invitations ({emailInvites.length})</Label>
               {emailInvites.map((invite, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                <div key={index} className="flex items-center justify-between p-2 bg-card rounded border">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-blue-600" />
+                    <Mail className="h-4 w-4 text-primary" />
                     <div>
                       <p className="text-sm font-medium">{invite.email}</p>
-                      <p className="text-xs text-gray-500">Role: {invite.role}</p>
+                      <p className="text-xs text-muted-foreground">Role: {invite.role}</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveEmailInvite(invite.email)}>
-                    <X className="h-4 w-4 text-gray-500" />
+                    <X className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
               ))}
@@ -190,13 +190,13 @@ export function InviteMemberDialog({ open, onOpenChange, projectId, onSuccess }:
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {emailInvites.length > 0 ? `${emailInvites.length} invitation${emailInvites.length > 1 ? 's' : ''} pending` : 'No invitations added'}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={handleAddMembers}
               disabled={emailInvites.length === 0 || !projectId || isSubmitting}
             >
@@ -248,7 +248,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-blue-600" />
+            <Ticket className="h-5 w-5 text-primary" />
             Create New Ticket
           </DialogTitle>
           <DialogDescription>
@@ -281,15 +281,15 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
               <Label htmlFor="new-ticket-description">Description *</Label>
               <div className="flex items-center gap-2">
                 <Switch id="new-ticket-ai-autofill" checked={newTicket.aiAutoFill} onCheckedChange={(checked) => setNewTicket({ ...newTicket, aiAutoFill: checked })} />
-                <Label htmlFor="new-ticket-ai-autofill" className="text-sm text-gray-600 cursor-pointer flex items-center gap-1">
-                  <Bot className="h-3.5 w-3.5 text-purple-600" />
+                <Label htmlFor="new-ticket-ai-autofill" className="text-sm text-muted-foreground cursor-pointer flex items-center gap-1">
+                  <Bot className="h-3.5 w-3.5 text-secondary" />
                   AI Auto-fill
                 </Label>
               </div>
             </div>
             <Textarea id="new-ticket-description" placeholder="Detailed description of the issue..." value={newTicket.description} onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })} rows={5} />
             {newTicket.aiAutoFill && (
-              <p className="text-xs text-purple-600 flex items-center gap-1">
+              <p className="text-xs text-secondary flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
                 AI will automatically categorize and suggest solutions based on this description
               </p>
@@ -302,7 +302,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
               <Select value={newTicket.priority} onValueChange={(value: 'low' | 'medium' | 'high') => setNewTicket({ ...newTicket, priority: value })}>
                 <SelectTrigger id="new-ticket-priority"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-gray-400" />Low</div></SelectItem>
+                  <SelectItem value="low"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-muted-foreground" />Low</div></SelectItem>
                   <SelectItem value="medium"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" />Medium</div></SelectItem>
                   <SelectItem value="high"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" />High</div></SelectItem>
                 </SelectContent>
@@ -313,7 +313,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
               <Select value={newTicket.assignTo} onValueChange={(value) => setNewTicket({ ...newTicket, assignTo: value })}>
                 <SelectTrigger id="new-ticket-assign"><SelectValue placeholder="Select agent (optional)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned"><div className="flex items-center gap-2"><User className="h-4 w-4 text-gray-400" />Unassigned</div></SelectItem>
+                  <SelectItem value="unassigned"><div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" />Unassigned</div></SelectItem>
                   {projectAgents.map((agent: any) => (
                     <SelectItem key={agent.id} value={agent.id}>
                       <div className="flex items-center gap-2">
@@ -328,12 +328,12 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
           </div>
 
           {newTicket.aiAutoFill && newTicket.description && (
-            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-purple-900">
+            <div className="rounded-lg border border-secondary/20 bg-secondary/10 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-secondary">
                 <Bot className="h-4 w-4" />
                 AI Suggestions
               </div>
-              <div className="space-y-2 text-sm text-purple-800">
+              <div className="space-y-2 text-sm text-secondary">
                 <div className="flex items-start gap-2"><Tag className="h-4 w-4 mt-0.5 flex-shrink-0" /><div><span className="font-medium">Suggested Category:</span> Technical Support</div></div>
                 <div className="flex items-start gap-2"><Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" /><div><span className="font-medium">Similar Tickets:</span> 3 related tickets found</div></div>
                 <div className="flex items-start gap-2"><FileText className="h-4 w-4 mt-0.5 flex-shrink-0" /><div><span className="font-medium">Knowledge Base:</span> 2 relevant articles available</div></div>
@@ -344,7 +344,7 @@ export function CreateTicketDialogPD({ open, onOpenChange, newTicket, setNewTick
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => { onOpenChange(false); resetTicket(); }}>Cancel</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onOpenChange(false); resetTicket(); }} disabled={!newTicket.subject || !newTicket.description || !newTicket.customerId}>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => { onOpenChange(false); resetTicket(); }} disabled={!newTicket.subject || !newTicket.description || !newTicket.customerId}>
             <Plus className="h-4 w-4 mr-2" />
             Create Ticket
           </Button>
@@ -408,7 +408,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
           <div className="space-y-2">
             <Label htmlFor="edit-project-website">Website URL</Label>
             <Input id="edit-project-website" type="url" placeholder="https://www.example.com" value={editedProject.website || ''} onChange={(e) => setEditedProject({ ...editedProject, website: e.target.value })} />
-            <p className="text-xs text-gray-500">The website associated with this project</p>
+            <p className="text-xs text-muted-foreground">The website associated with this project</p>
           </div>
 
           <div className="space-y-2">
@@ -430,8 +430,8 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               </div>
               <div className="flex-1">
                 <p className="font-semibold">{editedProject.name || 'Project Name'}</p>
-                <p className="text-sm text-gray-600">{editedProject.description || 'Project description will appear here'}</p>
-                {editedProject.website && <p className="text-xs text-blue-600 mt-1">{editedProject.website}</p>}
+                <p className="text-sm text-muted-foreground">{editedProject.description || 'Project description will appear here'}</p>
+                {editedProject.website && <p className="text-xs text-primary mt-1">{editedProject.website}</p>}
               </div>
             </div>
           </div>
@@ -439,7 +439,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleEditProject}>
+          <Button className="bg-primary hover:bg-primary/90" onClick={handleEditProject}>
             <Edit className="h-4 w-4 mr-2" />
             Save Changes
           </Button>

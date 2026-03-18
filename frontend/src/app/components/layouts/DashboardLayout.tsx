@@ -21,7 +21,7 @@ interface DashboardLayoutProps {
  */
 export function DashboardLayout({ sidebar, header, children, aside }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-muted/50">
       {/* Sidebar Slot */}
       <aside className="w-24 flex-shrink-0">
         {sidebar}
@@ -31,7 +31,7 @@ export function DashboardLayout({ sidebar, header, children, aside }: DashboardL
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Slot (Optional) */}
         {header && (
-          <header className="flex-shrink-0 bg-white border-b border-gray-200">
+          <header className="flex-shrink-0 bg-card border-b border-border">
             {header}
           </header>
         )}
@@ -44,7 +44,7 @@ export function DashboardLayout({ sidebar, header, children, aside }: DashboardL
 
           {/* Aside Slot (Optional) */}
           {aside && (
-            <aside className="w-80 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto">
+            <aside className="w-80 flex-shrink-0 border-l border-border bg-card overflow-y-auto">
               {aside}
             </aside>
           )}

@@ -79,12 +79,12 @@ export function CompanySwitcher({ selectedCompanyId, onCompanyChange }: CompanyS
           className="flex items-center gap-2 min-w-[200px] justify-between"
         >
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-gray-500" />
+            <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="truncate max-w-[150px]">
               {selectedCompany ? selectedCompany.name : 'All Companies'}
             </span>
           </div>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
@@ -98,7 +98,7 @@ export function CompanySwitcher({ selectedCompanyId, onCompanyChange }: CompanyS
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                   ALL
                 </AvatarFallback>
               </Avatar>
@@ -124,13 +124,13 @@ export function CompanySwitcher({ selectedCompanyId, onCompanyChange }: CompanyS
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarFallback className="bg-blue-600 text-white text-xs">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {company.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{company.name}</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {company.projects_count} projects · {company.agents_count} agents
                     </span>
                   </div>
@@ -144,7 +144,7 @@ export function CompanySwitcher({ selectedCompanyId, onCompanyChange }: CompanyS
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={() => navigate('/superadmin/companies')}
-          className="cursor-pointer text-blue-600"
+          className="cursor-pointer text-primary"
         >
           Manage Companies →
         </DropdownMenuItem>

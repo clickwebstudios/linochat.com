@@ -14,13 +14,13 @@ function AgentAdminLayoutInner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin
     <div className="flex h-screen overflow-hidden">
       <HumanRequestedListener />
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-24 border-r bg-gray-900 flex-col shrink-0">
+      <aside className="hidden md:flex w-24 border-r bg-sidebar flex-col shrink-0">
         <AdminSidebar role={sidebarRole} chatsCount={stats.chats} ticketsCount={stats.tickets} />
       </aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-        <SheetContent side="left" className="w-24 p-0 bg-gray-900">
+        <SheetContent side="left" className="w-24 p-0 bg-sidebar">
           <AdminSidebar role={sidebarRole} chatsCount={stats.chats} ticketsCount={stats.tickets} />
         </SheetContent>
       </Sheet>

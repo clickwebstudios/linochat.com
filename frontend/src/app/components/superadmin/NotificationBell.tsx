@@ -29,11 +29,11 @@ export function getNotificationIcon(type: NotificationType) {
   switch (type) {
     case 'alert':    return <AlertTriangle className="h-4 w-4 text-orange-600" />;
     case 'security': return <Shield className="h-4 w-4 text-red-600" />;
-    case 'user':     return <Users className="h-4 w-4 text-blue-600" />;
-    case 'billing':  return <CreditCard className="h-4 w-4 text-purple-600" />;
-    case 'system':   return <Server className="h-4 w-4 text-gray-600" />;
+    case 'user':     return <Users className="h-4 w-4 text-primary" />;
+    case 'billing':  return <CreditCard className="h-4 w-4 text-secondary" />;
+    case 'system':   return <Server className="h-4 w-4 text-muted-foreground" />;
     case 'success':  return <CheckCircle className="h-4 w-4 text-green-600" />;
-    default:         return <Bell className="h-4 w-4 text-gray-600" />;
+    default:         return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
 }
 
@@ -41,11 +41,11 @@ export function getNotificationBg(type: NotificationType) {
   switch (type) {
     case 'alert':    return 'bg-orange-100';
     case 'security': return 'bg-red-100';
-    case 'user':     return 'bg-blue-100';
-    case 'billing':  return 'bg-purple-100';
-    case 'system':   return 'bg-gray-100';
+    case 'user':     return 'bg-primary/10';
+    case 'billing':  return 'bg-secondary/10';
+    case 'system':   return 'bg-muted';
     case 'success':  return 'bg-green-100';
-    default:         return 'bg-gray-100';
+    default:         return 'bg-muted';
   }
 }
 
@@ -161,7 +161,7 @@ export function NotificationBell() {
           </div>
           {unreadCount > 0 && (
             <button
-              className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
+              className="text-xs text-primary hover:text-primary cursor-pointer"
               onClick={(e) => { e.preventDefault(); markAllRead(); }}
             >
               Mark all read
@@ -170,14 +170,14 @@ export function NotificationBell() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex border-b bg-gray-50">
+        <div className="flex border-b bg-muted/50">
           {(['all', 'unread'] as NotificationFilter[]).map(f => (
             <button
               key={f}
               className={`flex-1 py-2 text-xs text-center cursor-pointer transition-colors ${
                 filter === f
-                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-primary border-b-2 border-primary bg-card'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={(e) => { e.preventDefault(); setFilter(f); }}
             >
@@ -190,8 +190,8 @@ export function NotificationBell() {
         <div className="max-h-[380px] overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4">
-              <Bell className="h-8 w-8 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">
+              <Bell className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
                 No {filter === 'unread' ? 'unread ' : ''}notifications
               </p>
             </div>
@@ -201,8 +201,8 @@ export function NotificationBell() {
               return (
                 <button
                   key={notification.id}
-                  className={`w-full flex items-start gap-3 px-4 py-3 text-left cursor-pointer transition-colors hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
-                    !notification.is_read ? 'bg-blue-50/50' : ''
+                  className={`w-full flex items-start gap-3 px-4 py-3 text-left cursor-pointer transition-colors hover:bg-muted/50 border-b border-border last:border-b-0 ${
+                    !notification.is_read ? 'bg-primary/5' : ''
                   }`}
                   onClick={(e) => { e.preventDefault(); markAsRead(notification.id); }}
                 >
@@ -211,17 +211,17 @@ export function NotificationBell() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm truncate ${!notification.is_read ? 'font-semibold' : 'font-medium text-gray-700'}`}>
+                      <p className={`text-sm truncate ${!notification.is_read ? 'font-semibold' : 'font-medium text-foreground'}`}>
                         {notification.title}
                       </p>
                       {!notification.is_read && (
-                        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-blue-600 mt-1.5" />
+                        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-primary mt-1.5" />
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notification.message}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notification.message}</p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-400">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
                         {notification.created_at
                           ? new Date(notification.created_at).toLocaleDateString()
                           : ''}
@@ -235,9 +235,9 @@ export function NotificationBell() {
         </div>
 
         {/* Footer */}
-        <div className="border-t px-4 py-2.5 bg-gray-50">
+        <div className="border-t px-4 py-2.5 bg-muted/50">
           <button
-            className="w-full text-xs text-center text-blue-600 hover:text-blue-800 cursor-pointer"
+            className="w-full text-xs text-center text-primary hover:text-primary cursor-pointer"
             onClick={() => navigate('/superadmin/notifications')}
           >
             View all notifications

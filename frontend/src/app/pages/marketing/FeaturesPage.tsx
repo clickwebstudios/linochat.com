@@ -18,10 +18,10 @@ export default function FeaturesPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-50 to-white py-16">
+      <section className="bg-gradient-to-br from-primary/10 to-card py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-4 text-[48px] font-bold">Powerful Features for Modern Support Teams</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Everything you need to deliver exceptional customer service, all in one platform.
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function FeaturesPage() {
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
                   <h2 className="mb-4">Live Chat Widget</h2>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Engage customers in real-time with customizable chat widgets that match your brand.
                   </p>
                   <ul className="space-y-3">
@@ -85,7 +85,7 @@ export default function FeaturesPage() {
                     <CardTitle>Automated Ticket Routing</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Intelligent ticket assignment based on skills, availability, and workload.
                     </p>
                     <ul className="space-y-2">
@@ -109,7 +109,7 @@ export default function FeaturesPage() {
                     <CardTitle>Collaboration Tools</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Work together seamlessly with internal notes, @mentions, and ticket sharing.
                     </p>
                     <ul className="space-y-2">
@@ -135,25 +135,25 @@ export default function FeaturesPage() {
               <Card>
                 <CardContent className="p-8">
                   <h3 className="mb-4">Self-Service Knowledge Base</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Empower customers to find answers themselves with AI-powered search and comprehensive articles.
                   </p>
                   <div className="grid md:grid-cols-3 gap-6">
                     <div>
                       <h4 className="mb-2">AI-Powered Search</h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         Smart search with autocomplete and suggested articles
                       </p>
                     </div>
                     <div>
                       <h4 className="mb-2">Article Analytics</h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         Track views, ratings, and search terms
                       </p>
                     </div>
                     <div>
                       <h4 className="mb-2">Multi-language</h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         Support customers in their language
                       </p>
                     </div>
@@ -166,13 +166,13 @@ export default function FeaturesPage() {
               <Card>
                 <CardContent className="p-8">
                   <h3 className="mb-4">Comprehensive Analytics Dashboard</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Make data-driven decisions with real-time insights and custom reports.
                   </p>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <h4>Real-time Metrics</h4>
-                      <ul className="space-y-2 text-sm text-gray-600">
+                      <ul className="space-y-2 text-sm text-muted-foreground">
                         <li>• Active conversations</li>
                         <li>• Response times</li>
                         <li>• Resolution rates</li>
@@ -181,7 +181,7 @@ export default function FeaturesPage() {
                     </div>
                     <div className="space-y-3">
                       <h4>Custom Reports</h4>
-                      <ul className="space-y-2 text-sm text-gray-600">
+                      <ul className="space-y-2 text-sm text-muted-foreground">
                         <li>• Agent performance</li>
                         <li>• Ticket trends</li>
                         <li>• Peak hour analysis</li>
@@ -196,7 +196,7 @@ export default function FeaturesPage() {
             <TabsContent value="integrations">
               <div className="text-center mb-8">
                 <h3 className="mb-4">Connect Your Favorite Tools</h3>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Seamlessly integrate with 100+ apps and services
                 </p>
               </div>
@@ -204,8 +204,8 @@ export default function FeaturesPage() {
                 {['Salesforce', 'Slack', 'Shopify', 'Zendesk', 'HubSpot', 'Stripe', 'Gmail', 'Zapier'].map((app) => (
                   <Card key={app} className="text-center">
                     <CardContent className="p-6">
-                      <div className="h-12 w-12 mx-auto mb-2 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <span className="font-semibold text-gray-600">{app[0]}</span>
+                      <div className="h-12 w-12 mx-auto mb-2 rounded-lg bg-muted flex items-center justify-center">
+                        <span className="font-semibold text-muted-foreground">{app[0]}</span>
                       </div>
                       <p className="text-sm">{app}</p>
                     </CardContent>
@@ -219,12 +219,12 @@ export default function FeaturesPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Bot className="h-5 w-5 text-blue-600" />
+                      <Bot className="h-5 w-5 text-primary" />
                       AI Chatbots
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Train custom AI bots to handle common queries 24/7.
                     </p>
                     <ul className="space-y-2">
@@ -248,7 +248,7 @@ export default function FeaturesPage() {
                     <CardTitle>Automation Workflows</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Automate repetitive tasks and focus on what matters.
                     </p>
                     <ul className="space-y-2">
@@ -274,12 +274,12 @@ export default function FeaturesPage() {
       </section>
 
       {/* Security Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+            <Shield className="h-12 w-12 mx-auto mb-4 text-primary" />
             <h2 className="mb-4">Enterprise-Grade Security</h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Your data is protected with industry-leading security standards
             </p>
           </div>
@@ -287,25 +287,25 @@ export default function FeaturesPage() {
             <Card className="text-center">
               <CardContent className="p-6">
                 <h4 className="mb-2">GDPR Compliant</h4>
-                <p className="text-sm text-gray-600">Full compliance tools</p>
+                <p className="text-sm text-muted-foreground">Full compliance tools</p>
               </CardContent>
             </Card>
             <Card className="text-center">
               <CardContent className="p-6">
                 <h4 className="mb-2">256-bit SSL</h4>
-                <p className="text-sm text-gray-600">Bank-level encryption</p>
+                <p className="text-sm text-muted-foreground">Bank-level encryption</p>
               </CardContent>
             </Card>
             <Card className="text-center">
               <CardContent className="p-6">
                 <h4 className="mb-2">SOC 2 Type II</h4>
-                <p className="text-sm text-gray-600">Certified secure</p>
+                <p className="text-sm text-muted-foreground">Certified secure</p>
               </CardContent>
             </Card>
             <Card className="text-center">
               <CardContent className="p-6">
                 <h4 className="mb-2">99.9% Uptime</h4>
-                <p className="text-sm text-gray-600">Guaranteed SLA</p>
+                <p className="text-sm text-muted-foreground">Guaranteed SLA</p>
               </CardContent>
             </Card>
           </div>

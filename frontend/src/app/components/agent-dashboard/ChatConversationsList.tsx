@@ -45,7 +45,7 @@ export function ChatConversationsList({
     : filteredChats;
 
   return (
-    <div className="w-80 border-r border-[rgba(0,0,0,0.1)] bg-white flex flex-col">
+    <div className="w-80 border-r border-[rgba(0,0,0,0.1)] bg-card flex flex-col">
       <div className="h-[113px] border-b border-[rgba(0,0,0,0.1)] p-4 flex flex-col gap-3 shrink-0">
         <div className="relative h-9">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#717182]" />
@@ -61,7 +61,7 @@ export function ChatConversationsList({
             type="button"
             onClick={() => setChatFilter('all')}
             className={`flex-1 rounded-lg text-sm font-medium flex items-center justify-center transition-colors ${
-              chatFilter === 'all' ? 'bg-[#030213] text-white' : 'bg-white border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-gray-50'
+              chatFilter === 'all' ? 'bg-[#030213] text-white' : 'bg-card border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-muted/50'
             }`}
           >
             All
@@ -70,7 +70,7 @@ export function ChatConversationsList({
             type="button"
             onClick={() => setChatFilter('active')}
             className={`flex-1 rounded-lg text-sm font-medium flex items-center justify-center transition-colors ${
-              chatFilter === 'active' ? 'bg-[#030213] text-white' : 'bg-white border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-gray-50'
+              chatFilter === 'active' ? 'bg-[#030213] text-white' : 'bg-card border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-muted/50'
             }`}
           >
             Active
@@ -79,7 +79,7 @@ export function ChatConversationsList({
             type="button"
             onClick={() => setChatFilter('archived')}
             className={`flex-1 rounded-lg text-sm font-medium flex items-center justify-center transition-colors ${
-              chatFilter === 'archived' ? 'bg-[#030213] text-white' : 'bg-white border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-gray-50'
+              chatFilter === 'archived' ? 'bg-[#030213] text-white' : 'bg-card border border-[rgba(0,0,0,0.1)] text-[#0a0a0a] hover:bg-muted/50'
             }`}
           >
             Archived
@@ -89,8 +89,8 @@ export function ChatConversationsList({
       <div className="flex-1 overflow-y-auto">
         {displayedChats.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            <div className="w-16 h-16 bg-[#eff6ff] rounded-full flex items-center justify-center mb-4">
-              <MessageCircle className="h-8 w-8 text-[#155dfc]" />
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <MessageCircle className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-sm font-medium text-[#0a0a0a] mb-1">
               {searchQuery.trim()
@@ -122,15 +122,15 @@ export function ChatConversationsList({
             return (
               <div
                 key={chat.id}
-                className={`py-3 px-3 cursor-pointer border-b border-[rgba(0,0,0,0.1)] hover:bg-gray-50/50 transition-colors ${
-                  isSelected ? 'bg-[#eff6ff] border-l-[3px] border-l-[#155dfc] pl-[15px]' : ''
+                className={`py-3 px-3 cursor-pointer border-b border-[rgba(0,0,0,0.1)] hover:bg-muted/50/50 transition-colors ${
+                  isSelected ? 'bg-primary/10 border-l-[3px] border-l-primary pl-[15px]' : ''
                 }`}
                 onClick={() => setActiveChat(chat)}
               >
                 <div className="flex items-start gap-3">
                   <Avatar className="h-10 w-10 shrink-0 rounded-full">
                     <AvatarFallback className={`rounded-full text-base font-normal flex items-center justify-center ${
-                      isSelected ? 'bg-[#155dfc] text-white' : 'bg-[#e5e7eb] text-[#0a0a0a]'
+                      isSelected ? 'bg-primary text-white' : 'bg-muted text-[#0a0a0a]'
                     }`}>
                       {chat.customer_name ? chat.customer_name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : chat.avatar ? chat.avatar : <User className="h-5 w-5" />}
                     </AvatarFallback>
@@ -162,9 +162,9 @@ export function ChatConversationsList({
                         <span className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-lg text-xs font-medium ${
                           isOnline
                             ? 'bg-[#f0fdf4] border border-[#b9f8cf] text-[#008236]'
-                            : 'bg-gray-100 border border-gray-200 text-[#6a7282]'
+                            : 'bg-muted border border-border text-[#6a7282]'
                         }`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-[#00a63e]' : 'bg-gray-400'}`} />
+                          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-[#00a63e]' : 'bg-muted-foreground'}`} />
                           {isOnline ? 'Online' : 'Offline'}
                         </span>
                         {project && (
@@ -178,7 +178,7 @@ export function ChatConversationsList({
                         )}
                       </div>
                       {(chat.unread > 0 || chat.unread_count > 0) && (
-                        <span className="bg-[#155dfc] text-white text-xs font-medium h-5 min-w-[25px] px-2 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="bg-primary text-white text-xs font-medium h-5 min-w-[25px] px-2 rounded-lg flex items-center justify-center flex-shrink-0">
                           {chat.unread || chat.unread_count}
                         </span>
                       )}

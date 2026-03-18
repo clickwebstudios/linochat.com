@@ -44,9 +44,9 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
                 {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.monthly_revenue || '$0'}</p>
@@ -57,8 +57,8 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                   </>
                 )}
               </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-purple-600" />
+              <div className="h-12 w-12 bg-secondary/10 rounded-full flex items-center justify-center">
+                <CreditCard className="h-6 w-6 text-secondary" />
               </div>
             </div>
           </CardContent>
@@ -68,9 +68,9 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Users</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Users</p>
                 {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.total_users || 0}</p>
@@ -81,8 +81,8 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                   </>
                 )}
               </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -92,9 +92,9 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Active Agents</p>
+                <p className="text-sm text-muted-foreground mb-1">Active Agents</p>
                 {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.active_agents || 0}</p>
@@ -116,13 +116,13 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">System Uptime</p>
+                <p className="text-sm text-muted-foreground mb-1">System Uptime</p>
                 {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.system_uptime || '99.9%'}</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Last 30 days
                     </p>
                   </>
@@ -141,32 +141,32 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Latest Sign Ups</CardTitle>
-            <Badge variant="outline" className="text-blue-600 border-blue-600">
+            <Badge variant="outline" className="text-primary border-primary">
               12 This Week
             </Badge>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-6')}>
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-6')}>
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-blue-600 text-white">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
                     <Building2 className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate">NovaTech Industries</p>
-                    <span className="text-xs text-gray-500">2h ago</span>
+                    <span className="text-xs text-muted-foreground">2h ago</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1">James Carter &middot; james@novatech.io</p>
+                  <p className="text-xs text-muted-foreground mb-1">James Carter &middot; james@novatech.io</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-purple-600 text-white text-xs">Enterprise</Badge>
-                    <span className="text-xs text-gray-700 font-medium">$299/mo</span>
+                    <Badge className="bg-secondary text-secondary-foreground text-xs">Enterprise</Badge>
+                    <span className="text-xs text-foreground font-medium">$299/mo</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-7')}>
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-7')}>
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-emerald-600 text-white">
                     <Building2 className="h-5 w-5" />
@@ -175,17 +175,17 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate">GreenLeaf Organics</p>
-                    <span className="text-xs text-gray-500">5h ago</span>
+                    <span className="text-xs text-muted-foreground">5h ago</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1">Priya Sharma &middot; priya@greenleaf.com</p>
+                  <p className="text-xs text-muted-foreground mb-1">Priya Sharma &middot; priya@greenleaf.com</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-blue-600 text-white text-xs">Pro</Badge>
-                    <span className="text-xs text-gray-700 font-medium">$79/mo</span>
+                    <Badge className="bg-primary text-primary-foreground text-xs">Pro</Badge>
+                    <span className="text-xs text-foreground font-medium">$79/mo</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-8')}>
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-8')}>
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-orange-600 text-white">
                     <Building2 className="h-5 w-5" />
@@ -194,17 +194,17 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate">BrightPath Education</p>
-                    <span className="text-xs text-gray-500">Yesterday</span>
+                    <span className="text-xs text-muted-foreground">Yesterday</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1">Marcus Lee &middot; marcus@brightpath.edu</p>
+                  <p className="text-xs text-muted-foreground mb-1">Marcus Lee &middot; marcus@brightpath.edu</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-blue-600 text-white text-xs">Pro</Badge>
-                    <span className="text-xs text-gray-700 font-medium">$79/mo</span>
+                    <Badge className="bg-primary text-primary-foreground text-xs">Pro</Badge>
+                    <span className="text-xs text-foreground font-medium">$79/mo</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-9')}>
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-9')}>
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-rose-600 text-white">
                     <Building2 className="h-5 w-5" />
@@ -213,17 +213,17 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate">Apex Fitness Co</p>
-                    <span className="text-xs text-gray-500">Yesterday</span>
+                    <span className="text-xs text-muted-foreground">Yesterday</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1">Sofia Ramirez &middot; sofia@apexfitness.com</p>
+                  <p className="text-xs text-muted-foreground mb-1">Sofia Ramirez &middot; sofia@apexfitness.com</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="secondary" className="text-xs">Starter</Badge>
-                    <span className="text-xs text-gray-700 font-medium">$29/mo</span>
+                    <span className="text-xs text-foreground font-medium">$29/mo</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-10')}>
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-10')}>
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-cyan-600 text-white">
                     <Building2 className="h-5 w-5" />
@@ -232,12 +232,12 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate">CloudSync Solutions</p>
-                    <span className="text-xs text-gray-500">2 days ago</span>
+                    <span className="text-xs text-muted-foreground">2 days ago</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1">Daniel Nguyen &middot; daniel@cloudsync.dev</p>
+                  <p className="text-xs text-muted-foreground mb-1">Daniel Nguyen &middot; daniel@cloudsync.dev</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-purple-600 text-white text-xs">Enterprise</Badge>
-                    <span className="text-xs text-gray-700 font-medium">$299/mo</span>
+                    <Badge className="bg-secondary text-secondary-foreground text-xs">Enterprise</Badge>
+                    <span className="text-xs text-foreground font-medium">$299/mo</span>
                   </div>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 { initials: 'Globe', gradient: 'from-yellow-500 to-orange-500', name: 'Emma L.', time: '4m ago', company: 'EduLearn - Course Details', location: 'Berlin, DE', device: 'Desktop' },
                 { initials: 'Globe', gradient: 'from-indigo-500 to-blue-500', name: 'James P.', time: '5m ago', company: 'TechCorp - Features Page', location: 'Tokyo, JP', device: 'Mobile' },
               ].map((visitor, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div key={idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <div className="relative">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className={`bg-gradient-to-br ${visitor.gradient} text-white`}>
@@ -283,12 +283,12 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-semibold">{visitor.name}</p>
-                      <span className="text-xs text-gray-500">{visitor.time}</span>
+                      <span className="text-xs text-muted-foreground">{visitor.time}</span>
                     </div>
-                    <p className="text-xs text-gray-600 truncate">{visitor.company}</p>
+                    <p className="text-xs text-muted-foreground truncate">{visitor.company}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className="text-xs">{visitor.location}</Badge>
-                      <span className="text-xs text-gray-500">{visitor.device}</span>
+                      <span className="text-xs text-muted-foreground">{visitor.device}</span>
                     </div>
                   </div>
                 </div>
@@ -297,15 +297,15 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
             <div className="mt-4 pt-4 border-t">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Page Views</p>
+                  <p className="text-xs text-muted-foreground mb-1">Page Views</p>
                   <p className="text-sm font-bold">1,847</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Avg. Duration</p>
+                  <p className="text-xs text-muted-foreground mb-1">Avg. Duration</p>
                   <p className="text-sm font-bold">3m 24s</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Bounce Rate</p>
+                  <p className="text-xs text-muted-foreground mb-1">Bounce Rate</p>
                   <p className="text-sm font-bold">42%</p>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="revenue" fill="#8b5cf6" />
+                <Bar dataKey="revenue" fill="var(--secondary)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -343,7 +343,7 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2} />
+                <Line type="monotone" dataKey="users" stroke="var(--primary)" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -361,14 +361,14 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
               <Bell className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">Server maintenance scheduled</p>
-                <p className="text-xs text-gray-600">Planned downtime on Dec 25, 2024 at 2:00 AM UTC</p>
+                <p className="text-xs text-muted-foreground">Planned downtime on Dec 25, 2024 at 2:00 AM UTC</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
               <Shield className="h-5 w-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">Security audit completed</p>
-                <p className="text-xs text-gray-600">No vulnerabilities found in latest scan</p>
+                <p className="text-xs text-muted-foreground">No vulnerabilities found in latest scan</p>
               </div>
             </div>
           </div>

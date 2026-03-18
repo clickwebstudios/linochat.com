@@ -42,7 +42,7 @@ interface DashboardStatsProps {
  * // Using stats prop
  * <DashboardStats 
  *   stats={[
- *     { title: 'Active Chats', value: 24, icon: MessageCircle, iconColor: 'text-blue-600' },
+ *     { title: 'Active Chats', value: 24, icon: MessageCircle, iconColor: 'text-primary' },
  *     { title: 'Open Tickets', value: 156, icon: Ticket, iconColor: 'text-orange-600' }
  *   ]}
  * />
@@ -86,7 +86,7 @@ export function DashboardStats({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-3xl font-bold mt-2">{stat.value}</p>
                   {stat.trend && (
                     <p className={`text-xs mt-1 ${stat.trend.positive ? 'text-green-600' : 'text-red-600'}`}>
@@ -94,7 +94,7 @@ export function DashboardStats({
                     </p>
                   )}
                 </div>
-                <Icon className={`h-8 w-8 ${stat.iconColor || 'text-gray-600'}`} />
+                <Icon className={`h-8 w-8 ${stat.iconColor || 'text-muted-foreground'}`} />
               </div>
             </CardContent>
           </Card>
@@ -113,7 +113,7 @@ export function StatCard({ title, value, icon: Icon, iconColor, trend }: StatCar
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600">{title}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold mt-2">{value}</p>
             {trend && (
               <p className={`text-xs mt-1 ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
@@ -121,7 +121,7 @@ export function StatCard({ title, value, icon: Icon, iconColor, trend }: StatCar
               </p>
             )}
           </div>
-          <Icon className={`h-8 w-8 ${iconColor || 'text-gray-600'}`} />
+          <Icon className={`h-8 w-8 ${iconColor || 'text-muted-foreground'}`} />
         </div>
       </CardContent>
     </Card>

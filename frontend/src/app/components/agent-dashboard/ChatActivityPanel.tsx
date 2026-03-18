@@ -54,7 +54,7 @@ export function ChatActivityPanel({
   const [showPreviousChats, setShowPreviousChats] = useState(true);
 
   return (
-    <div className="w-96 border-l border-[rgba(0,0,0,0.1)] bg-white flex flex-col animate-in slide-in-from-right duration-200">
+    <div className="w-96 border-l border-[rgba(0,0,0,0.1)] bg-card flex flex-col animate-in slide-in-from-right duration-200">
       <div className="p-4 border-b border-[rgba(0,0,0,0.1)] shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
@@ -73,32 +73,32 @@ export function ChatActivityPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pt-4">
         {activityLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-[#155dfc]" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : !activity ? (
           <div className="text-center py-8">
-            <History className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No activity data available</p>
-            <p className="text-xs text-gray-400 mt-1">Activity history will appear here</p>
+            <History className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No activity data available</p>
+            <p className="text-xs text-muted-foreground mt-1">Activity history will appear here</p>
           </div>
         ) : (
           <>
             {/* Previous Conversations */}
-            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-card overflow-hidden">
               <button
                 onClick={() => setShowPreviousChats(!showPreviousChats)}
-                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
               >
                 <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
                   <Clock className="h-4 w-4 text-[#6a7282]" />
                   Previous Conversations
                   {activity.previousChats.length > 0 && (
-                    <Badge className="bg-[#155dfc] text-white text-xs rounded-lg px-2">
+                    <Badge className="bg-primary text-primary-foreground text-xs rounded-lg px-2">
                       {activity.previousChats.length}
                     </Badge>
                   )}
                 </h4>
-                {showPreviousChats ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {showPreviousChats ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </button>
               {showPreviousChats && (
                 <div className="p-3 pt-0 border-t">
@@ -107,11 +107,11 @@ export function ChatActivityPanel({
                       {activity.previousChats.map((chat) => (
                         <div
                           key={chat.id}
-                          className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                          className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => onOpenPreviousChat(chat)}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-[#155dfc] hover:underline">{chat.topic}</p>
+                            <p className="text-sm font-medium text-primary hover:underline">{chat.topic}</p>
                             <Badge variant="outline" className="text-xs border-[rgba(0,0,0,0.1)] text-[#0a0a0a]">{chat.duration}</Badge>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-[#6a7282]">
@@ -126,9 +126,9 @@ export function ChatActivityPanel({
                     </div>
                   ) : (
                     <div className="border rounded-lg p-4 text-center">
-                      <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No previous conversations</p>
-                      <p className="text-xs text-gray-400 mt-1">This is their first time chatting</p>
+                      <MessageCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No previous conversations</p>
+                      <p className="text-xs text-muted-foreground mt-1">This is their first time chatting</p>
                     </div>
                   )}
                 </div>
@@ -136,16 +136,16 @@ export function ChatActivityPanel({
             </div>
 
             {/* Customer Details */}
-            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-card overflow-hidden">
               <button
                 onClick={() => setShowCustomerDetails(!showCustomerDetails)}
-                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
               >
                 <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
                   <User className="h-4 w-4 text-[#6a7282]" />
                   Customer Details
                 </h4>
-                {showCustomerDetails ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {showCustomerDetails ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </button>
               {showCustomerDetails && (
                 <div className="p-3 pt-0 border-t border-[rgba(0,0,0,0.1)] space-y-3">
@@ -163,23 +163,23 @@ export function ChatActivityPanel({
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Tag className="h-3 w-3" /><span>Customer Tier</span></div>
-                    <Badge className={activity.customerTier ? 'bg-[#9810fa] text-white text-xs rounded-lg' : 'bg-gray-200 text-gray-600'}>{activity.customerTier ?? 'Standard'}</Badge>
+                    <Badge className={activity.customerTier ? 'bg-secondary text-secondary-foreground text-xs rounded-lg' : 'bg-muted text-muted-foreground'}>{activity.customerTier ?? 'Standard'}</Badge>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Session Information */}
-            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-white overflow-hidden">
+            <div className="border border-[rgba(0,0,0,0.1)] rounded-[10px] bg-card overflow-hidden">
               <button
                 onClick={() => setShowSessionInfo(!showSessionInfo)}
-                className="w-full p-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
               >
                 <h4 className="text-sm font-semibold text-[#101828] flex items-center gap-2">
                   <Clock className="h-4 w-4 text-[#6a7282]" />
                   Session Information
                 </h4>
-                {showSessionInfo ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {showSessionInfo ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </button>
               {showSessionInfo && (
                 <div className="p-3 pt-0 border-t border-[rgba(0,0,0,0.1)] space-y-3">
@@ -210,12 +210,12 @@ export function ChatActivityPanel({
             {/* Chat Initiated From */}
             <div>
               <h4 className="text-xs font-semibold text-[#6a7282] uppercase tracking-wide mb-3">Chat Initiated From</h4>
-              <div className="bg-[#eff6ff] border border-[#bedbff] rounded-[10px] p-3">
+              <div className="bg-primary/10 border border-primary/20 rounded-[10px] p-3">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-[#155dfc] shrink-0" />
+                  <MessageCircle className="h-4 w-4 text-primary shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#1c398e]">{activity.chatInitiatedFrom}</p>
-                    <p className="text-xs text-[#155dfc]">Current page when chat started</p>
+                    <p className="text-sm font-medium text-primary">{activity.chatInitiatedFrom}</p>
+                    <p className="text-xs text-primary">Current page when chat started</p>
                   </div>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function ChatActivityPanel({
               <h4 className="text-xs font-semibold text-[#6a7282] uppercase tracking-wide mb-3">Pages Visited</h4>
               <div className="space-y-2">
                 {activity.pagesVisited.map((page, index) => (
-                  <div key={index} className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-gray-50/50 transition-colors">
+                  <div key={index} className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-muted/50 transition-colors">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-sm font-medium text-[#0a0a0a]">{page.page}</p>
                       <span className="text-xs text-[#6a7282]">{page.duration}</span>

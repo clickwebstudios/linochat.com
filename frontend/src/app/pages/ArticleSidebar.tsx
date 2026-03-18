@@ -57,30 +57,30 @@ export default function ArticleSidebar({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3 text-sm">
-            <User className="h-4 w-4 text-gray-400" />
+            <User className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-gray-500">Author</p>
+              <p className="text-muted-foreground">Author</p>
               <p className="font-medium">{article.author}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Calendar className="h-4 w-4 text-gray-400" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-gray-500">Created</p>
+              <p className="text-muted-foreground">Created</p>
               <p className="font-medium">{article.createdAt}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Clock className="h-4 w-4 text-gray-400" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-gray-500">Last Updated</p>
+              <p className="text-muted-foreground">Last Updated</p>
               <p className="font-medium">{article.updatedAt}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <FileText className="h-4 w-4 text-gray-400" />
+            <FileText className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-gray-500">Category</p>
+              <p className="text-muted-foreground">Category</p>
               <p className="font-medium">{article.category}</p>
             </div>
           </div>
@@ -89,9 +89,9 @@ export default function ArticleSidebar({
             const project = projId ? mockProjects.find(p => p.id === projId) : null;
             return project ? (
               <div className="flex items-center gap-3 text-sm">
-                <FolderOpen className="h-4 w-4 text-gray-400" />
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-gray-500">Project</p>
+                  <p className="text-muted-foreground">Project</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <div
                       className="w-2.5 h-2.5 rounded-full"
@@ -111,7 +111,7 @@ export default function ArticleSidebar({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">
-            <TagIcon className="h-4 w-4 text-blue-600" />
+            <TagIcon className="h-4 w-4 text-primary" />
             Tags
           </CardTitle>
         </CardHeader>
@@ -139,7 +139,7 @@ export default function ArticleSidebar({
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                      className="ml-1 hover:bg-muted rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -155,7 +155,7 @@ export default function ArticleSidebar({
                 </Badge>
               ))}
               {article.tags.length === 0 && (
-                <p className="text-sm text-gray-500">No tags</p>
+                <p className="text-sm text-muted-foreground">No tags</p>
               )}
             </div>
           )}

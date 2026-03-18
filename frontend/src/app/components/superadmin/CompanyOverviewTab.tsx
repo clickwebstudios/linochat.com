@@ -92,11 +92,11 @@ export function CompanyOverviewTab({
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <FolderKanban className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <FolderKanban className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Projects</p>
+                <p className="text-xs text-muted-foreground">Projects</p>
                 <p className="text-xl font-bold">{companyProjects.length}</p>
               </div>
             </div>
@@ -109,7 +109,7 @@ export function CompanyOverviewTab({
                 <Headphones className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Agents</p>
+                <p className="text-xs text-muted-foreground">Agents</p>
                 <p className="text-xl font-bold">{companyAgents.length}</p>
               </div>
             </div>
@@ -118,11 +118,11 @@ export function CompanyOverviewTab({
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <Activity className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 bg-secondary/10 rounded-full flex items-center justify-center">
+                <Activity className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Tickets</p>
+                <p className="text-xs text-muted-foreground">Total Tickets</p>
                 <p className="text-xl font-bold">{totalTickets}</p>
               </div>
             </div>
@@ -135,7 +135,7 @@ export function CompanyOverviewTab({
                 <CreditCard className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Monthly Revenue</p>
+                <p className="text-xs text-muted-foreground">Monthly Revenue</p>
                 <p className="text-xl font-bold">{defaultMeta.mrr}</p>
               </div>
             </div>
@@ -150,7 +150,7 @@ export function CompanyOverviewTab({
             <CardTitle className="text-base">Projects</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{companyProjects.length}</Badge>
-              <Button variant="ghost" size="sm" className="text-xs text-blue-600" onClick={() => setCompanyDetailTab('projects')}>View all</Button>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => setCompanyDetailTab('projects')}>View all</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -165,11 +165,11 @@ export function CompanyOverviewTab({
                 </TableHeader>
                 <TableBody>
                   {companyProjects.map(project => (
-                    <TableRow key={project.id} className="hover:bg-gray-50">
+                    <TableRow key={project.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div>
                           <p className="font-semibold text-sm">{project.name}</p>
-                          <p className="text-xs text-gray-500">{project.domain || project.website || '\u2014'}</p>
+                          <p className="text-xs text-muted-foreground">{project.domain || project.website || '\u2014'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -183,7 +183,7 @@ export function CompanyOverviewTab({
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-gray-500 text-center py-6">No projects yet</p>
+              <p className="text-sm text-muted-foreground text-center py-6">No projects yet</p>
             )}
           </CardContent>
         </Card>
@@ -193,7 +193,7 @@ export function CompanyOverviewTab({
             <CardTitle className="text-base">Members</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{companyAgents.length}</Badge>
-              <Button variant="ghost" size="sm" className="text-xs text-blue-600" onClick={() => setCompanyDetailTab('team')}>View all</Button>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => setCompanyDetailTab('team')}>View all</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -209,7 +209,7 @@ export function CompanyOverviewTab({
                 </TableHeader>
                 <TableBody>
                   {companyAgents.map(agent => (
-                    <TableRow key={agent.id} className={`hover:bg-gray-50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/agent/${agent.id}`)}>
+                    <TableRow key={agent.id} className={`hover:bg-muted/50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/agent/${agent.id}`)}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7">
@@ -217,7 +217,7 @@ export function CompanyOverviewTab({
                           </Avatar>
                           <div>
                             <p className="font-semibold text-sm">{agent.name}</p>
-                            <p className="text-xs text-gray-500">{agent.email}</p>
+                            <p className="text-xs text-muted-foreground">{agent.email}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -225,7 +225,7 @@ export function CompanyOverviewTab({
                         <Badge variant="outline" className={
                           agent.status === 'Online' ? 'text-green-600 border-green-600 text-xs'
                           : agent.status === 'Away' ? 'text-yellow-600 border-yellow-600 text-xs'
-                          : 'text-gray-600 border-gray-600 text-xs'
+                          : 'text-muted-foreground border-border text-xs'
                         }>
                           {agent.status || 'Online'}
                         </Badge>
@@ -237,7 +237,7 @@ export function CompanyOverviewTab({
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-gray-500 text-center py-6">No agents assigned</p>
+              <p className="text-sm text-muted-foreground text-center py-6">No agents assigned</p>
             )}
           </CardContent>
         </Card>
@@ -253,29 +253,29 @@ export function CompanyOverviewTab({
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-gray-600">API Requests</span>
+                  <span className="text-sm text-muted-foreground">API Requests</span>
                   <span className="text-sm font-semibold">{defaultMeta.usage}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${defaultMeta.usage}%` }}></div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div className="bg-primary h-2 rounded-full" style={{ width: `${defaultMeta.usage}%` }}></div>
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-gray-600">Storage</span>
+                  <span className="text-sm text-muted-foreground">Storage</span>
                   <span className="text-sm font-semibold">34%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div className="bg-green-600 h-2 rounded-full" style={{ width: '34%' }}></div>
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-gray-600">Seats Used</span>
+                  <span className="text-sm text-muted-foreground">Seats Used</span>
                   <span className="text-sm font-semibold">{companyAgents.length} / {company.plan === 'Enterprise' ? 'Unlimited' : company.plan === 'Pro' ? '25' : '5'}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${Math.min((companyAgents.length / (company.plan === 'Enterprise' ? 100 : company.plan === 'Pro' ? 25 : 5)) * 100, 100)}%` }}></div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div className="bg-secondary h-2 rounded-full" style={{ width: `${Math.min((companyAgents.length / (company.plan === 'Enterprise' ? 100 : company.plan === 'Pro' ? 25 : 5)) * 100, 100)}%` }}></div>
                 </div>
               </div>
             </div>
@@ -288,40 +288,40 @@ export function CompanyOverviewTab({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
                 <div className="h-7 w-7 bg-green-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <Headphones className="h-3.5 w-3.5 text-green-600" />
                 </div>
                 <div>
                   <p className="text-sm">New agent added: <span className="font-semibold">James Wilson</span></p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
+                  <p className="text-xs text-muted-foreground">2 hours ago</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
-                <div className="h-7 w-7 bg-blue-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
+              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
+                <div className="h-7 w-7 bg-primary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <FolderKanban className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm">Project <span className="font-semibold">Mobile App</span> created</p>
-                  <p className="text-xs text-gray-500">1 day ago</p>
+                  <p className="text-xs text-muted-foreground">1 day ago</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
-                <div className="h-7 w-7 bg-purple-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <CreditCard className="h-3.5 w-3.5 text-purple-600" />
+              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
+                <div className="h-7 w-7 bg-secondary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <CreditCard className="h-3.5 w-3.5 text-secondary" />
                 </div>
                 <div>
                   <p className="text-sm">Payment received: <span className="font-semibold">{defaultMeta.mrr}</span></p>
-                  <p className="text-xs text-gray-500">3 days ago</p>
+                  <p className="text-xs text-muted-foreground">3 days ago</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
                 <div className="h-7 w-7 bg-orange-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <TrendingUp className="h-3.5 w-3.5 text-orange-600" />
                 </div>
                 <div>
                   <p className="text-sm">Plan upgraded from <span className="font-semibold">Starter to {company.plan}</span></p>
-                  <p className="text-xs text-gray-500">1 week ago</p>
+                  <p className="text-xs text-muted-foreground">1 week ago</p>
                 </div>
               </div>
             </div>

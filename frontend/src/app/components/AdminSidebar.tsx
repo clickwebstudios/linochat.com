@@ -33,8 +33,8 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
   const currentSection = pathSegments[2] || 'dashboard';
 
   const buttonBase = "w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors";
-  const activeClass = "bg-blue-600 text-white";
-  const inactiveClass = "text-gray-400 hover:text-white hover:bg-gray-800";
+  const activeClass = "bg-sidebar-primary text-sidebar-primary-foreground";
+  const inactiveClass = "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent";
 
   const isActive = (section: string) => {
     // Detail pages: highlight their parent section
@@ -57,11 +57,11 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
   ];
 
   return (
-    <div className="flex h-full flex-col bg-gray-900">
+    <div className="flex h-full flex-col bg-sidebar">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center border-b border-gray-800">
+      <div className="flex h-16 items-center justify-center border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
             <span className="text-sm font-bold text-white">LC</span>
           </div>
         </Link>

@@ -144,10 +144,10 @@ export default function CompanyDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="flex-1 flex items-center justify-center bg-muted/50">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-            <p className="text-gray-600">Loading company details...</p>
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading company details...</p>
           </div>
         </div>
       </>
@@ -159,10 +159,10 @@ export default function CompanyDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="flex-1 flex items-center justify-center bg-muted/50">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2">Company Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || "The company you're looking for doesn't exist."}</p>
+            <p className="text-muted-foreground mb-4">{error || "The company you're looking for doesn't exist."}</p>
             <Button onClick={() => navigate('/superadmin/companies')}>Back to Companies</Button>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function CompanyDetails() {
       <SuperadminTopbar />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 px-6 pt-6">
+        <main className="flex-1 overflow-y-auto bg-muted/50 px-6 pt-6">
           {/* Back Button & Company Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -221,23 +221,23 @@ export default function CompanyDetails() {
               </Button>
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-blue-600 text-white text-lg">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                     {company.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h1 className="text-2xl font-bold">{company.name}</h1>
-                  <p className="text-sm text-gray-500">ID: {company.id}</p>
+                  <p className="text-sm text-muted-foreground">ID: {company.id}</p>
                 </div>
               </div>
               <Badge 
                 variant="outline"
                 className={
                   company.plan === 'Enterprise' 
-                    ? 'border-purple-600 text-purple-600'
+                    ? 'border-secondary text-secondary'
                     : company.plan === 'Pro'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-gray-600 text-gray-600'
+                    ? 'border-primary text-primary'
+                    : 'border-muted-foreground text-muted-foreground'
                 }
               >
                 {company.plan}
@@ -279,10 +279,10 @@ export default function CompanyDetails() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Projects</p>
+                    <p className="text-sm text-muted-foreground">Projects</p>
                     <p className="text-3xl font-bold">{company.stats.total_projects}</p>
                   </div>
-                  <FolderKanban className="h-8 w-8 text-blue-600" />
+                  <FolderKanban className="h-8 w-8 text-primary" />
                 </div>
               </CardContent>
             </Card>
@@ -290,7 +290,7 @@ export default function CompanyDetails() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Agents</p>
+                    <p className="text-sm text-muted-foreground">Agents</p>
                     <p className="text-3xl font-bold">{company.stats.total_agents}</p>
                   </div>
                   <Headphones className="h-8 w-8 text-green-600" />
@@ -301,11 +301,11 @@ export default function CompanyDetails() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Tickets</p>
+                    <p className="text-sm text-muted-foreground">Total Tickets</p>
                     <p className="text-3xl font-bold">{totalTickets}</p>
                     <p className="text-xs text-green-600 mt-1">{resolvedTickets} resolved</p>
                   </div>
-                  <Ticket className="h-8 w-8 text-purple-600" />
+                  <Ticket className="h-8 w-8 text-secondary" />
                 </div>
               </CardContent>
             </Card>
@@ -313,7 +313,7 @@ export default function CompanyDetails() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Chats</p>
+                    <p className="text-sm text-muted-foreground">Total Chats</p>
                     <p className="text-3xl font-bold">{company.stats.total_chats}</p>
                   </div>
                   <MessageSquare className="h-8 w-8 text-orange-600" />
@@ -343,20 +343,20 @@ export default function CompanyDetails() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-3 text-sm">
-                      <Mail className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{company.email}</span>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{company.email}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{company.phone || '+1 (555) 123-4567'}</span>
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{company.phone || '+1 (555) 123-4567'}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Joined {formatDate(company.created_at)}</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Joined {formatDate(company.created_at)}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <CreditCard className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{company.plan} Plan</span>
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{company.plan} Plan</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -373,7 +373,7 @@ export default function CompanyDetails() {
                         <XAxis dataKey="month" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="tickets" fill="#3b82f6" name="Total Tickets" />
+                        <Bar dataKey="tickets" fill="var(--primary)" name="Total Tickets" />
                         <Bar dataKey="resolved" fill="#10b981" name="Resolved" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -386,28 +386,28 @@ export default function CompanyDetails() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-gray-600">Active Tickets</p>
+                      <p className="text-sm text-muted-foreground">Active Tickets</p>
                       <AlertCircle className="h-5 w-5 text-orange-500" />
                     </div>
                     <p className="text-2xl font-bold">{activeTickets}</p>
-                    <p className="text-xs text-gray-500 mt-1">Awaiting resolution</p>
+                    <p className="text-xs text-muted-foreground mt-1">Awaiting resolution</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-gray-600">Resolved Tickets</p>
+                      <p className="text-sm text-muted-foreground">Resolved Tickets</p>
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     </div>
                     <p className="text-2xl font-bold">{resolvedTickets}</p>
-                    <p className="text-xs text-gray-500 mt-1">{totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0}% resolution rate</p>
+                    <p className="text-xs text-muted-foreground mt-1">{totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0}% resolution rate</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-gray-600">Avg Response Time</p>
-                      <Clock className="h-5 w-5 text-blue-500" />
+                      <p className="text-sm text-muted-foreground">Avg Response Time</p>
+                      <Clock className="h-5 w-5 text-primary" />
                     </div>
                     <p className="text-2xl font-bold">2.4h</p>
                     <p className="text-xs text-green-600 mt-1">-15% from last month</p>
@@ -443,15 +443,15 @@ export default function CompanyDetails() {
                       {companyProjects.map((project) => (
                         <TableRow
                           key={project.id}
-                          className="cursor-pointer hover:bg-gray-50"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={() => navigate(`/superadmin/project/${project.id}`)}
                         >
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <FolderKanban className="h-5 w-5 text-blue-600" />
+                              <FolderKanban className="h-5 w-5 text-primary" />
                               <div>
                                 <p className="font-semibold">{project.name}</p>
-                                <p className="text-xs text-gray-500">ID: {project.id}</p>
+                                <p className="text-xs text-muted-foreground">ID: {project.id}</p>
                               </div>
                             </div>
                           </TableCell>
@@ -464,7 +464,7 @@ export default function CompanyDetails() {
                             <span className="font-semibold">{project.tickets_count}</span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">Active</span>
+                            <span className="text-sm text-muted-foreground">Active</span>
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
@@ -525,7 +525,7 @@ export default function CompanyDetails() {
                       {companyAgents.map((agent) => (
                         <TableRow
                           key={agent.id}
-                          className="cursor-pointer hover:bg-gray-50"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
                         >
                           <TableCell>
@@ -537,12 +537,12 @@ export default function CompanyDetails() {
                               </Avatar>
                               <div>
                                 <p className="font-semibold">{agent.name}</p>
-                                <p className="text-xs text-gray-500">ID: {agent.id}</p>
+                                <p className="text-xs text-muted-foreground">ID: {agent.id}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">{agent.email}</span>
+                            <span className="text-sm text-muted-foreground">{agent.email}</span>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{agent.role || 'Agent'}</Badge>
@@ -550,7 +550,7 @@ export default function CompanyDetails() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                              <span className="text-sm text-gray-600">{agent.status || 'Active'}</span>
+                              <span className="text-sm text-muted-foreground">{agent.status || 'Active'}</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -610,7 +610,7 @@ export default function CompanyDetails() {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback className="bg-purple-600 text-white text-xs">
+                                  <AvatarFallback className="bg-secondary text-primary-foreground text-xs">
                                     {chat.customer.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
@@ -618,7 +618,7 @@ export default function CompanyDetails() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm text-gray-600">{project?.name || 'Unknown'}</span>
+                              <span className="text-sm text-muted-foreground">{project?.name || 'Unknown'}</span>
                             </TableCell>
                             <TableCell>
                               <Badge 
@@ -628,14 +628,14 @@ export default function CompanyDetails() {
                                     ? 'border-green-600 text-green-600'
                                     : chat.status === 'waiting'
                                     ? 'border-orange-600 text-orange-600'
-                                    : 'border-gray-600 text-gray-600'
+                                    : 'border-muted-foreground text-muted-foreground'
                                 }
                               >
                                 {chat.status}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm text-gray-600">{chat.preview}</span>
+                              <span className="text-sm text-muted-foreground">{chat.preview}</span>
                             </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="sm">
@@ -662,29 +662,29 @@ export default function CompanyDetails() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="p-4 border rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                          <Ticket className="h-5 w-5 text-gray-600" />
-                          <span className="text-sm text-gray-600">Total</span>
+                          <Ticket className="h-5 w-5 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Total</span>
                         </div>
                         <p className="text-2xl font-bold">{totalTickets}</p>
                       </div>
                       <div className="p-4 border rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <AlertCircle className="h-5 w-5 text-orange-500" />
-                          <span className="text-sm text-gray-600">Active</span>
+                          <span className="text-sm text-muted-foreground">Active</span>
                         </div>
                         <p className="text-2xl font-bold">{activeTickets}</p>
                       </div>
                       <div className="p-4 border rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          <span className="text-sm text-gray-600">Resolved</span>
+                          <span className="text-sm text-muted-foreground">Resolved</span>
                         </div>
                         <p className="text-2xl font-bold">{resolvedTickets}</p>
                       </div>
                       <div className="p-4 border rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-5 w-5 text-blue-500" />
-                          <span className="text-sm text-gray-600">Resolution Rate</span>
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          <span className="text-sm text-muted-foreground">Resolution Rate</span>
                         </div>
                         <p className="text-2xl font-bold">{totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0}%</p>
                       </div>
@@ -696,15 +696,15 @@ export default function CompanyDetails() {
                         {companyProjects.map((project) => (
                           <div
                             key={project.id}
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
                             onClick={() => navigate(`/superadmin/project/${project.id}`)}
                           >
                             <div className="flex items-center gap-3">
-                              <FolderKanban className="h-5 w-5 text-blue-600" />
+                              <FolderKanban className="h-5 w-5 text-primary" />
                               <span className="font-medium">{project.name}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <span className="text-sm text-gray-600">{project.tickets_count} tickets</span>
+                              <span className="text-sm text-muted-foreground">{project.tickets_count} tickets</span>
                               <Button variant="ghost" size="sm">View</Button>
                             </div>
                           </div>
@@ -730,7 +730,7 @@ export default function CompanyDetails() {
                         <XAxis dataKey="day" />
                         <YAxis />
                         <Tooltip />
-                        <Line type="monotone" dataKey="chats" stroke="#3b82f6" strokeWidth={2} />
+                        <Line type="monotone" dataKey="chats" stroke="var(--primary)" strokeWidth={2} />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -747,7 +747,7 @@ export default function CompanyDetails() {
                         <XAxis dataKey="month" />
                         <YAxis />
                         <Tooltip />
-                        <Line type="monotone" dataKey="tickets" stroke="#3b82f6" strokeWidth={2} name="Created" />
+                        <Line type="monotone" dataKey="tickets" stroke="var(--primary)" strokeWidth={2} name="Created" />
                         <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} name="Resolved" />
                       </LineChart>
                     </ResponsiveContainer>
@@ -763,29 +763,29 @@ export default function CompanyDetails() {
                   <CardContent className="space-y-4">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">First Response Time</span>
+                        <span className="text-muted-foreground">First Response Time</span>
                         <span className="font-semibold">1.2h</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Resolution Time</span>
+                        <span className="text-muted-foreground">Resolution Time</span>
                         <span className="font-semibold">4.8h</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '72%' }}></div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: '72%' }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Customer Satisfaction</span>
+                        <span className="text-muted-foreground">Customer Satisfaction</span>
                         <span className="font-semibold">94%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: '94%' }}></div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-secondary h-2 rounded-full" style={{ width: '94%' }}></div>
                       </div>
                     </div>
                   </CardContent>
@@ -799,7 +799,7 @@ export default function CompanyDetails() {
                     {companyAgents.slice(0, 3).map((agent, idx) => (
                       <div
                         key={agent.id}
-                        className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                        className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
                         onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
                       >
                         <div className="flex items-center gap-2">
@@ -826,14 +826,14 @@ export default function CompanyDetails() {
                     {companyProjects.slice(0, 3).map((project) => (
                       <div
                         key={project.id}
-                        className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                        className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
                         onClick={() => navigate(`/superadmin/project/${project.id}`)}
                       >
                         <div className="flex items-center gap-2">
-                          <FolderKanban className="h-5 w-5 text-blue-600" />
+                          <FolderKanban className="h-5 w-5 text-primary" />
                           <span className="text-sm font-medium">{project.name}</span>
                         </div>
-                        <span className="text-sm text-gray-600">{project.tickets_count} tickets</span>
+                        <span className="text-sm text-muted-foreground">{project.tickets_count} tickets</span>
                       </div>
                     ))}
                   </CardContent>

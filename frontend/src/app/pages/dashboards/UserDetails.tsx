@@ -117,10 +117,10 @@ const activityData = [
 
 const recentActivity = [
   { time: '2 min ago', action: 'Resolved ticket', details: 'T-1045 - Login issues', icon: CheckCircle, color: 'text-green-600' },
-  { time: '15 min ago', action: 'Started chat', details: 'with Customer Lisa M.', icon: MessageCircle, color: 'text-blue-600' },
+  { time: '15 min ago', action: 'Started chat', details: 'with Customer Lisa M.', icon: MessageCircle, color: 'text-primary' },
   { time: '1 hour ago', action: 'Updated ticket', details: 'T-1032 - Changed priority to high', icon: AlertCircle, color: 'text-orange-600' },
   { time: '2 hours ago', action: 'Closed ticket', details: 'T-1028 - Billing inquiry resolved', icon: CheckCircle, color: 'text-green-600' },
-  { time: '3 hours ago', action: 'Added note', details: 'T-1015 - Escalated to technical team', icon: FileText, color: 'text-gray-600' },
+  { time: '3 hours ago', action: 'Added note', details: 'T-1015 - Escalated to technical team', icon: FileText, color: 'text-muted-foreground' },
 ];
 
 const loginHistory = [
@@ -200,8 +200,8 @@ export default function UserDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
-          <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex-1 flex items-center justify-center bg-muted/50">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span>Loading user details...</span>
           </div>
@@ -215,11 +215,11 @@ export default function UserDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="flex-1 flex items-center justify-center bg-muted/50">
           <div className="text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">User Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || "The user you're looking for doesn't exist."}</p>
+            <p className="text-muted-foreground mb-4">{error || "The user you're looking for doesn't exist."}</p>
             <Button onClick={() => navigate('/superadmin/team')}>Back to Team</Button>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function UserDetails() {
     <>
       <SuperadminTopbar />
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 px-6 pt-6">
+        <main className="flex-1 overflow-y-auto bg-muted/50 px-6 pt-6">
           {/* Back Button */}
           <div className="mb-6">
             <Button
@@ -250,7 +250,7 @@ export default function UserDetails() {
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-5">
                   <Avatar className="h-16 w-16">
-                    <AvatarFallback className="bg-blue-600 text-white text-xl">{initials}</AvatarFallback>
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xl">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -262,8 +262,8 @@ export default function UserDetails() {
                         {user.status}
                       </Badge>
                     </div>
-                    <p className="text-gray-600 mb-3">{d.bio}</p>
-                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                    <p className="text-muted-foreground mb-3">{d.bio}</p>
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1"><Mail className="h-4 w-4" />{user.email}</span>
                       <span className="flex items-center gap-1"><Phone className="h-4 w-4" />{d.phone}</span>
                       <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{d.location}</span>
@@ -298,11 +298,11 @@ export default function UserDetails() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Ticket className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Ticket className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Tickets Handled</p>
+                    <p className="text-sm text-muted-foreground">Tickets Handled</p>
                     <p className="text-2xl font-bold">{d.ticketsHandled}</p>
                   </div>
                 </div>
@@ -315,7 +315,7 @@ export default function UserDetails() {
                     <MessageCircle className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Chats Handled</p>
+                    <p className="text-sm text-muted-foreground">Chats Handled</p>
                     <p className="text-2xl font-bold">{d.chatsHandled}</p>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export default function UserDetails() {
                     <Clock className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Avg Response Time</p>
+                    <p className="text-sm text-muted-foreground">Avg Response Time</p>
                     <p className="text-2xl font-bold">{d.avgResponseTime}</p>
                   </div>
                 </div>
@@ -337,11 +337,11 @@ export default function UserDetails() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 bg-secondary/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-secondary" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Satisfaction</p>
+                    <p className="text-sm text-muted-foreground">Satisfaction</p>
                     <p className="text-2xl font-bold">{d.satisfaction}%</p>
                   </div>
                 </div>
@@ -371,7 +371,7 @@ export default function UserDetails() {
                         <XAxis dataKey="day" />
                         <YAxis />
                         <Tooltip />
-                        <Line type="monotone" dataKey="tickets" stroke="#3B82F6" strokeWidth={2} name="Tickets" />
+                        <Line type="monotone" dataKey="tickets" stroke="var(--primary)" strokeWidth={2} name="Tickets" />
                         <Line type="monotone" dataKey="chats" stroke="#10B981" strokeWidth={2} name="Chats" />
                       </LineChart>
                     </ResponsiveContainer>
@@ -387,13 +387,13 @@ export default function UserDetails() {
                 <CardContent>
                   <div className="space-y-4">
                     {recentActivity.map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                         <item.icon className={`h-5 w-5 mt-0.5 ${item.color}`} />
                         <div className="flex-1">
                           <p className="text-sm font-semibold">{item.action}</p>
-                          <p className="text-xs text-gray-600">{item.details}</p>
+                          <p className="text-xs text-muted-foreground">{item.details}</p>
                         </div>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">{item.time}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{item.time}</span>
                       </div>
                     ))}
                   </div>
@@ -408,18 +408,18 @@ export default function UserDetails() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Shield className="h-5 w-5 text-blue-600" />
+                    <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                      <Shield className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm font-semibold">Role</p>
-                        <p className="text-sm text-gray-600">{user.role}</p>
+                        <p className="text-sm text-muted-foreground">{user.role}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                       <Activity className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="text-sm font-semibold">Department</p>
-                        <p className="text-sm text-gray-600">{d.department}</p>
+                        <p className="text-sm text-muted-foreground">{d.department}</p>
                       </div>
                     </div>
                     <div>
@@ -507,7 +507,7 @@ export default function UserDetails() {
           </div>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-blue-600" onClick={() => setEditDialogOpen(false)}>Save Changes</Button>
+            <Button className="bg-primary" onClick={() => setEditDialogOpen(false)}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

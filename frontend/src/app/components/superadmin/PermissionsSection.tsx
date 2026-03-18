@@ -154,7 +154,7 @@ export function PermissionsSection() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Permissions</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Configure what each role can access across the platform.
           </p>
         </div>
@@ -163,7 +163,7 @@ export function PermissionsSection() {
           size="sm"
           disabled={!hasChanges}
           onClick={handleSave}
-          className={hasChanges ? 'bg-blue-600' : ''}
+          className={hasChanges ? 'bg-primary' : ''}
         >
           Save Changes
         </Button>
@@ -179,7 +179,7 @@ export function PermissionsSection() {
                   <TableHead key={role} className="text-center min-w-[110px]">
                     <div className="flex flex-col items-center gap-0.5">
                       <span>{role}</span>
-                      <span className="text-xs text-gray-400 font-normal">
+                      <span className="text-xs text-muted-foreground font-normal">
                         {roleUserCounts[role] || 0} users
                       </span>
                     </div>
@@ -189,34 +189,34 @@ export function PermissionsSection() {
             </TableHeader>
             <TableBody>
               {permissionModules.flatMap((mod, moduleIndex) => [
-                <TableRow key={`header-${mod.module}`} className="bg-gray-50/80">
+                <TableRow key={`header-${mod.module}`} className="bg-muted/50">
                   <TableCell
                     colSpan={roleNames.length + 1}
                     className="py-2"
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">{mod.module}</span>
-                      <span className="text-xs text-gray-400">{mod.description}</span>
+                      <span className="text-xs text-muted-foreground">{mod.description}</span>
                     </div>
                   </TableCell>
                 </TableRow>,
                 ...mod.permissions.map((perm, permIndex) => (
                   <TableRow key={perm.key}>
-                    <TableCell className="pl-8 text-sm text-gray-700">
+                    <TableCell className="pl-8 text-sm text-foreground">
                       {perm.label}
                     </TableCell>
                     {roleNames.map((role) => (
                       <TableCell key={role} className="text-center">
                         {role === 'Superadmin' ? (
                           <div className="flex justify-center">
-                            <Check className="h-4 w-4 text-purple-600" />
+                            <Check className="h-4 w-4 text-secondary" />
                           </div>
                         ) : (
                           <div className="flex justify-center">
                             <Switch
                               checked={perm.roles[role] || false}
                               onCheckedChange={() => handleToggle(moduleIndex, permIndex, role)}
-                              className="data-[state=checked]:bg-blue-600"
+                              className="data-[state=checked]:bg-primary"
                             />
                           </div>
                         )}

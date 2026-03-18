@@ -19,10 +19,10 @@ export default function ContactPage() {
       />
       <MarketingHeader />
 
-      <section className="bg-gradient-to-br from-blue-50 to-white py-16">
+      <section className="bg-gradient-to-br from-primary/10 to-card py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-4 text-[48px] font-bold">Get in Touch</h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted-foreground">
             We'd love to hear from you. Reach out anytime!
           </p>
         </div>
@@ -53,7 +53,7 @@ export default function ContactPage() {
                   <label className="block text-sm mb-2">Message</label>
                   <Textarea placeholder="Tell us more..." rows={6} />
                 </div>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button className="w-full bg-primary hover:bg-primary/90">
                   Send Message
                 </Button>
               </form>
@@ -65,32 +65,32 @@ export default function ContactPage() {
               
               <Card>
                 <CardContent className="p-4 flex items-start gap-4">
-                  <Mail className="h-6 w-6 text-blue-600 mt-1" />
+                  <Mail className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="mb-1">Email</h4>
-                    <p className="text-sm text-gray-600">support@linochat.com</p>
-                    <p className="text-sm text-gray-600">sales@linochat.com</p>
+                    <p className="text-sm text-muted-foreground">support@linochat.com</p>
+                    <p className="text-sm text-muted-foreground">sales@linochat.com</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-4 flex items-start gap-4">
-                  <Phone className="h-6 w-6 text-blue-600 mt-1" />
+                  <Phone className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="mb-1">Phone</h4>
-                    <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
-                    <p className="text-sm text-gray-600">+1 (555) 765-4321</p>
+                    <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
+                    <p className="text-sm text-muted-foreground">+1 (555) 765-4321</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-4 flex items-start gap-4">
-                  <MapPin className="h-6 w-6 text-blue-600 mt-1" />
+                  <MapPin className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="mb-1">Office</h4>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       123 Support Street<br />
                       San Francisco, CA 94105<br />
                       United States
@@ -101,18 +101,18 @@ export default function ContactPage() {
 
               <Card>
                 <CardContent className="p-4 flex items-start gap-4">
-                  <Clock className="h-6 w-6 text-blue-600 mt-1" />
+                  <Clock className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="mb-1">Support Hours</h4>
-                    <p className="text-sm text-gray-600">Mon-Fri: 9:00 AM - 6:00 PM PST</p>
-                    <p className="text-sm text-gray-600">Weekend: Emergency support only</p>
+                    <p className="text-sm text-muted-foreground">Mon-Fri: 9:00 AM - 6:00 PM PST</p>
+                    <p className="text-sm text-muted-foreground">Weekend: Emergency support only</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Map Placeholder */}
-              <div className="h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">Map would be embedded here</p>
+              <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
+                <p className="text-muted-foreground">Map would be embedded here</p>
               </div>
             </div>
           </div>

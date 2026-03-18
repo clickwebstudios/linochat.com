@@ -828,14 +828,14 @@ export default function AIArticleGenerator() {
 
   const getRelevanceColor = (score: number) => {
     if (score >= 90) return 'text-green-600 bg-green-50';
-    if (score >= 80) return 'text-blue-600 bg-blue-50';
+    if (score >= 80) return 'text-primary bg-primary/10';
     return 'text-yellow-600 bg-yellow-50';
   };
 
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -847,36 +847,36 @@ export default function AIArticleGenerator() {
           <ProjectSelector />
           <div>
             <h1 className="font-semibold">AI Article Generator</h1>
-            <p className="text-sm text-gray-500">Generate knowledge base articles from your website</p>
+            <p className="text-sm text-muted-foreground">Generate knowledge base articles from your website</p>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6 scroll-smooth pb-24 bg-gray-50">
+      <main className="flex-1 overflow-y-auto p-6 scroll-smooth pb-24 bg-muted/50">
         {isLoading ? (
           // Loading State
           <div className="flex flex-col items-center justify-center h-full">
             <div className="relative mb-8">
-              <Loader2 className="h-16 w-16 text-purple-600 animate-spin" />
+              <Loader2 className="h-16 w-16 text-secondary animate-spin" />
               <Sparkles className="h-6 w-6 text-yellow-500 absolute -top-2 -right-2 animate-pulse" />
             </div>
             <h2 className="text-2xl font-semibold mb-2">Analyzing Your Website</h2>
-            <p className="text-gray-600 mb-6 text-center max-w-md">
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
               Our AI is scanning your website content and generating helpful articles for your knowledge base...
             </p>
             <div className="space-y-3 w-full max-w-md">
               <div className="flex items-center gap-3 text-sm">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-gray-600">Scanning website pages...</span>
+                <span className="text-muted-foreground">Scanning website pages...</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                <span className="text-gray-600">Analyzing common questions...</span>
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <span className="text-muted-foreground">Analyzing common questions...</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <div className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0.4s' }} />
-                <span className="text-gray-600">Generating article drafts...</span>
+                <div className="h-2 w-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.4s' }} />
+                <span className="text-muted-foreground">Generating article drafts...</span>
               </div>
             </div>
           </div>
@@ -887,7 +887,7 @@ export default function AIArticleGenerator() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-2xl font-semibold mb-1">AI-Generated Articles</h2>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Review and select articles to add to your knowledge base ({selectedArticles.length} selected)
                   </p>
                 </div>
@@ -899,7 +899,7 @@ export default function AIArticleGenerator() {
                     Cancel
                   </Button>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                     onClick={handleSaveSelected}
                     disabled={selectedArticles.length === 0 || isSaving}
                   >
@@ -957,7 +957,7 @@ export default function AIArticleGenerator() {
                   <Card
                     key={article.id}
                     className={`cursor-pointer transition-all hover:shadow-lg ${
-                      isSelected ? 'ring-2 ring-blue-600 bg-blue-50' : ''
+                      isSelected ? 'ring-2 ring-primary bg-primary/10' : ''
                     }`}
                     onClick={() => toggleArticleSelection(article.id)}
                   >
@@ -1000,8 +1000,8 @@ export default function AIArticleGenerator() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600 mb-3">{article.summary}</p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <p className="text-sm text-muted-foreground mb-3">{article.summary}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {article.estimatedReadTime}
@@ -1021,9 +1021,9 @@ export default function AIArticleGenerator() {
             </div>
 
             {/* Bottom Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 md:left-24 bg-white border-t p-4 shadow-lg">
+            <div className="fixed bottom-0 left-0 right-0 md:left-24 bg-card border-t p-4 shadow-lg">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   {selectedArticles.length} article{selectedArticles.length !== 1 ? 's' : ''} selected
                 </div>
                 <div className="flex gap-3">
@@ -1034,7 +1034,7 @@ export default function AIArticleGenerator() {
                     Cancel
                   </Button>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                     onClick={handleSaveSelected}
                     disabled={selectedArticles.length === 0 || isSaving}
                   >
@@ -1063,7 +1063,7 @@ export default function AIArticleGenerator() {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-blue-600" />
+                <FileText className="h-5 w-5 text-primary" />
                 {previewArticle?.title}
               </div>
             </DialogTitle>
@@ -1073,13 +1073,13 @@ export default function AIArticleGenerator() {
                 <TrendingUp className="h-3 w-3 mr-1" />
                 {previewArticle?.relevanceScore}% Relevance
               </Badge>
-              <span className="text-sm text-gray-500 flex items-center gap-1">
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {previewArticle?.estimatedReadTime}
               </span>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-gray-50 rounded-lg">
+          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg">
             <div className="whitespace-pre-wrap">{previewArticle?.content}</div>
           </div>
           <div className="flex items-center justify-between border-t pt-4">
@@ -1095,7 +1095,7 @@ export default function AIArticleGenerator() {
                 Close
               </Button>
               <Button
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => {
                   if (previewArticle) {
                     toggleArticleSelection(previewArticle.id);
@@ -1136,13 +1136,13 @@ export default function AIArticleGenerator() {
               </Badge>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-3">Your selected articles have been successfully added to the knowledge base.</p>
+          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-3">Your selected articles have been successfully added to the knowledge base.</p>
           </div>
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex gap-2">
               <Button
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => {
                   setShowConfirmation(false);
                   navigate('/admin/dashboard', { state: { message: `Successfully added ${savedCount} articles to knowledge base!` } });

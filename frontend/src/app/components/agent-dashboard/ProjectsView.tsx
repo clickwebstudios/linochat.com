@@ -82,8 +82,8 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
 
   if (loading && projects.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
-        <div className="flex items-center gap-3 text-gray-500">
+      <div className="flex-1 flex items-center justify-center bg-muted/50 p-6">
+        <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Loading projects...</span>
         </div>
@@ -93,15 +93,15 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
 
   if (projects.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6">
-        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-          <Plus className="h-10 w-10 text-blue-600" />
+      <div className="flex-1 flex flex-col items-center justify-center bg-muted/50 p-6">
+        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <Plus className="h-10 w-10 text-primary" />
         </div>
         <h2 className="text-2xl font-semibold mb-2">No projects yet</h2>
-        <p className="text-gray-500 mb-8 text-center max-w-md">
+        <p className="text-muted-foreground mb-8 text-center max-w-md">
           Create your first project to get started
         </p>
-        <Button onClick={onAddProjectClick} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Add Project
         </Button>
@@ -110,11 +110,11 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
   }
 
   return (
-    <div className="flex-1 bg-gray-50 p-6">
+    <div className="flex-1 bg-muted/50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Projects</h1>
-          <Button onClick={onAddProjectClick} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
             Add Project
           </Button>
@@ -152,7 +152,7 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
                     </div>
                     <div>
                       <CardTitle className="text-base">{project.name}</CardTitle>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {project.website?.replace(/^https?:\/\//, '')}
                       </p>
                     </div>
@@ -167,11 +167,11 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
               </CardHeader>
               
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                   {project.description || 'No description'}
                 </p>
                 
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center gap-4">
                     <span>{project.totalTickets || 0} tickets</span>
                     <span className="text-green-600">{project.activeTickets || 0} active</span>

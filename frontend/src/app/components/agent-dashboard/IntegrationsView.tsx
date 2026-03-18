@@ -143,37 +143,37 @@ export function IntegrationsView() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500">Connect LinoChat with your favorite tools and services.</p>
+          <p className="text-sm text-muted-foreground">Connect LinoChat with your favorite tools and services.</p>
         </div>
         {projects.length > 1 && (
           <div className="relative">
             <select
               value={projectId ?? ''}
               onChange={(e) => { setProjectId(e.target.value); setFrubix(null); }}
-              className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="appearance-none bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm font-medium text-foreground cursor-pointer hover:border-border focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           </div>
         )}
       </div>
 
       {/* Frubix Integration */}
       <div>
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
           {isConnected ? 'Active' : 'Available'}
         </h3>
-        <Card className={`border shadow-sm ${isConnected ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
+        <Card className={`border shadow-sm ${isConnected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <FrubixLogo className="h-12 w-12" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-gray-900">Frubix</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Frubix</h3>
                     {isConnected ? (
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -183,11 +183,11 @@ export function IntegrationsView() {
                       <Badge variant="secondary">Not connected</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-muted-foreground mt-0.5">
                     Automatically create leads in Frubix when tickets are created in LinoChat.
                   </p>
                   {isConnected && frubix?.connected_at && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Connected {new Date(frubix.connected_at).toLocaleDateString()}
                     </p>
                   )}
@@ -241,15 +241,15 @@ export function IntegrationsView() {
 
       {/* Coming Soon */}
       <div>
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Coming Soon</h3>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Coming Soon</h3>
         <div className="grid grid-cols-4 gap-4">
           {comingSoonIntegrations.map((integration) => (
             <div
               key={integration.name}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 opacity-60"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/50 opacity-60"
             >
               <span className="text-2xl">{integration.icon}</span>
-              <span className="text-xs text-gray-500">{integration.name}</span>
+              <span className="text-xs text-muted-foreground">{integration.name}</span>
             </div>
           ))}
         </div>

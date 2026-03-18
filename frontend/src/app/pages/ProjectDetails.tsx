@@ -151,41 +151,41 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-gray-50 p-6">
+      <div className="flex-1 bg-muted/50 p-6">
         {/* Header skeleton */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
           <div className="flex-1">
-            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-6 w-48 bg-muted rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
           </div>
         </div>
 
         {/* Project card skeleton */}
-        <div className="bg-white rounded-xl border p-6 mb-6">
+        <div className="bg-card rounded-xl border p-6 mb-6">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="w-16 h-16 bg-muted rounded-xl animate-pulse" />
             <div className="flex-1">
-              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-              <div className="h-4 w-96 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-64 bg-muted rounded animate-pulse mb-2" />
+              <div className="h-4 w-96 bg-muted rounded animate-pulse" />
             </div>
           </div>
         </div>
 
         {/* Tabs skeleton */}
-        <div className="bg-white rounded-xl border">
+        <div className="bg-card rounded-xl border">
           <div className="border-b p-4">
             <div className="flex gap-4">
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-8 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-8 w-24 bg-muted rounded animate-pulse" />
             </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-full bg-muted rounded animate-pulse" />
+              <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
             </div>
           </div>
         </div>
@@ -195,11 +195,11 @@ export default function ProjectDetails() {
 
   if (!project) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-muted/50">
         <div className="text-center">
-          <FolderKanban className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Project Not Found</h2>
-          <p className="text-gray-600 mb-4">The project you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">The project you're looking for doesn't exist.</p>
           <Button onClick={() => navigate(`${basePath}/projects`)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
@@ -215,7 +215,7 @@ export default function ProjectDetails() {
       {isSuperadmin ? (
         <SuperadminTopbar />
       ) : (
-        <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+        <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -226,7 +226,7 @@ export default function ProjectDetails() {
               <Menu className="h-5 w-5" />
             </Button>
               <div className="relative w-96 hidden md:block">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search tickets, chats, customers..." className="pl-10" />
               </div>
             </div>
@@ -235,23 +235,23 @@ export default function ProjectDetails() {
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600"></span>
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 hidden md:inline-flex">
+              <Button className="bg-primary hover:bg-primary/90 hidden md:inline-flex">
                 + New Ticket
               </Button>
               <div className="hidden md:flex items-center gap-3 pl-4 border-l">
                 <div className="relative">
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-blue-600 text-white">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` : '??'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
+                  <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card"></span>
                 </div>
                 <div>
                   <div className="text-sm font-semibold">
                     {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                   </div>
-                  <div className="text-xs text-gray-500 capitalize">{user?.role ?? (basePath === '/admin' ? 'Admin' : 'Agent')}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{user?.role ?? (basePath === '/admin' ? 'Admin' : 'Agent')}</div>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -307,13 +307,13 @@ export default function ProjectDetails() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{project.name}</h1>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>ID: {project.id}</span>
                     {isSuperadmin && company && (
                       <>
                         <span>·</span>
                         <button
-                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                          className="flex items-center gap-1 hover:text-primary transition-colors"
                           onClick={() => navigate(`/superadmin/company/${company.id}`)}
                         >
                           <Building2 className="h-3 w-3" />
@@ -326,7 +326,7 @@ export default function ProjectDetails() {
                       href={project.website || 'https://example.com'}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                      className="flex items-center gap-1 hover:text-primary transition-colors"
                     >
                       <Globe className="h-3 w-3" />
                       {project.website || 'https://example.com'}
@@ -339,8 +339,8 @@ export default function ProjectDetails() {
             </div>
 
             <div className="flex gap-2">
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700"
+              <Button
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => setEditProjectDialogOpen(true)}
               >
                 <Edit className="h-4 w-4 mr-2" />

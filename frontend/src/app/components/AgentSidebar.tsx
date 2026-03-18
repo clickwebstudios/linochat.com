@@ -20,11 +20,11 @@ interface AgentSidebarProps {
 
 export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, ticketsCount = 0 }: AgentSidebarProps) {
   return (
-    <div className="flex h-full flex-col bg-gray-900">
+    <div className="flex h-full flex-col bg-sidebar">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center border-b border-gray-800">
+      <div className="flex h-16 items-center justify-center border-b border-sidebar-border">
         <Link to="/agent/dashboard">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
             <span className="text-sm text-white font-bold">CS</span>
           </div>
         </Link>
@@ -35,9 +35,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/dashboard"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors ${
-            activeSection === 'dashboard' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'dashboard'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Home className="h-6 w-6" />
@@ -46,9 +46,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/chats"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors relative ${
-            activeSection === 'chats' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'chats'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <MessageCircle className="h-6 w-6" />
@@ -58,9 +58,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/tickets"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors relative ${
-            activeSection === 'tickets' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'tickets'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Ticket className="h-6 w-6" />
@@ -70,9 +70,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/knowledge"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors ${
-            activeSection === 'knowledge' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'knowledge'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <FileText className="h-6 w-6" />
@@ -81,9 +81,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/reports"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors ${
-            activeSection === 'reports' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'reports'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <BarChart className="h-6 w-6" />
@@ -92,9 +92,9 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
         <Link
           to="/agent/settings"
           className={`w-full flex flex-col items-center gap-2 py-3 px-2 rounded-lg transition-colors ${
-            activeSection === 'settings' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            activeSection === 'settings'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Settings className="h-6 w-6" />
@@ -103,10 +103,10 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
       </nav>
 
       {/* Status */}
-      <div className="border-t border-gray-800 p-4">
+      <div className="border-t border-sidebar-border p-4">
         <div className="flex flex-col items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-green-500"></span>
-          <span className="text-xs text-gray-400">Online</span>
+          <span className="text-xs text-sidebar-foreground/60">Online</span>
         </div>
       </div>
     </div>

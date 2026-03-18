@@ -26,20 +26,20 @@ export default function HelpCenter() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/50">
       {/* Header */}
-      <header className="border-b bg-white">
+      <header className="border-b bg-card">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-                <span className="text-sm text-white font-bold">LC</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <span className="text-sm text-primary-foreground font-bold">LC</span>
               </div>
               <span className="font-bold">LinoChat</span>
             </Link>
             <nav className="flex items-center gap-4">
               <Link to="/contact">
-                <Button className="bg-blue-600">Contact Support</Button>
+                <Button className="bg-primary">Contact Support</Button>
               </Link>
             </nav>
           </div>
@@ -47,22 +47,22 @@ export default function HelpCenter() {
       </header>
 
       {/* Hero Search */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-700 text-white py-16">
+      <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="mb-4 text-white text-[48px] font-bold">How can we help you?</h1>
-          <p className="text-xl text-blue-100 mb-8">
+          <h1 className="mb-4 text-primary-foreground text-[48px] font-bold">How can we help you?</h1>
+          <p className="text-xl text-primary-foreground/80 mb-8">
             Search our knowledge base for answers
           </p>
           <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Search for articles, guides, FAQs..."
-              className="pl-12 h-14 text-lg bg-white"
+              className="pl-12 h-14 text-lg bg-card"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <p className="mt-4 text-sm text-blue-100">
+          <p className="mt-4 text-sm text-primary-foreground/80">
             Popular searches: password reset, billing, integrations
           </p>
         </div>
@@ -76,11 +76,11 @@ export default function HelpCenter() {
             {categories.map((category, i) => (
               <Card key={i} className="cursor-pointer hover:shadow-lg transition-all hover:scale-105">
                 <CardContent className="p-6 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {category.icon}
                   </div>
                   <h3 className="mb-2">{category.name}</h3>
-                  <p className="text-sm text-gray-600">{category.count} articles</p>
+                  <p className="text-sm text-muted-foreground">{category.count} articles</p>
                 </CardContent>
               </Card>
             ))}
@@ -89,7 +89,7 @@ export default function HelpCenter() {
       </section>
 
       {/* Popular Articles */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-card">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2>Popular Articles</h2>
@@ -101,7 +101,7 @@ export default function HelpCenter() {
                 <CardContent className="p-6">
                   <Badge className="mb-3">{article.category}</Badge>
                   <h3 className="mb-3">{article.title}</h3>
-                  <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>{article.views} views</span>
                     <span className="flex items-center gap-1">
                       <ThumbsUp className="h-4 w-4" />
@@ -122,11 +122,11 @@ export default function HelpCenter() {
           <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="bg-white border rounded-lg px-6">
+                <AccordionItem key={i} value={`faq-${i}`} className="bg-card border rounded-lg px-6">
                   <AccordionTrigger className="text-left">
                     {faq.q}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-600">
+                  <AccordionContent className="text-muted-foreground">
                     {faq.a}
                   </AccordionContent>
                 </AccordionItem>
@@ -138,7 +138,7 @@ export default function HelpCenter() {
 
       {/* Article Detail View (when clicked) */}
       {searchQuery && (
-        <section className="py-12 bg-white">
+        <section className="py-12 bg-card">
           <div className="container mx-auto px-4 max-w-4xl">
             <Card>
               <CardHeader>
@@ -146,7 +146,7 @@ export default function HelpCenter() {
                   <div>
                     <Badge className="mb-3">Getting Started</Badge>
                     <CardTitle>How to Get Started with LinoChat</CardTitle>
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Updated on Dec 15, 2024 • 5 min read
                     </p>
                   </div>
@@ -186,9 +186,9 @@ export default function HelpCenter() {
                 <div className="border-t pt-6 mt-6">
                   <h4 className="mb-4">Related Articles</h4>
                   <div className="space-y-2">
-                    <a href="#" className="block text-blue-600 hover:underline">→ Installing the Chat Widget</a>
-                    <a href="#" className="block text-blue-600 hover:underline">→ Managing Team Members</a>
-                    <a href="#" className="block text-blue-600 hover:underline">→ Customizing Your Dashboard</a>
+                    <a href="#" className="block text-primary hover:underline">→ Installing the Chat Widget</a>
+                    <a href="#" className="block text-primary hover:underline">→ Managing Team Members</a>
+                    <a href="#" className="block text-primary hover:underline">→ Customizing Your Dashboard</a>
                   </div>
                 </div>
               </CardContent>
@@ -198,19 +198,19 @@ export default function HelpCenter() {
       )}
 
       {/* CTA */}
-      <section className="py-12 bg-blue-600 text-white">
+      <section className="py-12 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-white">Can't find what you need?</h2>
-          <p className="text-xl text-blue-100 mb-6">
+          <h2 className="mb-4 text-primary-foreground">Can't find what you need?</h2>
+          <p className="text-xl text-primary-foreground/80 mb-6">
             Our support team is here to help!
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-card text-primary hover:bg-muted/50">
               <MessageCircle className="mr-2 h-5 w-5" />
               Start Live Chat
             </Button>
             <Link to="/contact">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-blue-700">
+              <Button size="lg" variant="outline" className="text-primary-foreground border-primary-foreground hover:bg-primary/90">
                 Contact Support
               </Button>
             </Link>
@@ -219,12 +219,12 @@ export default function HelpCenter() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-white py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-600">
+      <footer className="border-t bg-card py-8">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© 2024 LinoChat. All rights reserved.</p>
           <div className="mt-2 flex gap-4 justify-center">
-            <Link to="/" className="hover:text-blue-600">Home</Link>
-            <Link to="/contact" className="hover:text-blue-600">Contact</Link>
+            <Link to="/" className="hover:text-primary">Home</Link>
+            <Link to="/contact" className="hover:text-primary">Contact</Link>
           </div>
         </div>
       </footer>

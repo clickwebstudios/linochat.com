@@ -109,10 +109,10 @@ export default function InviteAcceptPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
-          <p className="text-gray-600">Loading invitation...</p>
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-muted-foreground">Loading invitation...</p>
         </div>
       </div>
     );
@@ -120,7 +120,7 @@ export default function InviteAcceptPage() {
 
   if (error && !invitation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -128,8 +128,8 @@ export default function InviteAcceptPage() {
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Invalid or expired invitation</h2>
-                <p className="text-gray-600 mt-1">{error}</p>
+                <h2 className="text-xl font-semibold text-foreground">Invalid or expired invitation</h2>
+                <p className="text-muted-foreground mt-1">{error}</p>
               </div>
               <Link to="/login">
                 <Button variant="outline">Go to Login</Button>
@@ -142,20 +142,20 @@ export default function InviteAcceptPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-blue-600 p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-white" />
+        <div className="bg-primary p-2 rounded-lg">
+          <MessageSquare className="h-6 w-6 text-primary-foreground" />
         </div>
-        <h1 className="text-xl text-blue-600">LinoChat</h1>
+        <h1 className="text-xl text-primary">LinoChat</h1>
       </div>
 
       <Link
         to="/"
-        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-muted/50 transition-colors"
         aria-label="Close"
       >
-        <X className="h-6 w-6 text-gray-600" />
+        <X className="h-6 w-6 text-muted-foreground" />
       </Link>
 
       <Card className="w-full max-w-md shadow-xl border-0">
@@ -170,9 +170,9 @@ export default function InviteAcceptPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-900">
+          <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-sm text-primary">
             <p className="font-medium">Invitation for: {invitation?.email}</p>
-            <p className="text-blue-700 mt-1">
+            <p className="text-primary mt-1">
               You'll join <strong>{invitation?.project.name}</strong> as a team member.
             </p>
           </div>
@@ -191,7 +191,7 @@ export default function InviteAcceptPage() {
                   First name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="first_name"
                     placeholder="John"
@@ -223,7 +223,7 @@ export default function InviteAcceptPage() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -236,7 +236,7 @@ export default function InviteAcceptPage() {
                   disabled={submitting}
                 />
               </div>
-              <p className="text-xs text-gray-500">Must be at least 6 characters</p>
+              <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
             </div>
 
             <div className="space-y-2">
@@ -244,7 +244,7 @@ export default function InviteAcceptPage() {
                 Confirm password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password_confirmation"
                   type="password"
@@ -261,7 +261,7 @@ export default function InviteAcceptPage() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={submitting}
             >
               {submitting ? (
@@ -275,7 +275,7 @@ export default function InviteAcceptPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-muted-foreground">
             By accepting, you agree to join the team and access the LinoChat dashboard.
           </p>
         </CardContent>

@@ -145,7 +145,7 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -162,7 +162,7 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={onCreateTicketClick}>
+            <Button className="bg-primary hover:bg-primary/90" onClick={onCreateTicketClick}>
               <Ticket className="h-4 w-4 mr-2" />
               New Ticket
             </Button>
@@ -171,10 +171,10 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
         <CardContent>
           {filteredTickets.length === 0 ? (
             <div className="text-center py-12">
-              <Ticket className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No tickets yet</h3>
-              <p className="text-gray-500 mb-6">Create your first ticket to get started</p>
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={onCreateTicketClick}>
+              <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No tickets yet</h3>
+              <p className="text-muted-foreground mb-6">Create your first ticket to get started</p>
+              <Button className="bg-primary hover:bg-primary/90" onClick={onCreateTicketClick}>
                 <Ticket className="h-4 w-4 mr-2" />
                 Create Ticket
               </Button>
@@ -197,7 +197,7 @@ export function TicketsTab({ basePath, onCreateTicketClick, projectId }: Tickets
                 {filteredTickets.map((ticket) => (
                   <TableRow 
                     key={ticket.id} 
-                    className="cursor-pointer hover:bg-gray-50" 
+                    className="cursor-pointer hover:bg-muted/50" 
                     onClick={() => navigate(`${basePath}/tickets/${ticket.id}`)}
                   >
                     <TableCell className="font-medium">TICK-{ticket.id}</TableCell>

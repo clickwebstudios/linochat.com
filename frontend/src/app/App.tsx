@@ -57,7 +57,7 @@ const InviteAcceptPage = lazy(() => import('./pages/auth/InviteAcceptPage'));
 function LoadingFallback() {
   return (
     <div className="flex h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
     </div>
   );
 }

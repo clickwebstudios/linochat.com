@@ -9,7 +9,7 @@ export const renderInlineMarkdown = (text: string): ReactNode => {
     const codeParts = part.split(/(`.*?`)/g);
     return codeParts.map((codePart, j) => {
       if (codePart.startsWith('`') && codePart.endsWith('`')) {
-        return <code key={`${i}-${j}`} className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600">{codePart.slice(1, -1)}</code>;
+        return <code key={`${i}-${j}`} className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-pink-600">{codePart.slice(1, -1)}</code>;
       }
       return <span key={`${i}-${j}`}>{codePart}</span>;
     });
@@ -32,7 +32,7 @@ export const renderContent = (text: string): ReactNode => {
     if (trimmed.startsWith('- [ ] ')) {
       return (
         <div key={i} className="flex items-center gap-2 py-1 ml-4">
-          <div className="h-4 w-4 border rounded border-gray-300" />
+          <div className="h-4 w-4 border rounded border-border" />
           <span className="text-sm">{trimmed.slice(6)}</span>
         </div>
       );
@@ -40,7 +40,7 @@ export const renderContent = (text: string): ReactNode => {
     if (trimmed.startsWith('- ')) {
       return (
         <div key={i} className="flex items-start gap-2 py-0.5 ml-4">
-          <span className="text-gray-400 mt-1">&bull;</span>
+          <span className="text-muted-foreground mt-1">&bull;</span>
           <span className="text-sm">{renderInlineMarkdown(trimmed.slice(2))}</span>
         </div>
       );
@@ -50,7 +50,7 @@ export const renderContent = (text: string): ReactNode => {
       if (match) {
         return (
           <div key={i} className="flex items-start gap-2 py-0.5 ml-4">
-            <span className="text-gray-500 min-w-[1.5rem] text-sm">{match[1]}.</span>
+            <span className="text-muted-foreground min-w-[1.5rem] text-sm">{match[1]}.</span>
             <span className="text-sm">{renderInlineMarkdown(match[2])}</span>
           </div>
         );
@@ -62,6 +62,6 @@ export const renderContent = (text: string): ReactNode => {
     if (trimmed === '') {
       return <div key={i} className="h-3" />;
     }
-    return <p key={i} className="text-sm text-gray-700 leading-relaxed">{renderInlineMarkdown(trimmed)}</p>;
+    return <p key={i} className="text-sm text-foreground leading-relaxed">{renderInlineMarkdown(trimmed)}</p>;
   });
 };

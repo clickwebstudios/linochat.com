@@ -68,31 +68,31 @@ export default function ResetPassword() {
   const hasValidParams = token && emailParam;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-blue-600 p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-white" />
+        <div className="bg-primary p-2 rounded-lg">
+          <MessageSquare className="h-6 w-6 text-primary-foreground" />
         </div>
-        <h1 className="text-xl text-blue-600">LinoChat</h1>
+        <h1 className="text-xl text-primary">LinoChat</h1>
       </div>
 
       <Link
         to="/"
-        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-muted/50 transition-colors"
         aria-label="Close"
       >
-        <X className="h-6 w-6 text-gray-600" />
+        <X className="h-6 w-6 text-muted-foreground" />
       </Link>
 
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         <div className="hidden lg:block space-y-6">
           <div className="space-y-4">
-            <h2 className="text-4xl text-gray-900">
+            <h2 className="text-4xl text-foreground">
               Set a new
               <br />
-              <span className="text-blue-600">password</span>
+              <span className="text-primary">password</span>
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground">
               Enter your new password below. Make sure it's at least 6 characters long.
             </p>
           </div>
@@ -118,8 +118,8 @@ export default function ResetPassword() {
                       <CheckCircle className="h-12 w-12 text-green-600" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-lg text-gray-900">Password reset successfully</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="text-lg text-foreground">Password reset successfully</h3>
+                      <p className="text-sm text-muted-foreground">
                         Redirecting you to login...
                       </p>
                     </div>
@@ -127,7 +127,7 @@ export default function ResetPassword() {
                 </div>
               ) : !hasValidParams ? (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     This link is invalid or has expired. Please request a new password reset.
                   </p>
                   <Link to="/forgot-password">
@@ -147,13 +147,13 @@ export default function ResetPassword() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled
-                      className="bg-gray-50"
+                      className="bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="password" className="text-sm">New password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="password"
                         type="password"
@@ -170,7 +170,7 @@ export default function ResetPassword() {
                   <div className="space-y-2">
                     <label htmlFor="password_confirmation" className="text-sm">Confirm password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="password_confirmation"
                         type="password"
@@ -191,7 +191,7 @@ export default function ResetPassword() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={loading}
                   >
                     {loading ? (
@@ -212,7 +212,7 @@ export default function ResetPassword() {
               <div className="pt-4">
                 <Link
                   to="/login"
-                  className="flex items-center justify-center text-sm text-blue-600 hover:underline"
+                  className="flex items-center justify-center text-sm text-primary hover:underline"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to login

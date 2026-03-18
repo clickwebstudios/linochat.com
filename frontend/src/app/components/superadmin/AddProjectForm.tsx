@@ -234,19 +234,19 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
         <div className="mt-6 flex flex-col items-center text-center">
           {!creationDone ? (
             <>
-              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
-                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
 
               {/* Progress bar */}
               <div className="w-full space-y-2 mb-6">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-blue-900">Processing...</span>
-                  <span className="text-blue-600">{Math.round(creationProgressPercent)}%</span>
+                  <span className="font-medium text-primary">Processing...</span>
+                  <span className="text-primary">{Math.round(creationProgressPercent)}%</span>
                 </div>
-                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${creationProgressPercent}%` }}
                   />
                 </div>
@@ -264,17 +264,17 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
                     {i < creationStep ? (
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     ) : i === creationStep ? (
-                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                      <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                     ) : (
-                      <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                      <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
                     )}
                     <span
                       className={
                         i === creationStep
-                          ? 'text-blue-900 font-medium'
+                          ? 'text-primary font-medium'
                           : i < creationStep
                             ? 'text-green-700'
-                            : 'text-gray-400'
+                            : 'text-muted-foreground'
                       }
                     >
                       {stepLabel}
@@ -288,7 +288,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Your project is ready. The AI assistant has been trained on your website content.
               </p>
             </>
@@ -313,7 +313,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
           {/* URL input */}
           <div className="space-y-2">
             <Label htmlFor="add-project-url" className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-gray-500" />
+              <Globe className="h-4 w-4 text-muted-foreground" />
               Website URL
             </Label>
             <div className="relative">
@@ -346,15 +346,15 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
 
           {/* Analyzing progress */}
           {analysisStatus === 'analyzing' && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-3">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-blue-900">Analyzing…</span>
-                  <span className="text-blue-600">{Math.round(progressPercent)}%</span>
+                  <span className="font-medium text-primary">Analyzing…</span>
+                  <span className="text-primary">{Math.round(progressPercent)}%</span>
                 </div>
-                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    className="h-full bg-primary rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -368,11 +368,11 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
                     {i < analysisStep ? (
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     ) : i === analysisStep ? (
-                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                      <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                     ) : (
-                      <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                      <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
                     )}
-                    <span className={i === analysisStep ? 'text-blue-900 font-medium' : i < analysisStep ? 'text-green-700' : 'text-gray-400'}>
+                    <span className={i === analysisStep ? 'text-primary font-medium' : i < analysisStep ? 'text-green-700' : 'text-muted-foreground'}>
                       {label}
                     </span>
                   </div>
@@ -411,7 +411,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
                   <Sparkles className="h-3 w-3 mr-1" />AI Generated
                 </Badge>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-green-200 bg-white">
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-green-200 bg-card">
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
                   style={{ backgroundColor: analyzedData.color }}
@@ -419,38 +419,38 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
                   {analyzedData.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{analyzedData.name}</p>
-                  <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{analyzedData.description}</p>
+                  <p className="font-semibold text-foreground truncate">{analyzedData.name}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{analyzedData.description}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200">
-                  <FileText className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-green-200">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase">Pages Found</p>
-                    <p className="text-sm text-gray-900">{analyzedData.pages}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Pages Found</p>
+                    <p className="text-sm text-foreground">{analyzedData.pages}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200">
-                  <Search className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-green-200">
+                  <Search className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase">Category</p>
-                    <p className="text-sm text-gray-900">{analyzedData.category}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Category</p>
+                    <p className="text-sm text-foreground">{analyzedData.category}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-green-200 col-span-2">
-                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-green-200 col-span-2">
+                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-gray-500 uppercase">Website</p>
-                    <p className="text-sm text-gray-900 truncate">{analyzedData.website.replace(/^https?:\/\//, '')}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Website</p>
+                    <p className="text-sm text-foreground truncate">{analyzedData.website.replace(/^https?:\/\//, '')}</p>
                   </div>
                   <div className="flex items-center gap-1.5 ml-auto">
-                    <Palette className="h-4 w-4 text-gray-400" />
+                    <Palette className="h-4 w-4 text-muted-foreground" />
                     <div
                       className="w-4 h-4 rounded-full border"
                       style={{ backgroundColor: analyzedData.color }}
                     />
-                    <p className="text-sm text-gray-900">{analyzedData.color}</p>
+                    <p className="text-sm text-foreground">{analyzedData.color}</p>
                   </div>
                 </div>
               </div>
@@ -461,14 +461,14 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
           <div className="flex gap-2 pt-1">
             {analysisStatus === 'done' ? (
               <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2"
+                className="flex-1 bg-primary hover:bg-primary/90 gap-2"
                 onClick={() => setStep(2)}
               >
                 Continue <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2"
+                className="flex-1 bg-primary hover:bg-primary/90 gap-2"
                 onClick={handleAnalyze}
                 disabled={!websiteUrl.trim() || analysisStatus === 'analyzing'}
               >
@@ -486,7 +486,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">or skip</span>
+              <span className="bg-white px-2 text-muted-foreground">or skip</span>
             </div>
           </div>
 
@@ -551,8 +551,8 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
 
         <div className="space-y-2">
           <Label>Website URL</Label>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-gray-50 text-sm text-gray-700">
-            <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 text-sm text-foreground">
+            <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="truncate">
               {websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
             </span>
@@ -560,7 +560,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
               href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto text-blue-600 hover:text-blue-700 flex-shrink-0"
+              className="ml-auto text-primary hover:text-primary/90 flex-shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -582,7 +582,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
                 <button
                   key={color}
                   className={`w-7 h-7 rounded-full border-2 shadow-sm hover:scale-110 transition-transform ${
-                    projectColor === color ? 'border-gray-900 ring-2 ring-gray-300' : 'border-white'
+                    projectColor === color ? 'border-foreground ring-2 ring-border' : 'border-white'
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => setProjectColor(color)}
@@ -594,7 +594,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
 
         {/* Live preview */}
         <div className="space-y-2 pt-2 border-t">
-          <Label className="text-xs text-gray-500 uppercase tracking-wider">Preview</Label>
+          <Label className="text-xs text-muted-foreground uppercase tracking-wider">Preview</Label>
           <div
             className="flex items-center gap-3 p-4 rounded-xl border-2 transition-colors"
             style={{ backgroundColor: projectColor + '08', borderColor: projectColor + '40' }}
@@ -606,8 +606,8 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
               {projectName ? projectName.substring(0, 2).toUpperCase() : 'NP'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900">{projectName || 'Project Name'}</p>
-              <p className="text-sm text-gray-500 truncate">
+              <p className="font-semibold text-foreground">{projectName || 'Project Name'}</p>
+              <p className="text-sm text-muted-foreground truncate">
                 {projectDescription || 'Project description will appear here'}
               </p>
             </div>
@@ -619,7 +619,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
           <Button
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-primary hover:bg-primary/90"
             onClick={handleSubmit}
             disabled={!projectName.trim() || isSubmitting}
           >

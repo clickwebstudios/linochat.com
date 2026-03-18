@@ -85,20 +85,20 @@ export default function OAuthAuthorizePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-muted/50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">Authorization Error</h2>
-            <p className="text-sm text-gray-500">{error}</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
         </Card>
       </div>
@@ -110,48 +110,48 @@ export default function OAuthAuthorizePage() {
   const scopeEntries = Object.entries(clientInfo.scopes);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-4">
           {/* LinoChat branding */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
-              <ShieldCheck className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-gray-900">LinoChat</span>
+            <span className="text-xl font-bold text-foreground">LinoChat</span>
           </div>
 
-          <h1 className="text-xl font-semibold text-gray-900">
-            Authorize <span className="text-blue-600">{clientInfo.client_name}</span>
+          <h1 className="text-xl font-semibold text-foreground">
+            Authorize <span className="text-primary">{clientInfo.client_name}</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Signed in as <span className="font-medium">{user?.email}</span>
           </p>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-foreground">
             <strong>{clientInfo.client_name}</strong> is requesting permission to access your
             LinoChat account with the following permissions:
           </p>
 
-          <div className="bg-gray-50 rounded-lg border divide-y">
+          <div className="bg-muted/50 rounded-lg border divide-y">
             {scopeEntries.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-gray-500 italic">No specific permissions requested.</p>
+              <p className="px-4 py-3 text-sm text-muted-foreground italic">No specific permissions requested.</p>
             ) : (
               scopeEntries.map(([scope, description]) => (
                 <div key={scope} className="flex items-start gap-3 px-4 py-3">
-                  <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{description}</p>
-                    <code className="text-xs text-gray-400">{scope}</code>
+                    <p className="text-sm font-medium text-foreground">{description}</p>
+                    <code className="text-xs text-muted-foreground">{scope}</code>
                   </div>
                 </div>
               ))
             )}
           </div>
 
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             You can revoke this access at any time from your account settings.
           </p>
         </CardContent>
@@ -166,7 +166,7 @@ export default function OAuthAuthorizePage() {
             Deny
           </Button>
           <Button
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-primary hover:bg-primary/90"
             disabled={submitting}
             onClick={() => handleDecision(true)}
           >

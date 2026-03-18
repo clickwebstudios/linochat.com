@@ -106,10 +106,10 @@ export function DashboardHeader({
   // Default search component
   const DefaultSearch = showSearch && (
     <div className="relative flex-1 max-w-md">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         placeholder="Search chats, tickets, customers..."
-        className="pl-10 bg-gray-50 border-gray-200"
+        className="pl-10 bg-muted/50 border-border"
         onChange={(e) => onSearch?.(e.target.value)}
       />
     </div>
@@ -140,24 +140,24 @@ export function DashboardHeader({
         
         <div className="max-h-96 overflow-y-auto">
           {notificationsList.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500">
+            <div className="p-4 text-center text-sm text-muted-foreground">
               No notifications
             </div>
           ) : (
             notificationsList.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer ${
-                  notification.unread ? 'bg-blue-50' : ''
+                className={`p-3 border-b last:border-b-0 hover:bg-muted/50 cursor-pointer ${
+                  notification.unread ? 'bg-primary/5' : ''
                 }`}
               >
                 <div className="flex items-start gap-2">
                   {notification.unread && (
-                    <div className="w-2 h-2 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm">{notification.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                   </div>
                 </div>
               </div>
@@ -180,20 +180,20 @@ export function DashboardHeader({
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-blue-600 text-white">
+            <AvatarFallback className="bg-primary text-primary-foreground">
               {user.avatar}
             </AvatarFallback>
           </Avatar>
           <div className="text-left hidden md:block">
             <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.role || 'Admin'}</p>
+            <p className="text-xs text-muted-foreground">{user.role || 'Admin'}</p>
           </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/profile-settings')}>

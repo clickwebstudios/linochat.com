@@ -125,7 +125,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const saveButton = (
     <div className="flex gap-2 items-center pt-2">
       <Button
-        className="bg-blue-600 hover:bg-blue-700"
+        className="bg-primary hover:bg-primary/90"
         onClick={handleSaveSettings}
         disabled={saving}
       >
@@ -156,15 +156,15 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             {/* ── Appearance Tab ── */}
             <TabsContent value="appearance">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
                   <div>
                     <p className="text-sm font-medium">Widget Status</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       {widgetActive ? 'Widget is active and visible on your website' : 'Widget is disabled and hidden from visitors'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${widgetActive ? 'text-green-600' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-medium ${widgetActive ? 'text-green-600' : 'text-muted-foreground'}`}>
                       {widgetActive ? 'Active' : 'Inactive'}
                     </span>
                     <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
@@ -265,7 +265,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       <AccordionTrigger>
                         <div className="flex flex-col items-start gap-1">
                           <span className="text-sm font-medium">Widget Schedule</span>
-                          <span className="text-xs text-gray-500 font-normal">Control when the widget is displayed to visitors</span>
+                          <span className="text-xs text-muted-foreground font-normal">Control when the widget is displayed to visitors</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
@@ -292,7 +292,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <p className="text-sm font-medium">Enable Greeting Bubble</p>
-                    <p className="text-sm text-gray-500">Automatically show a greeting message to visitors</p>
+                    <p className="text-sm text-muted-foreground">Automatically show a greeting message to visitors</p>
                   </div>
                   <Switch checked={greetingEnabled} onCheckedChange={setGreetingEnabled} />
                 </div>
@@ -325,11 +325,11 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                         rows={3}
                         maxLength={500}
                       />
-                      <p className="text-xs text-gray-400">{greetingMessage.length}/500 characters</p>
+                      <p className="text-xs text-muted-foreground">{greetingMessage.length}/500 characters</p>
                     </div>
 
-                    <div className="p-4 bg-gray-50 rounded-lg border">
-                      <p className="text-xs text-gray-500 mb-2 font-medium">Greeting Preview</p>
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Greeting Preview</p>
                       <div className="flex items-end gap-2">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: widgetColor }}>
                           {(widgetTitle || 'A')[0].toUpperCase()}
@@ -349,14 +349,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             {/* ── Embed Code Tab ── */}
             <TabsContent value="embed">
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Copy the snippet below and paste it before the closing <code className="bg-gray-100 px-1 rounded text-xs">&lt;/body&gt;</code> tag on every page where you want the widget to appear.
+                <p className="text-sm text-muted-foreground">
+                  Copy the snippet below and paste it before the closing <code className="bg-muted px-1 rounded text-xs">&lt;/body&gt;</code> tag on every page where you want the widget to appear.
                 </p>
-                <div className="bg-gray-50 rounded-lg p-4 border">
-                  <Label className="text-xs font-medium text-gray-700 mb-2 block">
+                <div className="bg-muted/50 rounded-lg p-4 border">
+                  <Label className="text-xs font-medium text-foreground mb-2 block">
                     Installation snippet
                   </Label>
-                  <pre className="text-xs text-gray-800 overflow-x-auto bg-gray-900 text-green-400 p-3 rounded">
+                  <pre className="text-xs overflow-x-auto bg-foreground text-green-400 p-3 rounded">
 {`<script>
   (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
@@ -399,8 +399,8 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             {/* ── Preview Tab ── */}
             <TabsContent value="preview">
               <div className="space-y-3">
-                <p className="text-sm text-gray-500">This is how your widget will look on a visitor's page. Click the widget button to open the chat panel.</p>
-                <div className="bg-gray-100 rounded-lg border-2 border-gray-200 relative" style={{ minHeight: '600px' }}>
+                <p className="text-sm text-muted-foreground">This is how your widget will look on a visitor's page. Click the widget button to open the chat panel.</p>
+                <div className="bg-muted rounded-lg border-2 border-border relative" style={{ minHeight: '600px' }}>
                   <div className={`absolute ${
                     widgetPosition === 'bottom-right' ? 'bottom-6 right-6' :
                     widgetPosition === 'bottom-left' ? 'bottom-6 left-6' :
@@ -476,7 +476,7 @@ function WidgetScheduleConfig({
           { day: 'Saturday', short: 'Sat', default: false },
           { day: 'Sunday', short: 'Sun', default: false },
         ].map((dayInfo) => (
-          <div key={dayInfo.day} className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
+          <div key={dayInfo.day} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
             <div className="flex items-center space-x-2 w-32">
               <Checkbox id={`day-${dayInfo.short}`} defaultChecked={dayInfo.default} />
               <label
@@ -488,7 +488,7 @@ function WidgetScheduleConfig({
             </div>
             <div className="flex items-center gap-2 flex-1">
               <Input type="time" defaultValue="09:00" className="flex-1" />
-              <span className="text-xs text-gray-500">to</span>
+              <span className="text-xs text-muted-foreground">to</span>
               <Input type="time" defaultValue="17:00" className="flex-1" />
             </div>
           </div>
@@ -515,7 +515,7 @@ function WidgetScheduleConfig({
         <div className="flex items-start justify-between">
           <div>
             <Label htmlFor="offline-behavior" className="text-sm font-medium">When Widget is Offline</Label>
-            <p className="text-xs text-gray-500 mt-1">Choose what visitors see outside business hours</p>
+            <p className="text-xs text-muted-foreground mt-1">Choose what visitors see outside business hours</p>
           </div>
           <Button
             type="button"
@@ -548,7 +548,7 @@ function WidgetScheduleConfig({
             onChange={(e) => setOfflineMessage(e.target.value)}
             className="min-h-[80px] resize-none"
           />
-          <p className="text-xs text-gray-500">This message will be displayed when the widget is offline</p>
+          <p className="text-xs text-muted-foreground">This message will be displayed when the widget is offline</p>
         </div>
       </div>
     </div>

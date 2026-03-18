@@ -424,10 +424,10 @@ export default function ChatDetails() {
 
   if (!chatInfo) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-gray-50">
-        <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-        <h2 className="text-xl text-gray-600 mb-2">Chat not found</h2>
-        <p className="text-gray-400 mb-6">The chat "{chatId}" could not be located.</p>
+      <div className="flex flex-1 flex-col items-center justify-center bg-muted/50">
+        <MessageSquare className="h-12 w-12 text-muted-foreground/50 mb-4" />
+        <h2 className="text-xl text-muted-foreground mb-2">Chat not found</h2>
+        <p className="text-muted-foreground mb-6">The chat "{chatId}" could not be located.</p>
         <Button variant="outline" onClick={() => navigate(`${basePath}/chats`)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Go Back
@@ -439,7 +439,7 @@ export default function ChatDetails() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -450,7 +450,7 @@ export default function ChatDetails() {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="relative w-96 hidden md:block">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search tickets, chats, customers..." className="pl-10" />
             </div>
           </div>
@@ -463,13 +463,13 @@ export default function ChatDetails() {
             <div className="hidden md:flex items-center gap-3 pl-4 border-l">
               <div className="relative">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-600 text-white">SC</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">SC</AvatarFallback>
                 </Avatar>
                 <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
               </div>
               <div>
                 <div className="text-sm font-semibold">Sarah Chen</div>
-                <div className="text-xs text-gray-500">Admin</div>
+                <div className="text-xs text-muted-foreground">Admin</div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -499,7 +499,7 @@ export default function ChatDetails() {
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Chat Header Bar */}
-            <div className="border-b bg-white px-6 py-3">
+            <div className="border-b bg-card px-6 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Button
@@ -521,9 +521,9 @@ export default function ChatDetails() {
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                   </Button>
-                  <div className="h-6 w-px bg-gray-200" />
+                  <div className="h-6 w-px bg-border" />
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">{chatInfo.avatar}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">{chatInfo.avatar}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
@@ -531,7 +531,7 @@ export default function ChatDetails() {
                       <Badge variant={getStatusVariant(chatInfo.status)} className="text-xs">{chatInfo.status}</Badge>
                       <Badge variant={getPriorityVariant(chatInfo.priority)} className="text-xs">{chatInfo.priority}</Badge>
                     </div>
-                    <p className="text-xs text-gray-500">{chatInfo.subject}</p>
+                    <p className="text-xs text-muted-foreground">{chatInfo.subject}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -539,7 +539,7 @@ export default function ChatDetails() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowInfoPanel(!showInfoPanel)}
-                    className={showInfoPanel ? 'bg-blue-50 border-blue-600' : ''}
+                    className={showInfoPanel ? 'bg-primary/10 border-primary' : ''}
                   >
                     <Info className="h-4 w-4 mr-2" />
                     Info
@@ -580,15 +580,15 @@ export default function ChatDetails() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-muted/50">
               {messages.map((message, index, array) => {
                 const isFirstUnread = !message.isRead && (index === 0 || array[index - 1].isRead);
 
                 if (message.sender === 'system') {
                   return (
                     <div key={message.id} className="flex justify-center">
-                      <div className="bg-gray-100 border border-gray-200 rounded-full px-4 py-1.5">
-                        <p className="text-xs text-gray-500">{message.text} &middot; {message.timestamp}</p>
+                      <div className="bg-muted border border-border rounded-full px-4 py-1.5">
+                        <p className="text-xs text-muted-foreground">{message.text} &middot; {message.timestamp}</p>
                       </div>
                     </div>
                   );
@@ -598,11 +598,11 @@ export default function ChatDetails() {
                   <div key={message.id}>
                     {isFirstUnread && (
                       <div className="flex items-center gap-3 my-4">
-                        <div className="flex-1 h-px bg-blue-200"></div>
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                        <div className="flex-1 h-px bg-primary/20"></div>
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
                           Unread Messages
                         </Badge>
-                        <div className="flex-1 h-px bg-blue-200"></div>
+                        <div className="flex-1 h-px bg-primary/20"></div>
                       </div>
                     )}
                     <div className={`flex ${message.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
@@ -610,24 +610,24 @@ export default function ChatDetails() {
                         <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarFallback className={`text-xs ${
                             message.sender === 'agent'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-700'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-foreground'
                           }`}>
                             {message.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className={`text-xs text-gray-500 mb-1 ${message.sender === 'agent' ? 'text-right' : ''}`}>
+                          <p className={`text-xs text-muted-foreground mb-1 ${message.sender === 'agent' ? 'text-right' : ''}`}>
                             {message.name}
                           </p>
                           <div className={`rounded-lg p-3 shadow-sm ${
                             message.sender === 'agent'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white border'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-card border'
                           }`}>
                             <p className="text-sm">{message.text}</p>
                           </div>
-                          <p className={`text-xs text-gray-400 mt-1 px-1 ${message.sender === 'agent' ? 'text-right' : ''}`}>
+                          <p className={`text-xs text-muted-foreground mt-1 px-1 ${message.sender === 'agent' ? 'text-right' : ''}`}>
                             {message.timestamp}
                           </p>
                         </div>
@@ -640,7 +640,7 @@ export default function ChatDetails() {
             </div>
 
             {/* Input Area */}
-            <div className="border-t p-4 bg-white">
+            <div className="border-t p-4 bg-card">
               <div className="flex gap-2 mb-3">
                 <Button variant="outline" size="sm">
                   <FileText className="h-4 w-4 mr-2" />
@@ -670,7 +670,7 @@ export default function ChatDetails() {
                 />
                 <Button
                   size="icon"
-                  className="bg-blue-600 hover:bg-blue-700 h-10 w-10"
+                  className="bg-primary hover:bg-primary/90 h-10 w-10"
                   onClick={handleSendMessage}
                 >
                   <Send className="h-4 w-4" />
@@ -681,110 +681,110 @@ export default function ChatDetails() {
 
           {/* Info Side Panel */}
           {showInfoPanel && (
-            <div className="w-80 lg:w-96 border-l bg-white flex-shrink-0 overflow-y-auto hidden md:block">
+            <div className="w-80 lg:w-96 border-l bg-card flex-shrink-0 overflow-y-auto hidden md:block">
               <div className="p-6 space-y-6">
                 {/* Customer Info */}
                 <div>
-                  <h3 className="text-sm text-gray-500 mb-3">Customer Information</h3>
+                  <h3 className="text-sm text-muted-foreground mb-3">Customer Information</h3>
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-blue-100 text-blue-700">{chatInfo.avatar}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary">{chatInfo.avatar}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-semibold">{chatInfo.customer}</p>
-                      <p className="text-xs text-gray-500">Customer since {chatInfo.customerSince}</p>
+                      <p className="text-xs text-muted-foreground">Customer since {chatInfo.customerSince}</p>
                     </div>
                   </div>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
                       {chatInfo.email}
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       {chatInfo.phone}
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
                       {chatInfo.location}
                     </div>
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
 
                 {/* Chat Details */}
                 <div>
-                  <h3 className="text-sm text-gray-500 mb-3">Chat Details</h3>
+                  <h3 className="text-sm text-muted-foreground mb-3">Chat Details</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Chat ID</span>
+                      <span className="text-muted-foreground">Chat ID</span>
                       <span className="font-mono text-xs">{chatInfo.id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Status</span>
+                      <span className="text-muted-foreground">Status</span>
                       <Badge variant={getStatusVariant(chatInfo.status)} className="text-xs">{chatInfo.status}</Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Priority</span>
+                      <span className="text-muted-foreground">Priority</span>
                       <Badge variant={getPriorityVariant(chatInfo.priority)} className="text-xs">{chatInfo.priority}</Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Assigned To</span>
+                      <span className="text-muted-foreground">Assigned To</span>
                       <span>{chatInfo.assignedTo}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Project</span>
+                      <span className="text-muted-foreground">Project</span>
                       <span>{chatInfo.projectName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Created</span>
+                      <span className="text-muted-foreground">Created</span>
                       <span>{chatInfo.created}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Last Activity</span>
+                      <span className="text-muted-foreground">Last Activity</span>
                       <span>{chatInfo.lastActivity}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
 
                 {/* Customer Stats */}
                 <div>
-                  <h3 className="text-sm text-gray-500 mb-3">Customer Stats</h3>
+                  <h3 className="text-sm text-muted-foreground mb-3">Customer Stats</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <p className="text-lg font-semibold">{chatInfo.totalChats}</p>
-                      <p className="text-xs text-gray-500">Total Chats</p>
+                      <p className="text-xs text-muted-foreground">Total Chats</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         <p className="text-lg font-semibold">{chatInfo.satisfaction}</p>
                       </div>
-                      <p className="text-xs text-gray-500">Satisfaction</p>
+                      <p className="text-xs text-muted-foreground">Satisfaction</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
 
                 {/* Activity Timeline */}
                 <div>
-                  <h3 className="text-sm text-gray-500 mb-3">Activity Timeline</h3>
+                  <h3 className="text-sm text-muted-foreground mb-3">Activity Timeline</h3>
                   <div className="space-y-3">
                     {timeline.map((event, index) => (
                       <div key={index} className="flex gap-3">
                         <div className="flex flex-col items-center">
-                          <div className="h-2 w-2 rounded-full bg-blue-600 mt-1.5" />
+                          <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
                           {index < timeline.length - 1 && (
-                            <div className="w-px flex-1 bg-gray-200 mt-1" />
+                            <div className="w-px flex-1 bg-border mt-1" />
                           )}
                         </div>
                         <div className="pb-3">
                           <p className="text-sm">{event.action}</p>
-                          <p className="text-xs text-gray-400">{event.time} &middot; {event.user}</p>
+                          <p className="text-xs text-muted-foreground">{event.time} &middot; {event.user}</p>
                         </div>
                       </div>
                     ))}

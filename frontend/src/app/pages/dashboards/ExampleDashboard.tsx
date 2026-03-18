@@ -100,7 +100,7 @@ export default function ExampleDashboard() {
         <TrendingUp className="mr-2 h-4 w-4" />
         Export Report
       </Button>
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+      <Button size="sm" className="bg-primary hover:bg-primary/90">
         <Ticket className="mr-2 h-4 w-4" />
         New Ticket
       </Button>
@@ -113,7 +113,7 @@ export default function ExampleDashboard() {
       title: 'Active Chats',
       value: mockStats.activeChats,
       icon: MessageCircle,
-      iconColor: 'text-blue-600',
+      iconColor: 'text-primary',
       trend: { value: '+12% from last week', positive: true },
     },
     {
@@ -134,7 +134,7 @@ export default function ExampleDashboard() {
       title: 'Satisfaction',
       value: mockStats.satisfaction,
       icon: ThumbsUp,
-      iconColor: 'text-purple-600',
+      iconColor: 'text-secondary',
       trend: { value: '+3% this month', positive: true },
     },
   ];
@@ -156,10 +156,10 @@ export default function ExampleDashboard() {
           search={
             <div className="flex items-center gap-4 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search chats, tickets, customers..."
-                  className="pl-10 bg-gray-50 border-gray-200"
+                  className="pl-10 bg-muted/50 border-border"
                   onChange={() => {}}
                 />
               </div>
@@ -203,8 +203,8 @@ export default function ExampleDashboard() {
                         <Area 
                           type="monotone" 
                           dataKey="tickets" 
-                          stroke="#3b82f6" 
-                          fill="#3b82f6" 
+                          stroke="var(--primary)" 
+                          fill="var(--primary)" 
                           fillOpacity={0.3} 
                         />
                       </AreaChart>
@@ -221,7 +221,7 @@ export default function ExampleDashboard() {
                     <div className="space-y-4">
                       <ActivityItem
                         icon={<Ticket className="h-4 w-4" />}
-                        iconColor="bg-blue-100 text-blue-600"
+                        iconColor="bg-primary/10 text-primary"
                         title="New ticket assigned: T-1001"
                         time="2 minutes ago"
                       />
@@ -233,7 +233,7 @@ export default function ExampleDashboard() {
                       />
                       <ActivityItem
                         icon={<Users className="h-4 w-4" />}
-                        iconColor="bg-purple-100 text-purple-600"
+                        iconColor="bg-secondary/10 text-secondary"
                         title="New team member joined"
                         time="1 hour ago"
                       />
@@ -252,7 +252,7 @@ export default function ExampleDashboard() {
             <TabsContent value="activity">
               <Card>
                 <CardContent className="p-6">
-                  <p className="text-gray-600">Activity timeline content...</p>
+                  <p className="text-muted-foreground">Activity timeline content...</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -260,7 +260,7 @@ export default function ExampleDashboard() {
             <TabsContent value="team">
               <Card>
                 <CardContent className="p-6">
-                  <p className="text-gray-600">Team performance metrics...</p>
+                  <p className="text-muted-foreground">Team performance metrics...</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -282,7 +282,7 @@ export default function ExampleDashboard() {
             <QuickActionCard
               title="Create Ticket"
               description="Start a new support ticket"
-              icon={<Ticket className="h-8 w-8 text-blue-600" />}
+              icon={<Ticket className="h-8 w-8 text-primary" />}
               onClick={() => navigate('/tickets/new')}
             />
             <QuickActionCard
@@ -294,7 +294,7 @@ export default function ExampleDashboard() {
             <QuickActionCard
               title="Manage Team"
               description="Add or edit team members"
-              icon={<Users className="h-8 w-8 text-purple-600" />}
+              icon={<Users className="h-8 w-8 text-secondary" />}
               onClick={() => setActiveSection('users')}
             />
           </div>
@@ -321,7 +321,7 @@ function ActivityItem({ icon, iconColor, title, time }: ActivityItemProps) {
       </div>
       <div className="flex-1">
         <p className="text-sm">{title}</p>
-        <p className="text-xs text-gray-500">{time}</p>
+        <p className="text-xs text-muted-foreground">{time}</p>
       </div>
     </div>
   );
@@ -345,7 +345,7 @@ function QuickActionCard({ title, description, icon, onClick }: QuickActionCardP
           {icon}
           <div>
             <h3 className="font-semibold">{title}</h3>
-            <p className="text-sm text-gray-600 mt-1">{description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
           </div>
         </div>
       </CardContent>

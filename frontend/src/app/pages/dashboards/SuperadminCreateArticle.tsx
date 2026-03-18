@@ -154,11 +154,11 @@ export default function SuperadminCreateArticle() {
       {/* Header */}
       {isLoadingCompanies ? (
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
       <>
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -176,14 +176,14 @@ export default function SuperadminCreateArticle() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           {company && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-              <Building2 className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-700">{company.name}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{company.name}</span>
             </div>
           )}
           <div>
             <h1 className="font-semibold">Create Knowledge Base Article</h1>
-            <p className="text-sm text-gray-500">Write and publish helpful content for your customers</p>
+            <p className="text-sm text-muted-foreground">Write and publish helpful content for your customers</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -213,7 +213,7 @@ export default function SuperadminCreateArticle() {
             )}
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
             onClick={() => handleSave('published')}
             disabled={!isFormValid() || isSaving}
           >
@@ -233,7 +233,7 @@ export default function SuperadminCreateArticle() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <main className="flex-1 overflow-y-auto p-6 bg-muted/50">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Form - Left Column */}
@@ -242,7 +242,7 @@ export default function SuperadminCreateArticle() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-bold">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                    <FileText className="h-5 w-5 text-primary" />
                     Article Details
                   </CardTitle>
                 </CardHeader>
@@ -306,7 +306,7 @@ export default function SuperadminCreateArticle() {
                       rows={20}
                       className="font-mono text-sm min-h-[400px]"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Supports Markdown formatting. Use # for headings, ** for bold, * for italic, etc.
                     </p>
                   </div>
@@ -320,7 +320,7 @@ export default function SuperadminCreateArticle() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TagIcon className="h-5 w-5 text-blue-600" />
+                    <TagIcon className="h-5 w-5 text-primary" />
                     Tags
                   </CardTitle>
                 </CardHeader>
@@ -347,7 +347,7 @@ export default function SuperadminCreateArticle() {
                         {tag}
                         <button
                           onClick={() => handleRemoveTag(tag)}
-                          className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                          className="ml-1 hover:bg-muted rounded-full p-0.5"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -355,7 +355,7 @@ export default function SuperadminCreateArticle() {
                     ))}
                   </div>
                   {formData.tags.length === 0 && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Add tags to help users find this article
                     </p>
                   )}
@@ -370,31 +370,31 @@ export default function SuperadminCreateArticle() {
                 <CardContent className="space-y-3">
                   {company && (
                     <div className="flex items-center gap-3 text-sm">
-                      <Building2 className="h-4 w-4 text-gray-500" />
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-gray-500">Company</p>
+                        <p className="text-muted-foreground">Company</p>
                         <p className="font-medium">{company.name}</p>
                       </div>
                     </div>
                   )}
                   <div className="flex items-center gap-3 text-sm">
-                    <User className="h-4 w-4 text-gray-500" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-gray-500">Author</p>
+                      <p className="text-muted-foreground">Author</p>
                       <p className="font-medium">{formData.author}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-gray-500">Created</p>
+                      <p className="text-muted-foreground">Created</p>
                       <p className="font-medium">{new Date().toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <FileText className="h-4 w-4 text-gray-500" />
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-gray-500">Status</p>
+                      <p className="text-muted-foreground">Status</p>
                       <Badge variant={formData.status === 'published' ? 'default' : 'secondary'}>
                         {formData.status === 'published' ? 'Published' : 'Draft'}
                       </Badge>
@@ -404,11 +404,11 @@ export default function SuperadminCreateArticle() {
               </Card>
 
               {/* Quick Tips */}
-              <Card className="border-blue-200 bg-blue-50">
+              <Card className="border-primary/20 bg-primary/10">
                 <CardHeader>
                   <CardTitle className="text-sm">Writing Tips</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-blue-900">
+                <CardContent className="space-y-2 text-sm text-primary">
                   <ul className="space-y-2 list-disc list-inside">
                     <li>Use clear, concise language</li>
                     <li>Break content into sections with headings</li>
@@ -428,7 +428,7 @@ export default function SuperadminCreateArticle() {
         <DialogContent className="max-w-4xl lg:max-w-6xl xl:max-w-7xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-blue-600" />
+              <FileText className="h-5 w-5 text-primary" />
               {formData.title || 'Untitled Article'}
             </DialogTitle>
             <DialogDescription className="flex items-center gap-4 flex-wrap">
@@ -440,16 +440,16 @@ export default function SuperadminCreateArticle() {
               ))}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-gray-50 rounded-lg">
+          <div className="flex-1 overflow-y-auto prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg">
             {formData.excerpt && (
-              <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
-                <p className="text-sm text-blue-900 italic">{formData.excerpt}</p>
+              <div className="bg-primary/10 border-l-4 border-primary p-4 mb-6">
+                <p className="text-sm text-primary italic">{formData.excerpt}</p>
               </div>
             )}
             <div className="whitespace-pre-wrap">{formData.content}</div>
           </div>
           <div className="flex items-center justify-between border-t pt-4">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               By {formData.author} {new Date().toLocaleDateString()}
             </div>
             <Button variant="outline" onClick={() => setShowPreview(false)}>
@@ -471,22 +471,22 @@ export default function SuperadminCreateArticle() {
               Your article "{formData.title}" has been {formData.status === 'published' ? 'published successfully' : 'saved as a draft'}.
             </DialogDescription>
           </DialogHeader>
-          <div className="p-6 bg-gray-50 rounded-lg">
+          <div className="p-6 bg-muted/50 rounded-lg">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Title:</span>
+                <span className="text-muted-foreground">Title:</span>
                 <span className="font-medium">{formData.title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Category:</span>
+                <span className="text-muted-foreground">Category:</span>
                 <span className="font-medium">{formData.category}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tags:</span>
+                <span className="text-muted-foreground">Tags:</span>
                 <span className="font-medium">{formData.tags.length || 'None'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
+                <span className="text-muted-foreground">Status:</span>
                 <Badge variant={formData.status === 'published' ? 'default' : 'secondary'}>
                   {formData.status === 'published' ? 'Published' : 'Draft'}
                 </Badge>
@@ -513,7 +513,7 @@ export default function SuperadminCreateArticle() {
               Create Another
             </Button>
             <Button
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-primary hover:bg-primary/90"
               onClick={() => {
                 setShowSuccessDialog(false);
                 handleBack();
