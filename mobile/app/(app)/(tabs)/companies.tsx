@@ -125,15 +125,15 @@ export default function CompaniesScreen() {
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
                   <Ionicons name="people-outline" size={14} color={Colors.textMuted} />
-                  <Text style={styles.statText}>{company.agents_count} agents</Text>
+                  <Text style={styles.statText}>{company.agents_count ?? 0} agents</Text>
                 </View>
                 <View style={styles.stat}>
                   <Ionicons name="person-outline" size={14} color={Colors.textMuted} />
-                  <Text style={styles.statText}>{company.members_count} members</Text>
+                  <Text style={styles.statText}>{company.members_count ?? 0} members</Text>
                 </View>
                 <View style={styles.stat}>
                   <Ionicons name="folder-outline" size={14} color={Colors.textMuted} />
-                  <Text style={styles.statText}>{company.projects_count} projects</Text>
+                  <Text style={styles.statText}>{company.projects_count ?? 0} projects</Text>
                 </View>
               </View>
               </TouchableOpacity>

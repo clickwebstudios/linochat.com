@@ -76,9 +76,15 @@ function DashboardPage() {
   return <Navigate to="/admin/dashboard" replace />;
 }
 
+function MaybeGoogleOAuth({ children }: { children: React.ReactNode }) {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (!clientId) return <>{children}</>;
+  return <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>;
+}
+
 export default function App() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+    <MaybeGoogleOAuth>
     <HelmetProvider>
       <AuthInitializer>
         <BrowserRouter>
@@ -231,6 +237,6 @@ export default function App() {
         </BrowserRouter>
       </AuthInitializer>
     </HelmetProvider>
-    </GoogleOAuthProvider>
+    </MaybeGoogleOAuth>
   );
 }
