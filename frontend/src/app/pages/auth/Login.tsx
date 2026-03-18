@@ -21,6 +21,19 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function GoogleLoginButton({ onSuccess }: { onSuccess: (token: string) => void }) {
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => onSuccess(tokenResponse.access_token),
+    onError: () => toast.error('Google login failed'),
+  });
+  return (
+    <Button variant="outline" className="w-full" onClick={() => handleGoogleLogin()}>
+      <GoogleIcon className="mr-2 h-4 w-4" />
+      Google
+    </Button>
+  );
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,18 +54,7 @@ export default function Login() {
     else navigate(from, { replace: true });
   };
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        await googleLogin(tokenResponse.access_token);
-        toast.success('Successfully logged in!');
-        redirectAfterLogin();
-      } catch (err: any) {
-        toast.error(err.message || 'Google login failed');
-      }
-    },
-    onError: () => toast.error('Google login failed'),
-  });
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,21 +204,32 @@ export default function Login() {
                 </Button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
+              {googleClientId && (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                <Button variant="outline" className="w-full" onClick={() => handleGoogleLogin()}>
-                  <GoogleIcon className="mr-2 h-4 w-4" />
-                  Google
-                </Button>
-              </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <GoogleLoginButton
+                      onSuccess={async (token) => {
+                        try {
+                          await googleLogin(token);
+                          toast.success('Successfully logged in!');
+                          redirectAfterLogin();
+                        } catch (err: any) {
+                          toast.error(err.message || 'Google login failed');
+                        }
+                      }}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="text-center text-sm">
                 <span className="text-muted-foreground">Don't have an account? </span>
