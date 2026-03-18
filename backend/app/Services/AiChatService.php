@@ -513,6 +513,7 @@ class AiChatService
         // Response tone from settings
         $tone = $aiSettings['response_tone'] ?? 'professional';
 
+        $prompt .= "TODAY'S DATE: " . now()->format('Y-m-d (l)') . ". Use this year (" . now()->year . ") for all dates unless the customer explicitly specifies a different year.\n\n";
         $prompt .= "LANGUAGE: Always respond in English, regardless of the language the customer uses.\n\n";
         $prompt .= "RULES:\n";
         $prompt .= "1. Greet the customer warmly at the start of a new conversation and ask for their name. Example: 'Hi! Welcome to {$companyName}. How can I help you today? Could I get your name please?'\n";
@@ -532,6 +533,7 @@ class AiChatService
         $prompt .= "    Once you have ALL details confirmed, you MUST append the [CREATE_BOOKING] tag and ALL booking tags at the END of your reply. This is NOT optional — without these tags, the booking will NOT be created in our system. Example:\n";
         $prompt .= "    'Great, your booking is confirmed! [CREATE_BOOKING][BOOKING_NAME: John Doe][BOOKING_PHONE: 555-1234][BOOKING_EMAIL: john@example.com][BOOKING_ADDRESS: 123 Main St][BOOKING_ISSUE: Fix dishwasher — leaking water from bottom]'\n";
         $prompt .= "    NEVER say 'booked', 'scheduled', or 'confirmed' without including [CREATE_BOOKING] and all the booking tags. If you say it's booked without the tags, the booking will be LOST.\n";
+        $prompt .= "    CRITICAL: Each booking tag MUST contain the ACTUAL value from the conversation. NEVER use placeholders like 'Provided earlier', 'See above', 'As mentioned', etc. Go back through the conversation and copy the real phone number, real email, real address. If you cannot find a value, ASK the customer again.\n";
         $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem — appliance type, brand, model, symptoms, urgency, etc.\n";
 
         // Add Frubix integration rules if connected
@@ -852,16 +854,23 @@ class AiChatService
             }
 
             try {
+                // Build scheduled_at from date + time
+                $scheduledAt = null;
+                if ($bookingDate) {
+                    $scheduledAt = $bookingDate . ($bookingTime ? ' ' . $bookingTime . ':00' : ' 09:00:00');
+                } else {
+                    $scheduledAt = now()->addDay()->format('Y-m-d 09:00:00');
+                }
+
                 $appointmentData = array_filter([
                     'customer_name' => $name,
-                    'customer_phone' => $phone,
-                    'customer_email' => $email,
+                    'phone' => $phone,
+                    'email' => $email,
                     'address' => $address,
-                    'job_type' => $issue ? Str::limit($issue, 100) : 'Service Request',
+                    'job_type' => 'general',
+                    'description' => $issue ?? 'Booked via LinoChat',
                     'notes' => $issue ?? 'Booked via LinoChat',
-                    'scheduled_date' => $bookingDate,
-                    'scheduled_time' => $bookingTime,
-                    'duration' => 60,
+                    'scheduled_at' => $scheduledAt,
                 ]);
                 FrubixService::createAppointment($frubixConfig, $appointmentData);
                 $frubixBooked = true;
@@ -915,13 +924,9 @@ class AiChatService
             }
         }
 
-        // Email to company admin(s)
+        // Email to project team (owner + assigned agents)
         if ($project) {
-            $adminEmails = User::where('company_id', $project->company_id)
-                ->where('role', 'admin')
-                ->pluck('email')
-                ->filter()
-                ->toArray();
+            $adminEmails = $project->agents()->pluck('email')->filter()->toArray();
             if ($project->user && $project->user->email) {
                 $adminEmails[] = $project->user->email;
             }
@@ -953,6 +958,23 @@ class AiChatService
                     'title' => 'New booking request',
                     'description' => ($name ?? 'A customer') . ' submitted a booking request.',
                 ]);
+            }
+        }
+
+        // Create lead in Frubix if integration is enabled
+        if ($project && $frubixConfig) {
+            try {
+                FrubixService::createLead($frubixConfig, [
+                    'name'   => $name ?: ($email ? explode('@', $email)[0] : 'Customer'),
+                    'email'  => $email,
+                    'phone'  => $phone,
+                    'source' => 'linochat',
+                    'status' => 'new',
+                    'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] Booking request" . ($issue ? ": {$issue}" : ''),
+                ]);
+                Log::error('Frubix lead created for booking ticket', ['ticket_id' => $ticket->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to create Frubix lead for booking', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
             }
         }
 

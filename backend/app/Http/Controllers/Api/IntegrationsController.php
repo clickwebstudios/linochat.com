@@ -26,7 +26,7 @@ class IntegrationsController extends Controller
 
         $integrations = $project->integrations ?? [];
 
-        // Never expose secrets
+        // Never expose secrets, keep display fields
         if (isset($integrations['frubix'])) {
             unset($integrations['frubix']['access_token']);
             unset($integrations['frubix']['refresh_token']);
@@ -66,7 +66,7 @@ class IntegrationsController extends Controller
             'client_id'     => $clientId,
             'redirect_uri'  => $redirectUri,
             'response_type' => 'code',
-            'scope'         => 'leads:write leads:read clients:read schedule:read schedule:write',
+            'scope'         => 'leads:write leads:read clients:read schedule:read schedule:write messages:write messages:read',
             'state'         => $state,
         ]);
 
@@ -131,11 +131,23 @@ class IntegrationsController extends Controller
                 'connected_at'  => now()->toISOString(),
             ];
 
+            // Fetch company info from Frubix
+            $companyInfo = FrubixService::getCompanyInfo($integrations['frubix']);
+            if ($companyInfo) {
+                $integrations['frubix']['company_name'] = $companyInfo['company_name'];
+                $integrations['frubix']['company_id'] = $companyInfo['company_id'];
+                $integrations['frubix']['connected_by'] = $companyInfo['user_name'];
+            }
+
             $project->update(['integrations' => $integrations]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Frubix connected successfully.',
+                'data' => [
+                    'company_name' => $companyInfo['company_name'] ?? null,
+                    'connected_by' => $companyInfo['user_name'] ?? null,
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Frubix OAuth callback failed', ['error' => $e->getMessage()]);

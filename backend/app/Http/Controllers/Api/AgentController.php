@@ -915,7 +915,7 @@ class AgentController extends Controller
                 'sender_phone' => null,
                 'sender_email' => $user->email ?? null,
                 'sender_type' => 'agent',
-                'channel' => 'chat',
+                'channel' => 'linochat',
                 'source' => 'linochat',
                 'external_id' => (string) $message->id,
                 'external_conversation_id' => (string) $chat->id,
