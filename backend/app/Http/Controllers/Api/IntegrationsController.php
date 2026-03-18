@@ -66,7 +66,7 @@ class IntegrationsController extends Controller
             'client_id'     => $clientId,
             'redirect_uri'  => $redirectUri,
             'response_type' => 'code',
-            'scope'         => 'leads:write leads:read clients:read schedule:read schedule:write',
+            'scope'         => 'leads:write leads:read clients:read schedule:read schedule:write messages:write messages:read',
             'state'         => $state,
         ]);
 
