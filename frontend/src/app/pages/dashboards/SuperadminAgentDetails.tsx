@@ -214,10 +214,10 @@ export default function SuperadminAgentDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <main className="flex-1 overflow-y-auto bg-gray-50 flex items-center justify-center">
+        <main className="flex-1 overflow-y-auto bg-muted/50 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600">Loading agent details...</p>
+            <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading agent details...</p>
           </div>
         </main>
       </>
@@ -229,11 +229,11 @@ export default function SuperadminAgentDetails() {
     return (
       <>
         <SuperadminTopbar />
-        <main className="flex-1 overflow-y-auto bg-gray-50 flex items-center justify-center">
+        <main className="flex-1 overflow-y-auto bg-muted/50 flex items-center justify-center">
           <div className="text-center">
-            <Headphones className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <Headphones className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Agent Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || "The agent you're looking for doesn't exist."}</p>
+            <p className="text-muted-foreground mb-4">{error || "The agent you're looking for doesn't exist."}</p>
             <Button onClick={() => navigate('/superadmin/team')}>Back to Team</Button>
           </div>
         </main>
@@ -258,7 +258,7 @@ export default function SuperadminAgentDetails() {
       <SuperadminTopbar />
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50 px-6 pt-6">
+      <main className="flex-1 overflow-y-auto bg-muted/50 px-6 pt-6">
         {/* Back Button */}
         <div className="mb-6">
           <Button
@@ -276,7 +276,7 @@ export default function SuperadminAgentDetails() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarFallback className="bg-blue-600 text-white text-3xl">
+                <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -291,7 +291,7 @@ export default function SuperadminAgentDetails() {
                       </Badge>
                       <Badge variant="outline">{agent.role}</Badge>
                     </div>
-                    <p className="text-gray-600 max-w-2xl">{agent.bio}</p>
+                    <p className="text-muted-foreground max-w-2xl">{agent.bio}</p>
                   </div>
 
                   <DropdownMenu>
@@ -319,19 +319,19 @@ export default function SuperadminAgentDetails() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <span>{agent.email}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-gray-400" />
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     <span>{agent.phone}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{agent.location}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>Joined {new Date(agent.join_date).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -339,7 +339,7 @@ export default function SuperadminAgentDetails() {
                 {company && (
                   <div className="mt-3 pt-3 border-t">
                     <button
-                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => navigate(`/superadmin/company/${company.id}`)}
                     >
                       <Building2 className="h-4 w-4" />
@@ -358,12 +358,12 @@ export default function SuperadminAgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Tickets Resolved</p>
+                <p className="text-sm text-muted-foreground">Tickets Resolved</p>
                 <CheckCircle className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex items-end gap-2">
                 <h3 className="text-3xl font-bold">{stats.tickets_resolved}</h3>
-                <span className="text-sm text-gray-500">/ {stats.total_tickets}</span>
+                <span className="text-sm text-muted-foreground">/ {stats.total_tickets}</span>
               </div>
               <div className="flex items-center gap-1 mt-2">
                 <TrendingUp className="h-3 w-3 text-green-600" />
@@ -375,8 +375,8 @@ export default function SuperadminAgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Avg Response Time</p>
-                <Clock className="h-4 w-4 text-blue-600" />
+                <p className="text-sm text-muted-foreground">Avg Response Time</p>
+                <Clock className="h-4 w-4 text-primary" />
               </div>
               <h3 className="text-3xl font-bold">{stats.avg_response_time}</h3>
               <div className="flex items-center gap-1 mt-2">
@@ -389,12 +389,12 @@ export default function SuperadminAgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Customer Rating</p>
+                <p className="text-sm text-muted-foreground">Customer Rating</p>
                 <Star className="h-4 w-4 text-yellow-500" />
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-3xl font-bold">{stats.rating}</h3>
-                <span className="text-sm text-gray-500">/ 5.0</span>
+                <span className="text-sm text-muted-foreground">/ 5.0</span>
               </div>
               <div className="flex items-center gap-1 mt-2">
                 <TrendingUp className="h-3 w-3 text-green-600" />
@@ -406,7 +406,7 @@ export default function SuperadminAgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Satisfaction Rate</p>
+                <p className="text-sm text-muted-foreground">Satisfaction Rate</p>
                 <ThumbsUp className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export default function SuperadminAgentDetails() {
                     {projects.map(project => (
                       <div
                         key={project.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted cursor-pointer transition-colors"
                         onClick={() => navigate(`/superadmin/project/${project.id}`)}
                       >
                         <div className="flex items-center gap-3">
@@ -454,14 +454,14 @@ export default function SuperadminAgentDetails() {
                           </div>
                           <div>
                             <span className="font-medium">{project.name}</span>
-                            <p className="text-xs text-gray-500">{project.active_tickets} active tickets</p>
+                            <p className="text-xs text-muted-foreground">{project.active_tickets} active tickets</p>
                           </div>
                         </div>
                         <Badge variant="outline">{project.status}</Badge>
                       </div>
                     ))}
                     {projects.length === 0 && (
-                      <p className="text-sm text-gray-500 text-center py-4">No projects assigned</p>
+                      <p className="text-sm text-muted-foreground text-center py-4">No projects assigned</p>
                     )}
                   </div>
                 </CardContent>
@@ -480,7 +480,7 @@ export default function SuperadminAgentDetails() {
                           <CheckCircle className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Tickets Closed</p>
+                          <p className="text-sm text-muted-foreground">Tickets Closed</p>
                           <p className="font-semibold">{stats.tickets_resolved} tickets</p>
                         </div>
                       </div>
@@ -489,15 +489,15 @@ export default function SuperadminAgentDetails() {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                          <MessageSquare className="h-5 w-5 text-blue-600" />
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <MessageSquare className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Chat Sessions</p>
+                          <p className="text-sm text-muted-foreground">Chat Sessions</p>
                           <p className="font-semibold">{stats.total_chats} sessions</p>
                         </div>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-700">+8%</Badge>
+                      <Badge className="bg-primary/10 text-primary">+8%</Badge>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -506,7 +506,7 @@ export default function SuperadminAgentDetails() {
                           <Award className="h-5 w-5 text-yellow-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">First Response Time</p>
+                          <p className="text-sm text-muted-foreground">First Response Time</p>
                           <p className="font-semibold">1.2 min avg</p>
                         </div>
                       </div>
@@ -580,7 +580,7 @@ export default function SuperadminAgentDetails() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                           No tickets currently assigned to this agent
                         </TableCell>
                       </TableRow>
@@ -603,13 +603,13 @@ export default function SuperadminAgentDetails() {
                     const Icon = iconMap[activity.icon] || FileText;
                     return (
                       <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                           <Icon className={`h-5 w-5 ${activity.color}`} />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{activity.action}</p>
-                          <p className="text-sm text-gray-600">{activity.details}</p>
-                          <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                          <p className="text-sm text-muted-foreground">{activity.details}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
                         </div>
                       </div>
                     );
@@ -660,7 +660,7 @@ export default function SuperadminAgentDetails() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-3">
-                      <Target className="h-8 w-8 text-blue-600" />
+                      <Target className="h-8 w-8 text-primary" />
                       <h4 className="font-semibold">Resolution Rate</h4>
                     </div>
                     <p className="text-3xl font-bold">
@@ -668,7 +668,7 @@ export default function SuperadminAgentDetails() {
                         ? ((stats.tickets_resolved / stats.total_tickets) * 100).toFixed(1) 
                         : 0}%
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">{stats.tickets_resolved} of {stats.total_tickets} tickets resolved</p>
+                    <p className="text-sm text-muted-foreground mt-1">{stats.tickets_resolved} of {stats.total_tickets} tickets resolved</p>
                   </CardContent>
                 </Card>
 
@@ -679,7 +679,7 @@ export default function SuperadminAgentDetails() {
                       <h4 className="font-semibold">First Contact Resolution</h4>
                     </div>
                     <p className="text-3xl font-bold">78%</p>
-                    <p className="text-sm text-gray-600 mt-1">Above team average of 72%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Above team average of 72%</p>
                   </CardContent>
                 </Card>
 
@@ -690,7 +690,7 @@ export default function SuperadminAgentDetails() {
                       <h4 className="font-semibold">Active Days</h4>
                     </div>
                     <p className="text-3xl font-bold">22/23</p>
-                    <p className="text-sm text-gray-600 mt-1">Days active this month</p>
+                    <p className="text-sm text-muted-foreground mt-1">Days active this month</p>
                   </CardContent>
                 </Card>
               </div>

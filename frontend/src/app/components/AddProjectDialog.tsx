@@ -257,30 +257,30 @@ export function AddProjectDialog({
 
         {/* ── KB Generation Overlay ─────────────────────────────────────── */}
         {isCreatingKB && (
-          <div className="absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-8 rounded-lg">
+          <div className="absolute inset-0 bg-card z-50 flex flex-col items-center justify-center p-8 rounded-lg">
             {!creationDone ? (
               <>
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
-                  <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                <h3 className="text-xl font-semibold text-foreground mb-1">
                   Creating Your Project
                 </h3>
-                <p className="text-sm text-gray-500 mb-8">
+                <p className="text-sm text-muted-foreground mb-8">
                   AI is building your knowledge base from your website...
                 </p>
 
                 {/* Progress bar */}
                 <div className="w-full max-w-sm space-y-2 mb-6">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-blue-900">Processing...</span>
-                    <span className="text-blue-600">
+                    <span className="font-medium text-primary">Processing...</span>
+                    <span className="text-primary">
                       {Math.round(creationProgressPercent)}%
                     </span>
                   </div>
-                  <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${creationProgressPercent}%` }}
                     />
                   </div>
@@ -298,17 +298,17 @@ export function AddProjectDialog({
                       {i < creationStep ? (
                         <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                       ) : i === creationStep ? (
-                        <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                        <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                       ) : (
-                        <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                        <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
                       )}
                       <span
                         className={
                           i === creationStep
-                            ? 'text-blue-900 font-medium'
+                            ? 'text-primary font-medium'
                             : i < creationStep
                               ? 'text-green-700'
-                              : 'text-gray-400'
+                              : 'text-muted-foreground'
                         }
                       >
                         {stepLabel}
@@ -322,10 +322,10 @@ export function AddProjectDialog({
                 <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   Project Created!
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Your knowledge base has been generated successfully.
                 </p>
               </>
@@ -334,7 +334,7 @@ export function AddProjectDialog({
         )}
 
         {/* ── Step Indicator Header ─────────────────────────────────────── */}
-        <div className="border-b bg-gray-50/80 px-6 pt-6 pb-4">
+        <div className="border-b bg-muted/50 px-6 pt-6 pb-4">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl">
               {step === 1 ? 'Add New Project' : 'Review Project Details'}
@@ -352,33 +352,33 @@ export function AddProjectDialog({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   step === 1
-                    ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/10'
                     : 'bg-green-600 text-white'
                 }`}
               >
                 {step > 1 ? <Check className="h-4 w-4" /> : '1'}
               </div>
               <span
-                className={`text-sm font-medium ${step === 1 ? 'text-blue-600' : 'text-green-600'}`}
+                className={`text-sm font-medium ${step === 1 ? 'text-primary' : 'text-green-600'}`}
               >
                 Analyze Website
               </span>
             </div>
 
-            <div className="h-px flex-1 bg-gray-300 max-w-12" />
+            <div className="h-px flex-1 bg-border max-w-12" />
 
             <div className="flex items-center gap-2 flex-1">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   step === 2
-                    ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/10'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 2
               </div>
               <span
-                className={`text-sm font-medium ${step === 2 ? 'text-blue-600' : 'text-gray-500'}`}
+                className={`text-sm font-medium ${step === 2 ? 'text-primary' : 'text-muted-foreground'}`}
               >
                 Submit Details
               </span>
@@ -393,7 +393,7 @@ export function AddProjectDialog({
               {/* URL Input */}
               <div className="space-y-2">
                 <Label htmlFor="website-url" className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-gray-500" />
+                  <Globe className="h-4 w-4 text-muted-foreground" />
                   Website URL
                 </Label>
                 <div className="relative">
@@ -426,7 +426,7 @@ export function AddProjectDialog({
                         setAnalyzedData(null);
                         setUrlError('');
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       &times;
                     </button>
@@ -439,7 +439,7 @@ export function AddProjectDialog({
                   </p>
                 )}
                 {!urlError && analysisStatus === 'idle' && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     We'll scan your website to auto-fill project name, description, and branding
                   </p>
                 )}
@@ -447,15 +447,15 @@ export function AddProjectDialog({
 
               {/* Analysis Progress */}
               {analysisStatus === 'analyzing' && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 space-y-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-blue-900">Analyzing...</span>
-                      <span className="text-blue-600">{Math.round(progressPercent)}%</span>
+                      <span className="font-medium text-primary">Analyzing...</span>
+                      <span className="text-primary">{Math.round(progressPercent)}%</span>
                     </div>
-                    <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                        className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
@@ -472,17 +472,17 @@ export function AddProjectDialog({
                         {i < analysisStep ? (
                           <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                         ) : i === analysisStep ? (
-                          <Loader2 className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                          <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                         ) : (
-                          <div className="h-4 w-4 rounded-full border border-gray-300 flex-shrink-0" />
+                          <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
                         )}
                         <span
                           className={
                             i === analysisStep
-                              ? 'text-blue-900 font-medium'
+                              ? 'text-primary font-medium'
                               : i < analysisStep
                                 ? 'text-green-700'
-                                : 'text-gray-400'
+                                : 'text-muted-foreground'
                           }
                         >
                           {stepLabel}
@@ -557,7 +557,7 @@ export function AddProjectDialog({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-4 rounded-lg border border-green-200 bg-white">
+                    <div className="flex items-start gap-3 p-4 rounded-lg border border-green-200 bg-card">
                       <div
                         className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
                         style={{ backgroundColor: analyzedData.color }}
@@ -565,49 +565,49 @@ export function AddProjectDialog({
                         {analyzedData.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
+                        <p className="font-semibold text-foreground truncate">
                           {analyzedData.name}
                         </p>
-                        <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                           {analyzedData.description}
                         </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-green-200">
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-green-200">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
                         <div className="min-w-0">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                             Website
                           </p>
-                          <p className="text-sm text-gray-900 truncate">
+                          <p className="text-sm text-foreground truncate">
                             {analyzedData.website.replace(/^https?:\/\//, '')}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-green-200">
-                        <FileText className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-green-200">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                             Pages Found
                           </p>
-                          <p className="text-sm text-gray-900">{analyzedData.pages} pages</p>
+                          <p className="text-sm text-foreground">{analyzedData.pages} pages</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-green-200">
-                        <Search className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-green-200">
+                        <Search className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                             Category
                           </p>
-                          <p className="text-sm text-gray-900">{analyzedData.category}</p>
+                          <p className="text-sm text-foreground">{analyzedData.category}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-green-200">
-                        <Palette className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-green-200">
+                        <Palette className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                             Brand Color
                           </p>
                           <div className="flex items-center gap-1.5">
@@ -615,7 +615,7 @@ export function AddProjectDialog({
                               className="w-3.5 h-3.5 rounded-full border"
                               style={{ backgroundColor: analyzedData.color }}
                             />
-                            <p className="text-sm text-gray-900">{analyzedData.color}</p>
+                            <p className="text-sm text-foreground">{analyzedData.color}</p>
                           </div>
                         </div>
                       </div>
@@ -661,8 +661,8 @@ export function AddProjectDialog({
 
               <div className="space-y-2">
                 <Label>Website URL</Label>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-gray-50 text-sm text-gray-700">
-                  <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 text-sm text-foreground">
+                  <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="truncate">
                     {websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
                   </span>
@@ -670,7 +670,7 @@ export function AddProjectDialog({
                     href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto text-blue-600 hover:text-blue-700 flex-shrink-0"
+                    className="ml-auto text-primary hover:text-primary/90 flex-shrink-0"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -693,7 +693,7 @@ export function AddProjectDialog({
                         key={color}
                         className={`w-8 h-8 rounded-full border-2 shadow-sm hover:scale-110 transition-transform ${
                           projectColor === color
-                            ? 'border-gray-900 ring-2 ring-gray-300'
+                            ? 'border-foreground ring-2 ring-border'
                             : 'border-white'
                         }`}
                         style={{ backgroundColor: color }}
@@ -706,7 +706,7 @@ export function AddProjectDialog({
 
               {/* Live Preview Card */}
               <div className="space-y-2 pt-2 border-t">
-                <Label className="text-xs text-gray-500 uppercase tracking-wider">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
                   Project Preview
                 </Label>
                 <div
@@ -723,14 +723,14 @@ export function AddProjectDialog({
                     {projectName ? projectName.substring(0, 2).toUpperCase() : 'NP'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-foreground">
                       {projectName || 'Project Name'}
                     </p>
-                    <p className="text-sm text-gray-500 truncate mt-0.5">
+                    <p className="text-sm text-muted-foreground truncate mt-0.5">
                       {projectDescription || 'Project description will appear here'}
                     </p>
                     {websiteUrl && (
-                      <p className="text-xs text-blue-600 mt-1 truncate">
+                      <p className="text-xs text-primary mt-1 truncate">
                         {(websiteUrl.startsWith('http')
                           ? websiteUrl
                           : `https://${websiteUrl}`
@@ -752,13 +752,13 @@ export function AddProjectDialog({
         </div>
 
         {/* ── Footer Actions ────────────────────────────────────────────── */}
-        <div className="border-t bg-gray-50/80 px-6 py-4 flex items-center justify-between">
+        <div className="border-t bg-muted/50 px-6 py-4 flex items-center justify-between">
           <div>
             {step === 2 && (
               <Button
                 variant="ghost"
                 onClick={handleBackToStep1}
-                className="gap-2 text-gray-600"
+                className="gap-2 text-muted-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -772,7 +772,7 @@ export function AddProjectDialog({
             {step === 1 ? (
               analysisStatus === 'done' ? (
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700 gap-2"
+                  className="bg-primary hover:bg-primary/90 gap-2"
                   onClick={handleGoToStep2}
                 >
                   Continue
@@ -780,7 +780,7 @@ export function AddProjectDialog({
                 </Button>
               ) : (
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700 gap-2"
+                  className="bg-primary hover:bg-primary/90 gap-2"
                   onClick={handleAnalyze}
                   disabled={!websiteUrl.trim() || analysisStatus === 'analyzing'}
                 >

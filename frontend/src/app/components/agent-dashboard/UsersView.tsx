@@ -244,7 +244,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Team Members</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your support team and their permissions</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage your support team and their permissions</p>
           {resendError && (
             <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
               {resendError}
@@ -289,7 +289,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
               {agentsLoading ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12">
-                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-6 w-6 animate-spin" />
                       <span>Loading team members...</span>
                     </div>
@@ -298,8 +298,8 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
               ) : agentsError ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12">
-                    <div className="text-gray-500">
-                      <User className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                    <div className="text-muted-foreground">
+                      <User className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                       <p className="font-medium">{agentsError}</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => loadAgents()}>
                         Retry
@@ -310,8 +310,8 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
               ) : filteredAgents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12">
-                    <div className="text-gray-500">
-                      <User className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                    <div className="text-muted-foreground">
+                      <User className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                       <p className="font-medium">No agents found</p>
                       <p className="text-sm mt-1">
                         {selectedProjects && selectedProjects.length > 0
@@ -325,19 +325,19 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
               filteredAgents.map((agent) => (
                 <TableRow 
                   key={agent.id} 
-                  className="cursor-pointer hover:bg-gray-50" 
+                  className="cursor-pointer hover:bg-muted/50" 
                   onClick={() => !agent.invitation_id && navigate(`${basePath}/users/${agent.id}`)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarFallback className="bg-blue-600 text-white">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {agent.avatar}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">{agent.name}</div>
-                        <div className="text-sm text-gray-500">{agent.email}</div>
+                        <div className="text-sm text-muted-foreground">{agent.email}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -356,7 +356,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
                               status === 'Active' ? 'bg-green-500' :
                               status === 'Away' ? 'bg-yellow-500' :
                               status === 'Deactivated' ? 'bg-red-500' :
-                              status === 'Invited' ? 'bg-blue-500' : 'bg-gray-400'
+                              status === 'Invited' ? 'bg-primary' : 'bg-muted-foreground'
                             }`} />
                             <span className="text-sm">{status}</span>
                           </>
@@ -387,10 +387,10 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
                         <span className="text-yellow-500">★</span>
                       </div>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-gray-500">{agent.lastActive}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{agent.lastActive}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>

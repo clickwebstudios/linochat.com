@@ -30,10 +30,10 @@ export function StepLoader({ steps = DEFAULT_STEPS, className = '' }: StepLoader
             <div
               className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 ${
                 index < currentStep
-                  ? 'bg-blue-600 border-blue-600 text-white'
+                  ? 'bg-primary border-primary text-primary-foreground'
                   : index === currentStep
-                  ? 'border-blue-600 bg-blue-50 text-blue-600'
-                  : 'border-gray-200 bg-gray-50 text-gray-400'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-muted/50 text-muted-foreground'
               }`}
             >
               {index < currentStep ? (
@@ -45,7 +45,7 @@ export function StepLoader({ steps = DEFAULT_STEPS, className = '' }: StepLoader
             {index < steps.length - 1 && (
               <div
                 className={`w-8 h-0.5 mx-0.5 transition-colors duration-300 ${
-                  index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+                  index < currentStep ? 'bg-primary' : 'bg-muted'
                 }`}
               />
             )}
@@ -53,7 +53,7 @@ export function StepLoader({ steps = DEFAULT_STEPS, className = '' }: StepLoader
         ))}
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium text-gray-700">
+        <p className="text-sm font-medium text-foreground">
           {steps[currentStep]}
           <span className="animate-pulse">...</span>
         </p>

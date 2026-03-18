@@ -66,7 +66,7 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold">{project.name}</h1>
-                    <p className="text-sm text-gray-500 mt-1">Project ID: {project.id}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Project ID: {project.id}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -83,18 +83,18 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
 
               {/* Description */}
               <div className="mb-4">
-                <p className="text-gray-600">{project.description}</p>
+                <p className="text-muted-foreground">{project.description}</p>
                 {isSuperadmin && (
                   <div className="flex items-center gap-4 mt-3">
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <MessageSquare className="h-4 w-4" />
-                      <a href={project.website} className="text-blue-600 hover:underline">{project.website}</a>
+                      <a href={project.website} className="text-primary hover:underline">{project.website}</a>
                     </div>
                     {company && (
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
                         <button
-                          className="text-blue-600 hover:underline"
+                          className="text-primary hover:underline"
                           onClick={() => navigate(`/superadmin/company/${company.id}`)}
                         >
                           {company.name}
@@ -109,11 +109,11 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-4 pt-4 border-t">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <Ticket className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <Ticket className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Total Tickets</p>
+                    <p className="text-sm text-muted-foreground">Total Tickets</p>
                     <p className="text-2xl font-bold">{project?.totalTickets ?? 0}</p>
                   </div>
                 </div>
@@ -123,8 +123,8 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                     <AlertCircle className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Active Tickets</p>
-                    <p className="text-2xl font-bold text-blue-600">{project?.activeTickets ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Active Tickets</p>
+                    <p className="text-2xl font-bold text-primary">{project?.activeTickets ?? 0}</p>
                   </div>
                 </div>
 
@@ -133,17 +133,17 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                     <CheckCircle className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Resolved</p>
+                    <p className="text-sm text-muted-foreground">Resolved</p>
                     <p className="text-2xl font-bold">{(project?.totalTickets ?? 0) - (project?.activeTickets ?? 0)}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <Users className="h-6 w-6 text-purple-600" />
+                  <div className="p-3 bg-secondary/10 rounded-lg">
+                    <Users className="h-6 w-6 text-secondary" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Team Members</p>
+                    <p className="text-sm text-muted-foreground">Team Members</p>
                     <p className="text-2xl font-bold">{project?.members ?? 0}</p>
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                   <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="created" stroke="#3b82f6" name="Created" strokeWidth={2} />
+                  <Line type="monotone" dataKey="created" stroke="var(--primary)" name="Created" strokeWidth={2} />
                   <Line type="monotone" dataKey="resolved" stroke="#10b981" name="Resolved" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
@@ -199,7 +199,7 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
             <CardTitle>Team Members</CardTitle>
             <Button 
               size="sm" 
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={onAddMemberClick}
             >
               <UserPlus className="h-4 w-4 mr-2" />
@@ -212,18 +212,18 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                 projectAgents.slice(0, 5).map(agent => (
                   <div
                     key={agent.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-600 text-white">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
-                        <p className="text-xs text-gray-500">{agent.email}</p>
+                        <p className="text-xs text-muted-foreground">{agent.email}</p>
                       </div>
                     </div>
                     <Badge variant="outline">Agent</Badge>
@@ -231,16 +231,16 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                 ))
               ) : (
                 [...Array(Math.min(5, project?.members || 0))].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-600 text-white">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {String.fromCharCode(65 + i)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">Team Member {i + 1}</p>
-                        <p className="text-xs text-gray-500">member{i + 1}@example.com</p>
+                        <p className="text-xs text-muted-foreground">member{i + 1}@example.com</p>
                       </div>
                     </div>
                     <Badge variant="outline">Agent</Badge>
@@ -258,11 +258,11 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <TrendingUp className="h-6 w-6 text-gray-400" />
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-sm text-gray-500">No recent activity</p>
-              <p className="text-xs text-gray-400 mt-1">Activity will appear here when tickets are created or resolved</p>
+              <p className="text-sm text-muted-foreground">No recent activity</p>
+              <p className="text-xs text-muted-foreground mt-1">Activity will appear here when tickets are created or resolved</p>
             </div>
           </CardContent>
         </Card>

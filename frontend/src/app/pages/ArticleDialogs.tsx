@@ -76,7 +76,7 @@ export function SuccessDialog({ open, onOpenChange, status, editTitle }: Success
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-3 justify-end pt-4">
-          <Button onClick={() => onOpenChange(false)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => onOpenChange(false)} className="bg-primary hover:bg-primary/90">
             Continue Editing
           </Button>
         </div>
@@ -104,7 +104,7 @@ export function ProjectSelectDialog({ open, onOpenChange, projects, onSelectProj
         </DialogHeader>
         <div className="py-4">
           {projects.length === 0 ? (
-            <p className="text-sm text-gray-500">No projects available. Please create a project first.</p>
+            <p className="text-sm text-muted-foreground">No projects available. Please create a project first.</p>
           ) : (
             <div className="space-y-2">
               {projects.map((project) => (

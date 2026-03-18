@@ -137,7 +137,7 @@ export function CompanyDialogs({
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
             <Button
-              className="bg-blue-600"
+              className="bg-primary"
               onClick={handleSaveEdit}
               disabled={!tempName.trim() || !tempEmail.trim()}
             >
@@ -156,12 +156,12 @@ export function CompanyDialogs({
               Delete Company
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete <span className="font-semibold text-gray-900">{editedCompanyName}</span> and all associated data including projects, tickets, chats, and team members.
+              This action cannot be undone. This will permanently delete <span className="font-semibold text-foreground">{editedCompanyName}</span> and all associated data including projects, tickets, chats, and team members.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="delete-confirm" className="text-sm text-gray-600">
-              Type <span className="font-mono font-semibold text-gray-900">{editedCompanyName}</span> to confirm deletion:
+            <Label htmlFor="delete-confirm" className="text-sm text-muted-foreground">
+              Type <span className="font-mono font-semibold text-foreground">{editedCompanyName}</span> to confirm deletion:
             </Label>
             <Input
               id="delete-confirm"
@@ -194,7 +194,7 @@ export function CompanyDialogs({
               Archive Company
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to archive <span className="font-semibold text-gray-900">{editedCompanyName}</span>? This will apply the following restrictions:
+              Are you sure you want to archive <span className="font-semibold text-foreground">{editedCompanyName}</span>? This will apply the following restrictions:
             </DialogDescription>
           </DialogHeader>
           <div className="py-2 space-y-3">
@@ -221,7 +221,7 @@ export function CompanyDialogs({
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="archive-reason" className="text-sm">Reason for archiving <span className="text-gray-400">(optional)</span></Label>
+              <Label htmlFor="archive-reason" className="text-sm">Reason for archiving <span className="text-muted-foreground">(optional)</span></Label>
               <Textarea
                 id="archive-reason"
                 placeholder="e.g. Customer requested account closure, non-payment, etc."

@@ -298,8 +298,8 @@ export function CompanyDetailView({
     return (
       <div className="flex items-center justify-center h-[400px]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-gray-500">Loading company data...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading company data...</p>
         </div>
       </div>
     );
@@ -311,7 +311,7 @@ export function CompanyDetailView({
       <div className="flex items-center justify-center h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <AlertCircle className="h-8 w-8 text-red-500" />
-          <p className="text-sm text-gray-700">{error || 'Company not found'}</p>
+          <p className="text-sm text-foreground">{error || 'Company not found'}</p>
           <Button variant="outline" onClick={() => setViewingCompanyId(null)}>
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back to Companies
@@ -349,17 +349,17 @@ export function CompanyDetailView({
                     variant="outline"
                     className={
                       company.plan === 'Enterprise'
-                        ? 'border-purple-600 text-purple-600'
+                        ? 'border-secondary text-secondary'
                         : company.plan === 'Pro'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-gray-600 text-gray-600'
+                        ? 'border-primary text-primary'
+                        : 'border-muted-foreground text-muted-foreground'
                     }
                   >
                     {company.plan}
                   </Badge>
-                  <Badge className={editedStatus === 'Active' ? 'bg-green-100 text-green-700' : editedStatus === 'Suspended' ? 'bg-red-100 text-red-700' : editedStatus === 'Archived' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}>{editedStatus}</Badge>
+                  <Badge className={editedStatus === 'Active' ? 'bg-green-100 text-green-700' : editedStatus === 'Suspended' ? 'bg-red-100 text-red-700' : editedStatus === 'Archived' ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}>{editedStatus}</Badge>
                 </div>
-                <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-500">
+                <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{editedEmail}</span>
                   <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{editedLocation}</span>
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Joined {defaultMeta.joined}</span>

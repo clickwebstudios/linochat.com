@@ -146,7 +146,7 @@ export function CompanyDataTabs({
             <CardTitle className="text-base">Recent Chats</CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search chats..." className="pl-8 h-9 w-[200px]" />
               </div>
             </div>
@@ -168,7 +168,7 @@ export function CompanyDataTabs({
                   {companyChats.map(chat => {
                     const project = getProjectById(chat.projectId);
                     return (
-                      <TableRow key={chat.id} className={`hover:bg-gray-50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/chats/${chat.id}`)}>
+                      <TableRow key={chat.id} className={`hover:bg-muted/50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/chats/${chat.id}`)}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-7 w-7">
@@ -180,20 +180,20 @@ export function CompanyDataTabs({
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500 max-w-[200px] truncate">{chat.preview}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{chat.preview}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm">
-                            {chat.isAIBot && <CircleDot className="h-3.5 w-3.5 text-purple-500" />}
+                            {chat.isAIBot && <CircleDot className="h-3.5 w-3.5 text-secondary" />}
                             <span>{chat.agent}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">{project?.name || '\u2014'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={chat.status === 'active' ? 'text-green-600 border-green-600 text-xs' : 'text-gray-500 border-gray-400 text-xs'}>
+                          <Badge variant="outline" className={chat.status === 'active' ? 'text-green-600 border-green-600 text-xs' : 'text-muted-foreground border-border text-xs'}>
                             {chat.status === 'active' ? 'Active' : 'Offline'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">{chat.time}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{chat.time}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -201,8 +201,8 @@ export function CompanyDataTabs({
               </Table>
             ) : (
               <div className="text-center py-10">
-                <MessageSquare className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No chats found for this company</p>
+                <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No chats found for this company</p>
               </div>
             )}
           </CardContent>
@@ -219,7 +219,7 @@ export function CompanyDataTabs({
             <CardTitle className="text-base">Support Tickets</CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search tickets..." className="pl-8 h-9 w-[200px]" />
               </div>
             </div>
@@ -240,30 +240,30 @@ export function CompanyDataTabs({
                 </TableHeader>
                 <TableBody>
                   {companyTickets.map(ticket => (
-                    <TableRow key={ticket.id} className={`hover:bg-gray-50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/tickets/${ticket.id}`)}>
-                      <TableCell className="font-mono text-sm text-blue-600">{ticket.id}</TableCell>
+                    <TableRow key={ticket.id} className={`hover:bg-muted/50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/tickets/${ticket.id}`)}>
+                      <TableCell className="font-mono text-sm text-primary">{ticket.id}</TableCell>
                       <TableCell className="font-semibold text-sm">{ticket.subject}</TableCell>
                       <TableCell className="text-sm">{ticket.customer}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs ${ticket.priority === 'high' ? 'text-red-600 border-red-600' : ticket.priority === 'medium' ? 'text-yellow-600 border-yellow-600' : 'text-gray-500 border-gray-400'}`}>
+                        <Badge variant="outline" className={`text-xs ${ticket.priority === 'high' ? 'text-red-600 border-red-600' : ticket.priority === 'medium' ? 'text-yellow-600 border-yellow-600' : 'text-muted-foreground border-border'}`}>
                           {ticket.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`text-xs ${ticket.status === 'open' ? 'bg-green-100 text-green-700' : ticket.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                        <Badge className={`text-xs ${ticket.status === 'open' ? 'bg-green-100 text-green-700' : ticket.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-muted text-muted-foreground'}`}>
                           {ticket.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">{ticket.assignedTo}</TableCell>
-                      <TableCell className="text-sm text-gray-500">{ticket.created}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{ticket.created}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
               <div className="text-center py-10">
-                <FileText className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No tickets found for this company</p>
+                <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No tickets found for this company</p>
               </div>
             )}
           </CardContent>
@@ -280,10 +280,10 @@ export function CompanyDataTabs({
             <CardTitle className="text-base">Knowledge Base Articles</CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search articles..." className="pl-8 h-9 w-[200px]" />
               </div>
-              <Button size="sm" className="bg-blue-600" disabled={isArchived} onClick={() => navigate('/superadmin/create-article', { state: { companyId: viewingCompanyId, companyName: company.name } })}><Plus className="h-4 w-4 mr-1" />New Article</Button>
+              <Button size="sm" className="bg-primary" disabled={isArchived} onClick={() => navigate('/superadmin/create-article', { state: { companyId: viewingCompanyId, companyName: company.name } })}><Plus className="h-4 w-4 mr-1" />New Article</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -305,10 +305,10 @@ export function CompanyDataTabs({
                   { id: 4, title: 'API Integration Guide', category: 'Developer', status: 'Draft', views: 120, helpful: 60, updated: 'Feb 8, 2026' },
                   { id: 5, title: 'Troubleshooting Common Issues', category: 'Support', status: 'Published', views: 734, helpful: 81, updated: 'Feb 1, 2026' },
                 ].map(article => (
-                  <TableRow key={article.id} className="hover:bg-gray-50">
+                  <TableRow key={article.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-blue-500" />
+                        <BookOpen className="h-4 w-4 text-primary" />
                         <span className="font-semibold text-sm">{article.title}</span>
                       </div>
                     </TableCell>
@@ -318,7 +318,7 @@ export function CompanyDataTabs({
                         {article.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">{article.updated}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{article.updated}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -350,10 +350,10 @@ export function CompanyDataTabs({
             <CardTitle className="text-base">All Agents</CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search agents..." className="pl-8 h-9 w-[200px]" />
               </div>
-              <Button size="sm" className="bg-blue-600"><UserPlus className="h-4 w-4 mr-1" />Invite Agent</Button>
+              <Button size="sm" className="bg-primary"><UserPlus className="h-4 w-4 mr-1" />Invite Agent</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -378,21 +378,21 @@ export function CompanyDataTabs({
                     const resolvedCount = agent.resolvedToday || [12, 8, 15, 6, 10][idx % 5];
                     const avgResp = ['1.8 min', '2.3 min', '1.5 min', '3.1 min', '2.0 min'][idx % 5];
                     return (
-                      <TableRow key={agent.id} className="hover:bg-gray-50">
+                      <TableRow key={agent.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className="relative">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback className="text-xs">{agent.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                               </Avatar>
-                              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${agentStatus === 'Online' ? 'bg-green-500' : agentStatus === 'Away' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
+                              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${agentStatus === 'Online' ? 'bg-green-500' : agentStatus === 'Away' ? 'bg-yellow-500' : 'bg-muted-foreground'}`} />
                             </div>
                             <span className="font-semibold text-sm">{agent.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">{agent.email}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{agent.email}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-xs ${agentStatus === 'Online' ? 'text-green-600 border-green-600' : agentStatus === 'Away' ? 'text-yellow-600 border-yellow-600' : 'text-gray-500 border-gray-400'}`}>
+                          <Badge variant="outline" className={`text-xs ${agentStatus === 'Online' ? 'text-green-600 border-green-600' : agentStatus === 'Away' ? 'text-yellow-600 border-yellow-600' : 'text-muted-foreground border-border'}`}>
                             {agentStatus}
                           </Badge>
                         </TableCell>
@@ -419,9 +419,9 @@ export function CompanyDataTabs({
               </Table>
             ) : (
               <div className="text-center py-10">
-                <Headphones className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No agents assigned</p>
-                <Button size="sm" className="mt-3 bg-blue-600"><UserPlus className="h-4 w-4 mr-1" />Invite First Agent</Button>
+                <Headphones className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No agents assigned</p>
+                <Button size="sm" className="mt-3 bg-primary"><UserPlus className="h-4 w-4 mr-1" />Invite First Agent</Button>
               </div>
             )}
           </CardContent>
@@ -459,8 +459,8 @@ export function CompanyDataTabs({
                   { id: 'INV-2025-039', date: 'Oct 1, 2025', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
                   { id: 'INV-2025-031', date: 'Sep 1, 2025', desc: 'Plan Upgrade Fee', amount: '$49.00', status: 'Paid' },
                 ].map(tx => (
-                  <TableRow key={tx.id} className="hover:bg-gray-50">
-                    <TableCell className="font-mono text-sm text-blue-600">{tx.id}</TableCell>
+                  <TableRow key={tx.id} className="hover:bg-muted/50">
+                    <TableCell className="font-mono text-sm text-primary">{tx.id}</TableCell>
                     <TableCell className="text-sm">{tx.date}</TableCell>
                     <TableCell className="text-sm">{tx.desc}</TableCell>
                     <TableCell className="font-semibold">{tx.amount}</TableCell>
@@ -483,10 +483,10 @@ export function CompanyDataTabs({
   if (tab === 'history') {
     const events: { icon: LucideIcon; color: string; action: string; detail: string; time: string; date: string }[] = [
       { icon: Headphones, color: 'bg-green-100 text-green-600', action: 'New agent added', detail: 'James Wilson joined the team', time: '2 hours ago', date: 'Feb 11, 2026' },
-      { icon: FolderKanban, color: 'bg-blue-100 text-blue-600', action: 'Project created', detail: 'Mobile App project was created', time: '1 day ago', date: 'Feb 10, 2026' },
-      { icon: CreditCard, color: 'bg-purple-100 text-purple-600', action: 'Payment received', detail: `Invoice INV-2026-012 paid \u2014 ${defaultMeta.mrr}`, time: '3 days ago', date: 'Feb 8, 2026' },
+      { icon: FolderKanban, color: 'bg-primary/10 text-primary', action: 'Project created', detail: 'Mobile App project was created', time: '1 day ago', date: 'Feb 10, 2026' },
+      { icon: CreditCard, color: 'bg-secondary/10 text-secondary', action: 'Payment received', detail: `Invoice INV-2026-012 paid \u2014 ${defaultMeta.mrr}`, time: '3 days ago', date: 'Feb 8, 2026' },
       { icon: ArrowUpRight, color: 'bg-orange-100 text-orange-600', action: 'Plan upgraded', detail: `Upgraded from Starter to ${company.plan}`, time: '1 week ago', date: 'Feb 4, 2026' },
-      { icon: Settings, color: 'bg-gray-100 text-gray-600', action: 'Settings updated', detail: 'Chat widget appearance was customized', time: '1 week ago', date: 'Feb 3, 2026' },
+      { icon: Settings, color: 'bg-muted text-muted-foreground', action: 'Settings updated', detail: 'Chat widget appearance was customized', time: '1 week ago', date: 'Feb 3, 2026' },
       { icon: UserPlus, color: 'bg-teal-100 text-teal-600', action: 'Agent invited', detail: 'Invitation sent to emily@company.com', time: '2 weeks ago', date: 'Jan 28, 2026' },
       { icon: BookOpen, color: 'bg-indigo-100 text-indigo-600', action: 'KB article published', detail: 'Published "Getting Started Guide"', time: '2 weeks ago', date: 'Jan 27, 2026' },
       { icon: Shield, color: 'bg-red-100 text-red-600', action: 'Security alert', detail: 'Admin password was changed', time: '3 weeks ago', date: 'Jan 21, 2026' },
@@ -500,24 +500,24 @@ export function CompanyDataTabs({
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Activity History</CardTitle>
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search activity..." className="pl-8 h-9 w-[200px]" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
               {events.map((event, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${event.color.split(' ')[0]}`}>
                     <event.icon className={`h-4 w-4 ${event.color.split(' ')[1]}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold">{event.action}</p>
-                    <p className="text-xs text-gray-500">{event.detail}</p>
+                    <p className="text-xs text-muted-foreground">{event.detail}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-gray-400">{event.time}</p>
-                    <p className="text-[10px] text-gray-300">{event.date}</p>
+                    <p className="text-xs text-muted-foreground">{event.time}</p>
+                    <p className="text-[10px] text-muted-foreground/60">{event.date}</p>
                   </div>
                 </div>
               ))}

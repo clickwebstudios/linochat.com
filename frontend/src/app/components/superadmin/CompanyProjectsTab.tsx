@@ -81,10 +81,10 @@ export function CompanyProjectsTab({
           <CardTitle className="text-base">All Projects</CardTitle>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search projects..." className="pl-8 h-9 w-[200px]" />
             </div>
-            <Button size="sm" className="bg-blue-600" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Add Project</Button>
+            <Button size="sm" className="bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Add Project</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -103,7 +103,7 @@ export function CompanyProjectsTab({
               </TableHeader>
               <TableBody>
                 {companyProjects.map(project => (
-                  <TableRow key={project.id} className={`hover:bg-gray-50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/project/${project.id}`)}>
+                  <TableRow key={project.id} className={`hover:bg-muted/50 ${isArchived ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => !isArchived && navigate(`/superadmin/project/${project.id}`)}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: project.color + '20' }}>
@@ -111,18 +111,18 @@ export function CompanyProjectsTab({
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{project.name}</p>
-                          <p className="text-xs text-gray-500 max-w-[200px] truncate">{project.description}</p>
+                          <p className="text-xs text-muted-foreground max-w-[200px] truncate">{project.description}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {project.website ? (
-                        <a href={project.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm flex items-center gap-1 hover:underline">
+                        <a href={project.website} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
                           {project.website.replace('https://', '').replace('http://', '')}
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       ) : (
-                        <span className="text-gray-400 text-sm">{'\u2014'}</span>
+                        <span className="text-muted-foreground text-sm">{'\u2014'}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -134,7 +134,7 @@ export function CompanyProjectsTab({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5 text-gray-400" />
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-sm">{project.members}</span>
                       </div>
                     </TableCell>
@@ -157,9 +157,9 @@ export function CompanyProjectsTab({
             </Table>
           ) : (
             <div className="text-center py-10">
-              <FolderKanban className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">No projects yet</p>
-              <Button size="sm" className="mt-3 bg-blue-600" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Create First Project</Button>
+              <FolderKanban className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No projects yet</p>
+              <Button size="sm" className="mt-3 bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Create First Project</Button>
             </div>
           )}
         </CardContent>

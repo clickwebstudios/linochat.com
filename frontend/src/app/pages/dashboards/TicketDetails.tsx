@@ -188,7 +188,7 @@ export default function TicketDetails() {
           action: 'Ticket created',
           user: ticket.customer_name || 'Customer',
           icon: Ticket,
-          color: 'text-blue-600',
+          color: 'text-primary',
         },
         ...(ticket.assigned_agent
           ? [{
@@ -196,7 +196,7 @@ export default function TicketDetails() {
               action: 'Assigned to',
               user: assignedAgentName,
               icon: UserPlus,
-              color: 'text-purple-600',
+              color: 'text-secondary',
             }]
           : []),
         {
@@ -359,15 +359,15 @@ export default function TicketDetails() {
   if (ticketLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
   if (!ticket) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-6">
-        <Ticket className="h-12 w-12 text-gray-300 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-600 mb-2">Ticket not found</h2>
+        <Ticket className="h-12 w-12 text-muted-foreground/50 mb-4" />
+        <h2 className="text-xl font-semibold text-muted-foreground mb-2">Ticket not found</h2>
         <Button variant="outline" onClick={() => navigate(`${basePath}/tickets`)}>
           Back to Tickets
         </Button>
@@ -378,7 +378,7 @@ export default function TicketDetails() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -389,7 +389,7 @@ export default function TicketDetails() {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="relative w-96 hidden md:block">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search tickets, chats, customers..." className="pl-10" />
             </div>
           </div>
@@ -398,20 +398,20 @@ export default function TicketDetails() {
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600"></span>
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 hidden md:inline-flex">
+            <Button className="bg-primary hover:bg-primary/90 hidden md:inline-flex">
               + New Ticket
             </Button>
             {/* Agent Info */}
             <div className="hidden md:flex items-center gap-3 pl-4 border-l">
               <div className="relative">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-600 text-white">SC</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">SC</AvatarFallback>
                 </Avatar>
                 <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
               </div>
               <div>
                 <div className="text-sm font-semibold">Sarah Chen</div>
-                <div className="text-xs text-gray-500">Admin</div>
+                <div className="text-xs text-muted-foreground">Admin</div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -551,24 +551,24 @@ export default function TicketDetails() {
                   </div>
                   <div className="grid grid-cols-5 gap-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Created: {ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '—'}</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Created: {ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Last update: {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '—'}</span>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Last update: {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Assigned to: {assignedAgentName}</span>
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Assigned to: {assignedAgentName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Category: {ticket.category || '—'}</span>
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Category: {ticket.category || '—'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Ticket className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600 font-mono">{ticket.ticket_number || `#${ticket.id}`}</span>
+                      <Ticket className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground font-mono">{ticket.ticket_number || `#${ticket.id}`}</span>
                     </div>
                   </div>
 
@@ -578,7 +578,7 @@ export default function TicketDetails() {
                       {/* Customer Profile */}
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <Avatar className="h-12 w-12">
-                          <AvatarFallback className="bg-blue-600 text-white">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                             {(customerInfo.name?.split(' ').map((n: string) => n[0]).join('') || '?').toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
@@ -590,31 +590,31 @@ export default function TicketDetails() {
                       {/* Contact Details */}
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm flex-1">
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">{customerInfo.email}</span>
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{customerInfo.email}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">{customerInfo.phone}</span>
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{customerInfo.phone}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">{customerInfo.location}</span>
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{customerInfo.location}</span>
                         </div>
                       </div>
 
                       {/* Stats */}
                       <div className="flex gap-6 text-sm flex-shrink-0">
                         <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Total Tickets</p>
+                          <p className="text-muted-foreground text-xs mb-1">Total Tickets</p>
                           <p className="font-semibold text-lg">{customerInfo.totalTickets}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Open Tickets</p>
+                          <p className="text-muted-foreground text-xs mb-1">Open Tickets</p>
                           <p className="font-semibold text-lg">{customerInfo.openTickets}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Satisfaction</p>
+                          <p className="text-muted-foreground text-xs mb-1">Satisfaction</p>
                           <div className="flex items-center gap-1 justify-center">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             <span className="font-semibold text-lg">{customerInfo.satisfaction}/5</span>
@@ -641,14 +641,14 @@ export default function TicketDetails() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-80 max-h-80 overflow-y-auto">
-                  <div className="px-2 py-1.5 text-sm font-semibold border-b sticky top-0 bg-white z-10">
+                  <div className="px-2 py-1.5 text-sm font-semibold border-b sticky top-0 bg-card z-10">
                     {customerInfo.name}'s Tickets
-                    <span className="text-xs text-gray-500 font-normal ml-2">
+                    <span className="text-xs text-muted-foreground font-normal ml-2">
                       {customerTickets.length} total, {customerTickets.filter((t) => t.status === 'open' || t.status === 'pending').length} open
                     </span>
                   </div>
                   {customerTickets.length === 0 ? (
-                    <div className="px-2 py-4 text-sm text-gray-500">No other tickets for this customer</div>
+                    <div className="px-2 py-4 text-sm text-muted-foreground">No other tickets for this customer</div>
                   ) : (
                     customerTickets.map((t) => (
                       <DropdownMenuItem
@@ -658,7 +658,7 @@ export default function TicketDetails() {
                       >
                         <div className="flex-1">
                           <div className="font-medium">{t.subject || 'No subject'}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             #{t.id} • {t.created_at ? new Date(t.created_at).toLocaleDateString() : '—'}
                           </div>
                         </div>
@@ -684,20 +684,20 @@ export default function TicketDetails() {
                 <div className="space-y-4 mb-6">
                   {conversationHistory.map((message) => (
                     <div key={message.id} className={`flex gap-3 ${message.sender === 'agent' ? 'flex-row-reverse' : ''}`}>
-                      <Avatar className={`h-10 w-10 ${message.isSystemMessage ? 'bg-gray-200' : ''}`}>
-                        <AvatarFallback className={message.sender === 'agent' ? 'bg-blue-600 text-white' : message.isSystemMessage ? 'bg-gray-400 text-white' : 'bg-gray-200'}>
+                      <Avatar className={`h-10 w-10 ${message.isSystemMessage ? 'bg-muted' : ''}`}>
+                        <AvatarFallback className={message.sender === 'agent' ? 'bg-primary text-primary-foreground' : message.isSystemMessage ? 'bg-muted-foreground text-white' : 'bg-muted'}>
                           {message.avatar}
                         </AvatarFallback>
                       </Avatar>
                       <div className={`flex-1 ${message.sender === 'agent' ? 'items-end' : ''}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-semibold">{message.name}</span>
-                          <span className="text-xs text-gray-500">{message.time}</span>
+                          <span className="text-xs text-muted-foreground">{message.time}</span>
                         </div>
                         <div className={`rounded-lg p-3 ${
-                          message.sender === 'agent' ? 'bg-blue-600 text-white ml-auto max-w-[80%]' :
-                          message.isSystemMessage ? 'bg-yellow-50 border border-yellow-200 text-gray-700 italic' :
-                          'bg-gray-100 text-gray-900 max-w-[80%]'
+                          message.sender === 'agent' ? 'bg-primary text-primary-foreground ml-auto max-w-[80%]' :
+                          message.isSystemMessage ? 'bg-yellow-50 border border-yellow-200 text-foreground italic' :
+                          'bg-muted text-foreground max-w-[80%]'
                         }`}>
                           <p className="text-sm">{message.message}</p>
                         </div>
@@ -725,8 +725,8 @@ export default function TicketDetails() {
                       <Button variant="outline" size="sm">
                         Save Draft
                       </Button>
-                      <Button 
-                        className="bg-blue-600 hover:bg-blue-700" 
+                      <Button
+                        className="bg-primary hover:bg-primary/90"
                         size="sm"
                         onClick={handleSendResponse}
                         disabled={isSendingReply || !responseMessage.trim() || ticket.status === 'resolved' || ticket.status === 'closed'}
@@ -753,15 +753,15 @@ export default function TicketDetails() {
                     const Icon = activity.icon;
                     return (
                       <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                        <div className={`h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0`}>
+                        <div className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0`}>
                           <Icon className={`h-5 w-5 ${activity.color}`} />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">
-                            {activity.action} {activity.user && <span className="text-blue-600">{activity.user}</span>}
+                            {activity.action} {activity.user && <span className="text-primary">{activity.user}</span>}
                             {(activity as any).status && <Badge variant="outline" className="ml-2">{(activity as any).status}</Badge>}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
                         </div>
                       </div>
                     );

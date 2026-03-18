@@ -112,29 +112,29 @@ export default function OAuthAppsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">OAuth Applications</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">OAuth Applications</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Register apps that can access LinoChat on behalf of your users.
           </p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Application
         </Button>
       </div>
 
       {/* Integration guide */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-primary/10 border-primary/20">
         <CardContent className="pt-4 pb-4">
           <div className="flex gap-3">
-            <Code2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800 space-y-1">
+            <Code2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-primary space-y-1">
               <p className="font-semibold">OAuth 2.0 Authorization Code Flow</p>
-              <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-                <li>Redirect users to <code className="bg-blue-100 px-1 rounded">https://linochat.com/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&scope=chats:read&state=…</code></li>
-                <li>User approves → LinoChat redirects back with <code className="bg-blue-100 px-1 rounded">?code=…&state=…</code></li>
-                <li>Exchange code: <code className="bg-blue-100 px-1 rounded">POST /api/oauth/token</code> with <code className="bg-blue-100 px-1 rounded">grant_type=authorization_code</code>, <code className="bg-blue-100 px-1 rounded">code</code>, <code className="bg-blue-100 px-1 rounded">client_id</code>, <code className="bg-blue-100 px-1 rounded">client_secret</code>, <code className="bg-blue-100 px-1 rounded">redirect_uri</code></li>
-                <li>Use returned <code className="bg-blue-100 px-1 rounded">access_token</code> as <code className="bg-blue-100 px-1 rounded">Authorization: Bearer …</code> header</li>
+              <ol className="list-decimal list-inside space-y-0.5 text-primary">
+                <li>Redirect users to <code className="bg-primary/10 px-1 rounded">https://linochat.com/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&scope=chats:read&state=…</code></li>
+                <li>User approves → LinoChat redirects back with <code className="bg-primary/10 px-1 rounded">?code=…&state=…</code></li>
+                <li>Exchange code: <code className="bg-primary/10 px-1 rounded">POST /api/oauth/token</code> with <code className="bg-primary/10 px-1 rounded">grant_type=authorization_code</code>, <code className="bg-primary/10 px-1 rounded">code</code>, <code className="bg-primary/10 px-1 rounded">client_id</code>, <code className="bg-primary/10 px-1 rounded">client_secret</code>, <code className="bg-primary/10 px-1 rounded">redirect_uri</code></li>
+                <li>Use returned <code className="bg-primary/10 px-1 rounded">access_token</code> as <code className="bg-primary/10 px-1 rounded">Authorization: Bearer …</code> header</li>
               </ol>
             </div>
           </div>
@@ -144,14 +144,14 @@ export default function OAuthAppsPage() {
       {/* App list */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : apps.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Code2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No OAuth applications yet.</p>
-            <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
+            <Code2 className="h-12 w-12 text-muted mx-auto mb-4" />
+            <p className="text-muted-foreground">No OAuth applications yet.</p>
+            <Button className="mt-4 bg-primary hover:bg-primary/90" onClick={() => setShowCreate(true)}>
               Register your first app
             </Button>
           </CardContent>
@@ -164,22 +164,22 @@ export default function OAuthAppsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-base">{app.name}</CardTitle>
-                    <p className="text-xs text-gray-400 mt-0.5">{app.redirect_uri}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{app.redirect_uri}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={app.is_active ? 'default' : 'secondary'}>
                       {app.is_active ? 'Active' : 'Disabled'}
                     </Badge>
-                    <span className="text-xs text-gray-400">{app.access_tokens_count} tokens</span>
+                    <span className="text-xs text-muted-foreground">{app.access_tokens_count} tokens</span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Client ID */}
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Client ID</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Client ID</label>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs bg-gray-50 border rounded px-3 py-1.5 font-mono truncate">
+                    <code className="flex-1 text-xs bg-muted/50 border rounded px-3 py-1.5 font-mono truncate">
                       {app.client_id}
                     </code>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(app.client_id, 'Client ID')}>
@@ -190,9 +190,9 @@ export default function OAuthAppsPage() {
 
                 {/* Client Secret */}
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Client Secret</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Client Secret</label>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs bg-gray-50 border rounded px-3 py-1.5 font-mono truncate">
+                    <code className="flex-1 text-xs bg-muted/50 border rounded px-3 py-1.5 font-mono truncate">
                       {showSecret[app.id] ? app.client_secret : '••••••••••••••••••••••••'}
                     </code>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowSecret(p => ({ ...p, [app.id]: !p[app.id] }))}>
@@ -206,7 +206,7 @@ export default function OAuthAppsPage() {
 
                 {/* Scopes */}
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Scopes</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Scopes</label>
                   <div className="flex flex-wrap gap-1">
                     {(app.scopes ?? []).map(s => (
                       <Badge key={s} variant="outline" className="text-xs font-mono">{s}</Badge>
@@ -255,7 +255,7 @@ export default function OAuthAppsPage() {
                 value={form.redirect_uri}
                 onChange={e => setForm(p => ({ ...p, redirect_uri: e.target.value }))}
               />
-              <p className="text-xs text-gray-400 mt-1">Users will be sent here after approving access.</p>
+              <p className="text-xs text-muted-foreground mt-1">Users will be sent here after approving access.</p>
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Permissions (Scopes)</label>
@@ -268,8 +268,8 @@ export default function OAuthAppsPage() {
                       onCheckedChange={() => toggleScope(scope)}
                     />
                     <label htmlFor={scope} className="text-sm cursor-pointer">
-                      <span className="font-mono text-xs text-blue-700 mr-2">{scope}</span>
-                      <span className="text-gray-600">{desc}</span>
+                      <span className="font-mono text-xs text-primary mr-2">{scope}</span>
+                      <span className="text-muted-foreground">{desc}</span>
                     </label>
                   </div>
                 ))}
@@ -278,7 +278,7 @@ export default function OAuthAppsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={createApp} disabled={creating}>
+            <Button className="bg-primary hover:bg-primary/90" onClick={createApp} disabled={creating}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Application'}
             </Button>
           </DialogFooter>
@@ -293,7 +293,7 @@ export default function OAuthAppsPage() {
           </DialogHeader>
           <div className="flex gap-3 py-2">
             <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Deleting <strong>{deleteTarget?.name}</strong> will immediately revoke all access tokens.
               Any website using this app will lose access.
             </p>

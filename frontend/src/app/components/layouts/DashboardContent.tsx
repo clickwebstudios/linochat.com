@@ -110,8 +110,8 @@ export function DashboardSection({
       {(title || description || actions) && (
         <div className="flex items-start justify-between">
           <div>
-            {title && <h2 className="text-2xl font-bold text-gray-900">{title}</h2>}
-            {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
+            {title && <h2 className="text-2xl font-bold text-foreground">{title}</h2>}
+            {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>

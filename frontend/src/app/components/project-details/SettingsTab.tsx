@@ -157,7 +157,7 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
 
           <div className="flex gap-2">
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={handleSave}
               disabled={saving || !hasChanges}
             >
@@ -173,23 +173,23 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
           <h3 className="text-sm font-medium mb-4">Project Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Project Color</Label>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Project Color</Label>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: project.color ?? '#4F46E5' }} />
-                <span className="text-sm text-gray-600">{project.color ?? '#4F46E5'}</span>
+                <div className="w-10 h-10 rounded-lg border-2 border-border" style={{ backgroundColor: project.color ?? '#4F46E5' }} />
+                <span className="text-sm text-muted-foreground">{project.color ?? '#4F46E5'}</span>
               </div>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Created</Label>
-              <p className="text-sm text-gray-600">{formatDisplayDate(project.created_at)}</p>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Created</Label>
+              <p className="text-sm text-muted-foreground">{formatDisplayDate(project.created_at)}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Last Updated</Label>
-              <p className="text-sm text-gray-600">{formatRelativeTime(project.updated_at)}</p>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Last Updated</Label>
+              <p className="text-sm text-muted-foreground">{formatRelativeTime(project.updated_at)}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Project ID</Label>
-              <p className="text-sm text-gray-600">{project.id}</p>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Project ID</Label>
+              <p className="text-sm text-muted-foreground">{project.id}</p>
             </div>
           </div>
         </div>

@@ -32,11 +32,11 @@ export default function SuperadminProfileSettings() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <ProjectSelector />
           <div className="relative w-96 hidden md:block">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search users, settings..." className="pl-10" />
           </div>
         </div>
@@ -47,15 +47,15 @@ export default function SuperadminProfileSettings() {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer">
+              <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-muted/50 rounded-lg p-2 transition-colors cursor-pointer">
                 <div className="text-right hidden sm:block">
                   <div className="text-sm font-semibold">Admin User</div>
-                  <div className="text-xs text-gray-500">Superadmin</div>
+                  <div className="text-xs text-muted-foreground">Superadmin</div>
                 </div>
                 <Avatar>
-                  <AvatarFallback className="bg-purple-600 text-white">AD</AvatarFallback>
+                  <AvatarFallback className="bg-secondary text-secondary-foreground">AD</AvatarFallback>
                 </Avatar>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -79,7 +79,7 @@ export default function SuperadminProfileSettings() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+      <main className="flex-1 overflow-y-auto bg-muted/50 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Profile Information */}
           <Card>
@@ -91,14 +91,14 @@ export default function SuperadminProfileSettings() {
               {/* Profile Photo */}
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarFallback className="bg-purple-600 text-white text-2xl">AD</AvatarFallback>
+                  <AvatarFallback className="bg-secondary text-secondary-foreground text-2xl">AD</AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm">
                     <Camera className="mr-2 h-4 w-4" />
                     Change Photo
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2">JPG, GIF or PNG. Max size of 2MB</p>
+                  <p className="text-xs text-muted-foreground mt-2">JPG, GIF or PNG. Max size of 2MB</p>
                 </div>
               </div>
 
@@ -120,7 +120,7 @@ export default function SuperadminProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="email" type="email" defaultValue="admin@linochat.com" className="pl-10" />
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function SuperadminProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="phone" type="tel" defaultValue="+1 (555) 999-0001" className="pl-10" />
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function SuperadminProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="location" defaultValue="San Francisco, CA" className="pl-10" />
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Email Notifications</Label>
-                  <p className="text-sm text-gray-500">Receive email about system alerts and updates</p>
+                  <p className="text-sm text-muted-foreground">Receive email about system alerts and updates</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -173,7 +173,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Desktop Notifications</Label>
-                  <p className="text-sm text-gray-500">Show desktop notifications for critical alerts</p>
+                  <p className="text-sm text-muted-foreground">Show desktop notifications for critical alerts</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -181,7 +181,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Sound Alerts</Label>
-                  <p className="text-sm text-gray-500">Play sound for system notifications</p>
+                  <p className="text-sm text-muted-foreground">Play sound for system notifications</p>
                 </div>
                 <Switch />
               </div>
@@ -189,7 +189,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Weekly Summary</Label>
-                  <p className="text-sm text-gray-500">Get a weekly summary of platform activity</p>
+                  <p className="text-sm text-muted-foreground">Get a weekly summary of platform activity</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -197,7 +197,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Security Alerts</Label>
-                  <p className="text-sm text-gray-500">Get notified about security-related events</p>
+                  <p className="text-sm text-muted-foreground">Get notified about security-related events</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -214,7 +214,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Show Advanced Options</Label>
-                  <p className="text-sm text-gray-500">Display advanced configuration options in dashboard</p>
+                  <p className="text-sm text-muted-foreground">Display advanced configuration options in dashboard</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -222,7 +222,7 @@ export default function SuperadminProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Audit Logging</Label>
-                  <p className="text-sm text-gray-500">Log all administrative actions for audit trail</p>
+                  <p className="text-sm text-muted-foreground">Log all administrative actions for audit trail</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -255,19 +255,19 @@ export default function SuperadminProfileSettings() {
               {/* Two-Factor Authentication */}
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <Shield className="h-5 w-5 text-secondary mt-0.5" />
                   <div className="flex-1">
                     <Label className="text-base">Two-Factor Authentication (2FA)</Label>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Add an extra layer of security to your account. Highly recommended for superadmin accounts.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between bg-secondary/10 p-4 rounded-lg border border-secondary/20">
                   <div className="space-y-0.5">
                     <Label>Enable 2FA</Label>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Require authentication code in addition to password
                     </p>
                   </div>
@@ -294,16 +294,16 @@ export default function SuperadminProfileSettings() {
       </main>
 
       {/* Save Panel - sticky at bottom of flex column */}
-      <div className="bg-white border-t shadow-lg shrink-0">
+      <div className="bg-card border-t shadow-lg shrink-0">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500 hidden sm:block">
+          <p className="text-sm text-muted-foreground hidden sm:block">
             Remember to save your changes before leaving this page.
           </p>
           <div className="flex gap-3 ml-auto">
             <Button variant="outline" asChild>
               <Link to="/superadmin/dashboard">Cancel</Link>
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Save className="mr-2 h-4 w-4" />
               Save Changes
             </Button>

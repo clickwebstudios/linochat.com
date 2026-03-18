@@ -99,7 +99,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
               <Badge variant="outline" className="text-xs">156</Badge>
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search chats..." className="pl-10 h-9 text-sm" />
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -125,11 +125,11 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
           <CardContent className="p-0 flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : superadminChats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-                <Headphones className="h-12 w-12 mb-2 text-gray-300" />
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <Headphones className="h-12 w-12 mb-2 text-muted" />
                 <p>No chats found</p>
               </div>
             ) : (
@@ -138,7 +138,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                 <div
                   key={chat.id}
                   className={`px-4 py-3 cursor-pointer transition-colors border-l-3 ${chat.borderColor} ${
-                    selectedChatId === chat.id ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    selectedChatId === chat.id ? 'bg-primary/10' : 'hover:bg-muted/50'
                   }`}
                   onClick={() => setSelectedChatId(chat.id)}
                 >
@@ -153,24 +153,24 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 shrink-0 ${
                             chat.status === 'active' ? 'text-green-600 border-green-600' :
                             chat.status === 'waiting' ? 'text-orange-600 border-orange-600' :
-                            'text-blue-600 border-blue-600'
+                            'text-primary border-primary'
                           }`}>
                             {chat.status === 'active' ? 'Active' : chat.status === 'waiting' ? 'Waiting' : 'Resolved'}
                           </Badge>
                         </div>
-                        <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2 shrink-0">{chat.time}</span>
+                        <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-2 shrink-0">{chat.time}</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{chat.company} • {chat.chatId}</p>
-                      <p className="text-xs text-gray-600 truncate mt-0.5">{chat.preview}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{chat.company} • {chat.chatId}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{chat.preview}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {chat.agent ? (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-blue-600 border-blue-600">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-primary border-primary">
                             <Headphones className="h-2.5 w-2.5 mr-0.5" />{chat.agent}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-orange-600 border-orange-600">Unassigned</Badge>
                         )}
-                        <span className="text-[11px] text-gray-400">{chat.msgs} msgs</span>
+                        <span className="text-[11px] text-muted-foreground">{chat.msgs} msgs</span>
                       </div>
                     </div>
                   </div>
@@ -184,10 +184,10 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
         {/* Right Panel - Chat Window */}
         <Card className="lg:col-span-2 flex flex-col overflow-hidden">
           {!selectedChat ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <Headphones className="h-16 w-16 mb-4 text-gray-300" />
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Headphones className="h-16 w-16 mb-4 text-muted" />
               <p className="text-lg font-medium">Select a chat to view</p>
-              <p className="text-sm text-gray-400">Choose a conversation from the list</p>
+              <p className="text-sm text-muted-foreground">Choose a conversation from the list</p>
             </div>
           ) : (
             <>
@@ -204,22 +204,22 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${
                           selectedChat.status === 'active' ? 'text-green-600 border-green-600' :
                           selectedChat.status === 'waiting' ? 'text-orange-600 border-orange-600' :
-                          'text-blue-600 border-blue-600'
+                          'text-primary border-primary'
                         }`}>
                           {selectedChat.status === 'active' ? 'Active' : selectedChat.status === 'waiting' ? 'Waiting' : 'Resolved'}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-500">{selectedChat.company} • {selectedChat.chatId} • {selectedChat.duration}</p>
+                      <p className="text-xs text-muted-foreground">{selectedChat.company} • {selectedChat.chatId} • {selectedChat.duration}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {selectedChat.agent && (
-                      <Badge variant="outline" className="text-xs text-blue-600 border-blue-600">
+                      <Badge variant="outline" className="text-xs text-primary border-primary">
                         <Headphones className="h-3 w-3 mr-1" />{selectedChat.agent}
                       </Badge>
                     )}
                     {!selectedChat.agent && (
-                      <Button size="sm" className="bg-blue-600 text-xs h-7">
+                      <Button size="sm" className="bg-primary text-xs h-7">
                         <Headphones className="h-3 w-3 mr-1" />Assign Agent
                       </Button>
                     )}
@@ -256,16 +256,16 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                     <div key={idx} className={`flex ${msg.from === 'agent' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[70%] rounded-lg p-3 ${
                         msg.from === 'agent'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
                       }`}>
                         <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                        <p className={`text-xs mt-1 ${msg.from === 'agent' ? 'text-blue-100' : 'text-gray-500'}`}>{msg.time}</p>
+                        <p className={`text-xs mt-1 ${msg.from === 'agent' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
                       </div>
                     </div>
                   ))}
                   {(!selectedChat.messages || selectedChat.messages.length === 0) && (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                       <p>No messages yet</p>
                     </div>
                   )}
@@ -276,7 +276,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
               <div className="border-t p-3 shrink-0">
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
-                    <Paperclip className="h-4 w-4 text-gray-400" />
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Input
                     placeholder="Type a message..."
@@ -292,11 +292,11 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                     disabled={isSending || selectedChat.status === 'resolved'}
                   />
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
-                    <SmilePlus className="h-4 w-4 text-gray-400" />
+                    <SmilePlus className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-blue-600 h-8 w-8 p-0 shrink-0"
+                    className="bg-primary h-8 w-8 p-0 shrink-0"
                     onClick={handleSendMessage}
                     disabled={isSending || !messageInput.trim() || selectedChat.status === 'resolved'}
                   >
@@ -304,7 +304,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                   </Button>
                 </div>
                 {selectedChat.status === 'resolved' && (
-                  <p className="text-xs text-gray-400 text-center mt-2">This chat has been resolved{selectedChat.rating ? ` • Customer rating: ${selectedChat.rating}/5` : ''}</p>
+                  <p className="text-xs text-muted-foreground text-center mt-2">This chat has been resolved{selectedChat.rating ? ` • Customer rating: ${selectedChat.rating}/5` : ''}</p>
                 )}
                 {selectedChat.status === 'waiting' && !selectedChat.agent && (
                   <p className="text-xs text-orange-500 text-center mt-2">This chat is waiting for an agent to be assigned</p>

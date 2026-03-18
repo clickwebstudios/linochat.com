@@ -49,8 +49,8 @@ export function UpgradePrompt({
         <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
           <Zap className="h-6 w-6 text-amber-500" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-        <p className="text-sm text-gray-600 mb-6 max-w-sm">{description}</p>
+        <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">{description}</p>
         <Button
           className="bg-amber-500 hover:bg-amber-600 text-white"
           onClick={() => navigate(billingPath)}

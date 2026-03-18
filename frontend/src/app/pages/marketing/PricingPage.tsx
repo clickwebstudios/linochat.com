@@ -29,30 +29,30 @@ export default function PricingPage() {
       />
       <MarketingHeader />
 
-      <section className="bg-gradient-to-br from-blue-50 to-white py-16">
+      <section className="bg-gradient-to-br from-primary/10 to-card py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-4 text-[48px] font-bold">Flexible Plans for Every Team Size</h1>
-          <p className="text-xl text-gray-600 mb-6">
+          <p className="text-xl text-muted-foreground mb-6">
             Start free, scale as you grow. No hidden fees.
           </p>
           
           {/* Billing Period Toggle */}
           <div className="flex items-center justify-center gap-4 mb-2">
-            <span className={`text-sm font-medium ${billingPeriod === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>
+            <span className={`text-sm font-medium ${billingPeriod === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
               Monthly
             </span>
             <button
               onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               style={{ backgroundColor: billingPeriod === 'annual' ? '#2563eb' : '#d1d5db' }}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-card transition-transform ${
                   billingPeriod === 'annual' ? 'translate-x-8' : 'translate-x-1'
                 }`}
               />
             </button>
-            <span className={`text-sm font-medium ${billingPeriod === 'annual' ? 'text-gray-900' : 'text-gray-500'}`}>
+            <span className={`text-sm font-medium ${billingPeriod === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
               Annual
             </span>
           </div>
@@ -80,10 +80,10 @@ export default function PricingPage() {
               return (
                 <Card
                   key={plan.name}
-                  className={`flex flex-col ${plan.popular ? 'border-2 border-blue-600 shadow-lg scale-105' : ''}`}
+                  className={`flex flex-col ${plan.popular ? 'border-2 border-primary shadow-lg scale-105' : ''}`}
                 >
                   {plan.popular && (
-                    <div className="bg-blue-600 text-white text-center py-2 rounded-t-lg">
+                    <div className="bg-primary text-primary-foreground text-center py-2 rounded-t-lg">
                       Most Popular
                     </div>
                   )}
@@ -93,7 +93,7 @@ export default function PricingPage() {
                       <span className="text-4xl font-bold">
                         {billingPeriod === 'monthly' ? plan.priceMonthly : plan.priceAnnual}
                       </span>
-                      <span className="text-gray-600 ml-2">/ {plan.period}</span>
+                      <span className="text-muted-foreground ml-2">/ {plan.period}</span>
                     </div>
                     {showDiscount && monthlySavings > 0 && (
                       <div className="mt-2">
@@ -113,7 +113,7 @@ export default function PricingPage() {
                       ))}
                     </ul>
                     <Button
-                      className={`w-full mt-auto ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                      className={`w-full mt-auto ${plan.popular ? 'bg-primary hover:bg-primary/90' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
                     >
                       {plan.cta === 'Start Free Trial' ? 'Get Started' : plan.cta}
@@ -126,7 +126,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-center mb-8">Frequently Asked Questions</h2>
           <Accordion type="single" collapsible className="w-full">

@@ -53,24 +53,24 @@ export function FrubixCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full text-center">
+    <div className="min-h-screen bg-muted/50 flex items-center justify-center">
+      <div className="bg-card rounded-xl shadow-lg p-8 max-w-sm w-full text-center">
         {status === 'loading' && (
           <>
             <Loader2 className="h-10 w-10 text-indigo-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-700">{message}</p>
+            <p className="text-foreground">{message}</p>
           </>
         )}
         {status === 'success' && (
           <>
             <CheckCircle2 className="h-10 w-10 text-green-600 mx-auto mb-4" />
-            <p className="text-gray-700 font-medium">{message}</p>
+            <p className="text-foreground font-medium">{message}</p>
           </>
         )}
         {status === 'error' && (
           <>
             <XCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-700 font-medium">{message}</p>
+            <p className="text-foreground font-medium">{message}</p>
             <button
               onClick={() => window.close()}
               className="mt-4 text-sm text-indigo-600 hover:underline"

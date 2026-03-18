@@ -34,7 +34,7 @@ export default function ArticleHeader({
   onDelete,
 }: ArticleHeaderProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-4 sm:px-6 shrink-0">
+    <header className="flex h-16 items-center justify-between border-b bg-card px-4 sm:px-6 shrink-0">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -53,7 +53,7 @@ export default function ArticleHeader({
               {article.status}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500 truncate">{article.category}</p>
+          <p className="text-sm text-muted-foreground truncate">{article.category}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export default function ArticleHeader({
             </Button>
             <Button
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={onPublish}
               disabled={isSaving}
             >
@@ -100,7 +100,7 @@ export default function ArticleHeader({
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                   onClick={onPublish}
                   disabled={isSaving}
                 >

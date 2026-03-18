@@ -140,7 +140,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -149,11 +149,11 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   if (!hasKnowledgeBase || categories.length === 0) {
     return (
       <div className="text-center py-12">
-        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Knowledge Base Yet</h3>
-        <p className="text-gray-500 mb-6">Create your first knowledge base articles to help customers.</p>
+        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Knowledge Base Yet</h3>
+        <p className="text-muted-foreground mb-6">Create your first knowledge base articles to help customers.</p>
         <Button 
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-primary hover:bg-primary/90"
           onClick={() => setAiGenerateDialogOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -222,7 +222,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-[#0a0a0a] flex items-center gap-2 leading-7">
-            <BookOpen className="h-5 w-5 text-[#155dfc]" />
+            <BookOpen className="h-5 w-5 text-primary" />
             Knowledge Base
           </h2>
           <p className="text-sm text-[#6a7282] mt-1">
@@ -230,7 +230,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
           </p>
         </div>
         <Button
-          className="bg-[#155dfc] hover:bg-[#1247c4] h-9 px-4"
+          className="bg-primary hover:bg-primary/90 h-9 px-4"
           onClick={() => setNewKBArticleDialogOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -241,7 +241,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
       <div className="flex gap-6">
         {/* Sidebar: Categories - Figma design */}
         <div className="w-72 flex-shrink-0">
-          <div className="bg-white border border-[rgba(0,0,0,0.1)] overflow-hidden">
+          <div className="bg-card border border-[rgba(0,0,0,0.1)] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-4 border-b border-[rgba(0,0,0,0.1)]">
               <h3 className="text-sm font-medium text-[#0a0a0a]">Categories</h3>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -260,7 +260,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                     className={`w-full flex items-center gap-3 px-3 py-3 text-left transition-colors ${
                       isSelected
                         ? 'bg-[#eff6ff] border border-[#bedbff]'
-                        : 'border border-transparent hover:bg-gray-50'
+                        : 'border border-transparent hover:bg-muted/50'
                     }`}
                   >
                     <div
@@ -282,7 +282,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                       </div>
                       {currentProject?.name && (
                         <div className="flex items-center gap-1 mt-1">
-                          <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+                          <span className="w-2 h-2 rounded-full bg-primary" />
                           <span className="text-xs text-[#99a1af] truncate">{currentProject.name}</span>
                         </div>
                       )}
@@ -296,7 +296,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
 
         {/* Main Content: Articles - Figma design */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white border border-[rgba(0,0,0,0.1)] overflow-hidden">
+          <div className="bg-card border border-[rgba(0,0,0,0.1)] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-5 gap-4">
               <div>
                 <h3 className="text-base font-medium text-[#0a0a0a]">
@@ -326,7 +326,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                 {filteredArticles.map((article: any, index: number) => (
                   <div
                     key={article.id}
-                    className={`flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors ${
+                    className={`flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-muted/50/50 transition-colors ${
                       index < filteredArticles.length - 1 ? 'border-b border-[rgba(0,0,0,0.1)]' : ''
                     }`}
                     onClick={() => navigate(`${basePath}/knowledge/article/${article.id}`)}
@@ -336,7 +336,7 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                       <div className="text-sm text-[#0a0a0a] font-normal">{article.title}</div>
                       <div className="text-xs text-[#99a1af] mt-0.5 flex items-center gap-2">
                         {isSearching && article._categoryName && (
-                          <span className="text-blue-500">{article._categoryName} · </span>
+                          <span className="text-primary">{article._categoryName} · </span>
                         )}
                         Updated {article.updated_at?.substring(0, 10) || article.created_at?.substring(0, 10)}
                       </div>

@@ -84,7 +84,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
             <Input placeholder={isSuperadmin ? 'Search agents...' : 'Search members...'} className="w-64" />
             <Button 
               size="sm" 
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={onAddMemberClick}
             >
               <UserPlus className="h-4 w-4 mr-2" />
@@ -110,23 +110,23 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                   projectAgents.map((agent, i) => (
                     <TableRow
                       key={agent.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-muted/50 cursor-pointer"
                       onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <Avatar className="h-9 w-9">
-                              <AvatarFallback className="bg-blue-600 text-white">
+                              <AvatarFallback className="bg-primary text-primary-foreground">
                                 {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
-                            <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${i % 3 === 0 ? 'bg-green-500' : i % 3 === 1 ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
+                            <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${i % 3 === 0 ? 'bg-green-500' : i % 3 === 1 ? 'bg-yellow-500' : 'bg-muted-foreground'}`}></span>
                           </div>
                           <span className="font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-500">{agent.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{agent.email}</TableCell>
                       <TableCell>
                         <Badge variant={i % 3 === 0 ? 'default' : i % 3 === 1 ? 'secondary' : 'outline'}>
                           {i % 3 === 0 ? 'Online' : i % 3 === 1 ? 'Away' : 'Offline'}
@@ -157,7 +157,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No agents assigned
                     </TableCell>
                   </TableRow>
@@ -182,11 +182,11 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                   const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
                   const joinedDate = member.created_at ? new Date(member.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
                   return (
-                    <TableRow key={member.id} className="hover:bg-gray-50">
+                    <TableRow key={member.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-blue-600 text-white">{initials}</AvatarFallback>
+                            <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{name}</span>
                         </div>
@@ -226,7 +226,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                   );
                 }) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No team members yet. Invite someone to get started.
                     </TableCell>
                   </TableRow>
@@ -264,7 +264,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                   const sentDate = new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                   const expiresDate = new Date(inv.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                   return (
-                    <TableRow key={inv.id} className="hover:bg-gray-50">
+                    <TableRow key={inv.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
@@ -275,7 +275,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                           <div>
                             <span className="font-medium">{inv.email}</span>
                             {(inv.first_name || inv.last_name) && (
-                              <p className="text-xs text-gray-400">{`${inv.first_name ?? ''} ${inv.last_name ?? ''}`.trim()}</p>
+                              <p className="text-xs text-muted-foreground">{`${inv.first_name ?? ''} ${inv.last_name ?? ''}`.trim()}</p>
                             )}
                           </div>
                         </div>
@@ -283,12 +283,12 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{inv.role}</Badge>
                       </TableCell>
-                      <TableCell className="text-gray-500 text-sm">{sentDate}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{sentDate}</TableCell>
                       <TableCell>
                         {isExpired ? (
                           <Badge variant="destructive" className="text-xs">Expired</Badge>
                         ) : (
-                          <span className="text-sm text-gray-500">{expiresDate}</span>
+                          <span className="text-sm text-muted-foreground">{expiresDate}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -296,7 +296,7 @@ export function TeamTab({ project, isSuperadmin, projectAgents, pendingInvitatio
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-blue-600 hover:text-blue-700"
+                            className="text-primary hover:text-primary/80"
                             onClick={() => handleResend(inv.id)}
                           >
                             <RefreshCw className="h-3.5 w-3.5 mr-1" />

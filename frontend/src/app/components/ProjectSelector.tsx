@@ -73,11 +73,11 @@ export function ProjectSelector() {
         <DropdownMenuSeparator />
         {loading ? (
           <DropdownMenuItem disabled>
-            <span className="text-gray-500 text-sm">Loading projects...</span>
+            <span className="text-muted-foreground text-sm">Loading projects...</span>
           </DropdownMenuItem>
         ) : projects.length === 0 ? (
           <DropdownMenuItem disabled>
-            <span className="text-gray-500 text-sm">No projects found</span>
+            <span className="text-muted-foreground text-sm">No projects found</span>
           </DropdownMenuItem>
         ) : (
           projects.map((project) => (
@@ -92,7 +92,7 @@ export function ProjectSelector() {
               />
               <span className="flex-1 truncate">{project.name}</span>
               {String(project.id) === String(projectId) && (
-                <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <Check className="h-4 w-4 text-primary flex-shrink-0" />
               )}
             </DropdownMenuItem>
           ))

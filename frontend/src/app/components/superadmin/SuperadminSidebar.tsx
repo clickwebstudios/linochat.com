@@ -44,13 +44,13 @@ export function SuperadminSidebar({ sidebarOpen }: SuperadminSidebarProps) {
   };
 
   return (
-    <aside className={`${sidebarOpen ? 'w-56' : 'w-20'} bg-gray-900 transition-all duration-300 flex flex-col shrink-0`}>
-      <div className="flex h-16 items-center border-b border-gray-800 px-6">
+    <aside className={`${sidebarOpen ? 'w-56' : 'w-20'} bg-sidebar transition-all duration-300 flex flex-col shrink-0`}>
+      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
         <Link to="/superadmin/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
             <span className="text-sm text-white font-bold">CS</span>
           </div>
-          {sidebarOpen && <span className="font-bold text-white">Admin Panel</span>}
+          {sidebarOpen && <span className="font-bold text-sidebar-foreground">Admin Panel</span>}
         </Link>
       </div>
 
@@ -59,8 +59,8 @@ export function SuperadminSidebar({ sidebarOpen }: SuperadminSidebarProps) {
           <Button
             key={item.id}
             variant="ghost"
-            className={`w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 ${
-              isActive(item.id) ? 'bg-blue-600 text-white hover:bg-blue-700' : ''
+            className={`w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent ${
+              isActive(item.id) ? 'bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary' : ''
             }`}
             asChild
           >

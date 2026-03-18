@@ -48,10 +48,10 @@ const STATUS_OPTIONS: {
     value: 'offline',
     label: 'Offline',
     description: "You're not available at the moment",
-    dotColor: 'bg-gray-400',
-    activeColor: 'border-gray-600',
-    activeBg: 'bg-gray-50',
-    checkColor: 'text-gray-600',
+    dotColor: 'bg-muted-foreground',
+    activeColor: 'border-muted-foreground',
+    activeBg: 'bg-muted/50',
+    checkColor: 'text-muted-foreground',
   },
 ];
 
@@ -78,7 +78,7 @@ export function UpdateStatusDialog({
               className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                 status === opt.value
                   ? `${opt.activeColor} ${opt.activeBg}`
-                  : 'border-gray-200 hover:border-gray-300'
+                  : 'border-border hover:border-border'
               }`}
               onClick={() => onStatusChange(opt.value)}
             >
@@ -87,7 +87,7 @@ export function UpdateStatusDialog({
               </div>
               <div className="flex-1">
                 <div className="font-semibold">{opt.label}</div>
-                <div className="text-sm text-gray-500">{opt.description}</div>
+                <div className="text-sm text-muted-foreground">{opt.description}</div>
               </div>
               {status === opt.value && (
                 <CheckCircle className={`h-5 w-5 ${opt.checkColor}`} />
@@ -100,7 +100,7 @@ export function UpdateStatusDialog({
             Cancel
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
             onClick={() => onOpenChange(false)}
           >
             Save Status

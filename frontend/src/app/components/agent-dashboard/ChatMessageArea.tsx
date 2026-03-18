@@ -104,19 +104,19 @@ export function ChatMessageArea({
 
   if (!activeChat) {
     return (
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50">
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-            <MessageCircle className="h-12 w-12 text-blue-600" />
+      <div className="flex-1 flex flex-col bg-card">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/50">
+          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <MessageCircle className="h-12 w-12 text-primary" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-semibold text-foreground mb-2">
             Select a conversation
           </h3>
-          <p className="text-sm text-gray-500 max-w-md mb-6">
+          <p className="text-sm text-muted-foreground max-w-md mb-6">
             Choose a chat from the list on the left to view messages and respond to customers.
           </p>
           {filteredChats.length > 0 && (
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-muted-foreground">
               {filteredChats.length} conversation{filteredChats.length !== 1 ? 's' : ''} available
             </div>
           )}
@@ -145,13 +145,13 @@ export function ChatMessageArea({
   })();
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
+    <div className="flex-1 flex flex-col bg-card">
       {/* Chat Header */}
       <div className="h-[74px] border-b border-[rgba(0,0,0,0.1)] px-4 flex items-center justify-between shrink-0">
         {/* Customer info (left) */}
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar className="h-10 w-10 shrink-0 rounded-full bg-[#155dfc]">
-            <AvatarFallback className="bg-[#155dfc] text-white text-base font-normal flex items-center justify-center">
+          <Avatar className="h-10 w-10 shrink-0 rounded-full bg-primary">
+            <AvatarFallback className="bg-primary text-primary-foreground text-base font-normal flex items-center justify-center">
               {activeChat?.customer_name ? activeChat.customer_name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : activeChat?.avatar ? activeChat.avatar : <User className="h-5 w-5" />}
             </AvatarFallback>
           </Avatar>
@@ -178,7 +178,7 @@ export function ChatMessageArea({
                 <>
                   <span>&bull;</span>
                   <span
-                    className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#3b82f6] text-[10px] text-white"
+                    className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary text-[10px] text-primary-foreground"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                     {activeChatProject.name}
@@ -192,7 +192,7 @@ export function ChatMessageArea({
         <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 px-3 h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-white hover:bg-gray-50">
+              <Button variant="outline" className="gap-2 px-3 h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50">
                 {(activeChat?.status === 'ai_handling' || (activeChat?.status === 'waiting' && !activeChat?.agent_id)) ? (
                   <>
                     <Avatar className="h-7 w-7 rounded-full">
@@ -205,7 +205,7 @@ export function ChatMessageArea({
                 ) : (
                   <>
                     <Avatar className="h-7 w-7 rounded-full">
-                      <AvatarFallback className="bg-[#155dfc] text-white text-xs font-medium">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
                         {activeChat?.agent_name ? activeChat.agent_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '\u2014'}
                       </AvatarFallback>
                     </Avatar>
@@ -227,7 +227,7 @@ export function ChatMessageArea({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-white hover:bg-gray-50"
+            className="h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50"
             onClick={handleTakeOverClick}
           >
             <UserPlus className="h-4 w-4 mr-2" />
@@ -236,7 +236,7 @@ export function ChatMessageArea({
           <Button
             variant="outline"
             size="sm"
-            className={`h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-white hover:bg-gray-50 ${showActivityHistory ? 'bg-blue-50 border-[#155dfc]' : ''}`}
+            className={`h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50 ${showActivityHistory ? 'bg-primary/10 border-primary' : ''}`}
             onClick={() => setShowActivityHistory(!showActivityHistory)}
           >
             <Info className="h-4 w-4 mr-2" />
@@ -244,7 +244,7 @@ export function ChatMessageArea({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg border-[rgba(0,0,0,0.1)] bg-white hover:bg-gray-50">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -266,13 +266,13 @@ export function ChatMessageArea({
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#f9fafb]">
         {messagesLoading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-[#155dfc]" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <MessageCircle className="h-12 w-12 text-gray-300 mb-4" />
+            <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-sm text-[#6a7282]">No messages yet</p>
-            <p className="text-xs text-gray-400 mt-1">Start the conversation by sending a message</p>
+            <p className="text-xs text-muted-foreground mt-1">Start the conversation by sending a message</p>
           </div>
         ) : (
           processedMessages.map((message, index, array) => {
@@ -283,7 +283,7 @@ export function ChatMessageArea({
                   <div className="flex items-center gap-3 my-4">
                     <div className="flex-1 h-px bg-[#bedbff]" />
                     <div className="px-2.5 py-1 rounded-lg border border-transparent bg-[#dbeafe]">
-                      <span className="text-xs font-medium text-[#1447e6]">Unread Messages</span>
+                      <span className="text-xs font-medium text-primary">Unread Messages</span>
                     </div>
                     <div className="flex-1 h-px bg-[#bedbff]" />
                   </div>
@@ -293,16 +293,16 @@ export function ChatMessageArea({
                     {/* AI Label */}
                     {message.sender_type === 'ai' && (
                       <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <div className="w-4 h-4 rounded-full bg-purple-600 flex items-center justify-center">
+                        <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center">
                           <Bot className="h-2.5 w-2.5 text-white" />
                         </div>
-                        <span className="text-[10px] font-medium text-purple-600">AI Assistant</span>
+                        <span className="text-[10px] font-medium text-secondary">AI Assistant</span>
                       </div>
                     )}
                     {/* System Message */}
                     {message.sender_type === 'system' && (
                       <div className="flex items-center justify-center my-2">
-                        <span className="text-xs text-[#6a7282] bg-gray-100 px-3 py-1 rounded-full">
+                        <span className="text-xs text-[#6a7282] bg-muted px-3 py-1 rounded-full">
                           {message.content}
                         </span>
                       </div>
@@ -310,8 +310,8 @@ export function ChatMessageArea({
                     {message.sender_type !== 'system' && (
                       <div className={`rounded-[10px] px-3.5 py-3 shadow-sm border ${
                         message.sender_type === 'agent' || message.sender_type === 'ai'
-                          ? 'bg-[#155dfc] text-white border-transparent'
-                          : 'bg-white border-[rgba(0,0,0,0.1)] text-[#0a0a0a]'
+                          ? 'bg-primary text-primary-foreground border-transparent'
+                          : 'bg-card border-[rgba(0,0,0,0.1)] text-[#0a0a0a]'
                       }`}>
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
@@ -324,7 +324,7 @@ export function ChatMessageArea({
                                     href={a.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-xs text-[#155dfc] hover:underline flex items-center gap-1"
+                                    className="text-xs text-primary hover:underline flex items-center gap-1"
                                   >
                                     View: {a.name}
                                   </a>
@@ -333,7 +333,7 @@ export function ChatMessageArea({
                             )}
                           </div>
                           {!message.isRead && message.sender_type !== 'agent' && message.sender_type !== 'ai' && (
-                            <span className="h-2 w-2 rounded-full bg-[#155dfc] flex-shrink-0 mt-1" />
+                            <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1" />
                           )}
                         </div>
                       </div>
@@ -355,14 +355,14 @@ export function ChatMessageArea({
           <div className="flex flex-col gap-1 py-2">
             {agentTyping && (
               <div className="flex justify-end">
-                <span className="text-xs text-[#6a7282] bg-gray-100 px-3 py-1.5 rounded-lg italic">
+                <span className="text-xs text-[#6a7282] bg-muted px-3 py-1.5 rounded-lg italic">
                   {agentTyping.agentName} is typing...
                 </span>
               </div>
             )}
             {customerTyping && (
               <div className="flex justify-start">
-                <span className="text-xs text-[#6a7282] bg-gray-100 px-3 py-1.5 rounded-lg italic">
+                <span className="text-xs text-[#6a7282] bg-muted px-3 py-1.5 rounded-lg italic">
                   Customer is typing...
                 </span>
               </div>
@@ -373,10 +373,10 @@ export function ChatMessageArea({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-[rgba(0,0,0,0.1)] p-4 bg-white shrink-0">
+      <div className="border-t border-[rgba(0,0,0,0.1)] p-4 bg-card shrink-0">
         {!hasTakenOver ? (
           <div
-            className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-[#f9fafb] border border-[#d1d5dc] cursor-pointer hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-[#f9fafb] border border-[#d1d5dc] cursor-pointer hover:bg-muted transition-colors"
             onClick={handleTakeOverClick}
           >
             <UserPlus className="h-4 w-4 text-[#6a7282]" />
@@ -406,7 +406,7 @@ export function ChatMessageArea({
                     ].map((response) => (
                       <button
                         key={response.title}
-                        className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b last:border-b-0 transition-colors"
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
                         onClick={() => setChatMessage(chatMessage ? `${chatMessage} ${response.text}` : response.text)}
                       >
                         <p className="text-sm">{response.title}</p>
@@ -431,7 +431,7 @@ export function ChatMessageArea({
                     {mockArticles.slice(0, 5).map((article) => (
                       <button
                         key={article.id}
-                        className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b last:border-b-0 transition-colors"
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
                         onClick={() => setChatMessage(chatMessage ? `${chatMessage} [KB: ${article.title}]` : `[KB: ${article.title}]`)}
                       >
                         <p className="text-sm">{article.title}</p>
@@ -461,7 +461,7 @@ export function ChatMessageArea({
                 <Plus className="h-4 w-4 mr-2" />
                 Attachment
                 {attachmentFiles.length > 0 && (
-                  <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 rounded">
+                  <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 rounded">
                     {attachmentFiles.length}
                   </span>
                 )}
@@ -502,19 +502,19 @@ export function ChatMessageArea({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-purple-500 hover:text-purple-700 hover:bg-purple-50 transition-colors"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-secondary hover:text-secondary hover:bg-secondary/10 transition-colors"
                       title="AI Suggested Responses"
                     >
                       <Sparkles className="h-4 w-4" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-96 p-0" align="end" side="top">
-                    <div className="p-3 border-b bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-md">
+                    <div className="p-3 border-b bg-gradient-to-r from-secondary/10 to-primary/10 rounded-t-md">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
-                        <p className="text-sm text-purple-800">AI Suggested Responses</p>
+                        <Sparkles className="h-4 w-4 text-secondary" />
+                        <p className="text-sm text-secondary">AI Suggested Responses</p>
                       </div>
-                      <p className="text-xs text-purple-600 mt-1">Based on the conversation context</p>
+                      <p className="text-xs text-secondary mt-1">Based on the conversation context</p>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
                       {[
@@ -525,14 +525,14 @@ export function ChatMessageArea({
                       ].map((suggestion) => (
                         <button
                           key={suggestion.tone}
-                          className="w-full text-left px-3 py-3 hover:bg-purple-50 border-b last:border-b-0 transition-colors group"
+                          className="w-full text-left px-3 py-3 hover:bg-secondary/10 border-b last:border-b-0 transition-colors group"
                           onClick={() => setChatMessage(suggestion.text)}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{suggestion.tone}</span>
-                            <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">Click to use</span>
+                            <span className="text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">{suggestion.tone}</span>
+                            <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">Click to use</span>
                           </div>
-                          <p className="text-sm text-gray-700 line-clamp-2 mt-1">{suggestion.text}</p>
+                          <p className="text-sm text-foreground line-clamp-2 mt-1">{suggestion.text}</p>
                         </button>
                       ))}
                     </div>
@@ -541,7 +541,7 @@ export function ChatMessageArea({
               </div>
               <Button
                 size="icon"
-                className="bg-[#155dfc] hover:bg-[#1247c4] h-10 w-10 rounded-[10px]"
+                className="bg-primary hover:bg-primary/90 h-10 w-10 rounded-[10px]"
                 onClick={onSendMessage}
                 disabled={!chatMessage.trim() || isSending}
               >

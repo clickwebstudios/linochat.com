@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center min-h-[300px]">
           <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
           <h2 className="text-lg font-semibold mb-1">Something went wrong</h2>
-          <p className="text-sm text-gray-500 mb-4 max-w-sm">
+          <p className="text-sm text-muted-foreground mb-4 max-w-sm">
             {this.state.error?.message ?? 'An unexpected error occurred.'}
           </p>
           <Button variant="outline" onClick={this.reset}>

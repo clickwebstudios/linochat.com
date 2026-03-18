@@ -126,7 +126,7 @@ export function CompanyTeamTab({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Team Members</CardTitle>
-          <Button size="sm" className="bg-blue-600" onClick={() => setInviteDialogOpen(true)} disabled={isArchived}><UserPlus className="h-4 w-4 mr-1" />Invite Member</Button>
+          <Button size="sm" className="bg-primary" onClick={() => setInviteDialogOpen(true)} disabled={isArchived}><UserPlus className="h-4 w-4 mr-1" />Invite Member</Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -143,21 +143,21 @@ export function CompanyTeamTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow className="hover:bg-gray-50">
+              <TableRow className="hover:bg-muted/50">
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs bg-purple-100 text-purple-700">A</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-secondary/10 text-secondary">A</AvatarFallback>
                     </Avatar>
                     <span className="font-semibold text-sm">{editedCompanyName.split(' ')[0]} Admin</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-gray-500">{editedEmail}</TableCell>
-                <TableCell><Badge className="bg-purple-100 text-purple-700 text-xs">Admin</Badge></TableCell>
+                <TableCell className="text-sm text-muted-foreground">{editedEmail}</TableCell>
+                <TableCell><Badge className="bg-secondary/10 text-secondary text-xs">Admin</Badge></TableCell>
                 <TableCell><Badge variant="outline" className="text-green-600 border-green-600 text-xs">Online</Badge></TableCell>
-                <TableCell className="text-sm text-gray-500">{'\u2014'}</TableCell>
-                <TableCell className="text-sm text-gray-500">{'\u2014'}</TableCell>
-                <TableCell className="text-sm text-gray-500">Just now</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{'\u2014'}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{'\u2014'}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Just now</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
                 </TableCell>
@@ -169,7 +169,7 @@ export function CompanyTeamTab({
                 const chatCounts = [4, 7, 2, 5, 3];
                 const ticketCounts = [3, 5, 2, 4, 1];
                 return (
-                  <TableRow key={agent.id} className="hover:bg-gray-50">
+                  <TableRow key={agent.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -178,16 +178,16 @@ export function CompanyTeamTab({
                         <span className="font-semibold text-sm">{agent.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">{agent.email}</TableCell>
-                    <TableCell><Badge className="bg-blue-100 text-blue-700 text-xs">Agent</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{agent.email}</TableCell>
+                    <TableCell><Badge className="bg-primary/10 text-primary text-xs">Agent</Badge></TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={`text-xs ${agentStatus === 'Online' ? 'text-green-600 border-green-600' : agentStatus === 'Away' ? 'text-yellow-600 border-yellow-600' : 'text-gray-500 border-gray-400'}`}>
+                      <Badge variant="outline" className={`text-xs ${agentStatus === 'Online' ? 'text-green-600 border-green-600' : agentStatus === 'Away' ? 'text-yellow-600 border-yellow-600' : 'text-muted-foreground border-muted-foreground'}`}>
                         {agentStatus}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">{chatCounts[idx % 5]}</TableCell>
                     <TableCell className="text-sm">{ticketCounts[idx % 5]}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{lastActives[idx % 5]}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lastActives[idx % 5]}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -204,7 +204,7 @@ export function CompanyTeamTab({
                 );
               })}
               {invitedMembers.map((member) => (
-                <TableRow key={member.id} className="hover:bg-gray-50">
+                <TableRow key={member.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
@@ -216,16 +216,16 @@ export function CompanyTeamTab({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-500">{member.email}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{member.email}</TableCell>
                   <TableCell>
-                    <Badge className={`text-xs ${member.role === 'Admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    <Badge className={`text-xs ${member.role === 'Admin' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}`}>
                       {member.role}
                     </Badge>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-gray-500 border-gray-400 text-xs">Pending</Badge></TableCell>
-                  <TableCell className="text-sm text-gray-500">{'\u2014'}</TableCell>
-                  <TableCell className="text-sm text-gray-500">{'\u2014'}</TableCell>
-                  <TableCell className="text-sm text-gray-500">{'\u2014'}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-muted-foreground border-muted-foreground text-xs">Pending</Badge></TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{'\u2014'}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{'\u2014'}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{'\u2014'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -290,7 +290,7 @@ export function CompanyTeamTab({
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
             <Button
-              className="bg-blue-600"
+              className="bg-primary"
               onClick={handleInviteMember}
               disabled={!inviteName.trim() || !inviteEmail.trim()}
             >

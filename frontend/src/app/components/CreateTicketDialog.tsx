@@ -167,7 +167,7 @@ export function CreateTicketDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-blue-600" />
+            <Ticket className="h-5 w-5 text-primary" />
             Create New Ticket
           </DialogTitle>
           <DialogDescription>
@@ -239,9 +239,9 @@ export function CreateTicketDialog({
                 />
                 <Label
                   htmlFor="ai-autofill"
-                  className="text-sm text-gray-600 cursor-pointer flex items-center gap-1"
+                  className="text-sm text-muted-foreground cursor-pointer flex items-center gap-1"
                 >
-                  <Bot className="h-3.5 w-3.5 text-purple-600" />
+                  <Bot className="h-3.5 w-3.5 text-secondary" />
                   AI Auto-fill
                 </Label>
               </div>
@@ -261,7 +261,7 @@ export function CreateTicketDialog({
               </p>
             )}
             {newTicket.aiAutoFill && (
-              <p className="text-xs text-purple-600 flex items-center gap-1">
+              <p className="text-xs text-secondary flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
                 AI will automatically categorize and suggest solutions based on
                 this description
@@ -286,7 +286,7 @@ export function CreateTicketDialog({
                 <SelectContent>
                   <SelectItem value="low">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-400" />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                       Low
                     </div>
                   </SelectItem>
@@ -325,7 +325,7 @@ export function CreateTicketDialog({
                       Loading projects...
                     </div>
                   ) : projects.length === 0 ? (
-                    <div className="p-4 text-sm text-gray-500">No projects found</div>
+                    <div className="p-4 text-sm text-muted-foreground">No projects found</div>
                   ) : (
                     projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -385,7 +385,7 @@ export function CreateTicketDialog({
               <SelectContent>
                 <SelectItem value="unassigned">
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     Unassigned
                   </div>
                 </SelectItem>
@@ -413,12 +413,12 @@ export function CreateTicketDialog({
 
           {/* AI Suggestion Preview (when AI is enabled) */}
           {newTicket.aiAutoFill && newTicket.description && (
-            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-purple-900">
+            <div className="rounded-lg border border-secondary/20 bg-secondary/10 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-secondary">
                 <Bot className="h-4 w-4" />
                 AI Suggestions
               </div>
-              <div className="space-y-2 text-sm text-purple-800">
+              <div className="space-y-2 text-sm text-secondary/80">
                 <div className="flex items-start gap-2">
                   <Tag className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div>
@@ -451,7 +451,7 @@ export function CreateTicketDialog({
             Cancel
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >

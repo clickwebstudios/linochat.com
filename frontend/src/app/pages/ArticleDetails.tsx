@@ -147,8 +147,8 @@ export default function ArticleDetails() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="h-12 w-12 text-blue-600 mb-4 animate-spin" />
+      <div className="flex flex-1 flex-col items-center justify-center bg-muted/50">
+        <Loader2 className="h-12 w-12 text-primary mb-4 animate-spin" />
         <h2 className="text-xl mb-2">Loading article...</h2>
       </div>
     );
@@ -156,10 +156,10 @@ export default function ArticleDetails() {
 
   if (!resolvedArticle) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-gray-50">
-        <AlertCircle className="h-12 w-12 text-gray-400 mb-4" />
+      <div className="flex flex-1 flex-col items-center justify-center bg-muted/50">
+        <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
         <h2 className="text-xl mb-2">Article Not Found</h2>
-        <p className="text-gray-500 mb-6">The article you are looking for does not exist or has been removed.</p>
+        <p className="text-muted-foreground mb-6">The article you are looking for does not exist or has been removed.</p>
         <Button onClick={() => navigate(`${basePath}/knowledge`)} variant="outline">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Knowledge Base
@@ -378,7 +378,7 @@ export default function ArticleDetails() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/50">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Article Content - Left Column */}
@@ -392,16 +392,16 @@ export default function ArticleDetails() {
                 <Card>
                   <CardContent className="pt-6">
                     {resolvedArticle.tags?.includes('ai-generated') && (
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
-                        <p className="text-sm text-blue-800 italic flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-blue-600" />
+                      <div className="bg-primary/10 border-l-4 border-primary p-4 mb-6 rounded-r-lg">
+                        <p className="text-sm text-primary italic flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
                           Article generated from {resolvedArticle.excerpt?.replace('Article generated from ', '') || 'AI'}
                         </p>
                       </div>
                     )}
                     {resolvedArticle.excerpt && !resolvedArticle.tags?.includes('ai-generated') && (
-                      <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6 rounded-r-lg">
-                        <p className="text-sm text-blue-900 italic">{resolvedArticle.excerpt}</p>
+                      <div className="bg-primary/10 border-l-4 border-primary p-4 mb-6 rounded-r-lg">
+                        <p className="text-sm text-primary italic">{resolvedArticle.excerpt}</p>
                       </div>
                     )}
                     <div className="prose prose-sm max-w-none">

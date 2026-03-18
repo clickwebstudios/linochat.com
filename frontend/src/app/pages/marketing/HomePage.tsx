@@ -74,7 +74,7 @@ export default function HomePage() {
       <MarketingHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-white py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             <motion.div
@@ -85,17 +85,17 @@ export default function HomePage() {
               <h1 className="mb-6 text-[48px] font-bold">
                 Elevate Your Customer Support with AI-Powered Chat
               </h1>
-              <p className="mb-8 text-xl text-gray-600">
+              <p className="mb-8 text-xl text-muted-foreground">
                 Deliver exceptional customer service with our all-in-one platform. Manage chats, tickets, and analytics seamlessly.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/signup">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90">
                     Start Free Trial
                   </Button>
                 </Link>
               </div>
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-muted-foreground">
                 ✓ No credit card required  ✓ 14-day free trial  ✓ Cancel anytime
               </p>
             </motion.div>
@@ -117,7 +117,7 @@ export default function HomePage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-card">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit, index) => (
@@ -130,11 +130,11 @@ export default function HomePage() {
               >
                 <Card className="text-center h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                       {benefit.icon}
                     </div>
                     <h3 className="mb-2">{benefit.title}</h3>
-                    <p className="text-sm text-gray-600">{benefit.description}</p>
+                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -144,11 +144,11 @@ export default function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="mb-4">Everything You Need to Delight Customers</h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Powerful features designed for modern support teams
             </p>
           </div>
@@ -163,11 +163,11 @@ export default function HomePage() {
               >
                 <Card className="text-center hover:shadow-lg transition-all cursor-pointer hover:scale-105">
                   <CardContent className="p-6">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       {feature.icon}
                     </div>
                     <h4 className="mb-1">{feature.name}</h4>
-                    <p className="text-sm text-gray-600">{feature.desc}</p>
+                    <p className="text-sm text-muted-foreground">{feature.desc}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -177,7 +177,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-blue-600 text-white">
+      <section className="py-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center">
             {stats.map((stat, index) => (
@@ -189,7 +189,7 @@ export default function HomePage() {
                 viewport={{ once: true }}
               >
                 <div className="text-4xl font-bold mb-2">{stat.value}</div>
-                <div className="text-blue-100">{stat.label}</div>
+                <div className="text-primary-foreground/80">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -197,11 +197,11 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="mb-4">Trusted by Leading Companies</h2>
-            <p className="text-xl text-gray-600">See what our customers say about us</p>
+            <p className="text-xl text-muted-foreground">See what our customers say about us</p>
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {mockTestimonials.map((testimonial, index) => (
@@ -219,14 +219,14 @@ export default function HomePage() {
                         <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
-                    <p className="mb-4 text-gray-600 italic">{testimonial.quote}</p>
+                    <p className="mb-4 text-muted-foreground italic">{testimonial.quote}</p>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
                         {testimonial.avatar}
                       </div>
                       <div>
                         <div className="font-semibold">{testimonial.author}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {testimonial.role}, {testimonial.company}
                         </div>
                       </div>
@@ -240,23 +240,23 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+      <section className="py-16 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-white">Ready to Transform Your Customer Support?</h2>
-          <p className="mb-8 text-xl text-blue-100">
+          <h2 className="mb-4 text-primary-foreground">Ready to Transform Your Customer Support?</h2>
+          <p className="mb-8 text-xl text-primary-foreground/80">
             Join thousands of companies already using LinoChat
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <input
               type="email"
               placeholder="Enter your work email"
-              className="px-4 py-3 rounded-lg w-full sm:w-96 text-gray-900"
+              className="px-4 py-3 rounded-lg w-full sm:w-96 text-foreground"
             />
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-card text-primary hover:bg-muted/50">
               Start Free Trial
             </Button>
           </div>
-          <p className="mt-4 text-sm text-blue-100">
+          <p className="mt-4 text-sm text-primary-foreground/80">
             ✓ 14-day free trial  ✓ No credit card required
           </p>
         </div>

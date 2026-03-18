@@ -143,7 +143,7 @@ export function EditCategoryDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5 text-blue-600" />
+            <Edit className="h-5 w-5 text-primary" />
             Edit Category
           </DialogTitle>
           <DialogDescription>
@@ -216,7 +216,7 @@ export function DeleteCategoryDialog({
           </DialogTitle>
           <DialogDescription>
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-gray-900">{categoryName}</span>?
+            <span className="font-semibold text-foreground">{categoryName}</span>?
             This will remove the category and all its articles permanently. This
             action cannot be undone.
           </DialogDescription>

@@ -49,7 +49,7 @@ export function HumanRequestedModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-6 gap-4 border-[1.111px] border-[rgba(0,0,0,0.1)] border-solid rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] bg-white">
+      <DialogContent className="max-w-md p-6 gap-4 border-[1.111px] border-[rgba(0,0,0,0.1)] border-solid rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] bg-card">
         <DialogHeader className="gap-2 text-left shrink-0">
           <DialogTitle className="text-[18px] font-semibold text-[#0a0a0a] leading-[18px] tracking-[-0.44px]">
             Human Agent Requested
@@ -107,7 +107,7 @@ export function HumanRequestedModal({
               </Button>
               <Button
                 type="button"
-                className="flex-1 h-8 rounded-[8px] bg-[#155dfc] hover:bg-[#1247c4] text-white text-[14px] font-medium"
+                className="flex-1 h-8 rounded-[8px] bg-primary hover:bg-primary/90 text-white text-[14px] font-medium"
                 onClick={handleTakeOver}
               >
                 <UserPlus className="h-4 w-4 mr-1 shrink-0" />

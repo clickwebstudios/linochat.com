@@ -138,7 +138,7 @@ export default function ProfileSettings() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -146,7 +146,7 @@ export default function ProfileSettings() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -158,7 +158,7 @@ export default function ProfileSettings() {
           </Button>
           <Link
             to={`${basePath}/dashboard`}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="hidden md:inline">Back to Dashboard</span>
@@ -167,13 +167,13 @@ export default function ProfileSettings() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-blue-600 text-white">{getInitials()}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground">{getInitials()}</AvatarFallback>
             </Avatar>
             <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
           </div>
           <div className="hidden md:block">
             <div className="text-sm font-semibold">{getDisplayName()}</div>
-            <div className="text-xs text-gray-500">{user.role === 'admin' ? 'Admin' : 'Agent'}</div>
+            <div className="text-xs text-muted-foreground">{user.role === 'admin' ? 'Admin' : 'Agent'}</div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -211,11 +211,11 @@ export default function ProfileSettings() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <main className="flex-1 overflow-y-auto p-6 bg-muted/50">
         <div className="max-w-4xl mx-auto space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-            <p className="text-gray-500 mt-1">Manage your account settings and preferences</p>
+            <h1 className="text-3xl font-bold text-foreground">Profile Settings</h1>
+            <p className="text-muted-foreground mt-1">Manage your account settings and preferences</p>
           </div>
 
           {/* Profile Information */}
@@ -228,14 +228,14 @@ export default function ProfileSettings() {
               {/* Profile Photo */}
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarFallback className="bg-blue-600 text-white text-2xl">{getInitials()}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">{getInitials()}</AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm">
                     <Camera className="mr-2 h-4 w-4" />
                     Change Photo
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2">JPG, GIF or PNG. Max size of 2MB</p>
+                  <p className="text-xs text-muted-foreground mt-2">JPG, GIF or PNG. Max size of 2MB</p>
                 </div>
               </div>
 
@@ -265,13 +265,13 @@ export default function ProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="email" 
                     type="email" 
                     value={formData.email}
                     disabled
-                    className="pl-10 bg-gray-50"
+                    className="pl-10 bg-muted/50"
                   />
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function ProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="phone" 
                     type="tel" 
@@ -296,7 +296,7 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <Label htmlFor="company">Company</Label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input 
                       id="company" 
                       value={formData.company}
@@ -308,7 +308,7 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
+                    <Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
                     <Select 
                       value={formData.country}
                       onValueChange={(value) => setFormData({...formData, country: value})}
@@ -369,7 +369,7 @@ export default function ProfileSettings() {
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="location" 
                     value={formData.location}
@@ -392,7 +392,7 @@ export default function ProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Email Notifications</Label>
-                  <p className="text-sm text-gray-500">Receive email about new tickets and updates</p>
+                  <p className="text-sm text-muted-foreground">Receive email about new tickets and updates</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -400,7 +400,7 @@ export default function ProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Desktop Notifications</Label>
-                  <p className="text-sm text-gray-500">Show desktop notifications for new messages</p>
+                  <p className="text-sm text-muted-foreground">Show desktop notifications for new messages</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -408,7 +408,7 @@ export default function ProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Sound Alerts</Label>
-                  <p className="text-sm text-gray-500">Play sound when receiving new messages</p>
+                  <p className="text-sm text-muted-foreground">Play sound when receiving new messages</p>
                 </div>
                 <Switch />
               </div>
@@ -416,7 +416,7 @@ export default function ProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Weekly Summary</Label>
-                  <p className="text-sm text-gray-500">Get a weekly summary of your performance</p>
+                  <p className="text-sm text-muted-foreground">Get a weekly summary of your performance</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -433,7 +433,7 @@ export default function ProfileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Auto-accept chats</Label>
-                  <p className="text-sm text-gray-500">Automatically accept incoming chat requests</p>
+                  <p className="text-sm text-muted-foreground">Automatically accept incoming chat requests</p>
                 </div>
                 <Switch defaultChecked />
               </div>
@@ -471,19 +471,19 @@ export default function ProfileSettings() {
               {/* Two-Factor Authentication */}
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <Shield className="h-5 w-5 text-primary mt-0.5" />
                   <div className="flex-1">
                     <Label className="text-base">Two-Factor Authentication (2FA)</Label>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Add an extra layer of security to your account
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between bg-muted/50 p-4 rounded-lg">
                   <div className="space-y-0.5">
                     <Label>Enable 2FA</Label>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Require authentication code in addition to password
                     </p>
                   </div>
@@ -510,7 +510,7 @@ export default function ProfileSettings() {
               <Link to={`${basePath}/dashboard`}>Cancel</Link>
             </Button>
             <Button 
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={handleSave}
               disabled={isSaving}
             >

@@ -226,7 +226,7 @@ export default function AgentDetails() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -234,7 +234,7 @@ export default function AgentDetails() {
   if (!agent) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">Agent not found.</p>
+        <p className="text-muted-foreground">Agent not found.</p>
         <Button variant="outline" onClick={() => navigate(`${basePath}/users`)}>Back to Team</Button>
       </div>
     );
@@ -248,7 +248,7 @@ export default function AgentDetails() {
   return (
     <>
       {/* Inner page header */}
-      <header className="flex h-16 items-center justify-between border-b bg-white px-6 shrink-0">
+      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMobileSidebar}>
             <span className="sr-only">Menu</span>
@@ -260,7 +260,7 @@ export default function AgentDetails() {
         </div>
         <div className="hidden md:flex items-center gap-3 pl-4 border-l">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-blue-600 text-white">
+            <AvatarFallback className="bg-primary text-primary-foreground">
               {currentUserInitials.toUpperCase() || 'ME'}
             </AvatarFallback>
           </Avatar>
@@ -268,7 +268,7 @@ export default function AgentDetails() {
             <div className="text-sm font-semibold">
               {(currentUser as any)?.first_name} {(currentUser as any)?.last_name}
             </div>
-            <div className="text-xs text-gray-500 capitalize">{(currentUser as any)?.role ?? 'Agent'}</div>
+            <div className="text-xs text-muted-foreground capitalize">{(currentUser as any)?.role ?? 'Agent'}</div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -289,7 +289,7 @@ export default function AgentDetails() {
           <CardContent className="px-5 py-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14">
-                <AvatarFallback className="bg-blue-600 text-white text-xl">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                   {getInitials(agent)}
                 </AvatarFallback>
               </Avatar>
@@ -305,21 +305,21 @@ export default function AgentDetails() {
                   </Badge>
                   <Badge variant="outline" className="capitalize">{agent.role}</Badge>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-gray-400" />{agent.email}</span>
-                  {agent.phone && <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-gray-400" />{agent.phone}</span>}
-                  {agent.location && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-gray-400" />{agent.location}</span>}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{agent.email}</span>
+                  {agent.phone && <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{agent.phone}</span>}
+                  {agent.location && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-muted-foreground" />{agent.location}</span>}
                   {agent.join_date && (
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       Joined {new Date(agent.join_date).toLocaleDateString()}
                     </span>
                   )}
                   {agent.last_active && (
-                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-gray-400" />Active {agent.last_active}</span>
+                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-muted-foreground" />Active {agent.last_active}</span>
                   )}
                 </div>
-                {agent.bio && <p className="text-sm text-gray-500 mt-1.5 line-clamp-1">{agent.bio}</p>}
+                {agent.bio && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-1">{agent.bio}</p>}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -346,7 +346,7 @@ export default function AgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Tickets Resolved</p>
+                <p className="text-sm text-muted-foreground">Tickets Resolved</p>
                 <CheckCircle className="h-4 w-4 text-green-600" />
               </div>
               <h3 className="text-3xl font-bold">{agent.tickets_resolved ?? 0}</h3>
@@ -360,12 +360,12 @@ export default function AgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Active Chats</p>
-                <MessageSquare className="h-4 w-4 text-blue-600" />
+                <p className="text-sm text-muted-foreground">Active Chats</p>
+                <MessageSquare className="h-4 w-4 text-primary" />
               </div>
               <h3 className="text-3xl font-bold">{agent.active_chats_count ?? 0}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-gray-500">Currently open</span>
+                <span className="text-xs text-muted-foreground">Currently open</span>
               </div>
             </CardContent>
           </Card>
@@ -373,12 +373,12 @@ export default function AgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Projects</p>
-                <FolderOpen className="h-4 w-4 text-purple-600" />
+                <p className="text-sm text-muted-foreground">Projects</p>
+                <FolderOpen className="h-4 w-4 text-secondary" />
               </div>
               <h3 className="text-3xl font-bold">{agentProjects.length}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-gray-500">Assigned</span>
+                <span className="text-xs text-muted-foreground">Assigned</span>
               </div>
             </CardContent>
           </Card>
@@ -386,13 +386,13 @@ export default function AgentDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-gray-600">Status</p>
+                <p className="text-sm text-muted-foreground">Status</p>
                 <ThumbsUp className="h-4 w-4 text-green-600" />
               </div>
               <h3 className="text-xl font-bold capitalize">{agentStatus || agent.status}</h3>
               <div className="flex items-center gap-1 mt-2">
                 <Star className="h-3 w-3 text-yellow-500" />
-                <span className="text-xs text-gray-500">Current</span>
+                <span className="text-xs text-muted-foreground">Current</span>
               </div>
             </CardContent>
           </Card>
@@ -422,7 +422,7 @@ export default function AgentDetails() {
                 <CardContent>
                   <div className="space-y-3">
                     {agentProjects.length > 0 ? agentProjects.map((project) => (
-                      <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={project.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: project.color ? `${project.color}20` : '#dbeafe' }}>
                             <FolderOpen className="h-5 w-5" style={{ color: project.color || '#2563eb' }} />
@@ -435,8 +435,8 @@ export default function AgentDetails() {
                         <Badge variant="outline">Active</Badge>
                       </div>
                     )) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <FolderOpen className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      <div className="text-center py-6 text-muted-foreground">
+                        <FolderOpen className="h-8 w-8 mx-auto mb-2 text-muted" />
                         <p className="text-sm">No projects assigned</p>
                       </div>
                     )}
@@ -456,7 +456,7 @@ export default function AgentDetails() {
                       <XAxis dataKey="day" />
                       <YAxis />
                       <Tooltip />
-                      <Line type="monotone" dataKey="time" stroke="#3b82f6" strokeWidth={2} />
+                      <Line type="monotone" dataKey="time" stroke="var(--primary)" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -508,7 +508,7 @@ export default function AgentDetails() {
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                           No tickets currently assigned to this agent
                         </TableCell>
                       </TableRow>
@@ -525,7 +525,7 @@ export default function AgentDetails() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Assign Projects</CardTitle>
-                  <p className="text-sm text-gray-500">{agentProjects.length} project{agentProjects.length !== 1 ? 's' : ''} assigned</p>
+                  <p className="text-sm text-muted-foreground">{agentProjects.length} project{agentProjects.length !== 1 ? 's' : ''} assigned</p>
                 </div>
               </CardHeader>
               <CardContent>
@@ -533,7 +533,7 @@ export default function AgentDetails() {
                   {projects.map((project) => {
                     const isAssigned = agentProjects.some((p) => String(p.id) === String(project.id));
                     return (
-                      <div key={project.id} className={`flex items-center justify-between p-3 rounded-lg border ${isAssigned ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-100 hover:border-gray-200'}`}>
+                      <div key={project.id} className={`flex items-center justify-between p-3 rounded-lg border ${isAssigned ? 'bg-muted/50 border-border' : 'bg-card border-border/50 hover:border-border'}`}>
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: project.color ? `${project.color}20` : '#dbeafe' }}>
                             <FolderOpen className="h-4 w-4" style={{ color: project.color || '#2563eb' }} />
@@ -648,7 +648,7 @@ export default function AgentDetails() {
           </DialogHeader>
           <div className="py-4 max-h-64 overflow-y-auto border rounded-lg p-3 space-y-2">
             {projects.map((project) => (
-              <div key={project.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50">
+              <div key={project.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50">
                 <Checkbox
                   id={`assign-${project.id}`}
                   checked={pendingProjectIds.includes(String(project.id))}
@@ -667,7 +667,7 @@ export default function AgentDetails() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500">{pendingProjectIds.length} project{pendingProjectIds.length !== 1 ? 's' : ''} selected</p>
+          <p className="text-xs text-muted-foreground">{pendingProjectIds.length} project{pendingProjectIds.length !== 1 ? 's' : ''} selected</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveProjects} disabled={saving}>

@@ -98,7 +98,7 @@ export function AIGenerateKBDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
+            <Sparkles className="h-5 w-5 text-secondary" />
             Generate Knowledge Base with AI
           </DialogTitle>
           <DialogDescription>
@@ -112,13 +112,13 @@ export function AIGenerateKBDialog({
             <Label>Select Project</Label>
             {projectsLoading && projects.length === 0 ? (
               <div className="flex items-center justify-center py-8 border rounded-lg">
-                <Loader2 className="h-6 w-6 animate-spin text-purple-600 mr-2" />
-                <span className="text-sm text-gray-500">Loading projects...</span>
+                <Loader2 className="h-6 w-6 animate-spin text-secondary mr-2" />
+                <span className="text-sm text-muted-foreground">Loading projects...</span>
               </div>
             ) : projects.length === 0 ? (
               <div className="text-center py-8 border rounded-lg">
-                <p className="text-sm text-gray-500">No projects found.</p>
-                <p className="text-xs text-gray-400 mt-1">Create a project first to generate knowledge base.</p>
+                <p className="text-sm text-muted-foreground">No projects found.</p>
+                <p className="text-xs text-muted-foreground mt-1">Create a project first to generate knowledge base.</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
@@ -127,8 +127,8 @@ export function AIGenerateKBDialog({
                     key={project.id}
                     className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
                       selectedProjectId === project.id
-                        ? 'border-purple-600 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                        ? 'border-secondary bg-secondary/10'
+                        : 'border-border hover:border-secondary/50 hover:bg-muted/50'
                     }`}
                     onClick={() => setSelectedProjectId(project.id)}
                   >
@@ -138,35 +138,35 @@ export function AIGenerateKBDialog({
                     />
                     <div className="flex-1">
                       <div className="font-semibold text-sm">{project.name}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {project.description || 'No description'}
                       </div>
                       {project.website && (
-                        <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                        <div className="text-xs text-primary mt-1 flex items-center gap-1">
                           <ExternalLink className="h-3 w-3" />
                           {project.website.replace(/^https?:\/\//, '')}
                         </div>
                       )}
                     </div>
                     {selectedProjectId === project.id && (
-                      <CheckCircle className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <CheckCircle className="h-5 w-5 text-secondary flex-shrink-0" />
                     )}
                   </div>
                 ))}
               </div>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Select a project and the AI will scan its website to generate
               knowledge base articles
             </p>
           </div>
 
-          <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+          <div className="rounded-lg border border-secondary/20 bg-secondary/10 p-4">
             <div className="flex gap-3">
-              <Info className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-purple-900">
+              <Info className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-secondary">
                 <p className="font-semibold mb-1">What will happen:</p>
-                <ul className="list-disc list-inside space-y-1 text-purple-800">
+                <ul className="list-disc list-inside space-y-1 text-secondary/80">
                   <li>
                     AI will crawl the selected project's website pages
                   </li>
@@ -190,7 +190,7 @@ export function AIGenerateKBDialog({
             Cancel
           </Button>
           <Button
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-secondary hover:bg-secondary/90"
             onClick={handleGenerate}
             disabled={!selectedProjectId || !hasWebsite || isGenerating}
           >

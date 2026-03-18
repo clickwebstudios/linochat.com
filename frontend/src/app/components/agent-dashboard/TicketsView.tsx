@@ -63,10 +63,10 @@ export function TicketsView({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">All Tickets</p>
+                <p className="text-sm text-muted-foreground">All Tickets</p>
                 <p className="text-2xl font-bold">{totalCount}</p>
               </div>
-              <Ticket className="h-6 w-6 text-gray-600" />
+              <Ticket className="h-6 w-6 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -74,10 +74,10 @@ export function TicketsView({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Open</p>
-                <p className="text-2xl font-bold text-blue-600">{openCount}</p>
+                <p className="text-sm text-muted-foreground">Open</p>
+                <p className="text-2xl font-bold text-primary">{openCount}</p>
               </div>
-              <AlertCircle className="h-6 w-6 text-blue-600" />
+              <AlertCircle className="h-6 w-6 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -85,7 +85,7 @@ export function TicketsView({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold text-orange-600">{pendingCount}</p>
               </div>
               <Clock className="h-6 w-6 text-orange-600" />
@@ -96,7 +96,7 @@ export function TicketsView({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Resolved</p>
+                <p className="text-sm text-muted-foreground">Resolved</p>
                 <p className="text-2xl font-bold text-green-600">{resolvedCount}</p>
               </div>
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -113,7 +113,7 @@ export function TicketsView({
             </CardTitle>
             <div className="flex gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search tickets..." 
                   className="pl-10 w-64"
@@ -122,7 +122,7 @@ export function TicketsView({
                 />
               </div>
               <Button 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 onClick={onCreateTicketClick}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -165,7 +165,7 @@ export function TicketsView({
                           {selectedTicket.priority}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="font-mono">{selectedTicket.id}</span>
                         <span>•</span>
                         <span>Customer: {selectedTicket.customer}</span>
@@ -178,7 +178,7 @@ export function TicketsView({
                 <CardContent className="space-y-4">
                   <div>
                     <Label>Description</Label>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       The customer is experiencing issues accessing their dashboard. They've tried multiple browsers and cleared cache but the problem persists.
                     </p>
                   </div>
@@ -192,7 +192,7 @@ export function TicketsView({
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline">Save Draft</Button>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button className="bg-primary hover:bg-primary/90">
                       <Send className="h-4 w-4 mr-2" />
                       Send Response
                     </Button>
@@ -220,7 +220,7 @@ export function TicketsView({
                     return (
                     <TableRow 
                       key={ticket.id} 
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`${basePath}/tickets/${ticket.id}`)}
                     >
                       <TableCell className="font-mono">{ticket.id}</TableCell>
@@ -258,7 +258,7 @@ export function TicketsView({
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No tickets found matching your criteria
                     </TableCell>
                   </TableRow>

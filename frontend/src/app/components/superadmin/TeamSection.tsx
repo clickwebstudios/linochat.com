@@ -150,7 +150,7 @@ export function TeamSection() {
         <h2 className="text-lg font-semibold">Team</h2>
         <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600">
+            <Button className="bg-primary">
               <Plus className="mr-2 h-4 w-4" />
               Invite User
             </Button>
@@ -202,7 +202,7 @@ export function TeamSection() {
                 </select>
               </div>
               <Button
-                className="w-full bg-blue-600"
+                className="w-full bg-primary"
                 onClick={handleInvite}
                 disabled={inviteLoading || !inviteEmail.trim() || !inviteProjectId}
               >
@@ -220,7 +220,7 @@ export function TeamSection() {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <Table>
@@ -238,7 +238,7 @@ export function TeamSection() {
                 {users.map((user) => (
                   <TableRow
                     key={user.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => navigate(`/superadmin/user/${user.id}`)}
                   >
                     <TableCell>
@@ -263,7 +263,7 @@ export function TeamSection() {
                             ? 'text-green-600 border-green-600' 
                             : user.status === 'Away'
                             ? 'text-yellow-600 border-yellow-600'
-                            : 'text-gray-600 border-gray-600'
+                            : 'text-muted-foreground border-muted-foreground'
                         }
                       >
                         {user.status}
@@ -335,7 +335,7 @@ export function TeamSection() {
               </select>
             </div>
             <Button
-              className="w-full bg-blue-600"
+              className="w-full bg-primary"
               onClick={() => editRoleUserId && handleEditRole(editRoleUserId, editRoleValue)}
             >
               Save

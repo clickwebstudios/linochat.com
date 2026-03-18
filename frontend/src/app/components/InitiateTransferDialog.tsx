@@ -77,7 +77,7 @@ export function InitiateTransferDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+            <ArrowRightLeft className="h-5 w-5 text-primary" />
             Transfer Chat to Another Agent
           </DialogTitle>
           <DialogDescription>
@@ -88,22 +88,22 @@ export function InitiateTransferDialog({
 
         <div className="space-y-4 py-4">
           {/* Current Chat Info */}
-          <div className="rounded-lg border bg-gray-50 p-4">
+          <div className="rounded-lg border bg-muted/50 p-4">
             <div className="flex items-center gap-3 mb-3">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-blue-100 text-blue-700">
+                <AvatarFallback className="bg-primary/10 text-primary">
                   {activeChat?.avatar || '?'}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h4 className="font-semibold">{activeChat?.customer || 'Unknown'}</h4>
-                <p className="text-sm text-gray-600">Current active chat</p>
+                <p className="text-sm text-muted-foreground">Current active chat</p>
               </div>
               <Badge variant="outline" className="ml-auto">
                 {activeChat?.status === 'active' ? 'Active' : 'Offline'}
               </Badge>
             </div>
-            <p className="text-sm text-gray-700">{activeChat?.preview || ''}</p>
+            <p className="text-sm text-foreground">{activeChat?.preview || ''}</p>
           </div>
 
           {/* Select Agent */}
@@ -193,18 +193,18 @@ export function InitiateTransferDialog({
               }
               rows={4}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Help the receiving agent by sharing relevant conversation context
             </p>
           </div>
 
           {/* Chat History Summary */}
-          <div className="rounded-lg border bg-blue-50 border-blue-200 p-4">
+          <div className="rounded-lg border bg-primary/10 border-primary/20 p-4">
             <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
+              <Info className="h-4 w-4 text-primary mt-0.5" />
+              <div className="text-sm text-primary">
                 <p className="font-medium mb-1">Transfer includes:</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-800">
+                <ul className="list-disc list-inside space-y-1 text-primary">
                   <li>Full chat history and context</li>
                   <li>Customer information and activity</li>
                   <li>Previous tickets and interactions</li>
@@ -221,7 +221,7 @@ export function InitiateTransferDialog({
             Cancel
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
             onClick={() => {
               onTransferSubmitted?.(transferData);
               resetAndClose();
