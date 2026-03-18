@@ -236,13 +236,9 @@ class TicketController extends Controller
             NotificationLog::record('email', 'Ticket Created — Customer', "Ticket #{$ticket->ticket_number}: {$ticket->subject}", $ticket->customer_email, 'failed', $companyId);
         }
 
-        // Send notification email to company admin(s)
+        // Send notification email to project team (owner + assigned agents)
         if ($project) {
-            $adminEmails = User::where('company_id', $project->company_id)
-                ->where('role', 'admin')
-                ->pluck('email')
-                ->filter()
-                ->toArray();
+            $adminEmails = $project->agents()->pluck('email')->filter()->toArray();
             if ($project->user && $project->user->email) {
                 $adminEmails[] = $project->user->email;
             }
@@ -273,11 +269,12 @@ class TicketController extends Controller
                     $lead = FrubixService::createLead($frubixConfig, [
                         'name'   => $ticket->customer_name ?: explode('@', $ticket->customer_email)[0],
                         'email'  => $ticket->customer_email,
+                        'phone'  => $ticket->customer_phone ?? null,
                         'source' => 'linochat',
                         'status' => 'new',
                         'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] {$ticket->subject}\n\n{$ticket->description}",
                     ]);
-                    Log::info('Frubix lead created for ticket', ['ticket_id' => $ticket->id, 'lead' => $lead]);
+                    Log::error('Frubix lead created for ticket', ['ticket_id' => $ticket->id]);
 
                     // If token was refreshed, update stored tokens
                     // (handled inside FrubixService if needed)
