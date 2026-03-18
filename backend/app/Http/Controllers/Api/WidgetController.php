@@ -71,9 +71,10 @@ class WidgetController extends Controller
 
             return $this->configResponse($request, $data, 200);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Widget config error', ['error' => $e->getMessage()]);
             return $this->configResponse($request, [
                 'success' => false,
-                'message' => 'Server error: ' . $e->getMessage(),
+                'message' => 'Server error',
             ], 500);
         }
     }
@@ -431,7 +432,7 @@ class WidgetController extends Controller
             \Illuminate\Support\Facades\Log::error('Send message failed', ['error' => $e->getMessage()]);
             return $this->sendMessageResponse($request, [
                 'success' => false,
-                'message' => 'Server error: ' . $e->getMessage(),
+                'message' => 'Server error',
             ], 500);
         }
     }
@@ -733,8 +734,11 @@ class WidgetController extends Controller
             // Request contact info
             $response = $this->aiService->requestContactInfoForTicket($chat);
             
-            broadcast(new MessageSent(ChatMessage::find($response['id'])))->toOthers();
-            
+            $aiMessage = ChatMessage::find($response['id']);
+            if ($aiMessage) {
+                broadcast(new MessageSent($aiMessage))->toOthers();
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -814,7 +818,10 @@ class WidgetController extends Controller
 
         // Send confirmation message
         $response = $this->aiService->confirmTicketCreated($chat, $ticketInfo);
-        broadcast(new MessageSent(ChatMessage::find($response['id'])))->toOthers();
+        $confirmMessage = ChatMessage::find($response['id']);
+        if ($confirmMessage) {
+            broadcast(new MessageSent($confirmMessage))->toOthers();
+        }
 
         return response()->json([
             'success' => true,

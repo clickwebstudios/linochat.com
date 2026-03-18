@@ -215,7 +215,7 @@ class AiChatService
                 $metadata['kb_references'] = array_map(fn($article) => [
                     'id' => $article->id,
                     'title' => $article->title,
-                    'category' => $article->category->name ?? null,
+                    'category' => $article->category?->name ?? null,
                 ], $kbContext);
             }
             

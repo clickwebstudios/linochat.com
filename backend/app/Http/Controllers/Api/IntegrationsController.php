@@ -98,6 +98,13 @@ class IntegrationsController extends Controller
             return response()->json(['success' => false, 'message' => 'Missing code or state'], 400);
         }
 
+        // Verify state matches what we stored in session (prevents CSRF)
+        $storedState = session('frubix_oauth_state');
+        if (!$storedState || $state !== $storedState) {
+            return response()->json(['success' => false, 'message' => 'Invalid state parameter'], 400);
+        }
+        session()->forget('frubix_oauth_state');
+
         // Decode state to get project_id
         $stateData = json_decode(base64_decode($state), true);
         $projectId = $stateData['project_id'] ?? null;
@@ -109,6 +116,15 @@ class IntegrationsController extends Controller
         $project = Project::find($projectId);
         if (!$project) {
             return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        // Verify the authenticated user owns this project
+        $user = auth('api')->user();
+        $hasAccess = $project->user_id === $user->id ||
+                     $user->projects()->where('projects.id', $project->id)->exists() ||
+                     $user->role === 'superadmin';
+        if (!$hasAccess) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         try {

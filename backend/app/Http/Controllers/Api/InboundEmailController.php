@@ -28,8 +28,8 @@ class InboundEmailController extends Controller
         // Verify shared secret — accept from body or query string (forwardemail.net passes it in URL)
         $secret   = env('INBOUND_EMAIL_SECRET');
         $provided = $request->input('secret') ?? $request->query('secret');
-        if ($secret && $provided !== $secret) {
-            Log::warning('InboundEmail: invalid secret from ' . $request->ip());
+        if (!$secret || $provided !== $secret) {
+            Log::warning('InboundEmail: invalid or missing secret from ' . $request->ip());
             return response()->json(['ok' => true]); // silent — don't reveal the reason
         }
 
