@@ -45,7 +45,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [isSuperadmin]);
 
   const onRefresh = () => {
     setRefreshing(true);
