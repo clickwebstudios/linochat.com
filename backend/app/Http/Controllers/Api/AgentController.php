@@ -17,6 +17,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\FrubixService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -374,6 +375,9 @@ class AgentController extends Controller
 
         // Broadcast to widget and agent dashboard (immediate, no queue)
         broadcast(new MessageSent($message));
+
+        // Forward message to Frubix if integrated
+        $this->forwardToFrubix($chat, $message, $user);
 
         return response()->json([
             'success' => true,
@@ -892,5 +896,35 @@ class AgentController extends Controller
                 'status' => $chat->status,
             ],
         ]);
+    }
+
+    private function forwardToFrubix(Chat $chat, ChatMessage $message, $user): void
+    {
+        try {
+            $project = Project::find($chat->project_id);
+            if (!$project) return;
+
+            $frubixConfig = $project->integrations['frubix'] ?? null;
+            if (!$frubixConfig || empty($frubixConfig['access_token'])) {
+                return;
+            }
+
+            FrubixService::sendMessage($frubixConfig, [
+                'message' => $message->content,
+                'sender_name' => $user->name ?? 'Agent',
+                'sender_phone' => null,
+                'sender_email' => $user->email ?? null,
+                'sender_type' => 'agent',
+                'channel' => 'chat',
+                'source' => 'linochat',
+                'external_id' => (string) $message->id,
+                'external_conversation_id' => (string) $chat->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Frubix message forward failed', [
+                'chat_id' => $chat->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

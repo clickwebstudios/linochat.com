@@ -165,6 +165,37 @@ class FrubixService
     }
 
     /**
+     * Send a message to Frubix.
+     */
+    public static function sendMessage(array $integrationConfig, array $data): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+        $accessToken = $integrationConfig['access_token'] ?? null;
+        $refreshToken = $integrationConfig['refresh_token'] ?? null;
+
+        if (!$accessToken) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = Http::withToken($accessToken)
+            ->post("{$baseUrl}/api/v1/messages", $data);
+
+        if ($response->status() === 401 && $refreshToken) {
+            $newTokens = self::refreshToken($integrationConfig);
+            if ($newTokens) {
+                $response = Http::withToken($newTokens['access_token'])
+                    ->post("{$baseUrl}/api/v1/messages", $data);
+            }
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to send Frubix message: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
      * Exchange authorization code for tokens.
      */
     public static function exchangeCode(string $baseUrl, string $clientId, string $clientSecret, string $code, string $redirectUri): array
