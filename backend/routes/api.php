@@ -353,8 +353,8 @@ Route::middleware('auth:sanctum')->prefix('oauth/clients')->group(function () {
 });
 
 // ─── External API endpoints (for integrations like Frubix) ──
-// Authenticated via project API key in Authorization header
-Route::prefix('v1/conversations')->group(function () {
+// Authenticated via LinoChat OAuth token with chats:write scope
+Route::middleware('oauth:chats:write')->prefix('v1/conversations')->group(function () {
     Route::post('/{id}/pause-ai', [IntegrationsController::class, 'pauseAi']);
     Route::post('/{id}/resume-ai', [IntegrationsController::class, 'resumeAi']);
 });
