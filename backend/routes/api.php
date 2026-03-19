@@ -352,7 +352,9 @@ Route::middleware('auth:sanctum')->prefix('oauth/clients')->group(function () {
     Route::delete('/{client}', [OAuthClientController::class, 'destroy']);
 });
 
-// ─── Example: OAuth-protected API endpoints (accessible by 3rd-party apps) ──
-// Usage: middleware('oauth:chats:read') — validates Bearer token + required scope
-// Route::middleware('oauth:chats:read')->get('/v1/chats', ...);
-// Route::middleware('oauth:tickets:read')->get('/v1/tickets', ...);
+// ─── External API endpoints (for integrations like Frubix) ──
+// Authenticated via project API key in Authorization header
+Route::prefix('v1/conversations')->group(function () {
+    Route::post('/{id}/pause-ai', [IntegrationsController::class, 'pauseAi']);
+    Route::post('/{id}/resume-ai', [IntegrationsController::class, 'resumeAi']);
+});

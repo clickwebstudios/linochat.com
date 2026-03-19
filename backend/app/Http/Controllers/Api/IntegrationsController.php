@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Chat;
+use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Services\FrubixService;
 use Illuminate\Http\JsonResponse;
@@ -274,5 +276,71 @@ class IntegrationsController extends Controller
         $project->update(['integrations' => $integrations]);
 
         return response()->json(['success' => true, 'message' => 'Frubix integration disconnected.']);
+    }
+
+    /**
+     * Pause AI for a conversation (external API for integrations like Frubix).
+     * POST /api/v1/conversations/{external_conversation_id}/pause-ai
+     */
+    public function pauseAi(Request $request, string $externalConversationId): JsonResponse
+    {
+        $chat = Chat::find($externalConversationId);
+        if (!$chat) {
+            return response()->json(['success' => false, 'message' => 'Conversation not found'], 404);
+        }
+
+        if ($chat->ai_enabled === false) {
+            return response()->json(['success' => true, 'message' => 'AI already paused', 'data' => ['chat_id' => $chat->id, 'ai_enabled' => false]]);
+        }
+
+        $chat->update([
+            'ai_enabled' => false,
+            'status' => $chat->agent_id ? 'active' : 'waiting',
+        ]);
+
+        ChatMessage::create([
+            'chat_id' => $chat->id,
+            'sender_type' => 'system',
+            'content' => 'AI assistant has been paused by external integration.',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'AI paused',
+            'data' => ['chat_id' => $chat->id, 'ai_enabled' => false, 'status' => $chat->status],
+        ]);
+    }
+
+    /**
+     * Resume AI for a conversation (external API for integrations like Frubix).
+     * POST /api/v1/conversations/{external_conversation_id}/resume-ai
+     */
+    public function resumeAi(Request $request, string $externalConversationId): JsonResponse
+    {
+        $chat = Chat::find($externalConversationId);
+        if (!$chat) {
+            return response()->json(['success' => false, 'message' => 'Conversation not found'], 404);
+        }
+
+        if ($chat->ai_enabled !== false) {
+            return response()->json(['success' => true, 'message' => 'AI already active', 'data' => ['chat_id' => $chat->id, 'ai_enabled' => true]]);
+        }
+
+        $chat->update([
+            'ai_enabled' => true,
+            'status' => $chat->agent_id ? $chat->status : 'ai_handling',
+        ]);
+
+        ChatMessage::create([
+            'chat_id' => $chat->id,
+            'sender_type' => 'system',
+            'content' => 'AI assistant has been resumed by external integration.',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'AI resumed',
+            'data' => ['chat_id' => $chat->id, 'ai_enabled' => true, 'status' => $chat->status],
+        ]);
     }
 }
