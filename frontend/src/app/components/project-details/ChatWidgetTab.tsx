@@ -19,14 +19,114 @@ import {
   AccordionTrigger,
 } from '../ui/accordion';
 import { Switch } from '../ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
+// Tabs imports removed — using custom sidebar nav like AI Settings
 import {
   Copy,
   MessageSquare,
   X,
   Loader2,
+  Paintbrush,
+  HandMetal,
+  Code,
+  Sparkles,
+  Clock,
+  Plus,
+  Trash2,
+  Globe,
+  CalendarOff,
+  ExternalLink,
 } from 'lucide-react';
 import { api } from '../../api/client';
+
+// --- Schedule Types & Constants ---
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+interface DaySchedule {
+  enabled: boolean;
+  slots: TimeSlot[];
+}
+
+interface ScheduleException {
+  id: string;
+  date: string;
+  label: string;
+  all_day_off: boolean;
+  offline_behavior_override?: string;
+  offline_message_override?: string;
+}
+
+interface WidgetSchedule {
+  mode: 'always' | 'business_hours' | 'agent_availability';
+  timezone: string;
+  weekly: Record<string, DaySchedule>;
+  offline_behavior: string;
+  offline_message: string;
+  offline_redirect_url: string;
+  offline_redirect_label: string;
+  offline_form_enabled: boolean;
+  exceptions: ScheduleException[];
+}
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+
+const DAY_LABELS: Record<string, string> = {
+  monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday',
+  friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
+};
+
+const DEFAULT_SCHEDULE: WidgetSchedule = {
+  mode: 'always',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York',
+  weekly: Object.fromEntries(
+    DAYS.map(d => [d, {
+      enabled: !['saturday', 'sunday'].includes(d),
+      slots: [{ start: '09:00', end: '17:00' }],
+    }])
+  ),
+  offline_behavior: 'show_message',
+  offline_message: "We're currently offline. We'll be back {next_available}.",
+  offline_redirect_url: '',
+  offline_redirect_label: 'Email us',
+  offline_form_enabled: false,
+  exceptions: [],
+};
+
+const OFFLINE_MESSAGE_TEMPLATES = [
+  "We're currently offline. We'll be back {next_available}.",
+  "Thanks for reaching out! Our team at {company_name} is available during business hours.",
+  "We're away right now. Drop us a line at {support_email} for urgent matters.",
+  "Our team is currently offline. Please leave a message and we'll respond as soon as we're back.",
+  "Hi! We're not available right now, but we'll be back {next_available}. Thanks for your patience!",
+];
+
+const TIMEZONES = [
+  { value: 'Pacific/Honolulu', label: 'Hawaii (HST)' },
+  { value: 'America/Anchorage', label: 'Alaska (AKST)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PST)' },
+  { value: 'America/Denver', label: 'Mountain Time (MST)' },
+  { value: 'America/Chicago', label: 'Central Time (CST)' },
+  { value: 'America/New_York', label: 'Eastern Time (EST)' },
+  { value: 'America/Halifax', label: 'Atlantic (AST)' },
+  { value: 'America/Sao_Paulo', label: 'Brasilia (BRT)' },
+  { value: 'Atlantic/Reykjavik', label: 'GMT / Iceland' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Central Europe (CET)' },
+  { value: 'Europe/Helsinki', label: 'Eastern Europe (EET)' },
+  { value: 'Europe/Moscow', label: 'Moscow (MSK)' },
+  { value: 'Asia/Dubai', label: 'Gulf (GST)' },
+  { value: 'Asia/Karachi', label: 'Pakistan (PKT)' },
+  { value: 'Asia/Kolkata', label: 'India (IST)' },
+  { value: 'Asia/Dhaka', label: 'Bangladesh (BST)' },
+  { value: 'Asia/Bangkok', label: 'Indochina (ICT)' },
+  { value: 'Asia/Shanghai', label: 'China (CST)' },
+  { value: 'Asia/Tokyo', label: 'Japan (JST)' },
+  { value: 'Asia/Seoul', label: 'Korea (KST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+  { value: 'Pacific/Auckland', label: 'New Zealand (NZST)' },
+];
 
 /** Widget base URL: VITE_WIDGET_BASE_URL or derived from VITE_API_URL (backend must serve widget.js) */
 function getWidgetBaseUrl(): string {
@@ -47,16 +147,51 @@ interface ChatWidgetTabProps {
   onCopyWidgetId: () => void;
 }
 
+type WidgetSection = 'appearance' | 'greeting' | 'animations' | 'schedule' | 'embed';
+
+const WIDGET_NAV = [
+  { id: 'appearance' as WidgetSection, label: 'Appearance', icon: Paintbrush },
+  { id: 'greeting' as WidgetSection, label: 'Greeting', icon: HandMetal },
+  { id: 'animations' as WidgetSection, label: 'Animations', icon: Sparkles },
+  { id: 'schedule' as WidgetSection, label: 'Schedule', icon: Clock },
+  { id: 'embed' as WidgetSection, label: 'Embed Code', icon: Code },
+];
+
+const WIDGET_ANIMATIONS = [
+  { id: 'none', label: 'None', description: 'No animation' },
+  { id: 'bounce', label: 'Bounce', description: 'Playful bounce effect' },
+  { id: 'pulse', label: 'Pulse', description: 'Gentle pulsing glow' },
+  { id: 'shake', label: 'Shake', description: 'Attention-grabbing shake' },
+  { id: 'wobble', label: 'Wobble', description: 'Soft wobble rotation' },
+  { id: 'tada', label: 'Tada', description: 'Celebratory pop' },
+  { id: 'heartbeat', label: 'Heartbeat', description: 'Rhythmic scale pulse' },
+  { id: 'rubber-band', label: 'Rubber Band', description: 'Elastic stretch snap' },
+  { id: 'swing', label: 'Swing', description: 'Pendulum swing' },
+  { id: 'jello', label: 'Jello', description: 'Wobbly jello skew' },
+  { id: 'float', label: 'Float', description: 'Gentle up-and-down float' },
+] as const;
+
 export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
+  const [activeSection, setActiveSection] = useState<WidgetSection>('appearance');
   const [widgetDesign, setWidgetDesign] = useState('modern');
+  const [widgetAnimation, setWidgetAnimation] = useState('none');
+  const [widgetGradient, setWidgetGradient] = useState('linear-gradient(135deg, #3b82f6, #a855f7, #ec4899)');
+  const [animRepeat, setAnimRepeat] = useState('infinite');
+  const [animDelay, setAnimDelay] = useState('0');
+  const [animDuration, setAnimDuration] = useState('default');
+  const [animStopAfter, setAnimStopAfter] = useState('0');
+  const [previewingAnimation, setPreviewingAnimation] = useState<string | null>(null);
   const [widgetColor, setWidgetColor] = useState(project?.color || '#3B82F6');
   const [widgetPosition, setWidgetPosition] = useState('bottom-right');
   const [widgetTitle, setWidgetTitle] = useState(project?.name || 'LinoChat Widget');
   const [welcomeMessage, setWelcomeMessage] = useState("Hi! How can we help you today?");
   const [buttonText, setButtonText] = useState('💬');
-  const [offlineBehavior, setOfflineBehavior] = useState('hide');
-  const [offlineMessage, setOfflineMessage] = useState("We're currently offline. Our team is available Mon-Fri, 9am-5pm EST.");
+  const [schedule, setSchedule] = useState<WidgetSchedule>(DEFAULT_SCHEDULE);
   const [showOfflinePreview, setShowOfflinePreview] = useState(false);
+
+  // Derive offline fields from schedule for WidgetPreview backward compat
+  const offlineBehavior = schedule.offline_behavior;
+  const offlineMessage = schedule.offline_message;
   const [widgetActive, setWidgetActive] = useState(true);
   const [greetingEnabled, setGreetingEnabled] = useState(false);
   const [greetingDelay, setGreetingDelay] = useState('3');
@@ -84,6 +219,30 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           setGreetingDelay(String(d.greeting_delay ?? 3));
           setGreetingMessage(d.greeting_message || '👋 Hi there! How can we help you today?');
           if (d.font_size) setFontSize(String(d.font_size));
+          if (d.animation) setWidgetAnimation(d.animation);
+          if (d.animation_repeat) setAnimRepeat(d.animation_repeat);
+          if (d.animation_delay) setAnimDelay(d.animation_delay);
+          if (d.animation_duration) setAnimDuration(d.animation_duration);
+          if (d.animation_stop_after) setAnimStopAfter(d.animation_stop_after);
+          if (d.gradient) setWidgetGradient(d.gradient);
+          // Hydrate schedule (with backward compat for old flat fields)
+          if (d.schedule) {
+            setSchedule(prev => ({
+              ...prev,
+              ...d.schedule,
+              weekly: d.schedule.weekly ?? prev.weekly,
+              exceptions: d.schedule.exceptions ?? [],
+            }));
+          } else {
+            // Backward compat: populate schedule from flat fields
+            if (d.offline_behavior || d.offline_message) {
+              setSchedule(prev => ({
+                ...prev,
+                offline_behavior: d.offline_behavior ?? prev.offline_behavior,
+                offline_message: d.offline_message ?? prev.offline_message,
+              }));
+            }
+          }
         }
       } catch {
         // Use project defaults if API fails
@@ -110,6 +269,15 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         greeting_delay: parseInt(greetingDelay),
         greeting_message: greetingMessage,
         font_size: parseInt(fontSize),
+        animation: widgetAnimation,
+        animation_repeat: animRepeat,
+        animation_delay: animDelay,
+        animation_duration: animDuration,
+        animation_stop_after: animStopAfter,
+        gradient: widgetGradient,
+        offline_behavior: schedule.offline_behavior,
+        offline_message: schedule.offline_message,
+        schedule,
       });
       if (response.success) {
         setSaveSuccess(true);
@@ -139,23 +307,39 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   );
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Chat Widget Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="appearance">
-            <TabsList className="mb-6 w-full">
-              <TabsTrigger value="appearance" className="flex-1">Appearance</TabsTrigger>
-              <TabsTrigger value="greeting" className="flex-1">Greeting</TabsTrigger>
-              <TabsTrigger value="embed" className="flex-1">Embed Code</TabsTrigger>
-              <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
-            </TabsList>
+    <div className="flex gap-6">
+            {/* Sidebar */}
+            <aside className="w-56 shrink-0">
+              <nav className="space-y-1">
+                {WIDGET_NAV.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activeSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${
+                        isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+            </aside>
+            <div className="flex-1 min-w-0">
 
-            {/* ── Appearance Tab ── */}
-            <TabsContent value="appearance">
+            {/* ── Appearance ── */}
+            {activeSection === 'appearance' && (
               <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Appearance</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Customize how the chat widget looks on your website.</p>
+                </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
                   <div>
                     <p className="text-sm font-medium">Widget Status</p>
@@ -208,42 +392,103 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="widget-design">Widget Design</Label>
-                  <Select value={widgetDesign} onValueChange={setWidgetDesign}>
-                    <SelectTrigger id="widget-design">
-                      <SelectValue placeholder="Select design" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="modern">Modern</SelectItem>
-                      <SelectItem value="minimal">Minimal</SelectItem>
-                      <SelectItem value="classic">Classic</SelectItem>
-                      <SelectItem value="bubble">Bubble</SelectItem>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="friendly">Friendly</SelectItem>
-                      <SelectItem value="gradient">Gradient</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="widget-color">Widget Color</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="widget-color"
-                      type="color"
-                      value={widgetColor}
-                      onChange={(e) => setWidgetColor(e.target.value)}
-                      className="w-20 h-10"
-                    />
-                    <Input
-                      value={widgetColor}
-                      onChange={(e) => setWidgetColor(e.target.value)}
-                      placeholder="#000000"
-                      className="flex-1"
-                    />
+                  <Label>Widget Design</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { id: 'modern', label: 'Modern', desc: 'Round, shadow' },
+                      { id: 'minimal', label: 'Minimal', desc: 'Clean, light' },
+                      { id: 'classic', label: 'Classic', desc: 'Square, solid' },
+                      { id: 'bubble', label: 'Bubble', desc: 'Large, border' },
+                      { id: 'compact', label: 'Compact', desc: 'Small, tight' },
+                      { id: 'professional', label: 'Professional', desc: 'Sharp, formal' },
+                      { id: 'friendly', label: 'Friendly', desc: 'Rounded, warm' },
+                      { id: 'gradient', label: 'Gradient', desc: 'Colorful blend' },
+                    ].map(d => (
+                      <button
+                        key={d.id}
+                        onClick={() => setWidgetDesign(d.id)}
+                        className={`text-left p-2.5 rounded-lg border-2 transition-all ${
+                          widgetDesign === d.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-7 h-7 shrink-0 flex items-center justify-center text-white ${
+                              d.id === 'bubble' ? 'rounded-full border-2 border-white shadow' :
+                              d.id === 'compact' ? 'rounded-md scale-90' :
+                              d.id === 'classic' ? 'rounded-sm' :
+                              d.id === 'professional' ? 'rounded-none' :
+                              d.id === 'friendly' ? 'rounded-2xl' :
+                              d.id === 'gradient' ? 'rounded-full' :
+                              'rounded-full'
+                            }`}
+                            style={d.id === 'gradient' ? { background: widgetGradient } : { backgroundColor: widgetColor }}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`text-xs font-medium truncate ${widgetDesign === d.id ? 'text-primary' : ''}`}>{d.label}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{d.desc}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
+
+                {widgetDesign === 'gradient' ? (
+                  <div className="grid gap-2">
+                    <Label>Gradient Color</Label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { id: 'linear-gradient(135deg, #3b82f6, #a855f7, #ec4899)', label: 'Aurora' },
+                        { id: 'linear-gradient(135deg, #f43f5e, #ef4444, #f97316)', label: 'Sunset' },
+                        { id: 'linear-gradient(135deg, #10b981, #14b8a6, #06b6d4)', label: 'Ocean' },
+                        { id: 'linear-gradient(135deg, #7c3aed, #6366f1, #3b82f6)', label: 'Indigo' },
+                        { id: 'linear-gradient(135deg, #f59e0b, #f97316, #ef4444)', label: 'Fire' },
+                        { id: 'linear-gradient(135deg, #ec4899, #d946ef, #9333ea)', label: 'Berry' },
+                        { id: 'linear-gradient(135deg, #06b6d4, #3b82f6, #4f46e5)', label: 'Sky' },
+                        { id: 'linear-gradient(135deg, #84cc16, #10b981, #0d9488)', label: 'Forest' },
+                        { id: 'linear-gradient(135deg, #facc15, #f59e0b, #ea580c)', label: 'Gold' },
+                        { id: 'linear-gradient(135deg, #334155, #1f2937, #18181b)', label: 'Charcoal' },
+                      ].map(g => (
+                        <button
+                          key={g.id}
+                          onClick={() => setWidgetGradient(g.id)}
+                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${
+                            widgetGradient === g.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-full" style={{ background: g.id }} />
+                          <span className="text-[10px] font-medium text-muted-foreground">{g.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <Label htmlFor="widget-color">Widget Color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="widget-color"
+                        type="color"
+                        value={widgetColor}
+                        onChange={(e) => setWidgetColor(e.target.value)}
+                        className="w-20 h-10"
+                      />
+                      <Input
+                        value={widgetColor}
+                        onChange={(e) => setWidgetColor(e.target.value)}
+                        placeholder="#000000"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-2">
                   <Label htmlFor="font-size">Font Size</Label>
@@ -259,36 +504,17 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Select>
                 </div>
 
-                <div className="border-t pt-4 mt-2">
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="schedule">
-                      <AccordionTrigger>
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="text-sm font-medium">Widget Schedule</span>
-                          <span className="text-xs text-muted-foreground font-normal">Control when the widget is displayed to visitors</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <WidgetScheduleConfig
-                          offlineBehavior={offlineBehavior}
-                          setOfflineBehavior={setOfflineBehavior}
-                          offlineMessage={offlineMessage}
-                          setOfflineMessage={setOfflineMessage}
-                          showOfflinePreview={showOfflinePreview}
-                          setShowOfflinePreview={setShowOfflinePreview}
-                        />
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
-
                 {saveButton}
               </div>
-            </TabsContent>
+            )}
 
-            {/* ── Greeting Tab ── */}
-            <TabsContent value="greeting">
+            {/* ── Greeting ── */}
+            {activeSection === 'greeting' && (
               <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Greeting</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Set up an automatic greeting bubble to engage visitors.</p>
+                </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <p className="text-sm font-medium">Enable Greeting Bubble</p>
@@ -328,30 +554,193 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       <p className="text-xs text-muted-foreground">{greetingMessage.length}/500 characters</p>
                     </div>
 
-                    <div className="p-4 bg-muted/50 rounded-lg border">
-                      <p className="text-xs text-muted-foreground mb-2 font-medium">Greeting Preview</p>
-                      <div className="flex items-end gap-2">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: widgetColor }}>
-                          {(widgetTitle || 'A')[0].toUpperCase()}
-                        </div>
-                        <div className="bg-white border rounded-2xl rounded-bl-sm px-3 py-2 max-w-xs shadow-sm">
-                          <p style={{ fontSize: `${fontSize}px` }}>{greetingMessage || '...'}</p>
-                        </div>
+                    <div className="grid gap-2">
+                      <Label>Quick Templates</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          '👋 Hi there! How can we help you today?',
+                          '💬 Got questions? We\'re here to chat!',
+                          '🎉 Welcome! Let us know if you need anything.',
+                          '🚀 Need help getting started? Ask away!',
+                          '😊 Hey! We\'re online and ready to help.',
+                          '🛒 Looking for something? We can help you find it!',
+                        ].map(tpl => (
+                          <button
+                            key={tpl}
+                            onClick={() => setGreetingMessage(tpl)}
+                            className={`text-left text-sm px-3 py-2 rounded-lg border transition-all ${
+                              greetingMessage === tpl
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border hover:border-primary/40 hover:bg-muted/50 text-muted-foreground'
+                            }`}
+                          >
+                            {tpl}
+                          </button>
+                        ))}
                       </div>
                     </div>
+
                   </div>
                 )}
 
                 {saveButton}
               </div>
-            </TabsContent>
+            )}
 
-            {/* ── Embed Code Tab ── */}
-            <TabsContent value="embed">
+
+
+            {/* ── Animations ── */}
+            {activeSection === 'animations' && (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Copy the snippet below and paste it before the closing <code className="bg-muted px-1 rounded text-xs">&lt;/body&gt;</code> tag on every page where you want the widget to appear.
-                </p>
+                <div>
+                  <h3 className="text-lg font-semibold">Button Animation</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Choose an animation for the chat widget button to draw visitor attention.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {WIDGET_ANIMATIONS.map(anim => {
+                    const isSelected = widgetAnimation === anim.id;
+                    const isPreviewing = previewingAnimation === anim.id;
+                    return (
+                      <button
+                        key={anim.id}
+                        onClick={() => setWidgetAnimation(anim.id)}
+                        onMouseEnter={() => setPreviewingAnimation(anim.id)}
+                        onMouseLeave={() => setPreviewingAnimation(null)}
+                        className={`text-left p-3 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>{anim.label}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{anim.description}</p>
+                          </div>
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs ${
+                              isPreviewing || isSelected ? `animate-widget-${anim.id}` : ''
+                            }`}
+                            style={{ backgroundColor: widgetColor }}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {widgetAnimation !== 'none' && (
+                  <div className="border-t pt-4 mt-2 space-y-4">
+                    <h4 className="text-sm font-medium">Animation Parameters</h4>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Repeat</Label>
+                        <Select value={animRepeat} onValueChange={setAnimRepeat}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">Once</SelectItem>
+                            <SelectItem value="2">2 times</SelectItem>
+                            <SelectItem value="3">3 times</SelectItem>
+                            <SelectItem value="5">5 times</SelectItem>
+                            <SelectItem value="10">10 times</SelectItem>
+                            <SelectItem value="infinite">Infinite</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>Start Delay</Label>
+                        <Select value={animDelay} onValueChange={setAnimDelay}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">Immediately</SelectItem>
+                            <SelectItem value="1">After 1s</SelectItem>
+                            <SelectItem value="2">After 2s</SelectItem>
+                            <SelectItem value="3">After 3s</SelectItem>
+                            <SelectItem value="5">After 5s</SelectItem>
+                            <SelectItem value="10">After 10s</SelectItem>
+                            <SelectItem value="30">After 30s</SelectItem>
+                            <SelectItem value="60">After 1 min</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>Speed</Label>
+                        <Select value={animDuration} onValueChange={setAnimDuration}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            <SelectItem value="0.5">Fast (0.5s)</SelectItem>
+                            <SelectItem value="1">Normal (1s)</SelectItem>
+                            <SelectItem value="1.5">Slow (1.5s)</SelectItem>
+                            <SelectItem value="2">Very slow (2s)</SelectItem>
+                            <SelectItem value="3">Extra slow (3s)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>Stop After</Label>
+                        <Select value={animStopAfter} onValueChange={setAnimStopAfter}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">Never (keep going)</SelectItem>
+                            <SelectItem value="5">5 seconds</SelectItem>
+                            <SelectItem value="10">10 seconds</SelectItem>
+                            <SelectItem value="30">30 seconds</SelectItem>
+                            <SelectItem value="60">1 minute</SelectItem>
+                            <SelectItem value="300">5 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Animation will {animDelay !== '0' ? `start after ${animDelay}s` : 'start immediately'},
+                      play {animRepeat === 'infinite' ? 'indefinitely' : `${animRepeat} time${animRepeat !== '1' ? 's' : ''}`}
+                      {animStopAfter !== '0' ? `, and stop after ${animStopAfter}s` : ''}.
+                    </p>
+                  </div>
+                )}
+
+                {saveButton}
+              </div>
+            )}
+
+            {/* ── Schedule ── */}
+            {activeSection === 'schedule' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Widget Schedule</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Control when the widget is displayed to visitors.
+                  </p>
+                </div>
+                <WidgetScheduleConfig
+                  schedule={schedule}
+                  setSchedule={setSchedule}
+                  showOfflinePreview={showOfflinePreview}
+                  setShowOfflinePreview={setShowOfflinePreview}
+                />
+                {saveButton}
+              </div>
+            )}
+
+            {/* ── Embed Code ── */}
+            {activeSection === 'embed' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Embed Code</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Copy the snippet below and paste it before the closing <code className="bg-muted px-1 rounded text-xs">&lt;/body&gt;</code> tag on every page where you want the widget to appear.
+                  </p>
+                </div>
                 <div className="bg-muted/50 rounded-lg p-4 border">
                   <Label className="text-xs font-medium text-foreground mb-2 block">
                     Installation snippet
@@ -394,19 +783,26 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Button>
                 </div>
               </div>
-            </TabsContent>
+            )}
 
-            {/* ── Preview Tab ── */}
-            <TabsContent value="preview">
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">This is how your widget will look on a visitor's page. Click the widget button to open the chat panel.</p>
-                <div className="bg-muted rounded-lg border-2 border-border relative" style={{ minHeight: '600px' }}>
+            </div>
+
+            {/* ── Live Preview (always visible) ── */}
+            <div className="w-[750px] shrink-0">
+              <div className="sticky top-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
+                <div className="bg-muted rounded-lg border border-border relative" style={{ minHeight: '500px' }}>
                   <div className={`absolute ${
-                    widgetPosition === 'bottom-right' ? 'bottom-6 right-6' :
-                    widgetPosition === 'bottom-left' ? 'bottom-6 left-6' :
-                    widgetPosition === 'top-right' ? 'top-6 right-6' :
-                    'top-6 left-6'
-                  }`}>
+                    widgetPosition === 'bottom-right' ? 'bottom-4 right-4' :
+                    widgetPosition === 'bottom-left' ? 'bottom-4 left-4' :
+                    widgetPosition === 'top-right' ? 'top-4 right-4' :
+                    'top-4 left-4'
+                  } ${widgetAnimation && widgetAnimation !== 'none' ? `animate-widget-${widgetAnimation}` : ''}`}
+                  style={widgetAnimation && widgetAnimation !== 'none' ? {
+                    animationIterationCount: animRepeat === 'infinite' ? 'infinite' : animRepeat,
+                    animationDelay: animDelay !== '0' ? `${animDelay}s` : undefined,
+                    ...(animDuration !== 'default' ? { animationDuration: `${animDuration}s` } : {}),
+                  } as React.CSSProperties : undefined}>
                     <WidgetPreview
                       design={widgetDesign}
                       color={widgetColor}
@@ -420,137 +816,411 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       greetingEnabled={greetingEnabled}
                       greetingMessage={greetingMessage}
                       fontSize={fontSize}
+                      gradient={widgetGradient}
                     />
                   </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+          </div>
   );
 }
 
 // --- Sub-components ---
 
 function WidgetScheduleConfig({
-  offlineBehavior: _offlineBehavior,
-  setOfflineBehavior,
-  offlineMessage,
-  setOfflineMessage,
+  schedule,
+  setSchedule,
   showOfflinePreview,
   setShowOfflinePreview,
 }: {
-  offlineBehavior: string;
-  setOfflineBehavior: (v: string) => void;
-  offlineMessage: string;
-  setOfflineMessage: (v: string) => void;
+  schedule: WidgetSchedule;
+  setSchedule: React.Dispatch<React.SetStateAction<WidgetSchedule>>;
   showOfflinePreview: boolean;
   setShowOfflinePreview: (v: boolean) => void;
 }) {
+  const updateSchedule = (patch: Partial<WidgetSchedule>) => setSchedule(prev => ({ ...prev, ...patch }));
+  const updateDay = (day: string, patch: Partial<DaySchedule>) =>
+    setSchedule(prev => ({
+      ...prev,
+      weekly: { ...prev.weekly, [day]: { ...prev.weekly[day], ...patch } },
+    }));
+  const updateSlot = (day: string, idx: number, patch: Partial<TimeSlot>) =>
+    setSchedule(prev => {
+      const slots = [...(prev.weekly[day]?.slots || [])];
+      slots[idx] = { ...slots[idx], ...patch };
+      return { ...prev, weekly: { ...prev.weekly, [day]: { ...prev.weekly[day], slots } } };
+    });
+  const addSlot = (day: string) =>
+    setSchedule(prev => {
+      const slots = [...(prev.weekly[day]?.slots || [])];
+      if (slots.length >= 4) return prev;
+      slots.push({ start: '13:00', end: '17:00' });
+      return { ...prev, weekly: { ...prev.weekly, [day]: { ...prev.weekly[day], slots } } };
+    });
+  const removeSlot = (day: string, idx: number) =>
+    setSchedule(prev => {
+      const slots = (prev.weekly[day]?.slots || []).filter((_, i) => i !== idx);
+      return { ...prev, weekly: { ...prev.weekly, [day]: { ...prev.weekly[day], slots: slots.length ? slots : [{ start: '09:00', end: '17:00' }] } } };
+    });
+  const copyMondayToWeekdays = () =>
+    setSchedule(prev => {
+      const monday = prev.weekly.monday;
+      if (!monday) return prev;
+      const weekly = { ...prev.weekly };
+      for (const d of ['tuesday', 'wednesday', 'thursday', 'friday']) {
+        weekly[d] = { enabled: monday.enabled, slots: monday.slots.map(s => ({ ...s })) };
+      }
+      return { ...prev, weekly };
+    });
+  const addException = () =>
+    setSchedule(prev => ({
+      ...prev,
+      exceptions: [...prev.exceptions, { id: `exc_${Date.now()}`, date: '', label: '', all_day_off: true }],
+    }));
+  const removeException = (id: string) =>
+    setSchedule(prev => ({ ...prev, exceptions: prev.exceptions.filter(e => e.id !== id) }));
+  const updateException = (id: string, patch: Partial<ScheduleException>) =>
+    setSchedule(prev => ({
+      ...prev,
+      exceptions: prev.exceptions.map(e => e.id === id ? { ...e, ...patch } : e),
+    }));
+
+  // Compute current online status client-side for the indicator
+  const computeIsOnline = (): { online: boolean; nextAt?: string } => {
+    if (schedule.mode === 'always') return { online: true };
+    if (schedule.mode !== 'business_hours') return { online: true };
+    try {
+      const now = new Date();
+      const fmt = new Intl.DateTimeFormat('en-US', { timeZone: schedule.timezone, weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false });
+      const parts = fmt.formatToParts(now);
+      const dayName = (parts.find(p => p.type === 'weekday')?.value || '').toLowerCase();
+      const hour = parts.find(p => p.type === 'hour')?.value || '00';
+      const minute = parts.find(p => p.type === 'minute')?.value || '00';
+      const currentTime = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+      const daySchedule = schedule.weekly[dayName];
+      if (!daySchedule?.enabled) return { online: false };
+      for (const slot of daySchedule.slots) {
+        if (currentTime >= slot.start && currentTime < slot.end) return { online: true };
+      }
+      return { online: false };
+    } catch {
+      return { online: true };
+    }
+  };
+
+  const status = computeIsOnline();
+
   return (
-    <div className="space-y-4 pt-2">
-      <div className="grid gap-2">
-        <Label htmlFor="schedule-enabled">Enable Schedule</Label>
-        <Select defaultValue="always">
-          <SelectTrigger id="schedule-enabled">
-            <SelectValue placeholder="Select schedule option" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="always">Always Available</SelectItem>
-            <SelectItem value="business-hours">Business Hours Only</SelectItem>
-            <SelectItem value="custom">Custom Schedule</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
+    <div className="space-y-6 pt-2">
+      {/* 1. Schedule Mode */}
       <div className="grid gap-3">
-        <Label>Weekly Schedule</Label>
-        {[
-          { day: 'Monday', short: 'Mon', default: true },
-          { day: 'Tuesday', short: 'Tue', default: true },
-          { day: 'Wednesday', short: 'Wed', default: true },
-          { day: 'Thursday', short: 'Thu', default: true },
-          { day: 'Friday', short: 'Fri', default: true },
-          { day: 'Saturday', short: 'Sat', default: false },
-          { day: 'Sunday', short: 'Sun', default: false },
-        ].map((dayInfo) => (
-          <div key={dayInfo.day} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
-            <div className="flex items-center space-x-2 w-32">
-              <Checkbox id={`day-${dayInfo.short}`} defaultChecked={dayInfo.default} />
-              <label
-                htmlFor={`day-${dayInfo.short}`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {dayInfo.day}
-              </label>
-            </div>
-            <div className="flex items-center gap-2 flex-1">
-              <Input type="time" defaultValue="09:00" className="flex-1" />
-              <span className="text-xs text-muted-foreground">to</span>
-              <Input type="time" defaultValue="17:00" className="flex-1" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="timezone">Timezone</Label>
-        <Select defaultValue="utc">
-          <SelectTrigger id="timezone">
-            <SelectValue placeholder="Select timezone" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="utc">UTC (GMT+0)</SelectItem>
-            <SelectItem value="est">Eastern Time (GMT-5)</SelectItem>
-            <SelectItem value="pst">Pacific Time (GMT-8)</SelectItem>
-            <SelectItem value="cet">Central European Time (GMT+1)</SelectItem>
-            <SelectItem value="ist">India Standard Time (GMT+5:30)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="border-t pt-4 mt-4 space-y-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <Label htmlFor="offline-behavior" className="text-sm font-medium">When Widget is Offline</Label>
-            <p className="text-xs text-muted-foreground mt-1">Choose what visitors see outside business hours</p>
-          </div>
-          <Button
-            type="button"
-            variant={showOfflinePreview ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowOfflinePreview(!showOfflinePreview)}
-            className="ml-2"
-          >
-            {showOfflinePreview ? "Show Online" : "View Offline"}
-          </Button>
-        </div>
-        <Select defaultValue="hide" onValueChange={setOfflineBehavior}>
-          <SelectTrigger id="offline-behavior">
-            <SelectValue placeholder="Select offline behavior" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="hide">Hide widget completely</SelectItem>
-            <SelectItem value="message">Show offline message</SelectItem>
-            <SelectItem value="form">Show contact form</SelectItem>
-            <SelectItem value="custom">Show custom message</SelectItem>
-          </SelectContent>
-        </Select>
-
+        <Label className="text-sm font-medium">Schedule Mode</Label>
         <div className="grid gap-2">
-          <Label htmlFor="offline-message">Offline Message</Label>
-          <Textarea
-            id="offline-message"
-            placeholder="We're currently offline. Please leave a message and we'll get back to you soon!"
-            value={offlineMessage}
-            onChange={(e) => setOfflineMessage(e.target.value)}
-            className="min-h-[80px] resize-none"
-          />
-          <p className="text-xs text-muted-foreground">This message will be displayed when the widget is offline</p>
+          {([
+            { value: 'always' as const, label: 'Always Available', desc: 'Widget is always online' },
+            { value: 'business_hours' as const, label: 'Business Hours', desc: 'Set weekly hours & timezone' },
+            { value: 'agent_availability' as const, label: 'Agent Availability', desc: 'Coming soon', disabled: true },
+          ] as const).map(opt => (
+            <label
+              key={opt.value}
+              className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                schedule.mode === opt.value ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+              } ${opt.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <input
+                type="radio"
+                name="schedule-mode"
+                value={opt.value}
+                checked={schedule.mode === opt.value}
+                onChange={() => !opt.disabled && updateSchedule({ mode: opt.value })}
+                disabled={opt.disabled}
+                className="mt-0.5"
+              />
+              <div>
+                <div className="text-sm font-medium">{opt.label}</div>
+                <div className="text-xs text-muted-foreground">{opt.desc}</div>
+              </div>
+            </label>
+          ))}
         </div>
       </div>
+
+      {schedule.mode === 'business_hours' && (
+        <>
+          {/* 2. Status Indicator */}
+          <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30">
+            <span className={`inline-block w-2.5 h-2.5 rounded-full ${status.online ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-sm font-medium">
+              Currently: {status.online ? 'Online' : 'Offline'}
+            </span>
+            <Button
+              type="button"
+              variant={showOfflinePreview ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowOfflinePreview(!showOfflinePreview)}
+              className="ml-auto"
+            >
+              {showOfflinePreview ? 'Show Online' : 'Preview Offline'}
+            </Button>
+          </div>
+
+          {/* 3. Timezone Selector */}
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Timezone
+            </Label>
+            <Select value={schedule.timezone} onValueChange={tz => updateSchedule({ timezone: tz })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map(tz => (
+                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 4. Weekly Schedule Grid */}
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between">
+              <Label>Weekly Schedule</Label>
+              <Button type="button" variant="ghost" size="sm" onClick={copyMondayToWeekdays} className="text-xs h-7">
+                Copy Monday to all weekdays
+              </Button>
+            </div>
+            {DAYS.map(day => {
+              const ds = schedule.weekly[day] || { enabled: false, slots: [{ start: '09:00', end: '17:00' }] };
+              return (
+                <div key={day} className={`border rounded-lg p-3 space-y-2 ${ds.enabled ? 'bg-muted/30' : 'bg-muted/10 opacity-60'}`}>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`day-${day}`}
+                      checked={ds.enabled}
+                      onCheckedChange={(v) => updateDay(day, { enabled: !!v })}
+                    />
+                    <label htmlFor={`day-${day}`} className="text-sm font-medium w-24">{DAY_LABELS[day]}</label>
+                  </div>
+                  {ds.enabled && (
+                    <div className="space-y-2 pl-6">
+                      {ds.slots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={slot.start}
+                            onChange={e => updateSlot(day, idx, { start: e.target.value })}
+                            className="w-28"
+                          />
+                          <span className="text-xs text-muted-foreground">to</span>
+                          <Input
+                            type="time"
+                            value={slot.end}
+                            onChange={e => updateSlot(day, idx, { end: e.target.value })}
+                            className="w-28"
+                          />
+                          {ds.slots.length > 1 && (
+                            <Button type="button" variant="ghost" size="sm" onClick={() => removeSlot(day, idx)} className="h-7 w-7 p-0">
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {ds.slots.length < 4 && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => addSlot(day)} className="text-xs h-7">
+                          <Plus className="h-3 w-3 mr-1" /> Add time slot
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 5. Offline Behavior */}
+          <div className="border-t pt-4 space-y-3">
+            <div>
+              <Label className="text-sm font-medium">When Widget is Offline</Label>
+              <p className="text-xs text-muted-foreground mt-1">Choose what visitors see outside business hours</p>
+            </div>
+            <div className="grid gap-2">
+              {([
+                { value: 'hide', label: 'Hide widget completely' },
+                { value: 'show_message', label: 'Show offline message' },
+                { value: 'ai_only', label: 'AI-only mode' },
+                { value: 'contact_form', label: 'Show contact form' },
+                { value: 'redirect', label: 'Redirect to URL' },
+              ]).map(opt => (
+                <label
+                  key={opt.value}
+                  className={`flex items-center gap-2 p-2.5 border rounded-lg cursor-pointer transition-colors text-sm ${
+                    schedule.offline_behavior === opt.value ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="offline-behavior"
+                    value={opt.value}
+                    checked={schedule.offline_behavior === opt.value}
+                    onChange={() => updateSchedule({ offline_behavior: opt.value })}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+
+            {schedule.offline_behavior === 'redirect' && (
+              <div className="space-y-2 pl-2">
+                <div className="grid gap-1">
+                  <Label className="text-xs">Redirect URL</Label>
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="https://example.com/contact"
+                      value={schedule.offline_redirect_url}
+                      onChange={e => updateSchedule({ offline_redirect_url: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-xs">Button Label</Label>
+                  <Input
+                    placeholder="Email us"
+                    value={schedule.offline_redirect_label}
+                    onChange={e => updateSchedule({ offline_redirect_label: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {schedule.offline_behavior === 'contact_form' && (
+              <p className="text-xs text-muted-foreground pl-2">
+                Visitors can submit their name, email, and message when you're offline.
+              </p>
+            )}
+
+            {schedule.offline_behavior === 'ai_only' && (
+              <p className="text-xs text-muted-foreground pl-2">
+                The AI assistant will handle conversations when no agents are available.
+              </p>
+            )}
+          </div>
+
+          {/* 6. Offline Message + Templates */}
+          {schedule.offline_behavior !== 'hide' && (
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                <Label>Offline Message</Label>
+                <Textarea
+                  placeholder="We're currently offline..."
+                  value={schedule.offline_message}
+                  onChange={e => updateSchedule({ offline_message: e.target.value })}
+                  className="min-h-[80px] resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Variables: <code className="bg-muted px-1 rounded">{'{company_name}'}</code>{' '}
+                  <code className="bg-muted px-1 rounded">{'{next_available}'}</code>{' '}
+                  <code className="bg-muted px-1 rounded">{'{support_email}'}</code>
+                </p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Templates</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {OFFLINE_MESSAGE_TEMPLATES.map((tpl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => updateSchedule({ offline_message: tpl })}
+                      className={`text-xs px-2.5 py-1.5 rounded-md border transition-colors ${
+                        schedule.offline_message === tpl ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted/50'
+                      }`}
+                    >
+                      {tpl.length > 50 ? tpl.slice(0, 50) + '...' : tpl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 7. Holiday/Exception Dates */}
+          <div className="border-t pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="flex items-center gap-1.5">
+                  <CalendarOff className="h-3.5 w-3.5" />
+                  Holiday / Exception Dates
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">Override schedule for specific dates</p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addException} className="text-xs h-7">
+                <Plus className="h-3 w-3 mr-1" /> Add Date
+              </Button>
+            </div>
+            {schedule.exceptions.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">No exceptions configured.</p>
+            )}
+            {schedule.exceptions.map(exc => (
+              <div key={exc.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={exc.date}
+                    onChange={e => updateException(exc.id, { date: e.target.value })}
+                    className="w-40"
+                  />
+                  <Input
+                    placeholder="Label (e.g. Christmas)"
+                    value={exc.label}
+                    onChange={e => updateException(exc.id, { label: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeException(exc.id)} className="h-7 w-7 p-0">
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-4 pl-1">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`exc-allday-${exc.id}`}
+                      checked={exc.all_day_off}
+                      onCheckedChange={v => updateException(exc.id, { all_day_off: !!v })}
+                    />
+                    <label htmlFor={`exc-allday-${exc.id}`} className="text-xs">All day off</label>
+                  </div>
+                </div>
+                {exc.all_day_off && (
+                  <div className="space-y-2 pl-1">
+                    <Select
+                      value={exc.offline_behavior_override || ''}
+                      onValueChange={v => updateException(exc.id, { offline_behavior_override: v || undefined })}
+                    >
+                      <SelectTrigger className="text-xs h-8">
+                        <SelectValue placeholder="Use default offline behavior" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Use default</SelectItem>
+                        <SelectItem value="show_message">Show message</SelectItem>
+                        <SelectItem value="hide">Hide widget</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {exc.offline_behavior_override === 'show_message' && (
+                      <Input
+                        placeholder="Override message (e.g. Happy Holidays!)"
+                        value={exc.offline_message_override || ''}
+                        onChange={e => updateException(exc.id, { offline_message_override: e.target.value })}
+                        className="text-xs"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -569,6 +1239,7 @@ function WidgetPreview({
   greetingEnabled = false,
   greetingMessage = '',
   fontSize = '14',
+  gradient = 'from-blue-500 via-purple-500 to-pink-500',
 }: {
   design: string;
   color: string;
@@ -582,6 +1253,7 @@ function WidgetPreview({
   greetingEnabled?: boolean;
   greetingMessage?: string;
   fontSize?: string;
+  gradient?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -634,7 +1306,7 @@ function WidgetPreview({
   const fontSizePx = `${fontSize}px`;
 
   const greetingBubble = greetingEnabled && greetingMessage && !isOpen ? (
-    <div className="absolute bottom-[72px] right-0 bg-white rounded-xl shadow-lg border px-3 py-2 w-52 leading-relaxed text-gray-800" style={{ fontSize: fontSizePx }}>
+    <div className="absolute bottom-[72px] right-0 bg-white rounded-xl shadow-lg border px-4 py-3 w-72 leading-relaxed text-gray-800" style={{ fontSize: fontSizePx }}>
       {greetingMessage}
       <div className="absolute bottom-[-6px] right-6 w-3 h-3 bg-white border-b border-r rotate-45" />
     </div>
@@ -1007,12 +1679,12 @@ function WidgetPreview({
       return (
         <div className="relative">
           {greetingBubble}
-          <button className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" onClick={() => setIsOpen(true)}>
+          <button className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white" style={{ background: gradient }} onClick={() => setIsOpen(true)}>
             <MessageSquare className="h-6 w-6" />
           </button>
           {showPanel && (
           <div className={`absolute ${chatVertical} ${chatHorizontal} w-80 bg-white rounded-xl shadow-2xl overflow-hidden`}>
-            <div className="p-4 text-white bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+            <div className="p-4 text-white" style={{ background: gradient }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>

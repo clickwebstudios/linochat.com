@@ -1154,6 +1154,23 @@ class WidgetLoaderController extends Controller
         loadConfig()
             .then(function() {
                 if (CONFIG && CONFIG.widget_active === false) return; // Widget disabled by owner
+                // Offline handling based on schedule
+                if (CONFIG && CONFIG.is_online === false) {
+                    var ob = CONFIG.offline_behavior || 'hide';
+                    if (ob === 'hide') return; // Don't render widget at all
+                    // For other offline behaviors, show button with offline indicator
+                    createButtonOnly();
+                    updateButtonAppearance();
+                    // Add offline indicator dot to button
+                    var btn = document.getElementById('linochat-button');
+                    if (btn) {
+                        var dot = document.createElement('span');
+                        dot.style.cssText = 'position:absolute;top:4px;right:4px;width:10px;height:10px;background:#ef4444;border-radius:50%;border:2px solid white;';
+                        btn.style.position = 'relative';
+                        btn.appendChild(dot);
+                    }
+                    return;
+                }
                 createButtonOnly();
                 updateButtonAppearance();
                 showGreeting();

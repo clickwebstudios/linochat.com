@@ -37,6 +37,14 @@ class WidgetSettingsController extends Controller
 
         $settings = $project->widget_settings ?? [];
 
+        $defaultWeekly = [];
+        foreach (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as $day) {
+            $enabled = !in_array($day, ['saturday', 'sunday']);
+            $defaultWeekly[$day] = ['enabled' => $enabled, 'slots' => [['start' => '09:00', 'end' => '17:00']]];
+        }
+
+        $schedule = $settings['schedule'] ?? [];
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -56,6 +64,25 @@ class WidgetSettingsController extends Controller
                 'greeting_delay' => $settings['greeting_delay'] ?? 3,
                 'greeting_message' => $settings['greeting_message'] ?? '👋 Hi there! How can we help you today?',
                 'font_size' => $settings['font_size'] ?? 14,
+                'animation' => $settings['animation'] ?? 'none',
+                'animation_repeat' => $settings['animation_repeat'] ?? 'infinite',
+                'animation_delay' => $settings['animation_delay'] ?? '0',
+                'animation_duration' => $settings['animation_duration'] ?? 'default',
+                'animation_stop_after' => $settings['animation_stop_after'] ?? '0',
+                'gradient' => $settings['gradient'] ?? 'linear-gradient(135deg, #3b82f6, #a855f7, #ec4899)',
+                'offline_behavior' => $settings['offline_behavior'] ?? 'hide',
+                'offline_message' => $settings['offline_message'] ?? "We're currently offline. Our team is available Mon-Fri, 9am-5pm EST.",
+                'schedule' => [
+                    'mode' => $schedule['mode'] ?? 'always',
+                    'timezone' => $schedule['timezone'] ?? 'America/New_York',
+                    'weekly' => $schedule['weekly'] ?? $defaultWeekly,
+                    'offline_behavior' => $schedule['offline_behavior'] ?? $settings['offline_behavior'] ?? 'hide',
+                    'offline_message' => $schedule['offline_message'] ?? $settings['offline_message'] ?? "We're currently offline. Our team is available Mon-Fri, 9am-5pm EST.",
+                    'offline_redirect_url' => $schedule['offline_redirect_url'] ?? '',
+                    'offline_redirect_label' => $schedule['offline_redirect_label'] ?? 'Email us',
+                    'offline_form_enabled' => $schedule['offline_form_enabled'] ?? false,
+                    'exceptions' => $schedule['exceptions'] ?? [],
+                ],
                 'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
             ],
         ]);
@@ -103,6 +130,34 @@ class WidgetSettingsController extends Controller
             'greeting_delay'    => 'nullable|integer|min:0|max:3600',
             'greeting_message'  => 'nullable|string|max:500',
             'font_size'         => 'nullable|integer|in:12,14,16',
+            'animation'         => 'nullable|string|max:50',
+            'animation_repeat'  => 'nullable|string|max:20',
+            'animation_delay'   => 'nullable|string|max:10',
+            'animation_duration' => 'nullable|string|max:10',
+            'animation_stop_after' => 'nullable|string|max:10',
+            'gradient'          => 'nullable|string|max:200',
+            'offline_behavior'  => 'nullable|string|in:hide,show_message,ai_only,contact_form,redirect',
+            'offline_message'   => 'nullable|string|max:500',
+            'schedule'                              => 'nullable|array',
+            'schedule.mode'                         => 'nullable|string|in:always,business_hours,agent_availability',
+            'schedule.timezone'                     => 'nullable|string|max:100',
+            'schedule.weekly'                       => 'nullable|array',
+            'schedule.weekly.*.enabled'             => 'nullable|boolean',
+            'schedule.weekly.*.slots'               => 'nullable|array|max:4',
+            'schedule.weekly.*.slots.*.start'       => 'nullable|string|date_format:H:i',
+            'schedule.weekly.*.slots.*.end'         => 'nullable|string|date_format:H:i',
+            'schedule.offline_behavior'             => 'nullable|string|in:hide,show_message,ai_only,contact_form,redirect',
+            'schedule.offline_message'              => 'nullable|string|max:500',
+            'schedule.offline_redirect_url'         => 'nullable|string|max:500',
+            'schedule.offline_redirect_label'       => 'nullable|string|max:100',
+            'schedule.offline_form_enabled'         => 'nullable|boolean',
+            'schedule.exceptions'                   => 'nullable|array|max:50',
+            'schedule.exceptions.*.id'              => 'nullable|string|max:50',
+            'schedule.exceptions.*.date'            => 'nullable|date_format:Y-m-d',
+            'schedule.exceptions.*.label'           => 'nullable|string|max:100',
+            'schedule.exceptions.*.all_day_off'     => 'nullable|boolean',
+            'schedule.exceptions.*.offline_behavior_override' => 'nullable|string|in:hide,show_message,ai_only,contact_form,redirect',
+            'schedule.exceptions.*.offline_message_override'  => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -122,6 +177,9 @@ class WidgetSettingsController extends Controller
             'widget_title', 'show_agent_name', 'show_agent_avatar',
             'widget_active', 'auto_open', 'auto_open_delay', 'design',
             'greeting_enabled', 'greeting_delay', 'greeting_message', 'font_size',
+            'animation', 'animation_repeat', 'animation_delay', 'animation_duration',
+            'animation_stop_after', 'gradient', 'offline_behavior', 'offline_message',
+            'schedule',
         ];
 
         foreach ($updatableFields as $field) {
