@@ -115,7 +115,7 @@ export default function SuperadminPlatform() {
       <div className="flex-1">
         {activeTab === 'companies' && (
           <div className="p-6">
-            <SuperadminDashboard />
+            <SuperadminDashboard hideHeader />
           </div>
         )}
 
