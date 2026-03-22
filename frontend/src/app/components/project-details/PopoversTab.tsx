@@ -47,6 +47,7 @@ interface PopoverConfig {
   trigger_delay: number;
   trigger_scroll_percent: number;
   show_once_per_session: boolean;
+  overlay: 'dark' | 'light' | 'blur' | 'none';
   show_on_pages: string;
   page_urls: string[];
 }
@@ -63,6 +64,7 @@ const DEFAULT_POPOVER: PopoverConfig = {
   secondary_button: { text: 'Ask a Question', url: '', action: 'open_chat' },
   show_online_status: true,
   online_status_text: 'Support Online',
+  overlay: 'dark',
   trigger: 'delay',
   trigger_delay: 3,
   trigger_scroll_percent: 50,
@@ -262,6 +264,29 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                   </div>
                 </div>
 
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-medium">Background Overlay</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: 'dark' as const, label: 'Dark Overlay' },
+                      { id: 'light' as const, label: 'Light Overlay' },
+                      { id: 'blur' as const, label: 'Blur' },
+                      { id: 'none' as const, label: 'No Overlay' },
+                    ]).map(o => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => update({ overlay: o.id })}
+                        className={`p-2.5 border rounded-lg text-center text-sm font-medium transition-colors ${
+                          popover.overlay === o.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {saveButton}
               </div>
             )}
@@ -438,8 +463,50 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
           <div className="flex-1 min-w-0">
             <div className="sticky top-4">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Live Preview</div>
-              <div className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-start min-h-[500px] pt-12">
-                <PopoverPreview popover={popover} color={popover.color || widgetColor} />
+              <div className="rounded-xl border overflow-hidden relative" style={{ minHeight: 560 }}>
+                {/* Fake website background */}
+                <div className="absolute inset-0 bg-white p-6 space-y-4">
+                  <div className="flex items-center gap-3 pb-4 border-b">
+                    <div className="w-8 h-8 rounded bg-blue-600" />
+                    <div className="h-4 w-24 bg-gray-200 rounded" />
+                    <div className="ml-auto flex gap-4">
+                      <div className="h-3 w-14 bg-gray-200 rounded" />
+                      <div className="h-3 w-14 bg-gray-200 rounded" />
+                      <div className="h-3 w-14 bg-gray-200 rounded" />
+                      <div className="h-3 w-14 bg-gray-200 rounded" />
+                    </div>
+                  </div>
+                  <div className="pt-8 space-y-3 max-w-md">
+                    <div className="h-8 w-72 bg-gray-100 rounded" />
+                    <div className="h-4 w-full bg-gray-100 rounded" />
+                    <div className="h-4 w-5/6 bg-gray-100 rounded" />
+                    <div className="h-4 w-2/3 bg-gray-100 rounded" />
+                  </div>
+                  <div className="pt-4 flex gap-3">
+                    <div className="h-10 w-32 bg-blue-100 rounded-lg" />
+                    <div className="h-10 w-28 bg-gray-100 rounded-lg" />
+                  </div>
+                  <div className="pt-8 grid grid-cols-3 gap-4">
+                    <div className="h-28 bg-gray-50 rounded-lg border" />
+                    <div className="h-28 bg-gray-50 rounded-lg border" />
+                    <div className="h-28 bg-gray-50 rounded-lg border" />
+                  </div>
+                  <div className="pt-4 space-y-2">
+                    <div className="h-3 w-full bg-gray-100 rounded" />
+                    <div className="h-3 w-4/5 bg-gray-100 rounded" />
+                    <div className="h-3 w-3/4 bg-gray-100 rounded" />
+                  </div>
+                </div>
+                {/* Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center" style={{
+                  background: popover.overlay === 'dark' ? 'rgba(0,0,0,0.4)' :
+                              popover.overlay === 'light' ? 'rgba(255,255,255,0.6)' :
+                              popover.overlay === 'none' ? 'transparent' : 'transparent',
+                  backdropFilter: popover.overlay === 'blur' ? 'blur(4px)' : undefined,
+                  WebkitBackdropFilter: popover.overlay === 'blur' ? 'blur(4px)' : undefined,
+                }}>
+                  <PopoverPreview popover={popover} color={popover.color || widgetColor} />
+                </div>
               </div>
             </div>
           </div>
@@ -466,9 +533,16 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   const { design, heading, description, badge_text, primary_button, secondary_button, show_online_status, online_status_text } = popover;
   const w = SIZE_WIDTHS[popover.size || 'medium'];
 
+  const closeBtn = (
+    <button className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors">
+      <X className="h-4 w-4" />
+    </button>
+  );
+
   if (design === 'urgent') return (
-    <div className="bg-white rounded-xl shadow-xl border overflow-hidden" style={{ width: w, borderTopColor: '#f59e0b', borderTopWidth: 3 }}>
-      <div className="p-5 space-y-4">
+    <div className="relative bg-white rounded-xl shadow-xl border overflow-hidden" style={{ width: w, borderTopColor: '#f59e0b', borderTopWidth: 3 }}>
+      {closeBtn}
+      <div className="p-5 pt-6 space-y-4">
         <span className="bg-amber-100 text-amber-600 px-2 py-1 rounded text-xs font-bold">⚡ {badge_text}</span>
         <div>
           <h3 className="text-lg font-extrabold text-gray-900 uppercase">{heading}</h3>
@@ -486,7 +560,8 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'luxury') return (
-    <div className="bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ width: w, borderTop: '3px solid', borderImage: 'linear-gradient(90deg, #b8860b, #daa520, #b8860b) 1' }}>
+    <div className="relative bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ width: w, borderTop: '3px solid', borderImage: 'linear-gradient(90deg, #b8860b, #daa520, #b8860b) 1' }}>
+      {closeBtn}
       <div className="p-8 text-center space-y-5">
         <div className="text-3xl">🏠</div>
         <h3 className="text-2xl text-gray-800" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>{heading}</h3>
@@ -500,7 +575,8 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'bold') return (
-    <div className="bg-white shadow-xl overflow-hidden" style={{ width: w, border: `3px solid ${color}` }}>
+    <div className="relative bg-white shadow-xl overflow-hidden" style={{ width: w, border: `3px solid ${color}` }}>
+      {closeBtn}
       <div className="p-8 text-center space-y-5">
         <h3 className="text-2xl font-extrabold" style={{ color }}>{heading}</h3>
         {primary_button.action !== 'none' && <button className="w-full py-4 text-white font-bold text-sm uppercase tracking-wide rounded" style={{ background: color }}>{primary_button.text} →</button>}
@@ -515,8 +591,9 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'minimal') return (
-    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ width: w }}>
-      <div className="p-6 space-y-4">
+    <div className="relative bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ width: w }}>
+      {closeBtn}
+      <div className="p-6 pt-8 space-y-4">
         {show_online_status && (
           <div className="flex justify-center">
             <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-200">
@@ -542,7 +619,8 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
 
   // Modern (default)
   return (
-    <div className="bg-white rounded-xl shadow-xl overflow-hidden" style={{ width: w, borderTop: `4px solid ${color}` }}>
+    <div className="relative bg-white rounded-xl shadow-xl overflow-hidden" style={{ width: w, borderTop: `4px solid ${color}` }}>
+      {closeBtn}
       <div className="p-6 space-y-4">
         <h3 className="text-xl font-semibold text-gray-900">{heading}</h3>
         <p className="text-sm text-gray-500">{description}</p>
