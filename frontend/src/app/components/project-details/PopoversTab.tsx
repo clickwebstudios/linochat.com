@@ -21,6 +21,8 @@ import {
   Globe,
   Eye,
   Settings2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '../../api/client';
 
@@ -582,16 +584,92 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center py-20">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-              <Eye className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium">Popovers Disabled</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">Enable popovers to show targeted messages to your website visitors.</p>
+        <PopoverShowcase popover={popover} update={update} widgetColor={widgetColor} />
+      )}
+    </div>
+  );
+}
+
+// --- Showcase carousel (disabled state) ---
+const SHOWCASE_DESIGNS = [
+  { id: 'modern', name: 'Modern', desc: 'Clean action cards with icons, descriptions, and online status. Great for service businesses.' },
+  { id: 'urgent', name: 'Urgent', desc: 'Bold CTA with attention-grabbing badge. Perfect for time-sensitive offers and support.' },
+  { id: 'luxury', name: 'Luxury', desc: 'Elegant serif typography with gold accents. Ideal for premium brands and concierge services.' },
+  { id: 'bold', name: 'Bold', desc: 'Full-width bordered design with large text. High-impact for clear call-to-actions.' },
+  { id: 'minimal', name: 'Minimal', desc: 'Clean rounded card with pill badge. Subtle and friendly, blends with any website.' },
+] as const;
+
+function PopoverShowcase({
+  popover, update, widgetColor,
+}: {
+  popover: PopoverConfig;
+  update: (patch: Partial<PopoverConfig>) => void;
+  widgetColor: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const current = SHOWCASE_DESIGNS[idx];
+  const previewPopover = { ...popover, design: current.id, enabled: true, size: 'medium' as const };
+
+  return (
+    <div className="flex-1 flex flex-col items-center py-8 space-y-8">
+      {/* Title + Enable */}
+      <div className="text-center space-y-3 max-w-md">
+        <h3 className="text-xl font-semibold">Popover Designs</h3>
+        <p className="text-sm text-muted-foreground">
+          Engage visitors with targeted messages. Pick a design and enable to get started.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <span className="text-sm font-medium text-muted-foreground">Enable Popovers</span>
+          <Switch checked={popover.enabled} onCheckedChange={v => {
+            update({ enabled: v, design: current.id });
+          }} />
+        </div>
+      </div>
+
+      {/* Carousel */}
+      <div className="flex items-center gap-4 w-full max-w-2xl">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 p-0 shrink-0 rounded-full"
+          onClick={() => setIdx(i => (i - 1 + SHOWCASE_DESIGNS.length) % SHOWCASE_DESIGNS.length)}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+
+        <div className="flex-1 flex flex-col items-center gap-5">
+          {/* Preview */}
+          <div className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-center min-h-[380px] w-full">
+            <PopoverPreview popover={previewPopover} color={widgetColor} />
+          </div>
+
+          {/* Title + Description */}
+          <div className="text-center space-y-1">
+            <h4 className="text-lg font-semibold">{current.name}</h4>
+            <p className="text-sm text-muted-foreground max-w-sm">{current.desc}</p>
+          </div>
+
+          {/* Dots */}
+          <div className="flex gap-2">
+            {SHOWCASE_DESIGNS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIdx(i)}
+                className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+              />
+            ))}
           </div>
         </div>
-      )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 p-0 shrink-0 rounded-full"
+          onClick={() => setIdx(i => (i + 1) % SHOWCASE_DESIGNS.length)}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 }
