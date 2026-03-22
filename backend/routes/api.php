@@ -285,7 +285,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/projects/{projectId}/integrations/frubix/schedule/{appointmentId}', [IntegrationsController::class, 'frubixUpdateAppointment']);
     Route::delete('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'disconnectFrubix']);
     Route::post('/integrations/frubix/callback', [IntegrationsController::class, 'frubixCallback']);
+    Route::post('/agent/tickets/{ticketId}/frubix-lead', [TicketController::class, 'createFrubixLead']);
 });
+
+// Frubix webhooks (public, verified by signature)
+Route::post('/webhooks/frubix', [\App\Http\Controllers\Api\FrubixWebhookController::class, 'handle']);
 
 // Alternative route for messages (with 's')
 Route::middleware('auth:sanctum')->post('/agent/chats/{chat_id}/messages', [AgentController::class, 'sendMessage']);

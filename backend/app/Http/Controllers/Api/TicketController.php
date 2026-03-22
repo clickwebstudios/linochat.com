@@ -735,4 +735,53 @@ class TicketController extends Controller
             'data' => $volume,
         ]);
     }
+
+    /**
+     * Manually create a Frubix lead from an existing ticket.
+     */
+    public function createFrubixLead(Request $request, string $ticketId)
+    {
+        $user = auth('api')->user();
+        $ticket = Ticket::find($ticketId);
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $project = Project::find($ticket->project_id);
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        $frubixConfig = $project->integrations['frubix'] ?? null;
+        if (!$frubixConfig || empty($frubixConfig['enabled']) || empty($frubixConfig['access_token'])) {
+            return response()->json(['success' => false, 'message' => 'Frubix integration not connected'], 400);
+        }
+
+        try {
+            $lead = FrubixService::createLead($frubixConfig, [
+                'name'   => $ticket->customer_name ?: ($ticket->customer_email ? explode('@', $ticket->customer_email)[0] : 'Unknown'),
+                'email'  => $ticket->customer_email,
+                'source' => 'linochat',
+                'status' => 'new',
+                'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] {$ticket->subject}\n\n{$ticket->description}",
+            ], $project);
+
+            $leadId = $lead['id'] ?? null;
+            $frubixUrl = rtrim($frubixConfig['url'] ?? 'https://frubix.com', '/');
+            $leadUrl = $leadId ? "{$frubixUrl}/leads/{$leadId}" : null;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead created in Frubix',
+                'data' => [
+                    'frubix_lead_id'  => $leadId,
+                    'frubix_lead_url' => $leadUrl,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create Frubix lead manually', ['ticket_id' => $ticketId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to create lead: ' . $e->getMessage()], 500);
+        }
+    }
 }

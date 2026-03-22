@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
+import type { FrubixIntegration } from '../../types/frubix';
 
 function FrubixLogo({ className }: { className?: string }) {
   return (
@@ -14,12 +15,6 @@ function FrubixLogo({ className }: { className?: string }) {
       <text x="16" y="22" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="system-ui">F</text>
     </svg>
   );
-}
-
-interface FrubixIntegration {
-  enabled?: boolean;
-  url?: string;
-  connected_at?: string;
 }
 
 interface Project {

@@ -56,6 +56,7 @@ import {
   Tag,
   User,
   Link2,
+  ExternalLink,
 } from 'lucide-react';
 import { mockProjects } from '../../data/mockData';
 import { useLayout } from '../../components/layouts/LayoutContext';
@@ -115,6 +116,7 @@ export default function TicketDetails() {
   const [isEscalating, setIsEscalating] = useState(false);
   const [isCreatingFrubixLead, setIsCreatingFrubixLead] = useState(false);
   const [frubixLeadCreated, setFrubixLeadCreated] = useState(false);
+  const [frubixLeadUrl, setFrubixLeadUrl] = useState<string | null>(null);
 
   const loadTicket = async () => {
     if (!ticketId) return;
@@ -346,8 +348,10 @@ export default function TicketDetails() {
     if (!ticketId || isCreatingFrubixLead || frubixLeadCreated) return;
     setIsCreatingFrubixLead(true);
     try {
-      await api.post(`/agent/tickets/${ticketId}/frubix-lead`, {});
+      const res = await api.post<any>(`/agent/tickets/${ticketId}/frubix-lead`, {});
       setFrubixLeadCreated(true);
+      const leadUrl = res?.data?.frubix_lead_url;
+      if (leadUrl) setFrubixLeadUrl(leadUrl);
       toast.success('Lead created in Frubix!');
     } catch (error: any) {
       toast.error(error?.message || 'Failed to create Frubix lead');
@@ -515,6 +519,14 @@ export default function TicketDetails() {
                     )}
                     {frubixLeadCreated ? 'Lead Created in Frubix' : 'Create Frubix Lead'}
                   </DropdownMenuItem>
+                  {frubixLeadUrl && (
+                    <DropdownMenuItem asChild>
+                      <a href={frubixLeadUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Lead in Frubix
+                      </a>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="text-red-600" onClick={() => setDeleteDialogOpen(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Ticket
