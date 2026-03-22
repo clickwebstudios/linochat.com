@@ -44,6 +44,8 @@ class WidgetController extends Controller
             // Get widget settings with defaults
             $settings = $project->widget_settings ?? [];
 
+            $scheduleStatus = $this->computeScheduleStatus($settings, $project);
+
             $data = [
                 'success' => true,
                 'data' => [
@@ -66,6 +68,13 @@ class WidgetController extends Controller
                     'font_size' => $settings['font_size'] ?? 14,
                     'ai_name' => ($project->ai_settings['ai_name'] ?? null) ?: 'Lino',
                     'website' => $project->website,
+                    'is_online' => $scheduleStatus['is_online'],
+                    'offline_behavior' => $scheduleStatus['offline_behavior'],
+                    'offline_message' => $scheduleStatus['offline_message'],
+                    'offline_form_enabled' => $scheduleStatus['offline_form_enabled'],
+                    'offline_redirect_url' => $scheduleStatus['offline_redirect_url'],
+                    'offline_redirect_label' => $scheduleStatus['offline_redirect_label'],
+                    'next_online_at' => $scheduleStatus['next_online_at'],
                     'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
                 ],
             ];
@@ -77,6 +86,156 @@ class WidgetController extends Controller
                 'message' => 'Server error: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function computeScheduleStatus(array $settings, Project $project): array
+    {
+        $schedule = $settings['schedule'] ?? [];
+        $mode = $schedule['mode'] ?? 'always';
+
+        $defaults = [
+            'is_online' => true,
+            'offline_behavior' => $schedule['offline_behavior'] ?? $settings['offline_behavior'] ?? 'hide',
+            'offline_message' => $schedule['offline_message'] ?? $settings['offline_message'] ?? '',
+            'offline_form_enabled' => $schedule['offline_form_enabled'] ?? false,
+            'offline_redirect_url' => $schedule['offline_redirect_url'] ?? '',
+            'offline_redirect_label' => $schedule['offline_redirect_label'] ?? 'Email us',
+            'next_online_at' => null,
+        ];
+
+        if ($mode === 'always') {
+            return $defaults;
+        }
+
+        if ($mode !== 'business_hours') {
+            return $defaults;
+        }
+
+        $tz = $schedule['timezone'] ?? 'America/New_York';
+        try {
+            $timezone = new \DateTimeZone($tz);
+        } catch (\Exception $e) {
+            $timezone = new \DateTimeZone('America/New_York');
+        }
+
+        $now = new \DateTime('now', $timezone);
+        $todayStr = $now->format('Y-m-d');
+        $dayName = strtolower($now->format('l'));
+        $weekly = $schedule['weekly'] ?? [];
+        $exceptions = $schedule['exceptions'] ?? [];
+
+        // Check exceptions for today
+        $todayException = null;
+        foreach ($exceptions as $exc) {
+            if (($exc['date'] ?? '') === $todayStr) {
+                $todayException = $exc;
+                break;
+            }
+        }
+
+        if ($todayException && ($todayException['all_day_off'] ?? false)) {
+            $offlineBehavior = $todayException['offline_behavior_override'] ?? $defaults['offline_behavior'];
+            $offlineMessage = $todayException['offline_message_override'] ?? $defaults['offline_message'];
+            $nextOnline = $this->findNextOnlineTime($weekly, $exceptions, $timezone, $now);
+            $offlineMessage = $this->replaceMessageVariables($offlineMessage, $project, $nextOnline);
+            return array_merge($defaults, [
+                'is_online' => false,
+                'offline_behavior' => $offlineBehavior,
+                'offline_message' => $offlineMessage,
+                'next_online_at' => $nextOnline?->format('c'),
+            ]);
+        }
+
+        // Check weekly schedule
+        $daySchedule = $weekly[$dayName] ?? null;
+        if (!$daySchedule || !($daySchedule['enabled'] ?? false)) {
+            $nextOnline = $this->findNextOnlineTime($weekly, $exceptions, $timezone, $now);
+            $defaults['offline_message'] = $this->replaceMessageVariables($defaults['offline_message'], $project, $nextOnline);
+            return array_merge($defaults, [
+                'is_online' => false,
+                'next_online_at' => $nextOnline?->format('c'),
+            ]);
+        }
+
+        // Check if current time falls within any slot
+        $slots = $daySchedule['slots'] ?? [];
+        $currentTime = $now->format('H:i');
+        $isOnline = false;
+        foreach ($slots as $slot) {
+            $start = $slot['start'] ?? '09:00';
+            $end = $slot['end'] ?? '17:00';
+            if ($currentTime >= $start && $currentTime < $end) {
+                $isOnline = true;
+                break;
+            }
+        }
+
+        if ($isOnline) {
+            return $defaults;
+        }
+
+        $nextOnline = $this->findNextOnlineTime($weekly, $exceptions, $timezone, $now);
+        $defaults['offline_message'] = $this->replaceMessageVariables($defaults['offline_message'], $project, $nextOnline);
+        return array_merge($defaults, [
+            'is_online' => false,
+            'next_online_at' => $nextOnline?->format('c'),
+        ]);
+    }
+
+    private function findNextOnlineTime(array $weekly, array $exceptions, \DateTimeZone $timezone, \DateTime $now): ?\DateTime
+    {
+        $exceptionDates = [];
+        foreach ($exceptions as $exc) {
+            if ($exc['all_day_off'] ?? false) {
+                $exceptionDates[$exc['date'] ?? ''] = true;
+            }
+        }
+
+        // Scan up to 14 days forward
+        for ($offset = 0; $offset <= 14; $offset++) {
+            $checkDate = clone $now;
+            if ($offset > 0) {
+                $checkDate->modify("+{$offset} days");
+                $checkDate->setTime(0, 0, 0);
+            }
+            $dateStr = $checkDate->format('Y-m-d');
+
+            if (isset($exceptionDates[$dateStr])) {
+                continue;
+            }
+
+            $dayName = strtolower($checkDate->format('l'));
+            $daySchedule = $weekly[$dayName] ?? null;
+            if (!$daySchedule || !($daySchedule['enabled'] ?? false)) {
+                continue;
+            }
+
+            $slots = $daySchedule['slots'] ?? [];
+            usort($slots, fn ($a, $b) => strcmp($a['start'] ?? '00:00', $b['start'] ?? '00:00'));
+
+            foreach ($slots as $slot) {
+                $start = $slot['start'] ?? '09:00';
+                $slotStart = clone $checkDate;
+                [$h, $m] = explode(':', $start);
+                $slotStart->setTime((int)$h, (int)$m, 0);
+
+                if ($slotStart > $now) {
+                    return $slotStart;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function replaceMessageVariables(string $message, Project $project, ?\DateTime $nextOnline): string
+    {
+        $replacements = [
+            '{company_name}' => $project->name ?? '',
+            '{support_email}' => $project->support_email ?? $project->email ?? '',
+            '{next_available}' => $nextOnline ? $nextOnline->format('l, g:i A') : 'soon',
+        ];
+        return str_replace(array_keys($replacements), array_values($replacements), $message);
     }
 
     /**

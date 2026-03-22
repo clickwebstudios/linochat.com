@@ -1,82 +1,73 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { api } from '../../api/client';
-import { Loader2, Link2, CheckCircle2, XCircle, Unlink } from 'lucide-react';
+import { Loader2, Link2, CheckCircle2, XCircle, Unlink, Plug, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import type { FrubixConfig } from '../../types/frubix';
 
 interface IntegrationsTabProps {
   project: { id: string };
 }
 
-interface FrubixConfig {
-  url?: string;
-  client_id?: string;
-  client_secret?: string;
-  connected?: boolean;
-  connected_at?: string;
-}
-
 export function IntegrationsTab({ project }: IntegrationsTabProps) {
   const [frubix, setFrubix] = useState<FrubixConfig>({});
-  const [form, setForm] = useState({ url: '', client_id: '', client_secret: '' });
   const [isConnected, setIsConnected] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     api.get<any>(`/projects/${project.id}/integrations`).then((res) => {
       if (res.success && res.data?.frubix) {
         setFrubix(res.data.frubix);
-        setIsConnected(true);
-        setForm((f) => ({ ...f, url: res.data.frubix.url || '' }));
+        setIsConnected(res.data.frubix.enabled === true || res.data.frubix.connected === true);
       }
     }).catch(() => {});
   }, [project.id]);
 
-  const handleTest = async () => {
-    if (!form.url || !form.client_id || !form.client_secret) {
-      toast.error('Fill in all fields before testing.');
-      return;
-    }
-    setIsTesting(true);
-    try {
-      const res = await api.post<any>(`/projects/${project.id}/integrations/frubix/test`, form);
-      if (res.success && res.data?.success) {
-        toast.success('Connection successful!');
-      } else {
-        toast.error('Connection failed. Check your credentials.');
-      }
-    } catch {
-      toast.error('Connection failed.');
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!form.url || !form.client_id || !form.client_secret) {
-      toast.error('Fill in all fields.');
-      return;
-    }
-    setIsSaving(true);
-    try {
-      const res = await api.put<any>(`/projects/${project.id}/integrations/frubix`, form);
-      if (res.success) {
+  // Listen for OAuth callback from popup
+  const handleMessage = useCallback((event: MessageEvent) => {
+    if (event.data?.type === 'frubix-oauth-callback') {
+      if (event.data.success) {
+        setFrubix({ enabled: true, connected: true, connected_at: new Date().toISOString() });
         setIsConnected(true);
-        setFrubix({ url: form.url, connected: true });
-        setShowForm(false);
-        toast.success('Frubix connected successfully.');
+        toast.success('Frubix connected successfully!');
+      } else {
+        toast.error(event.data.error || 'Failed to connect Frubix');
       }
-    } catch {
-      toast.error('Failed to save integration.');
-    } finally {
-      setIsSaving(false);
+      setConnecting(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [handleMessage]);
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const res = await api.get<{ url: string }>(`/projects/${project.id}/integrations/frubix/authorize`);
+      const authorizeUrl = (res.data as any)?.url;
+      if (!authorizeUrl) {
+        toast.error('Could not get Frubix authorization URL');
+        setConnecting(false);
+        return;
+      }
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      window.open(
+        authorizeUrl,
+        'frubix-oauth',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`,
+      );
+      setTimeout(() => setConnecting(false), 300000);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to initiate Frubix connection');
+      setConnecting(false);
     }
   };
 
@@ -87,8 +78,6 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
       await api.delete(`/projects/${project.id}/integrations/frubix`);
       setIsConnected(false);
       setFrubix({});
-      setForm({ url: '', client_id: '', client_secret: '' });
-      setShowForm(false);
       toast.success('Frubix disconnected.');
     } catch {
       toast.error('Failed to disconnect.');
@@ -104,7 +93,6 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
         <p className="text-sm text-muted-foreground mt-1">Connect external platforms to sync data with this project.</p>
       </div>
 
-      {/* Frubix Card */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -130,18 +118,30 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
         </CardHeader>
 
         <CardContent>
-          {isConnected && !showForm ? (
+          {isConnected ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Connected to <span className="font-medium">{frubix.url}</span>
-              </p>
+              {frubix.url && (
+                <p className="text-sm text-muted-foreground">
+                  Connected to <span className="font-medium">{frubix.url}</span>
+                </p>
+              )}
+              {frubix.connected_at && (
+                <p className="text-xs text-muted-foreground">
+                  Connected {new Date(frubix.connected_at).toLocaleDateString()}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Agents can create Frubix leads directly from tickets.
+                Agents can create Frubix leads directly from tickets. AI can look up clients and manage appointments.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
-                  Update Credentials
-                </Button>
+                {frubix.url && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={frubix.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Open Frubix
+                    </a>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -155,60 +155,27 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {!isConnected && !showForm && (
-                <Button size="sm" onClick={() => setShowForm(true)}>
-                  Connect Frubix
-                </Button>
-              )}
-
-              {showForm && (
-                <>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="frubix-url">Frubix URL</Label>
-                      <Input
-                        id="frubix-url"
-                        placeholder="https://frubix.com"
-                        value={form.url}
-                        onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="frubix-client-id">Client ID</Label>
-                      <Input
-                        id="frubix-client-id"
-                        placeholder="Paste client ID from Frubix OAuth Apps"
-                        value={form.client_id}
-                        onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="frubix-secret">Client Secret</Label>
-                      <Input
-                        id="frubix-secret"
-                        type="password"
-                        placeholder="Paste client secret"
-                        value={form.client_secret}
-                        onChange={(e) => setForm((f) => ({ ...f, client_secret: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleTest} disabled={isTesting}>
-                      {isTesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                      Test Connection
-                    </Button>
-                    <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                      {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                      Save
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </>
-              )}
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Connect your Frubix account to automatically sync leads from tickets and enable AI appointment management.
+              </p>
+              <Button
+                onClick={handleConnect}
+                disabled={connecting}
+                size="sm"
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Waiting for authorization...
+                  </>
+                ) : (
+                  <>
+                    <Plug className="h-4 w-4 mr-2" />
+                    Connect with Frubix
+                  </>
+                )}
+              </Button>
             </div>
           )}
         </CardContent>
