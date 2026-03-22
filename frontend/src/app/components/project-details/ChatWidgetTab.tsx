@@ -834,35 +834,45 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             <div className="w-[750px] shrink-0">
               <div className="sticky top-4">
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
-                <div className="bg-muted rounded-lg border border-border relative" style={{ minHeight: '500px' }}>
-                  <div className={`absolute ${
-                    widgetPosition === 'bottom-right' ? 'bottom-4 right-4' :
-                    widgetPosition === 'bottom-left' ? 'bottom-4 left-4' :
-                    widgetPosition === 'top-right' ? 'top-4 right-4' :
-                    'top-4 left-4'
-                  } ${widgetAnimation && widgetAnimation !== 'none' ? `animate-widget-${widgetAnimation}` : ''}`}
-                  style={widgetAnimation && widgetAnimation !== 'none' ? {
-                    animationIterationCount: animRepeat === 'infinite' ? 'infinite' : animRepeat,
-                    animationDelay: animDelay !== '0' ? `${animDelay}s` : undefined,
-                    ...(animDuration !== 'default' ? { animationDuration: `${animDuration}s` } : {}),
-                  } as React.CSSProperties : undefined}>
-                    <WidgetPreview
-                      design={widgetDesign}
-                      color={widgetColor}
-                      position={widgetPosition}
-                      title={widgetTitle}
-                      welcomeMessage={welcomeMessage}
-                      buttonText={buttonText}
-                      showOfflinePreview={showOfflinePreview}
-                      offlineBehavior={offlineBehavior}
-                      offlineMessage={offlineMessage}
-                      greetingEnabled={greetingEnabled}
-                      greetingMessage={greetingMessage}
-                      fontSize={fontSize}
-                      gradient={widgetGradient}
-                    />
+                {widgetActive ? (
+                  <div className="bg-muted rounded-lg border border-border relative" style={{ minHeight: '500px' }}>
+                    <div className={`absolute ${
+                      widgetPosition === 'bottom-right' ? 'bottom-4 right-4' :
+                      widgetPosition === 'bottom-left' ? 'bottom-4 left-4' :
+                      widgetPosition === 'top-right' ? 'top-4 right-4' :
+                      'top-4 left-4'
+                    } ${widgetAnimation && widgetAnimation !== 'none' ? `animate-widget-${widgetAnimation}` : ''}`}
+                    style={widgetAnimation && widgetAnimation !== 'none' ? {
+                      animationIterationCount: animRepeat === 'infinite' ? 'infinite' : animRepeat,
+                      animationDelay: animDelay !== '0' ? `${animDelay}s` : undefined,
+                      ...(animDuration !== 'default' ? { animationDuration: `${animDuration}s` } : {}),
+                    } as React.CSSProperties : undefined}>
+                      <WidgetPreview
+                        design={widgetDesign}
+                        color={widgetColor}
+                        position={widgetPosition}
+                        title={widgetTitle}
+                        welcomeMessage={welcomeMessage}
+                        buttonText={buttonText}
+                        showOfflinePreview={showOfflinePreview}
+                        offlineBehavior={offlineBehavior}
+                        offlineMessage={offlineMessage}
+                        greetingEnabled={greetingEnabled}
+                        greetingMessage={greetingMessage}
+                        fontSize={fontSize}
+                        gradient={widgetGradient}
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <WidgetDesignShowcase
+                    color={widgetColor}
+                    title={widgetTitle}
+                    welcomeMessage={welcomeMessage}
+                    onActivate={() => setWidgetActive(true)}
+                    onSelectDesign={setWidgetDesign}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -1264,6 +1274,79 @@ function WidgetScheduleConfig({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// --- Widget Design Showcase (when widget inactive) ---
+const WIDGET_DESIGNS_SHOWCASE = [
+  { id: 'modern', name: 'Modern', desc: 'Round shadow design with clean layout' },
+  { id: 'minimal', name: 'Minimal', desc: 'Clean and light with subtle borders' },
+  { id: 'classic', name: 'Classic', desc: 'Square solid traditional look' },
+  { id: 'bubble', name: 'Bubble', desc: 'Large rounded bubble style' },
+  { id: 'compact', name: 'Compact', desc: 'Small tight layout' },
+  { id: 'professional', name: 'Professional', desc: 'Sharp formal design' },
+  { id: 'friendly', name: 'Friendly', desc: 'Rounded warm appearance' },
+  { id: 'gradient', name: 'Gradient', desc: 'Colorful gradient blend' },
+] as const;
+
+function WidgetDesignShowcase({ color, title, welcomeMessage, onActivate, onSelectDesign }: {
+  color: string; title: string; welcomeMessage: string;
+  onActivate: () => void; onSelectDesign: (d: string) => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => { setIdx(i => (i + 1) % WIDGET_DESIGNS_SHOWCASE.length); setFading(false); }, 300);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (i: number) => { if (i === idx) return; setFading(true); setTimeout(() => { setIdx(i); setFading(false); }, 300); };
+  const current = WIDGET_DESIGNS_SHOWCASE[idx];
+
+  return (
+    <div className="flex flex-col items-center py-8 space-y-6">
+      <div className="text-center space-y-3 max-w-md">
+        <h3 className="text-xl font-semibold">Widget Designs</h3>
+        <p className="text-sm text-muted-foreground">Preview available designs and activate your widget.</p>
+        <Button size="sm" onClick={() => { onSelectDesign(current.id); onActivate(); }}>
+          Activate Widget
+        </Button>
+      </div>
+      <div className="flex items-center gap-4 w-full">
+        <button onClick={() => goTo((idx - 1 + WIDGET_DESIGNS_SHOWCASE.length) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">‹</span>
+        </button>
+        <div className="flex-1 flex flex-col items-center gap-4">
+          <div className="bg-muted rounded-lg border relative w-full flex items-end justify-end p-4" style={{ minHeight: 400, opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <WidgetPreview
+              design={current.id}
+              color={color}
+              title={title}
+              welcomeMessage={welcomeMessage}
+              showOfflinePreview={false}
+              offlineBehavior="hide"
+              offlineMessage=""
+            />
+          </div>
+          <div className="text-center space-y-1" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <h4 className="text-lg font-semibold">{current.name}</h4>
+            <p className="text-sm text-muted-foreground">{current.desc}</p>
+          </div>
+          <div className="flex gap-2">
+            {WIDGET_DESIGNS_SHOWCASE.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+            ))}
+          </div>
+        </div>
+        <button onClick={() => goTo((idx + 1) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">›</span>
+        </button>
+      </div>
     </div>
   );
 }
