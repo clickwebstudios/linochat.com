@@ -21,12 +21,15 @@ import {
   Globe,
   Eye,
   Settings2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '../../api/client';
 
 // --- Types ---
 interface PopoverButtonConfig {
   text: string;
+  icon: string;
   url: string;
   action: 'url' | 'open_chat' | 'none';
 }
@@ -46,7 +49,7 @@ interface PopoverConfig {
   trigger: string;
   trigger_delay: number;
   trigger_scroll_percent: number;
-  show_once_per_session: boolean;
+  max_displays_per_session: number;
   overlay: 'dark' | 'light' | 'none';
   overlay_blur: boolean;
   show_on_pages: string;
@@ -61,8 +64,8 @@ const DEFAULT_POPOVER: PopoverConfig = {
   heading: 'How can we help you today?',
   description: 'Our team is ready to assist with your needs.',
   badge_text: 'SUPPORT ONLINE',
-  primary_button: { text: 'Schedule Service', url: '', action: 'open_chat' },
-  secondary_button: { text: 'Ask a Question', url: '', action: 'open_chat' },
+  primary_button: { text: 'Schedule Service', icon: '📅', url: '', action: 'open_chat' },
+  secondary_button: { text: 'Ask a Question', icon: '💬', url: '', action: 'open_chat' },
   show_online_status: true,
   online_status_text: 'Support Online',
   overlay: 'dark',
@@ -70,7 +73,7 @@ const DEFAULT_POPOVER: PopoverConfig = {
   trigger: 'delay',
   trigger_delay: 3,
   trigger_scroll_percent: 50,
-  show_once_per_session: true,
+  max_displays_per_session: 1,
   show_on_pages: 'all',
   page_urls: [],
 };
@@ -334,7 +337,16 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Primary Button</Label>
                   <div className="grid gap-2">
-                    <Input value={popover.primary_button.text} onChange={e => updateBtn('primary_button', { text: e.target.value })} placeholder="Button text" />
+                    <div className="flex gap-2">
+                      <div className="w-16 shrink-0">
+                        <Label className="text-xs">Icon</Label>
+                        <Input value={popover.primary_button.icon} onChange={e => updateBtn('primary_button', { icon: e.target.value })} className="text-center text-lg" maxLength={2} />
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-xs">Text</Label>
+                        <Input value={popover.primary_button.text} onChange={e => updateBtn('primary_button', { text: e.target.value })} placeholder="Button text" />
+                      </div>
+                    </div>
                     <Select value={popover.primary_button.action} onValueChange={v => updateBtn('primary_button', { action: v as PopoverButtonConfig['action'] })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -350,21 +362,37 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                 </div>
 
                 <div className="space-y-3 border-t pt-4">
-                  <Label className="text-sm font-medium">Secondary Button</Label>
-                  <div className="grid gap-2">
-                    <Input value={popover.secondary_button.text} onChange={e => updateBtn('secondary_button', { text: e.target.value })} placeholder="Button text" />
-                    <Select value={popover.secondary_button.action} onValueChange={v => updateBtn('secondary_button', { action: v as PopoverButtonConfig['action'] })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="open_chat">Open Chat</SelectItem>
-                        <SelectItem value="url">Open URL</SelectItem>
-                        <SelectItem value="none">Hidden</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {popover.secondary_button.action === 'url' && (
-                      <Input value={popover.secondary_button.url} onChange={e => updateBtn('secondary_button', { url: e.target.value })} placeholder="https://..." />
-                    )}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Secondary Button</Label>
+                    <Switch
+                      checked={popover.secondary_button.action !== 'none'}
+                      onCheckedChange={v => updateBtn('secondary_button', { action: v ? 'open_chat' : 'none' })}
+                    />
                   </div>
+                  {popover.secondary_button.action !== 'none' && (
+                    <div className="grid gap-2">
+                      <div className="flex gap-2">
+                        <div className="w-16 shrink-0">
+                          <Label className="text-xs">Icon</Label>
+                          <Input value={popover.secondary_button.icon} onChange={e => updateBtn('secondary_button', { icon: e.target.value })} className="text-center text-lg" maxLength={2} />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Text</Label>
+                          <Input value={popover.secondary_button.text} onChange={e => updateBtn('secondary_button', { text: e.target.value })} placeholder="Button text" />
+                        </div>
+                      </div>
+                      <Select value={popover.secondary_button.action} onValueChange={v => updateBtn('secondary_button', { action: v as PopoverButtonConfig['action'] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open_chat">Open Chat</SelectItem>
+                          <SelectItem value="url">Open URL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {popover.secondary_button.action === 'url' && (
+                        <Input value={popover.secondary_button.url} onChange={e => updateBtn('secondary_button', { url: e.target.value })} placeholder="https://..." />
+                      )}
+                    </div>
+                  )}
                 </div>
                 {saveButton}
               </div>
@@ -399,15 +427,26 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                   <p className="text-sm text-muted-foreground mt-1">Control when the popover appears.</p>
                 </div>
                 <div className="grid gap-3">
-                  <Select value={popover.trigger} onValueChange={v => update({ trigger: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="immediate">Show immediately</SelectItem>
-                      <SelectItem value="delay">After a delay</SelectItem>
-                      <SelectItem value="scroll">On scroll</SelectItem>
-                      <SelectItem value="exit_intent">Exit intent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: 'immediate', name: 'Immediate', desc: 'Show on page load' },
+                      { id: 'delay', name: 'Time Delay', desc: 'Show after X seconds' },
+                      { id: 'scroll', name: 'Scroll Depth', desc: 'Show at scroll %' },
+                      { id: 'exit_intent', name: 'Exit Intent', desc: 'Cursor leaves viewport' },
+                    ]).map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => update({ trigger: t.id })}
+                        className={`p-3 border rounded-lg text-left transition-colors ${
+                          popover.trigger === t.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">{t.name}</div>
+                        <div className="text-xs text-muted-foreground">{t.desc}</div>
+                      </button>
+                    ))}
+                  </div>
                   {popover.trigger === 'delay' && (
                     <div className="grid gap-1">
                       <Label className="text-xs">Delay (seconds)</Label>
@@ -420,9 +459,38 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                       <Input type="number" min={1} max={100} value={popover.trigger_scroll_percent} onChange={e => update({ trigger_scroll_percent: parseInt(e.target.value) || 50 })} />
                     </div>
                   )}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Checkbox id="po-once" checked={popover.show_once_per_session} onCheckedChange={v => update({ show_once_per_session: !!v })} />
-                    <label htmlFor="po-once" className="text-sm">Show only once per session</label>
+                  <div className="grid gap-1 pt-1">
+                    <Label className="text-xs">Times to show per session</Label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 5].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => update({ max_displays_per_session: n })}
+                          className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                            popover.max_displays_per_session === n ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          {n === 5 ? '5+' : n}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => update({ max_displays_per_session: 0 })}
+                        className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                          popover.max_displays_per_session === 0 ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        Unlimited
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {popover.max_displays_per_session === 0
+                        ? 'Popover will show every time the trigger fires'
+                        : popover.max_displays_per_session === 1
+                        ? 'Popover will show only once per session'
+                        : `Popover will show up to ${popover.max_displays_per_session} times per session`}
+                    </p>
                   </div>
                 </div>
                 {saveButton}
@@ -516,16 +584,115 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center py-20">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-              <Eye className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium">Popovers Disabled</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">Enable popovers to show targeted messages to your website visitors.</p>
+        <PopoverShowcase popover={popover} update={update} widgetColor={widgetColor} />
+      )}
+    </div>
+  );
+}
+
+// --- Showcase carousel (disabled state) ---
+const SHOWCASE_DESIGNS = [
+  { id: 'modern', name: 'Modern', desc: 'Clean action cards with icons, descriptions, and online status. Great for service businesses.' },
+  { id: 'urgent', name: 'Urgent', desc: 'Bold CTA with attention-grabbing badge. Perfect for time-sensitive offers and support.' },
+  { id: 'luxury', name: 'Luxury', desc: 'Elegant serif typography with gold accents. Ideal for premium brands and concierge services.' },
+  { id: 'bold', name: 'Bold', desc: 'Full-width bordered design with large text. High-impact for clear call-to-actions.' },
+  { id: 'minimal', name: 'Minimal', desc: 'Clean rounded card with pill badge. Subtle and friendly, blends with any website.' },
+] as const;
+
+function PopoverShowcase({
+  popover, update, widgetColor,
+}: {
+  popover: PopoverConfig;
+  update: (patch: Partial<PopoverConfig>) => void;
+  widgetColor: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  // Auto-advance every 4s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % SHOWCASE_DESIGNS.length);
+        setFading(false);
+      }, 300);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (i: number) => {
+    if (i === idx) return;
+    setFading(true);
+    setTimeout(() => { setIdx(i); setFading(false); }, 300);
+  };
+
+  const current = SHOWCASE_DESIGNS[idx];
+  const previewPopover = { ...popover, design: current.id, enabled: true, size: 'medium' as const };
+
+  return (
+    <div className="flex-1 flex flex-col items-center py-8 space-y-8">
+      {/* Title + Enable */}
+      <div className="text-center space-y-3 max-w-md">
+        <h3 className="text-xl font-semibold">Popover Designs</h3>
+        <p className="text-sm text-muted-foreground">
+          Engage visitors with targeted messages. Pick a design and enable to get started.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <span className="text-sm font-medium text-muted-foreground">Enable Popovers</span>
+          <Switch checked={popover.enabled} onCheckedChange={v => {
+            update({ enabled: v, design: current.id });
+          }} />
+        </div>
+      </div>
+
+      {/* Carousel */}
+      <div className="flex items-center gap-4 w-full max-w-2xl">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 p-0 shrink-0 rounded-full"
+          onClick={() => goTo((idx - 1 + SHOWCASE_DESIGNS.length) % SHOWCASE_DESIGNS.length)}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+
+        <div className="flex-1 flex flex-col items-center gap-5">
+          {/* Preview */}
+          <div
+            className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-center min-h-[380px] w-full"
+            style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
+          >
+            <PopoverPreview popover={previewPopover} color={widgetColor} />
+          </div>
+
+          {/* Title + Description */}
+          <div className="text-center space-y-1" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <h4 className="text-lg font-semibold">{current.name}</h4>
+            <p className="text-sm text-muted-foreground max-w-sm">{current.desc}</p>
+          </div>
+
+          {/* Dots */}
+          <div className="flex gap-2">
+            {SHOWCASE_DESIGNS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+              />
+            ))}
           </div>
         </div>
-      )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 p-0 shrink-0 rounded-full"
+          onClick={() => goTo((idx + 1) % SHOWCASE_DESIGNS.length)}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -552,8 +719,8 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
           <h3 className="text-lg font-extrabold text-gray-900 uppercase">{heading}</h3>
           <p className="text-sm text-gray-600 mt-1">{description}</p>
         </div>
-        {primary_button.action !== 'none' && <button className="w-full py-2.5 rounded-md text-white font-bold text-sm uppercase" style={{ background: color }}>{primary_button.text}</button>}
-        {secondary_button.action !== 'none' && <button className="w-full py-2.5 rounded-md border border-gray-300 text-gray-800 font-bold text-sm uppercase">{secondary_button.text}</button>}
+        {primary_button.action !== 'none' && <button className="w-full py-2.5 rounded-md text-white font-bold text-sm uppercase" style={{ background: color }}>{primary_button.icon} {primary_button.text}</button>}
+        {secondary_button.action !== 'none' && <button className="w-full py-2.5 rounded-md border border-gray-300 text-gray-800 font-bold text-sm uppercase">{secondary_button.icon} {secondary_button.text}</button>}
       </div>
       {show_online_status && (
         <div className="border-t px-5 py-2 flex items-center justify-center gap-1.5">
@@ -583,8 +750,8 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
       {closeBtn}
       <div className="p-8 text-center space-y-5">
         <h3 className="text-2xl font-extrabold" style={{ color }}>{heading}</h3>
-        {primary_button.action !== 'none' && <button className="w-full py-4 text-white font-bold text-sm uppercase tracking-wide rounded" style={{ background: color }}>{primary_button.text} →</button>}
-        {secondary_button.action !== 'none' && <button className="w-full py-4 border-2 font-bold text-sm uppercase tracking-wide rounded" style={{ borderColor: color, color }}>{secondary_button.text} 💬</button>}
+        {primary_button.action !== 'none' && <button className="w-full py-4 text-white font-bold text-sm uppercase tracking-wide rounded" style={{ background: color }}>{primary_button.icon} {primary_button.text}</button>}
+        {secondary_button.action !== 'none' && <button className="w-full py-4 border-2 font-bold text-sm uppercase tracking-wide rounded" style={{ borderColor: color, color }}>{secondary_button.text} {secondary_button.icon}</button>}
         {show_online_status && (
           <div className="flex items-center justify-center gap-1.5">
             <span className="w-2 h-2 bg-green-500 rounded-full" /><span className="text-xs text-gray-600 uppercase tracking-wide">{online_status_text}</span>
@@ -609,12 +776,12 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
         <p className="text-sm text-gray-500 text-center">{description}</p>
         {primary_button.action !== 'none' && (
           <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-            <span className="flex items-center gap-2">📅 {primary_button.text}</span><span className="text-gray-400">›</span>
+            <span className="flex items-center gap-2">{primary_button.icon} {primary_button.text}</span><span className="text-gray-400">›</span>
           </button>
         )}
         {secondary_button.action !== 'none' && (
           <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-            <span className="flex items-center gap-2">❓ {secondary_button.text}</span><span className="text-gray-400">›</span>
+            <span className="flex items-center gap-2">{secondary_button.icon} {secondary_button.text}</span><span className="text-gray-400">›</span>
           </button>
         )}
       </div>
@@ -630,14 +797,14 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
         <p className="text-sm text-gray-500">{description}</p>
         {primary_button.action !== 'none' && (
           <button className="w-full flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 text-left">
-            <span className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: color }}>📅</span>
+            <span className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: color }}>{primary_button.icon || '📅'}</span>
             <div className="flex-1"><div className="text-sm font-semibold text-gray-900">{primary_button.text}</div><div className="text-xs text-gray-500">Book a pro when the job needs extra hands.</div></div>
             <span className="text-gray-400">›</span>
           </button>
         )}
         {secondary_button.action !== 'none' && (
           <button className="w-full flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 text-left">
-            <span className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: color }}>💬</span>
+            <span className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: color }}>{secondary_button.icon || '💬'}</span>
             <div className="flex-1"><div className="text-sm font-semibold text-gray-900">{secondary_button.text}</div><div className="text-xs text-gray-500">Quick advice for those tricky moments.</div></div>
             <span className="text-gray-400">›</span>
           </button>
