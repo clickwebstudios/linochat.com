@@ -40,6 +40,7 @@ const AIArticleGenerator = lazy(() => import('./pages/AIArticleGenerator'));
 const CreateArticle = lazy(() => import('./pages/CreateArticle'));
 const ArticleDetails = lazy(() => import('./pages/ArticleDetails'));
 const BillingPage = lazy(() => import('./pages/dashboards/BillingPage'));
+const SuperadminSelectView = lazy(() => import('./pages/dashboards/SuperadminSelectView'));
 const OAuthAuthorizePage = lazy(() => import('./pages/oauth/OAuthAuthorizePage'));
 const OAuthAppsPage = lazy(() => import('./pages/oauth/OAuthAppsPage'));
 const FrubixCallbackPage = lazy(() => import('./pages/oauth/FrubixCallbackPage').then(m => ({ default: m.FrubixCallbackPage })));
@@ -173,6 +174,7 @@ export default function App() {
 
               {/* Superadmin Layout Routes */}
               <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Superadmin" /></ErrorBoundary></ProtectedRoute>}>
+                <Route path="/superadmin/select-view" element={<SuperadminSelectView />} />
                 <Route path="/superadmin/dashboard" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/chats" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/tickets" element={<AgentDashboard role="Superadmin" />} />

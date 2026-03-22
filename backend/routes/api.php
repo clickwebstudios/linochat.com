@@ -324,6 +324,7 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::put('/agents/{agentId}', [SuperadminController::class, 'updateAgent']);
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
+    Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
