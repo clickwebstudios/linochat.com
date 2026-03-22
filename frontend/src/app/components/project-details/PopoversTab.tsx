@@ -47,7 +47,8 @@ interface PopoverConfig {
   trigger_delay: number;
   trigger_scroll_percent: number;
   show_once_per_session: boolean;
-  overlay: 'dark' | 'light' | 'blur' | 'none';
+  overlay: 'dark' | 'light' | 'none';
+  overlay_blur: boolean;
   show_on_pages: string;
   page_urls: string[];
 }
@@ -65,6 +66,7 @@ const DEFAULT_POPOVER: PopoverConfig = {
   show_online_status: true,
   online_status_text: 'Support Online',
   overlay: 'dark',
+  overlay_blur: false,
   trigger: 'delay',
   trigger_delay: 3,
   trigger_scroll_percent: 50,
@@ -266,12 +268,11 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
 
                 <div className="space-y-3 border-t pt-4">
                   <Label className="text-sm font-medium">Background Overlay</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {([
-                      { id: 'dark' as const, label: 'Dark Overlay' },
-                      { id: 'light' as const, label: 'Light Overlay' },
-                      { id: 'blur' as const, label: 'Blur' },
-                      { id: 'none' as const, label: 'No Overlay' },
+                      { id: 'dark' as const, label: 'Dark' },
+                      { id: 'light' as const, label: 'Light' },
+                      { id: 'none' as const, label: 'None' },
                     ]).map(o => (
                       <button
                         key={o.id}
@@ -284,6 +285,10 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                         {o.label}
                       </button>
                     ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox id="po-blur" checked={popover.overlay_blur} onCheckedChange={v => update({ overlay_blur: !!v })} />
+                    <label htmlFor="po-blur" className="text-sm">Apply background blur</label>
                   </div>
                 </div>
 
@@ -500,10 +505,9 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                 {/* Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center" style={{
                   background: popover.overlay === 'dark' ? 'rgba(0,0,0,0.4)' :
-                              popover.overlay === 'light' ? 'rgba(255,255,255,0.6)' :
-                              popover.overlay === 'none' ? 'transparent' : 'transparent',
-                  backdropFilter: popover.overlay === 'blur' ? 'blur(4px)' : undefined,
-                  WebkitBackdropFilter: popover.overlay === 'blur' ? 'blur(4px)' : undefined,
+                              popover.overlay === 'light' ? 'rgba(255,255,255,0.6)' : 'transparent',
+                  backdropFilter: popover.overlay_blur ? 'blur(4px)' : undefined,
+                  WebkitBackdropFilter: popover.overlay_blur ? 'blur(4px)' : undefined,
                 }}>
                   <PopoverPreview popover={popover} color={popover.color || widgetColor} />
                 </div>
