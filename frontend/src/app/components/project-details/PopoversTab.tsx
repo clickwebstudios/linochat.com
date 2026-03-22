@@ -607,6 +607,26 @@ function PopoverShowcase({
   widgetColor: string;
 }) {
   const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  // Auto-advance every 4s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % SHOWCASE_DESIGNS.length);
+        setFading(false);
+      }, 300);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (i: number) => {
+    if (i === idx) return;
+    setFading(true);
+    setTimeout(() => { setIdx(i); setFading(false); }, 300);
+  };
+
   const current = SHOWCASE_DESIGNS[idx];
   const previewPopover = { ...popover, design: current.id, enabled: true, size: 'medium' as const };
 
@@ -632,19 +652,22 @@ function PopoverShowcase({
           variant="ghost"
           size="sm"
           className="h-10 w-10 p-0 shrink-0 rounded-full"
-          onClick={() => setIdx(i => (i - 1 + SHOWCASE_DESIGNS.length) % SHOWCASE_DESIGNS.length)}
+          onClick={() => goTo((idx - 1 + SHOWCASE_DESIGNS.length) % SHOWCASE_DESIGNS.length)}
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
         <div className="flex-1 flex flex-col items-center gap-5">
           {/* Preview */}
-          <div className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-center min-h-[380px] w-full">
+          <div
+            className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-center min-h-[380px] w-full"
+            style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
+          >
             <PopoverPreview popover={previewPopover} color={widgetColor} />
           </div>
 
           {/* Title + Description */}
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-1" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
             <h4 className="text-lg font-semibold">{current.name}</h4>
             <p className="text-sm text-muted-foreground max-w-sm">{current.desc}</p>
           </div>
@@ -654,7 +677,7 @@ function PopoverShowcase({
             {SHOWCASE_DESIGNS.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setIdx(i)}
+                onClick={() => goTo(i)}
                 className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`}
               />
             ))}
@@ -665,7 +688,7 @@ function PopoverShowcase({
           variant="ghost"
           size="sm"
           className="h-10 w-10 p-0 shrink-0 rounded-full"
-          onClick={() => setIdx(i => (i + 1) % SHOWCASE_DESIGNS.length)}
+          onClick={() => goTo((idx + 1) % SHOWCASE_DESIGNS.length)}
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
