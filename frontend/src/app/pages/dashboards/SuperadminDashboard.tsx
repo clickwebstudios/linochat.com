@@ -182,8 +182,8 @@ export default function SuperadminDashboard() {
   const fetchCompanies = async () => {
     setIsLoadingCompanies(true);
     try {
-      const response = await api.get<{ data: Company[]; pagination: unknown }>('/superadmin/companies');
-      setCompanies(response.data?.data ?? []);
+      const response = await api.get<Company[]>('/superadmin/companies');
+      setCompanies(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     } finally {
@@ -194,8 +194,8 @@ export default function SuperadminDashboard() {
   const fetchProjects = async () => {
     setIsLoadingProjects(true);
     try {
-      const response = await api.get<{ data: Project[]; pagination: unknown }>('/superadmin/projects');
-      setProjects(response.data?.data ?? []);
+      const response = await api.get<Project[]>('/superadmin/projects');
+      setProjects(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
     } finally {
@@ -206,8 +206,8 @@ export default function SuperadminDashboard() {
   const fetchAgents = async () => {
     setIsLoadingAgents(true);
     try {
-      const response = await api.get<{ data: Agent[]; pagination: unknown }>('/superadmin/agents');
-      setAgents(response.data?.data ?? []);
+      const response = await api.get<Agent[]>('/superadmin/agents');
+      setAgents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch agents:', error);
     } finally {
@@ -218,8 +218,8 @@ export default function SuperadminDashboard() {
   const fetchChats = async () => {
     setIsLoadingChats(true);
     try {
-      const response = await api.get<{ data: Chat[]; pagination: unknown }>('/superadmin/chats');
-      setChats(response.data?.data ?? []);
+      const response = await api.get<Chat[]>('/superadmin/chats');
+      setChats(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch chats:', error);
     } finally {

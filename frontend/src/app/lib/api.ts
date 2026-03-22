@@ -16,7 +16,8 @@ let csrfReady = false;
 async function ensureCsrf() {
   if (!csrfReady) {
     try {
-      await axios.get(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
+      const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || '';
+      await axios.get(`${base}/sanctum/csrf-cookie`, {
         withCredentials: true,
         timeout: 5000,
       });

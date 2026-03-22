@@ -1,142 +1,574 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import MarketingHeader from '../../components/MarketingHeader';
 import MarketingFooter from '../../components/MarketingFooter';
 import ChatWidget from '../../components/ChatWidget';
 import SEOHead from '../../components/SEOHead';
 import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
-import { Check } from 'lucide-react';
-import { mockPricingPlans } from '../../data/mockData';
-import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Switch } from '../../components/ui/switch';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../../components/ui/accordion';
+import {
+  Check,
+  X,
+  ArrowRight,
+  Sparkles,
+  Building2,
+  Phone,
+} from 'lucide-react';
+
+const plans = [
+  {
+    name: 'Free',
+    description: 'For individuals just getting started',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    period: 'forever',
+    popular: false,
+    cta: 'Get Started Free',
+    ctaLink: '/signup',
+    features: [
+      '1 agent',
+      'Basic live chat',
+      '100 tickets/month',
+      '7-day chat history',
+      'Email support',
+    ],
+  },
+  {
+    name: 'Starter',
+    description: 'For small teams scaling up',
+    priceMonthly: 19,
+    priceAnnual: 15,
+    period: 'user/mo',
+    popular: false,
+    cta: 'Start Free Trial',
+    ctaLink: '/signup?plan=starter',
+    features: [
+      'Up to 5 agents',
+      'Unlimited live chats',
+      'Unlimited tickets',
+      '30-day chat history',
+      'Basic analytics',
+      'Email & chat support',
+    ],
+  },
+  {
+    name: 'Pro',
+    description: 'For growing businesses',
+    priceMonthly: 49,
+    priceAnnual: 39,
+    period: 'user/mo',
+    popular: true,
+    cta: 'Start Free Trial',
+    ctaLink: '/signup?plan=pro',
+    features: [
+      'Unlimited agents',
+      'AI-powered chatbots',
+      'Advanced analytics & reports',
+      'Priority support',
+      'Custom integrations',
+      'SLA management',
+      'API access',
+      'Team collaboration tools',
+    ],
+  },
+  {
+    name: 'Enterprise',
+    description: 'For large organizations',
+    priceMonthly: -1,
+    priceAnnual: -1,
+    period: '',
+    popular: false,
+    cta: 'Contact Sales',
+    ctaLink: '/contact',
+    features: [
+      'Everything in Pro',
+      'Dedicated account manager',
+      'Custom AI model training',
+      'White-label solution',
+      'GDPR compliance tools',
+      '24/7 phone support',
+      'Custom SLA',
+      'On-premise deployment option',
+    ],
+  },
+];
+
+type FeatureAvailability = boolean | string;
+
+interface ComparisonFeature {
+  name: string;
+  free: FeatureAvailability;
+  starter: FeatureAvailability;
+  pro: FeatureAvailability;
+  enterprise: FeatureAvailability;
+}
+
+const comparisonFeatures: ComparisonFeature[] = [
+  { name: 'Agents', free: '1', starter: 'Up to 5', pro: 'Unlimited', enterprise: 'Unlimited' },
+  { name: 'Tickets', free: '100/mo', starter: 'Unlimited', pro: 'Unlimited', enterprise: 'Unlimited' },
+  { name: 'Chat history', free: '7 days', starter: '30 days', pro: 'Unlimited', enterprise: 'Unlimited' },
+  { name: 'AI chatbot', free: false, starter: false, pro: true, enterprise: true },
+  { name: 'Analytics', free: false, starter: 'Basic', pro: 'Advanced', enterprise: 'Advanced' },
+  { name: 'Integrations', free: false, starter: false, pro: 'Custom', enterprise: 'Custom' },
+  { name: 'SLA management', free: false, starter: false, pro: true, enterprise: 'Custom' },
+  { name: 'Priority support', free: false, starter: false, pro: true, enterprise: true },
+  { name: 'Custom branding', free: false, starter: false, pro: false, enterprise: true },
+  { name: 'API access', free: false, starter: false, pro: true, enterprise: true },
+  { name: 'White-label', free: false, starter: false, pro: false, enterprise: true },
+  { name: 'Dedicated account manager', free: false, starter: false, pro: false, enterprise: true },
+  { name: '24/7 phone support', free: false, starter: false, pro: false, enterprise: true },
+];
+
+const faqs = [
+  {
+    q: 'Can I switch plans at any time?',
+    a: 'Absolutely! You can upgrade or downgrade your plan at any time. When upgrading, you\'ll be charged the prorated difference for the remainder of your billing cycle. When downgrading, the new rate applies at the start of your next billing period.',
+  },
+  {
+    q: 'What payment methods do you accept?',
+    a: 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers. For Enterprise plans, we also support invoicing with NET 30 payment terms.',
+  },
+  {
+    q: 'Is there a setup fee?',
+    a: 'No! There are no setup fees, no hidden costs, and no surprises. You only pay for the plan you choose. Our Free plan is truly free forever, and paid plans include a 14-day free trial.',
+  },
+  {
+    q: 'Do you offer discounts for nonprofits or startups?',
+    a: 'Yes, we offer special pricing for registered nonprofits, educational institutions, and early-stage startups. Contact our sales team to learn more about our discount programs.',
+  },
+  {
+    q: 'What happens when my trial ends?',
+    a: 'When your 14-day trial ends, you\'ll automatically be moved to the Free plan unless you choose to subscribe. No charges will be made without your explicit consent, and your data will be preserved.',
+  },
+  {
+    q: 'Can I cancel my subscription?',
+    a: 'Yes, you can cancel your subscription at any time from your account settings. Your plan will remain active until the end of your current billing period, and you won\'t be charged again.',
+  },
+];
+
+function FeatureCell({ value }: { value: FeatureAvailability }) {
+  if (value === true) {
+    return <Check className="h-5 w-5 text-primary mx-auto" />;
+  }
+  if (value === false) {
+    return <X className="h-5 w-5 text-muted-foreground/40 mx-auto" />;
+  }
+  return <span className="text-sm font-medium">{value}</span>;
+}
 
 export default function PricingPage() {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-  
-  const faqs = [
-    { q: 'Can I change plans anytime?', a: 'Yes! You can upgrade or downgrade your plan at any time.' },
-    { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, PayPal, and wire transfers for Enterprise.' },
-    { q: 'Is there a setup fee?', a: 'No setup fees. Just pay for what you use.' },
-    { q: 'Do you offer discounts for annual billing?', a: 'Yes! Save 20% when you pay annually.' },
-  ];
+  const [isAnnual, setIsAnnual] = useState(false);
 
   return (
     <div className="min-h-screen">
       <SEOHead
-        title="Pricing - Flexible Plans for Every Team"
-        description="LinoChat pricing plans starting from free. Choose the perfect plan for your team. Get started with our 14-day free trial. No credit card required."
-        keywords="customer support pricing, helpdesk pricing, live chat pricing, support software cost"
+        title="Pricing - Simple, Transparent Plans for Every Team"
+        description="LinoChat pricing plans starting from free. Choose the perfect plan for your team. Start with our 14-day free trial. No credit card required."
+        keywords="customer support pricing, helpdesk pricing, live chat pricing, support software cost, LinoChat plans"
         canonical="https://linochat.com/pricing"
       />
       <MarketingHeader />
 
-      <section className="bg-gradient-to-br from-primary/10 to-card py-16">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="mb-4 text-[48px] font-bold">Flexible Plans for Every Team Size</h1>
-          <p className="text-xl text-muted-foreground mb-6">
-            Start free, scale as you grow. No hidden fees.
-          </p>
-          
-          {/* Billing Period Toggle */}
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <span className={`text-sm font-medium ${billingPeriod === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="mb-4 text-[48px] font-bold">
+              Simple, transparent pricing
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Start free, scale as you grow. No hidden fees, no surprises.
+              Every plan includes a 14-day free trial.
+            </p>
+          </motion.div>
+
+          {/* Billing Toggle */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center justify-center gap-3 mt-10"
+          >
+            <span
+              className={`text-sm font-medium transition-colors ${
+                !isAnnual ? 'text-foreground' : 'text-muted-foreground'
+              }`}
+            >
               Monthly
             </span>
-            <button
-              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              style={{ backgroundColor: billingPeriod === 'annual' ? '#2563eb' : '#d1d5db' }}
+            <Switch
+              checked={isAnnual}
+              onCheckedChange={setIsAnnual}
+              className="data-[state=checked]:bg-primary"
+            />
+            <span
+              className={`text-sm font-medium transition-colors ${
+                isAnnual ? 'text-foreground' : 'text-muted-foreground'
+              }`}
             >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-card transition-transform ${
-                  billingPeriod === 'annual' ? 'translate-x-8' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className={`text-sm font-medium ${billingPeriod === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
               Annual
             </span>
-          </div>
-          
-          {billingPeriod === 'annual' && (
-            <p className="text-sm text-green-600 font-medium">
-              💰 Save 20% with annual billing
-            </p>
-          )}
+            <Badge className="bg-green-500/15 text-green-700 border-green-500/20 hover:bg-green-500/15">
+              Save 20%
+            </Badge>
+          </motion.div>
         </div>
       </section>
 
-      <section className="py-16">
+      {/* Pricing Cards */}
+      <section className="py-16 -mt-4">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {mockPricingPlans.map((plan) => {
-              // Calculate savings for annual billing
-              const monthlyCost = plan.priceMonthly.replace('$', '');
-              const annualCost = plan.priceAnnual.replace('$', '');
-              const showDiscount = billingPeriod === 'annual' && monthlyCost !== 'Custom' && monthlyCost !== '0';
-              const monthlySavings = monthlyCost !== 'Custom' && annualCost !== 'Custom' 
-                ? (parseFloat(monthlyCost) - parseFloat(annualCost)) * 12 
-                : 0;
-              
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            {plans.map((plan, index) => {
+              const isEnterprise = plan.name === 'Enterprise';
+              const isPro = plan.popular;
+              const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+              const isCustom = price === -1;
+
               return (
-                <Card
+                <motion.div
                   key={plan.name}
-                  className={`flex flex-col ${plan.popular ? 'border-2 border-primary shadow-lg scale-105' : ''}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`flex ${isPro ? 'lg:-mt-4 lg:mb-[-16px]' : ''}`}
                 >
-                  {plan.popular && (
-                    <div className="bg-primary text-primary-foreground text-center py-2 rounded-t-lg">
-                      Most Popular
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold">
-                        {billingPeriod === 'monthly' ? plan.priceMonthly : plan.priceAnnual}
-                      </span>
-                      <span className="text-muted-foreground ml-2">/ {plan.period}</span>
-                    </div>
-                    {showDiscount && monthlySavings > 0 && (
-                      <div className="mt-2">
-                        <span className="inline-block bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                          Save ${monthlySavings.toFixed(0)}/year
-                        </span>
+                  <Card
+                    className={`flex flex-col w-full relative overflow-hidden ${
+                      isPro
+                        ? 'border-2 border-primary shadow-xl shadow-primary/10'
+                        : isEnterprise
+                        ? 'bg-foreground text-background border-foreground'
+                        : ''
+                    }`}
+                  >
+                    {isPro && (
+                      <div className="absolute top-0 right-0">
+                        <Badge className="rounded-none rounded-bl-lg px-3 py-1 text-xs">
+                          Most Popular
+                        </Badge>
                       </div>
                     )}
-                  </CardHeader>
-                  <CardContent className="flex flex-col flex-1">
-                    <ul className="space-y-3 mb-6 flex-1">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className={`w-full mt-auto ${plan.popular ? 'bg-primary hover:bg-primary/90' : ''}`}
-                      variant={plan.popular ? 'default' : 'outline'}
-                    >
-                      {plan.cta === 'Start Free Trial' ? 'Get Started' : plan.cta}
-                    </Button>
-                  </CardContent>
-                </Card>
+
+                    <CardHeader className="pb-0">
+                      <div className="flex items-center gap-2">
+                        {isEnterprise && (
+                          <Building2 className="h-5 w-5 text-background/70" />
+                        )}
+                        <CardTitle
+                          className={`text-lg font-semibold ${
+                            isEnterprise ? 'text-background' : ''
+                          }`}
+                        >
+                          {plan.name}
+                        </CardTitle>
+                      </div>
+                      <CardDescription
+                        className={
+                          isEnterprise ? 'text-background/60' : ''
+                        }
+                      >
+                        {plan.description}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="flex flex-col flex-1 pt-4">
+                      {/* Price */}
+                      <div className="mb-6">
+                        {isCustom ? (
+                          <div>
+                            <span
+                              className={`text-4xl font-bold ${
+                                isEnterprise ? 'text-background' : ''
+                              }`}
+                            >
+                              Custom
+                            </span>
+                            <p
+                              className={`text-sm mt-1 ${
+                                isEnterprise
+                                  ? 'text-background/60'
+                                  : 'text-muted-foreground'
+                              }`}
+                            >
+                              Tailored to your needs
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-baseline gap-1">
+                              <span
+                                className={`text-4xl font-bold ${
+                                  isEnterprise ? 'text-background' : ''
+                                }`}
+                              >
+                                ${price}
+                              </span>
+                              {plan.period && (
+                                <span
+                                  className={`text-sm ${
+                                    isEnterprise
+                                      ? 'text-background/60'
+                                      : 'text-muted-foreground'
+                                  }`}
+                                >
+                                  /{plan.period}
+                                </span>
+                              )}
+                            </div>
+                            {price === 0 && (
+                              <p
+                                className={`text-sm mt-1 ${
+                                  isEnterprise
+                                    ? 'text-background/60'
+                                    : 'text-muted-foreground'
+                                }`}
+                              >
+                                Free forever
+                              </p>
+                            )}
+                            {isAnnual && plan.priceMonthly > 0 && (
+                              <p className="text-sm mt-1 text-muted-foreground">
+                                <span className="line-through">
+                                  ${plan.priceMonthly}
+                                </span>
+                                <span className="text-green-600 font-medium ml-1.5">
+                                  Save ${(plan.priceMonthly - plan.priceAnnual) * 12}/yr
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Features */}
+                      <ul className="space-y-3 mb-8 flex-1">
+                        {plan.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm">
+                            <Check
+                              className={`h-4 w-4 mt-0.5 shrink-0 ${
+                                isPro
+                                  ? 'text-primary'
+                                  : isEnterprise
+                                  ? 'text-background/70'
+                                  : 'text-green-600'
+                              }`}
+                            />
+                            <span
+                              className={
+                                isEnterprise ? 'text-background/80' : ''
+                              }
+                            >
+                              {feature}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* CTA */}
+                      <Link to={plan.ctaLink} className="mt-auto">
+                        {isPro ? (
+                          <Button className="w-full bg-primary hover:bg-primary/90" size="lg">
+                            {plan.cta}
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        ) : isEnterprise ? (
+                          <Button
+                            variant="outline"
+                            className="w-full border-background/30 text-background hover:bg-background/10 hover:text-background"
+                            size="lg"
+                          >
+                            <Phone className="h-4 w-4 mr-1" />
+                            {plan.cta}
+                          </Button>
+                        ) : (
+                          <Button variant="outline" className="w-full" size="lg">
+                            {plan.cta}
+                          </Button>
+                        )}
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            All paid plans include a 14-day free trial. No credit card required.
+          </p>
         </div>
       </section>
 
+      {/* Feature Comparison Table */}
       <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="mb-4 text-3xl font-bold">Compare plans in detail</h2>
+            <p className="text-muted-foreground text-lg">
+              Find the perfect plan for your team's needs
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+            className="overflow-x-auto"
+          >
+            <table className="w-full min-w-[640px]">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-4 px-4 font-semibold text-sm w-[200px]">
+                    Feature
+                  </th>
+                  <th className="text-center py-4 px-4 font-semibold text-sm">
+                    Free
+                  </th>
+                  <th className="text-center py-4 px-4 font-semibold text-sm">
+                    Starter
+                  </th>
+                  <th className="text-center py-4 px-4 font-semibold text-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                      Pro
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </span>
+                  </th>
+                  <th className="text-center py-4 px-4 font-semibold text-sm">
+                    Enterprise
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonFeatures.map((feature, index) => (
+                  <tr
+                    key={feature.name}
+                    className={`border-b last:border-b-0 ${
+                      index % 2 === 0 ? 'bg-card/50' : ''
+                    }`}
+                  >
+                    <td className="py-3.5 px-4 text-sm font-medium">
+                      {feature.name}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <FeatureCell value={feature.free} />
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <FeatureCell value={feature.starter} />
+                    </td>
+                    <td className="py-3.5 px-4 text-center bg-primary/5">
+                      <FeatureCell value={feature.pro} />
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <FeatureCell value={feature.enterprise} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 bg-card">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-center mb-8">Frequently Asked Questions</h2>
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger>{faq.q}</AccordionTrigger>
-                <AccordionContent>{faq.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="mb-4 text-3xl font-bold">Frequently asked questions</h2>
+            <p className="text-muted-foreground text-lg">
+              Everything you need to know about our pricing
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, i) => (
+                <AccordionItem key={i} value={`faq-${i}`}>
+                  <AccordionTrigger className="text-base font-medium">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Bottom CTA Section */}
+      <section className="py-20 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="mb-4 text-3xl font-bold text-primary-foreground">
+              Start your free trial today
+            </h2>
+            <p className="mb-8 text-xl text-primary-foreground/80 max-w-2xl mx-auto">
+              Join thousands of support teams already using LinoChat to deliver
+              exceptional customer experiences.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/signup">
+                <Button
+                  size="lg"
+                  className="bg-card text-primary hover:bg-card/90 px-8"
+                >
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground px-8"
+                >
+                  Talk to Sales
+                </Button>
+              </Link>
+            </div>
+            <p className="mt-6 text-sm text-primary-foreground/70">
+              No credit card required &middot; 14-day free trial &middot; Cancel anytime
+            </p>
+          </motion.div>
         </div>
       </section>
 

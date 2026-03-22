@@ -21,7 +21,7 @@ class SuperadminSeeder extends Seeder
                 'last_name' => 'Studio',
                 'password' => Hash::make('z4ynP$G@n3!Fe%V59%M5'),
                 'role' => 'superadmin',
-                'status' => 'active',
+                'status' => 'Active',
                 'email_verified_at' => now(),
                 'join_date' => now(),
             ]

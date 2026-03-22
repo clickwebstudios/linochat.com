@@ -24,9 +24,7 @@ export function AgentSidebar({ activeSection = 'dashboard', chatsCount = 0, tick
       {/* Logo */}
       <div className="flex h-16 items-center justify-center border-b border-sidebar-border">
         <Link to="/agent/dashboard">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
-            <span className="text-sm text-white font-bold">CS</span>
-          </div>
+          <img src="/logo-icon.svg" alt="LinoChat" className="h-10 w-10" />
         </Link>
       </div>
 

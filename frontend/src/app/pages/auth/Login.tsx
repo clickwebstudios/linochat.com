@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { MessageSquare, Mail, Lock, ArrowRight, X, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, X, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -91,10 +91,8 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       {/* Logo in top left */}
       <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-primary p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <h1 className="text-xl text-primary">LinoChat</h1>
+        <img src="/logo-icon.svg" alt="LinoChat" className="h-10 w-10" />
+        <h1 className="text-xl text-primary font-semibold">LinoChat</h1>
       </div>
 
       {/* Close button in top right */}

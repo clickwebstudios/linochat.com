@@ -40,18 +40,12 @@ export default function MarketingHeader() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <span className="text-xl text-primary-foreground">LC</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold">LinoChat</span>
-              <span className="text-xs text-muted-foreground">Seamless Customer Conversations</span>
-            </div>
+          <Link to="/">
+            <img src="/logo-horizontal.svg" alt="LinoChat" className="h-12" />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-6 md:flex">
+          <nav className="hidden items-center gap-6 md:flex text-base">
             <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>

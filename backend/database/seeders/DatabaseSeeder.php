@@ -25,5 +25,8 @@ class DatabaseSeeder extends Seeder
         
         // Create superadmin
         $this->call(SuperadminSeeder::class);
+
+        // Create test users for each role
+        $this->call(TestUsersSeeder::class);
     }
 }
