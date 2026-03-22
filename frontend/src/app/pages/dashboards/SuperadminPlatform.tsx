@@ -47,7 +47,7 @@ export default function SuperadminPlatform() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-card border-b px-6">
+      <header className="bg-card border-b px-6 sticky top-0 z-50">
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/superadmin/select-view')} className="gap-1.5">
