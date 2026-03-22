@@ -27,9 +27,10 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
 
-type PlatformTab = 'companies' | 'activity' | 'pricing' | 'transactions' | 'analytics' | 'settings';
+type PlatformTab = 'overview' | 'companies' | 'activity' | 'pricing' | 'transactions' | 'analytics' | 'settings';
 
 const PLATFORM_TABS: { id: PlatformTab; label: string; icon: any }[] = [
+  { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'companies', label: 'All Companies', icon: Building2 },
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -41,7 +42,7 @@ const PLATFORM_TABS: { id: PlatformTab; label: string; icon: any }[] = [
 export default function SuperadminPlatform() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<PlatformTab>('companies');
+  const [activeTab, setActiveTab] = useState<PlatformTab>('overview');
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -113,10 +114,12 @@ export default function SuperadminPlatform() {
 
       {/* Content */}
       <div className="flex-1">
+        {activeTab === 'overview' && (
+          <SuperadminDashboard hideHeader sectionOverride="overview" />
+        )}
+
         {activeTab === 'companies' && (
-          <div className="p-6">
-            <SuperadminDashboard hideHeader />
-          </div>
+          <SuperadminDashboard hideHeader sectionOverride="companies" />
         )}
 
         {activeTab === 'activity' && (

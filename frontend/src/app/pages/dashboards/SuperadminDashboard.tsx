@@ -122,7 +122,7 @@ interface PlatformStats {
   csat_score: string;
 }
 
-export default function SuperadminDashboard({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+export default function SuperadminDashboard({ hideHeader = false, sectionOverride }: { hideHeader?: boolean; sectionOverride?: string } = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -158,7 +158,7 @@ export default function SuperadminDashboard({ hideHeader = false }: { hideHeader
     'analytics': 'analytics',
     'logs': 'logs',
   };
-  const activeSection = sectionMap[urlSection] || 'overview';
+  const activeSection = sectionOverride || sectionMap[urlSection] || 'overview';
 
   // Fetch data based on active section
   useEffect(() => {
