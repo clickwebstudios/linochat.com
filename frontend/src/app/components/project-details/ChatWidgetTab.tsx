@@ -349,6 +349,18 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     </div>
   );
 
+  if (!widgetActive) {
+    return (
+      <WidgetDesignShowcase
+        color={widgetColor}
+        title={widgetTitle}
+        welcomeMessage={welcomeMessage}
+        onActivate={() => setWidgetActive(true)}
+        onSelectDesign={setWidgetDesign}
+      />
+    );
+  }
+
   return (
     <div className="flex gap-6">
             {/* Sidebar */}
@@ -834,8 +846,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             <div className="w-[750px] shrink-0">
               <div className="sticky top-4">
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
-                {widgetActive ? (
-                  <div className="rounded-lg border border-border relative overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="rounded-lg border border-border relative overflow-hidden" style={{ minHeight: '500px' }}>
                     {/* Fake website background */}
                     <div className="absolute inset-0 bg-white p-6 space-y-4">
                       <div className="flex items-center gap-3 pb-4 border-b">
@@ -896,16 +907,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                         gradient={widgetGradient}
                       />
                     </div>
-                  </div>
-                ) : (
-                  <WidgetDesignShowcase
-                    color={widgetColor}
-                    title={widgetTitle}
-                    welcomeMessage={welcomeMessage}
-                    onActivate={() => setWidgetActive(true)}
-                    onSelectDesign={setWidgetDesign}
-                  />
-                )}
+                </div>
               </div>
             </div>
           </div>
