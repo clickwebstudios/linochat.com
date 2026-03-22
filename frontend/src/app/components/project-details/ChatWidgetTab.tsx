@@ -835,7 +835,40 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
               <div className="sticky top-4">
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
                 {widgetActive ? (
-                  <div className="bg-muted rounded-lg border border-border relative" style={{ minHeight: '500px' }}>
+                  <div className="rounded-lg border border-border relative overflow-hidden" style={{ minHeight: '500px' }}>
+                    {/* Fake website background */}
+                    <div className="absolute inset-0 bg-white p-6 space-y-4">
+                      <div className="flex items-center gap-3 pb-4 border-b">
+                        <div className="w-8 h-8 rounded bg-blue-600" />
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                        <div className="ml-auto flex gap-4">
+                          <div className="h-3 w-14 bg-gray-200 rounded" />
+                          <div className="h-3 w-14 bg-gray-200 rounded" />
+                          <div className="h-3 w-14 bg-gray-200 rounded" />
+                          <div className="h-3 w-14 bg-gray-200 rounded" />
+                        </div>
+                      </div>
+                      <div className="pt-8 space-y-3 max-w-md">
+                        <div className="h-8 w-72 bg-gray-100 rounded" />
+                        <div className="h-4 w-full bg-gray-100 rounded" />
+                        <div className="h-4 w-5/6 bg-gray-100 rounded" />
+                        <div className="h-4 w-2/3 bg-gray-100 rounded" />
+                      </div>
+                      <div className="pt-4 flex gap-3">
+                        <div className="h-10 w-32 bg-blue-100 rounded-lg" />
+                        <div className="h-10 w-28 bg-gray-100 rounded-lg" />
+                      </div>
+                      <div className="pt-8 grid grid-cols-3 gap-4">
+                        <div className="h-28 bg-gray-50 rounded-lg border" />
+                        <div className="h-28 bg-gray-50 rounded-lg border" />
+                        <div className="h-28 bg-gray-50 rounded-lg border" />
+                      </div>
+                      <div className="pt-4 space-y-2">
+                        <div className="h-3 w-full bg-gray-100 rounded" />
+                        <div className="h-3 w-4/5 bg-gray-100 rounded" />
+                        <div className="h-3 w-3/4 bg-gray-100 rounded" />
+                      </div>
+                    </div>
                     <div className={`absolute ${
                       widgetPosition === 'bottom-right' ? 'bottom-4 right-4' :
                       widgetPosition === 'bottom-left' ? 'bottom-4 left-4' :
