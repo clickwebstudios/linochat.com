@@ -836,7 +836,7 @@ class AiChatService
         $bookingTime = null;
         $project = $project ?? $chat->project ?? Project::find($chat->project_id);
         $frubixConfig = $project ? $this->getFrubixIntegration($project) : null;
-        Log::error('Frubix booking check', [
+        Log::info('Frubix booking check', [
             'chat_id' => $chat->id,
             'project_id' => $chat->project_id,
             'project_loaded' => $project ? true : false,
@@ -851,6 +851,33 @@ class AiChatService
                 $bookingTime = trim($m[1]);
             }
 
+            // Check for schedule conflicts before booking
+            $conflictMessage = null;
+            if ($bookingDate) {
+                try {
+                    $existingSlots = FrubixService::getSchedule($frubixConfig, [
+                        'date' => $bookingDate,
+                    ], $project);
+                    if (!empty($existingSlots) && $bookingTime) {
+                        $requestedMinutes = $this->timeToMinutes($bookingTime);
+                        foreach ($existingSlots as $slot) {
+                            $slotTime = $slot['scheduled_time'] ?? null;
+                            $slotDuration = $slot['duration'] ?? 60;
+                            if ($slotTime) {
+                                $slotStart = $this->timeToMinutes($slotTime);
+                                $slotEnd = $slotStart + $slotDuration;
+                                if ($requestedMinutes >= $slotStart && $requestedMinutes < $slotEnd) {
+                                    $conflictMessage = "The {$bookingTime} slot on {$bookingDate} is already taken.";
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Frubix schedule conflict check failed', ['error' => $e->getMessage()]);
+                }
+            }
+
             try {
                 $appointmentData = array_filter([
                     'customer_name' => $name,
@@ -863,9 +890,11 @@ class AiChatService
                     'scheduled_time' => $bookingTime,
                     'duration' => 60,
                 ]);
-                FrubixService::createAppointment($frubixConfig, $appointmentData);
-                $frubixBooked = true;
-                Log::error('Frubix appointment CREATED', [
+                if (!$conflictMessage) {
+                    FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
+                }
+                $frubixBooked = !$conflictMessage;
+                Log::info('Frubix appointment created', [
                     'chat_id' => $chat->id,
                     'ticket_id' => $ticket->id,
                     'date' => $bookingDate,
@@ -881,7 +910,9 @@ class AiChatService
         $cleanContent = $this->cleanAiResponse($aiContent);
         $confirmationNote = $frubixBooked
             ? "\n\nYour appointment has been booked" . ($bookingDate ? " for {$bookingDate}" . ($bookingTime ? " at {$bookingTime}" : '') : '') . " (Ticket #{$ticket->ticket_number}). We'll see you then!"
-            : "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
+            : ($conflictMessage ?? null
+                ? "\n\n{$conflictMessage} Your booking request has been submitted (Ticket #{$ticket->ticket_number}) and our team will help find an available time."
+                : "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.");
 
         $message = ChatMessage::create([
             'chat_id' => $chat->id,
@@ -1359,5 +1390,11 @@ class AiChatService
     public function setModel(string $model): void
     {
         $this->model = $model;
+    }
+
+    private function timeToMinutes(string $time): int
+    {
+        $parts = explode(':', $time);
+        return ((int) ($parts[0] ?? 0)) * 60 + ((int) ($parts[1] ?? 0));
     }
 }

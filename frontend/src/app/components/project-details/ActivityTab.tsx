@@ -15,10 +15,11 @@ import { api } from '../../api/client';
 
 interface Activity {
   id: string;
-  type: 'ticket_created' | 'ticket_resolved' | 'ticket_assigned' | 'member_added' | 'chat_started' | 'note_added';
-  title: string;
+  type: string;
+  title?: string;
   description: string;
-  createdAt: string;
+  created_at: string;
+  createdAt?: string;
   user?: {
     id: string;
     name: string;
@@ -30,11 +31,13 @@ interface ActivityTabProps {
 }
 
 const activityIcons: Record<string, { icon: any; color: string; bg: string }> = {
+  ticket: { icon: Ticket, color: 'text-primary', bg: 'bg-primary/10' },
   ticket_created: { icon: Ticket, color: 'text-primary', bg: 'bg-primary/10' },
   ticket_resolved: { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
   ticket_assigned: { icon: User, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  member_added: { icon: UserPlus, color: 'text-secondary', bg: 'bg-secondary/10' },
+  chat: { icon: MessageSquare, color: 'text-cyan-600', bg: 'bg-cyan-50' },
   chat_started: { icon: MessageSquare, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+  member_added: { icon: UserPlus, color: 'text-secondary', bg: 'bg-secondary/10' },
   note_added: { icon: TrendingUp, color: 'text-muted-foreground', bg: 'bg-muted/50' },
   default: { icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
 };
@@ -129,15 +132,16 @@ export function ActivityTab({ projectId }: ActivityTabProps) {
             {activities.map((activity) => {
               const config = activityIcons[activity.type] || activityIcons.default;
               const Icon = config.icon;
+              const dateStr = activity.created_at || activity.createdAt || '';
               return (
                 <div key={activity.id} className={`flex items-start gap-3 p-3 ${config.bg} rounded-lg`}>
                   <Icon className={`h-5 w-5 ${config.color} mt-0.5 flex-shrink-0`} />
                   <div className="flex-1 flex justify-between items-start">
                     <div>
-                      <p className="text-sm font-medium">{activity.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                      <p className="text-sm font-medium">{activity.description}</p>
+                      {activity.title && <p className="text-xs text-muted-foreground mt-1">{activity.title}</p>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{formatTimeAgo(activity.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap ml-2">{dateStr ? formatTimeAgo(dateStr) : ''}</p>
                   </div>
                 </div>
               );
