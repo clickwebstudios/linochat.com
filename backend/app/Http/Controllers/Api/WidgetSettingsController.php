@@ -180,6 +180,7 @@ class WidgetSettingsController extends Controller
             'popover.design'                       => 'nullable|string|in:urgent,luxury,modern,bold,minimal',
             'popover.size'                         => 'nullable|string|in:small,medium,large',
             'popover.color'                        => 'nullable|string|max:20',
+            'popover.overlay'                      => 'nullable|string|in:dark,light,blur,none',
             'popover.heading'                      => 'nullable|string|max:200',
             'popover.description'                  => 'nullable|string|max:500',
             'popover.badge_text'                   => 'nullable|string|max:50',
