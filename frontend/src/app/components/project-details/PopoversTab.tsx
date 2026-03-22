@@ -47,7 +47,7 @@ interface PopoverConfig {
   trigger: string;
   trigger_delay: number;
   trigger_scroll_percent: number;
-  show_once_per_session: boolean;
+  max_displays_per_session: number;
   overlay: 'dark' | 'light' | 'none';
   overlay_blur: boolean;
   show_on_pages: string;
@@ -71,7 +71,7 @@ const DEFAULT_POPOVER: PopoverConfig = {
   trigger: 'delay',
   trigger_delay: 3,
   trigger_scroll_percent: 50,
-  show_once_per_session: true,
+  max_displays_per_session: 1,
   show_on_pages: 'all',
   page_urls: [],
 };
@@ -457,9 +457,38 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                       <Input type="number" min={1} max={100} value={popover.trigger_scroll_percent} onChange={e => update({ trigger_scroll_percent: parseInt(e.target.value) || 50 })} />
                     </div>
                   )}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Checkbox id="po-once" checked={popover.show_once_per_session} onCheckedChange={v => update({ show_once_per_session: !!v })} />
-                    <label htmlFor="po-once" className="text-sm">Show only once per session</label>
+                  <div className="grid gap-1 pt-1">
+                    <Label className="text-xs">Times to show per session</Label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 5].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => update({ max_displays_per_session: n })}
+                          className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                            popover.max_displays_per_session === n ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          {n === 5 ? '5+' : n}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => update({ max_displays_per_session: 0 })}
+                        className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                          popover.max_displays_per_session === 0 ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        Unlimited
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {popover.max_displays_per_session === 0
+                        ? 'Popover will show every time the trigger fires'
+                        : popover.max_displays_per_session === 1
+                        ? 'Popover will show only once per session'
+                        : `Popover will show up to ${popover.max_displays_per_session} times per session`}
+                    </p>
                   </div>
                 </div>
                 {saveButton}
