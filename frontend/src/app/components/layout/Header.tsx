@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/button';
 
@@ -10,9 +9,7 @@ export function Header() {
     <header className="bg-card border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="bg-primary p-2 rounded-lg">
-            <MessageSquare className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src="/logo-icon.svg" alt="LinoChat" className="h-9 w-9" />
           <span className="text-xl text-primary font-semibold">LinoChat</span>
         </Link>
 

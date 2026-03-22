@@ -116,7 +116,7 @@ class ProjectController extends Controller
 
         // Normalize website URL for comparison (lowercase, strip trailing slash)
         $website = rtrim(strtolower($request->input('website')), '/');
-        $duplicate = Project::whereRaw('LOWER(TRIM(TRAILING \'/\' FROM website)) = ?', [$website])->first();
+        $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])->first();
         if ($duplicate) {
             return response()->json([
                 'success' => false,
@@ -191,7 +191,7 @@ class ProjectController extends Controller
         // Check for duplicate website URL (excluding current project)
         if ($request->has('website')) {
             $website = rtrim(strtolower($request->input('website')), '/');
-            $duplicate = Project::whereRaw('LOWER(TRIM(TRAILING \'/\' FROM website)) = ?', [$website])
+            $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])
                 ->where('id', '!=', $project_id)
                 ->first();
             if ($duplicate) {

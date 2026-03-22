@@ -279,9 +279,7 @@ export default function ChatWidget({
             {/* Header */}
             <div className="flex items-center justify-between border-b p-4 text-primary-foreground rounded-t-lg bg-primary">
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 border-2 border-white">
-                  <AvatarFallback className="bg-primary/90 text-primary-foreground">LC</AvatarFallback>
-                </Avatar>
+                <img src="/logo-icon.svg" alt="LinoChat" className="h-8 w-8 rounded-md" />
                 <div>
                   <h3 className="font-semibold">LinoChat</h3>
                   <p className="text-xs text-primary-foreground/70">Online • AI Powered</p>

@@ -60,10 +60,8 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
     <div className="flex h-full flex-col bg-sidebar">
       {/* Logo */}
       <div className="flex h-16 items-center justify-center border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
-            <span className="text-sm font-bold text-white">LC</span>
-          </div>
+        <Link to="/">
+          <img src="/logo-icon.svg" alt="LinoChat" className="h-10 w-10" />
         </Link>
       </div>
 

@@ -39,6 +39,7 @@ import { TeamTab } from '../components/project-details/TeamTab';
 import { ActivityTab } from '../components/project-details/ActivityTab';
 import { ChatWidgetTab } from '../components/project-details/ChatWidgetTab';
 import { AISettingsTab } from '../components/project-details/AISettingsTab';
+import { PopoversTab } from '../components/project-details/PopoversTab';
 import { SettingsTab } from '../components/project-details/SettingsTab';
 import { IntegrationsTab } from '../components/project-details/IntegrationsTab';
 
@@ -361,6 +362,7 @@ export default function ProjectDetails() {
               <TabsTrigger value="team">Team Members</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
+              <TabsTrigger value="popovers">Popovers</TabsTrigger>
               <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -407,6 +409,10 @@ export default function ProjectDetails() {
                 copiedWidgetId={copiedWidgetId}
                 onCopyWidgetId={handleCopyWidgetId}
               />
+            </TabsContent>
+
+            <TabsContent value="popovers" className="space-y-4">
+              <PopoversTab projectId={projectId} />
             </TabsContent>
 
             <TabsContent value="ai-settings" className="space-y-4">

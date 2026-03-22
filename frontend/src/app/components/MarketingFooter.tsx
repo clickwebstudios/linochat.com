@@ -9,9 +9,7 @@ export default function MarketingFooter() {
           {/* Company Info */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <span className="text-xl text-primary-foreground">LC</span>
-              </div>
+              <img src="/logo-icon.svg" alt="LinoChat" className="h-10 w-10" />
               <span className="font-bold">LinoChat</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
