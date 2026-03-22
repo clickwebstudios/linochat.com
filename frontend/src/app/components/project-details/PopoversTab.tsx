@@ -637,12 +637,9 @@ function PopoverShowcase({
         <p className="text-sm text-muted-foreground">
           Engage visitors with targeted messages. Pick a design and enable to get started.
         </p>
-        <div className="flex items-center justify-center gap-3 pt-1">
-          <span className="text-sm font-medium text-muted-foreground">Enable Popovers</span>
-          <Switch checked={popover.enabled} onCheckedChange={v => {
-            update({ enabled: v, design: current.id });
-          }} />
-        </div>
+        <Button size="sm" onClick={() => update({ enabled: true, design: current.id })}>
+          Activate Popover
+        </Button>
       </div>
 
       {/* Carousel */}
