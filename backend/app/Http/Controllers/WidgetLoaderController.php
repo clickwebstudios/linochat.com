@@ -1145,6 +1145,106 @@ class WidgetLoaderController extends Controller
         }, delay);
     }
 
+    // Popover system
+    function showPopover() {
+        if (!CONFIG || !CONFIG.popover || !CONFIG.popover.enabled) return;
+        var po = CONFIG.popover;
+        var SK = 'linochat_popover_shown';
+        if (po.show_once_per_session && sessionStorage.getItem(SK)) return;
+        // Page targeting
+        if (po.show_on_pages === 'specific' && po.page_urls && po.page_urls.length > 0) {
+            var path = window.location.pathname;
+            var match = po.page_urls.some(function(u) { return path.indexOf(u) !== -1; });
+            if (!match) return;
+        }
+        function render() {
+            if (document.getElementById('linochat-popover')) return;
+            var overlay = document.createElement('div');
+            overlay.id = 'linochat-popover';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);';
+            var color = CONFIG.color || '#4F46E5';
+            var html = buildPopoverHTML(po, color);
+            overlay.innerHTML = html;
+            document.body.appendChild(overlay);
+            sessionStorage.setItem(SK, '1');
+            // Close handlers
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) closePopover(); });
+            var closeBtn = overlay.querySelector('[data-popover-close]');
+            if (closeBtn) closeBtn.addEventListener('click', closePopover);
+            // Button handlers
+            var btns = overlay.querySelectorAll('[data-popover-action]');
+            for (var i = 0; i < btns.length; i++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var action = btn.getAttribute('data-popover-action');
+                        var url = btn.getAttribute('data-popover-url');
+                        closePopover();
+                        if (action === 'open_chat') { openChat(); }
+                        else if (action === 'url' && url) { window.open(url, '_blank'); }
+                    });
+                })(btns[i]);
+            }
+        }
+        function closePopover() {
+            var el = document.getElementById('linochat-popover');
+            if (el) el.remove();
+        }
+        var trigger = po.trigger || 'delay';
+        if (trigger === 'immediate') { render(); }
+        else if (trigger === 'delay') { setTimeout(render, (po.trigger_delay || 3) * 1000); }
+        else if (trigger === 'scroll') {
+            var fired = false;
+            window.addEventListener('scroll', function() {
+                if (fired) return;
+                var pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+                if (pct >= (po.trigger_scroll_percent || 50)) { fired = true; render(); }
+            });
+        } else if (trigger === 'exit_intent') {
+            document.addEventListener('mouseout', function(e) {
+                if (e.clientY < 5 && !document.getElementById('linochat-popover')) { render(); }
+            });
+        }
+    }
+    function buildPopoverHTML(po, color) {
+        var h = po.heading || ''; var d = po.description || '';
+        var p1 = po.primary_button || {}; var p2 = po.secondary_button || {};
+        var badge = po.badge_text || 'SUPPORT ONLINE';
+        var status = po.show_online_status !== false ? po.online_status_text || 'Support Online' : '';
+        var closeX = '<button data-popover-close style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#999;line-height:1;">&times;</button>';
+        var p1Btn = p1.action !== 'none' ? '<button data-popover-action="' + (p1.action||'open_chat') + '" data-popover-url="' + (p1.url||'') + '" style="STYLE_P1">' + (p1.text||'') + '</button>' : '';
+        var p2Btn = p2.action !== 'none' ? '<button data-popover-action="' + (p2.action||'open_chat') + '" data-popover-url="' + (p2.url||'') + '" style="STYLE_P2">' + (p2.text||'') + '</button>' : '';
+        var statusHTML = status ? '<div style="STYLE_STATUS"><span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50;margin-right:6px;"></span>' + status + '</div>' : '';
+        var design = po.design || 'modern';
+        if (design === 'urgent') {
+            p1Btn = p1Btn.replace('STYLE_P1', 'width:100%;padding:12px;background:'+color+';color:white;border:none;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;text-transform:uppercase;');
+            p2Btn = p2Btn.replace('STYLE_P2', 'width:100%;padding:12px;background:white;color:#333;border:1px solid #ddd;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;text-transform:uppercase;');
+            statusHTML = statusHTML.replace('STYLE_STATUS', 'text-align:center;padding:10px;border-top:1px solid #eee;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;');
+            return '<div style="position:relative;width:380px;background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;border-top:4px solid #f59e0b;">' + closeX + '<div style="padding:24px;">' + '<div style="margin-bottom:12px;"><span style="background:#fef3c7;color:#d97706;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:700;">⚡ ' + badge + '</span></div>' + '<h3 style="font-size:18px;font-weight:800;color:#111;margin:0 0 6px;text-transform:uppercase;">' + h + '</h3>' + '<p style="font-size:14px;color:#666;margin:0 0 16px;">' + d + '</p>' + '<div style="display:flex;flex-direction:column;gap:8px;">' + p1Btn + p2Btn + '</div></div>' + statusHTML + '</div>';
+        }
+        if (design === 'luxury') {
+            p1Btn = p1Btn.replace('STYLE_P1', 'width:100%;padding:16px;background:white;color:#444;border:1px solid #ccc;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:2px;');
+            p2Btn = p2Btn.replace('STYLE_P2', 'width:100%;padding:16px;background:#1a1a2e;color:white;border:none;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:2px;');
+            return '<div style="position:relative;width:420px;background:#faf9f6;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;border-top:3px solid #b8860b;">' + closeX + '<div style="padding:40px;text-align:center;">' + '<div style="font-size:28px;margin-bottom:16px;">🏠</div>' + '<h3 style="font-size:24px;color:#333;margin:0 0 12px;font-family:Georgia,serif;font-style:italic;">' + h + '</h3>' + '<div style="width:48px;height:1px;background:#ccc;margin:0 auto 12px;"></div>' + '<p style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:2px;margin:0 0 24px;">' + d + '</p>' + '<div style="display:flex;flex-direction:column;gap:12px;">' + p1Btn + p2Btn + '</div>' + '<div style="margin-top:20px;font-size:10px;color:#bbb;text-transform:uppercase;letter-spacing:2px;">Exclusivity Guaranteed</div></div></div>';
+        }
+        if (design === 'bold') {
+            p1Btn = p1Btn.replace('STYLE_P1', 'width:100%;padding:18px;background:'+color+';color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:1px;');
+            p2Btn = p2Btn.replace('STYLE_P2', 'width:100%;padding:18px;background:white;color:'+color+';border:2px solid '+color+';font-size:14px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:1px;');
+            statusHTML = statusHTML.replace('STYLE_STATUS', 'text-align:center;margin-top:8px;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;');
+            return '<div style="position:relative;width:380px;background:white;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;border:3px solid '+color+';">' + closeX + '<div style="padding:36px;text-align:center;">' + '<h3 style="font-size:26px;font-weight:800;color:'+color+';margin:0 0 20px;">' + h + '</h3>' + '<div style="display:flex;flex-direction:column;gap:12px;">' + p1Btn + p2Btn + '</div>' + statusHTML + '</div></div>';
+        }
+        if (design === 'minimal') {
+            p1Btn = p1Btn.replace('STYLE_P1', 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px;background:white;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;cursor:pointer;text-align:left;');
+            p2Btn = p2Btn.replace('STYLE_P2', 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px;background:white;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;cursor:pointer;text-align:left;');
+            var badgeHTML = (po.show_online_status !== false) ? '<div style="text-align:center;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:500;border:1px solid #bbf7d0;"><span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block;"></span>' + badge + '</span></div>' : '';
+            return '<div style="position:relative;width:360px;background:white;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.12);overflow:hidden;border:1px solid #e5e7eb;">' + closeX + '<div style="padding:24px;">' + badgeHTML + '<h3 style="font-size:18px;font-weight:600;color:#111;margin:0 0 6px;text-align:center;">' + h + '</h3>' + '<p style="font-size:13px;color:#6b7280;margin:0 0 16px;text-align:center;">' + d + '</p>' + '<div style="display:flex;flex-direction:column;gap:8px;">' + (p1.action !== 'none' ? '<button data-popover-action="'+(p1.action||'open_chat')+'" data-popover-url="'+(p1.url||'')+'" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px;background:white;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;cursor:pointer;text-align:left;"><span>📅 '+(p1.text||'')+'</span><span style="color:#9ca3af;">›</span></button>' : '') + (p2.action !== 'none' ? '<button data-popover-action="'+(p2.action||'open_chat')+'" data-popover-url="'+(p2.url||'')+'" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px;background:white;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;cursor:pointer;text-align:left;"><span>❓ '+(p2.text||'')+'</span><span style="color:#9ca3af;">›</span></button>' : '') + '</div></div></div>';
+        }
+        // modern (default)
+        p1Btn = p1Btn.replace('STYLE_P1', 'width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:white;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:left;font-size:14px;color:#111;');
+        p2Btn = p2Btn.replace('STYLE_P2', 'width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:white;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:left;font-size:14px;color:#111;');
+        statusHTML = statusHTML.replace('STYLE_STATUS', 'display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:12px 24px;border-top:1px solid #f3f4f6;font-size:12px;color:#22c55e;font-weight:500;');
+        return '<div style="position:relative;width:400px;background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;border-top:4px solid '+color+';">' + closeX + '<div style="padding:24px;">' + '<h3 style="font-size:20px;font-weight:600;color:#111;margin:0 0 6px;">' + h + '</h3>' + '<p style="font-size:14px;color:#6b7280;margin:0 0 16px;">' + d + '</p>' + '<div style="display:flex;flex-direction:column;gap:8px;">' + (p1.action !== 'none' ? '<button data-popover-action="'+(p1.action||'open_chat')+'" data-popover-url="'+(p1.url||'')+'" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:white;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:left;"><span style="width:36px;height:36px;border-radius:8px;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:16px;color:white;">📅</span><div><div style="font-size:14px;font-weight:600;color:#111;">'+(p1.text||'')+'</div><div style="font-size:12px;color:#6b7280;">Book a pro when the job needs extra hands.</div></div><span style="margin-left:auto;color:#9ca3af;">›</span></button>' : '') + (p2.action !== 'none' ? '<button data-popover-action="'+(p2.action||'open_chat')+'" data-popover-url="'+(p2.url||'')+'" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:white;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:left;"><span style="width:36px;height:36px;border-radius:8px;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:16px;color:white;">💬</span><div><div style="font-size:14px;font-weight:600;color:#111;">'+(p2.text||'')+'</div><div style="font-size:12px;color:#6b7280;">Quick advice for those tricky moments.</div></div><span style="margin-left:auto;color:#9ca3af;">›</span></button>' : '') + '</div></div>' + statusHTML + '</div>';
+    }
+
     // Initialize (guard against duplicate script loads) - only show button; full init on first click
     function init() {
         if (window.__linochat_init_done) return;
@@ -1174,6 +1274,7 @@ class WidgetLoaderController extends Controller
                 createButtonOnly();
                 updateButtonAppearance();
                 showGreeting();
+                showPopover();
                 // Pre-initialize chat in background so clicking opens instantly
                 CHAT_INIT_PROMISE = initChat().catch(function() { CHAT_INIT_PROMISE = null; });
             })
