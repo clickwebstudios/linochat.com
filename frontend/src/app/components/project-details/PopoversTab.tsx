@@ -34,6 +34,8 @@ interface PopoverButtonConfig {
 interface PopoverConfig {
   enabled: boolean;
   design: string;
+  size: 'small' | 'medium' | 'large';
+  color: string;
   heading: string;
   description: string;
   badge_text: string;
@@ -52,6 +54,8 @@ interface PopoverConfig {
 const DEFAULT_POPOVER: PopoverConfig = {
   enabled: false,
   design: 'modern',
+  size: 'medium',
+  color: '',
   heading: 'How can we help you today?',
   description: 'Our team is ready to assist with your needs.',
   badge_text: 'SUPPORT ONLINE',
@@ -201,6 +205,63 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     </button>
                   ))}
                 </div>
+
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-medium">Size</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { id: 'small' as const, label: 'Small' },
+                      { id: 'medium' as const, label: 'Medium' },
+                      { id: 'large' as const, label: 'Large' },
+                    ]).map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => update({ size: s.id })}
+                        className={`p-2.5 border rounded-lg text-center text-sm font-medium transition-colors ${
+                          popover.size === s.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-medium">Color Theme</Label>
+                  <p className="text-xs text-muted-foreground">Leave empty to use the widget color.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { color: '', label: 'Widget' },
+                      { color: '#4F46E5', label: 'Indigo' },
+                      { color: '#2563EB', label: 'Blue' },
+                      { color: '#0891B2', label: 'Cyan' },
+                      { color: '#059669', label: 'Green' },
+                      { color: '#D97706', label: 'Amber' },
+                      { color: '#DC2626', label: 'Red' },
+                      { color: '#7C3AED', label: 'Purple' },
+                      { color: '#DB2777', label: 'Pink' },
+                      { color: '#1E293B', label: 'Slate' },
+                    ].map(c => (
+                      <button
+                        key={c.label}
+                        type="button"
+                        onClick={() => update({ color: c.color })}
+                        className={`flex flex-col items-center gap-1 p-1.5 rounded-lg border transition-colors ${
+                          popover.color === c.color ? 'border-primary ring-1 ring-primary' : 'border-transparent hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        <span
+                          className="w-8 h-8 rounded-full border"
+                          style={{ background: c.color || widgetColor }}
+                        />
+                        <span className="text-[10px] text-muted-foreground">{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {saveButton}
               </div>
             )}
@@ -378,7 +439,7 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
             <div className="sticky top-4">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Live Preview</div>
               <div className="bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 p-8 flex justify-center items-start min-h-[500px] pt-12">
-                <PopoverPreview popover={popover} color={widgetColor} />
+                <PopoverPreview popover={popover} color={popover.color || widgetColor} />
               </div>
             </div>
           </div>
@@ -399,11 +460,14 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
 }
 
 // --- Popover Preview Designs ---
+const SIZE_WIDTHS = { small: 300, medium: 380, large: 460 } as const;
+
 function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: string }) {
   const { design, heading, description, badge_text, primary_button, secondary_button, show_online_status, online_status_text } = popover;
+  const w = SIZE_WIDTHS[popover.size || 'medium'];
 
   if (design === 'urgent') return (
-    <div className="w-[340px] bg-white rounded-xl shadow-xl border overflow-hidden" style={{ borderTopColor: '#f59e0b', borderTopWidth: 3 }}>
+    <div className="bg-white rounded-xl shadow-xl border overflow-hidden" style={{ width: w, borderTopColor: '#f59e0b', borderTopWidth: 3 }}>
       <div className="p-5 space-y-4">
         <span className="bg-amber-100 text-amber-600 px-2 py-1 rounded text-xs font-bold">⚡ {badge_text}</span>
         <div>
@@ -422,7 +486,7 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'luxury') return (
-    <div className="w-[380px] bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ borderTop: '3px solid', borderImage: 'linear-gradient(90deg, #b8860b, #daa520, #b8860b) 1' }}>
+    <div className="bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ width: w, borderTop: '3px solid', borderImage: 'linear-gradient(90deg, #b8860b, #daa520, #b8860b) 1' }}>
       <div className="p-8 text-center space-y-5">
         <div className="text-3xl">🏠</div>
         <h3 className="text-2xl text-gray-800" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>{heading}</h3>
@@ -436,7 +500,7 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'bold') return (
-    <div className="w-[360px] bg-white shadow-xl overflow-hidden" style={{ border: `3px solid ${color}` }}>
+    <div className="bg-white shadow-xl overflow-hidden" style={{ width: w, border: `3px solid ${color}` }}>
       <div className="p-8 text-center space-y-5">
         <h3 className="text-2xl font-extrabold" style={{ color }}>{heading}</h3>
         {primary_button.action !== 'none' && <button className="w-full py-4 text-white font-bold text-sm uppercase tracking-wide rounded" style={{ background: color }}>{primary_button.text} →</button>}
@@ -451,7 +515,7 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'minimal') return (
-    <div className="w-[360px] bg-white rounded-2xl shadow-lg border overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ width: w }}>
       <div className="p-6 space-y-4">
         {show_online_status && (
           <div className="flex justify-center">
@@ -478,7 +542,7 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
 
   // Modern (default)
   return (
-    <div className="w-[380px] bg-white rounded-xl shadow-xl overflow-hidden" style={{ borderTop: `4px solid ${color}` }}>
+    <div className="bg-white rounded-xl shadow-xl overflow-hidden" style={{ width: w, borderTop: `4px solid ${color}` }}>
       <div className="p-6 space-y-4">
         <h3 className="text-xl font-semibold text-gray-900">{heading}</h3>
         <p className="text-sm text-gray-500">{description}</p>
