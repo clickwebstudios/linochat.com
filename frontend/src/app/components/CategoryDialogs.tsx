@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from './ui/select';
 import { Plus, Edit, Check, Trash2, AlertCircle } from 'lucide-react';
-import { mockProjects } from '../data/mockData';
+import { api } from '../api/client';
+// Mock data removed — projects passed as props or from store
 
 /* ------------------------------------------------------------------ */
 /* Add Category Dialog                                                 */
@@ -36,6 +37,12 @@ export function AddCategoryDialog({
 }: AddCategoryDialogProps) {
   const [name, setName] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [projects, setProjects] = useState<{ id: string; name: string; color: string }[]>([]);
+  useState(() => {
+    api.get<any>('/projects').then(res => {
+      if (res.success && res.data) setProjects(Array.isArray(res.data) ? res.data : []);
+    }).catch(() => {});
+  });
 
   const resetAndClose = () => {
     setName('');
@@ -61,7 +68,7 @@ export function AddCategoryDialog({
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
               <SelectContent>
-                {mockProjects.map((project) => (
+                {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     <span className="flex items-center gap-2">
                       <span

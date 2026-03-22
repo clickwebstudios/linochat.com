@@ -35,7 +35,7 @@ import {
   X,
   Info,
 } from 'lucide-react';
-import { mockProjects } from '../../data/mockData';
+// Mock data removed
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { api } from '../../api/client';
 
@@ -507,8 +507,8 @@ export default function ChatDetails() {
                     size="sm"
                     onClick={() => {
                       if (basePath === '/superadmin' && chat) {
-                        const project = mockProjects.find((p: any) => p.id === chat.projectId);
-                        if (project?.companyId) {
+                        const project = chat.project;
+                        if (project?.company_id) {
                           navigate('/superadmin/companies', {
                             state: { viewingCompanyId: project.companyId, companyDetailTab: 'chats' },
                           });

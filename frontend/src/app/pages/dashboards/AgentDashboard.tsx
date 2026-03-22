@@ -28,7 +28,7 @@ import {
   Inbox,
   Loader2,
 } from 'lucide-react';
-import { mockProjects } from '../../data/mockData';
+// Mock data removed — projects from API/store
 import { useAuthStore } from '../../stores/authStore';
 import { useProjectsStore, selectProjects } from '../../stores/projectsStore';
 import {
@@ -128,8 +128,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     }
   }, [user, isSuperadmin, selectedCompanyId, fetchProjects]);
   
-  // Use API projects or fallback to mock
-  const displayProjects = projects.length > 0 ? projects : mockProjects;
+  const displayProjects = projects;
   
   // Update selectedProjects when projects load
   useEffect(() => {
