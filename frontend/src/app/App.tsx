@@ -172,9 +172,11 @@ export default function App() {
                 <Route path="/admin/notifications" element={<NotificationsPage />} />
               </Route>
 
+              {/* Superadmin Select View (no sidebar) */}
+              <Route path="/superadmin/select-view" element={<ProtectedRoute><SuperadminSelectView /></ProtectedRoute>} />
+
               {/* Superadmin Layout Routes */}
               <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Superadmin" /></ErrorBoundary></ProtectedRoute>}>
-                <Route path="/superadmin/select-view" element={<SuperadminSelectView />} />
                 <Route path="/superadmin/dashboard" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/chats" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/tickets" element={<AgentDashboard role="Superadmin" />} />
