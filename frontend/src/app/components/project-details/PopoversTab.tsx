@@ -153,16 +153,15 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
 
   return (
     <div className="flex gap-6">
-      {/* Sidebar */}
+      {/* Sidebar — only shown when enabled */}
+      {popover.enabled && (
       <aside className="w-48 shrink-0">
-        {/* Enable toggle at top of sidebar */}
         <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
           <span className="text-sm font-medium">Enabled</span>
           <Switch checked={popover.enabled} onCheckedChange={v => update({ enabled: v })} />
         </div>
 
-        {popover.enabled && (
-          <nav className="space-y-1">
+        <nav className="space-y-1">
             {POPOVER_NAV.map(item => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
@@ -182,8 +181,8 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
               );
             })}
           </nav>
-        )}
       </aside>
+      )}
 
       {/* Content + Preview */}
       {popover.enabled ? (
