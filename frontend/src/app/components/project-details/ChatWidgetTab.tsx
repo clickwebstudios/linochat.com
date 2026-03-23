@@ -791,7 +791,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   <Label className="text-xs font-medium text-foreground mb-2 block">
                     Installation snippet
                   </Label>
-                  <pre className="text-xs overflow-x-auto bg-foreground text-green-400 p-3 rounded">
+                  <pre className="text-xs whitespace-pre-wrap break-all bg-foreground text-green-400 p-3 rounded">
 {`<script>
   (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
