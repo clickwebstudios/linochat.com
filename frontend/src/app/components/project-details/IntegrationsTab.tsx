@@ -3,7 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { api } from '../../api/client';
-import { Link2, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
+
+function FrubixLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#6366F1" />
+      <text x="16" y="22" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="system-ui">F</text>
+    </svg>
+  );
+}
 import type { FrubixConfig } from '../../types/frubix';
 
 interface IntegrationsTabProps {
@@ -34,9 +43,7 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-secondary" />
-              </div>
+              <FrubixLogo className="h-10 w-10" />
               <div>
                 <CardTitle className="text-base">Frubix</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">Field service management — sync leads, jobs, and clients</p>
