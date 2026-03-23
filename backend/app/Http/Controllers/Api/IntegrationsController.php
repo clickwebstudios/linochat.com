@@ -275,4 +275,46 @@ class IntegrationsController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Frubix integration disconnected.']);
     }
+
+    /**
+     * Register Frubix as the chat manager for this project (called by Frubix via OAuth).
+     */
+    public function frubixRegisterConnection(Request $request, int $projectId): JsonResponse
+    {
+        $project = $this->getProject($projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $validated = $request->validate([
+            'frubix_api_url'   => 'required|url',
+            'frubix_api_token' => 'required|string',
+            'webhook_url'      => 'nullable|url',
+        ]);
+
+        $integrations = $project->integrations ?? [];
+        $integrations['frubix_managed'] = [
+            'enabled'      => true,
+            'api_url'      => $validated['frubix_api_url'],
+            'api_token'    => $validated['frubix_api_token'],
+            'webhook_url'  => $validated['webhook_url'] ?? null,
+            'connected_at' => now()->toIso8601String(),
+        ];
+        $project->update(['integrations' => $integrations]);
+
+        return response()->json(['success' => true, 'message' => 'Frubix connection registered.']);
+    }
+
+    /**
+     * Unregister Frubix as the chat manager (called by Frubix on disconnect).
+     */
+    public function frubixUnregisterConnection(Request $request, int $projectId): JsonResponse
+    {
+        $project = $this->getProject($projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $integrations = $project->integrations ?? [];
+        unset($integrations['frubix_managed']);
+        $project->update(['integrations' => $integrations]);
+
+        return response()->json(['success' => true, 'message' => 'Frubix connection removed.']);
+    }
 }

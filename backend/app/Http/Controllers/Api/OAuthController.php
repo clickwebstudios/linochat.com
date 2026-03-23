@@ -16,9 +16,11 @@ class OAuthController extends Controller
     // Available scopes with human-readable descriptions
     public const SCOPES = [
         'chats:read'     => 'View your chats and messages',
+        'chats:write'    => 'Send messages to chats',
         'tickets:read'   => 'View your support tickets',
         'tickets:write'  => 'Create and update tickets on your behalf',
         'projects:read'  => 'View your projects',
+        'projects:write' => 'Manage project integrations',
         'knowledge:read' => 'Access your knowledge base articles',
         'users:read'     => 'View your team members',
     ];

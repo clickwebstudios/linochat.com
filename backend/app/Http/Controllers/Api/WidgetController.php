@@ -14,6 +14,8 @@ use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Services\AiChatService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -558,10 +560,33 @@ class WidgetController extends Controller
             $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
             broadcast(new MessageSent($message))->toOthers();
 
+            // Forward to Frubix if this project is Frubix-managed
+            $frubixManaged = $project->integrations['frubix_managed'] ?? null;
+            $isFrubixManaged = $frubixManaged && ($frubixManaged['enabled'] ?? false);
+
+            if ($isFrubixManaged) {
+                try {
+                    $frubixUrl = rtrim($frubixManaged['api_url'], '/');
+                    Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/v1/messages", [
+                        'sender_name'              => $chat->customer_name ?: 'Visitor',
+                        'sender_email'             => $chat->customer_email,
+                        'sender_type'              => 'customer',
+                        'message'                  => $input['message'],
+                        'channel'                  => 'linochat',
+                        'source'                   => 'linochat',
+                        'external_conversation_id' => (string) $chat->id,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to forward message to Frubix', ['error' => $e->getMessage()]);
+                }
+            }
+
             $aiResponse = null;
             $chat->refresh(); // Ensure we have latest agent_id/status (agent may have taken over)
             // Never use AI when an agent has taken over (agent_id is set)
-            $shouldAiReply = $chat->ai_enabled !== false
+            // Skip AI when Frubix manages the conversation
+            $shouldAiReply = !$isFrubixManaged
+                && $chat->ai_enabled !== false
                 && !$chat->agent_id
                 && ($chat->status === 'ai_handling'
                     || $chat->status === 'waiting');

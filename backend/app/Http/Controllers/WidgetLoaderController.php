@@ -435,10 +435,15 @@ class WidgetLoaderController extends Controller
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success && data.data.settings_updated_at !== LAST_SETTINGS_UPDATE) {
-                    console.log('LinoChat: Settings updated, reloading...');
+                    console.log('LinoChat: Settings updated, full reload...');
                     CONFIG = data.data;
                     LAST_SETTINGS_UPDATE = CONFIG.settings_updated_at;
-                    updateWidgetAppearance();
+                    // Full reload: remove widget and recreate with new settings
+                    var el = document.getElementById('linochat-widget');
+                    if (el) el.remove();
+                    window.__linochat_init_done = false;
+                    ADDED_MESSAGE_IDS = {};
+                    init();
                 }
             })
             .catch(function(e) {
@@ -809,7 +814,7 @@ class WidgetLoaderController extends Controller
             var doOpen = function() {
                 createWidget(true);
                 CHAT_INITIALIZED = true;
-                SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 120000);
+                SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 30000);
                 startHeartbeat();
             };
 

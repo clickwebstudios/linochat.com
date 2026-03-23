@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { api } from '../../api/client';
-import { CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink, MessageCircle } from 'lucide-react';
 
 function FrubixLogo({ className }: { className?: string }) {
   return (
@@ -22,12 +22,16 @@ interface IntegrationsTabProps {
 export function IntegrationsTab({ project }: IntegrationsTabProps) {
   const [frubix, setFrubix] = useState<FrubixConfig>({});
   const [isConnected, setIsConnected] = useState(false);
+  const [isFrubixManaged, setIsFrubixManaged] = useState(false);
 
   useEffect(() => {
     api.get<any>(`/projects/${project.id}/integrations`).then((res) => {
       if (res.success && res.data?.frubix) {
         setFrubix(res.data.frubix);
         setIsConnected(res.data.frubix.enabled === true || res.data.frubix.connected === true);
+      }
+      if (res.success && res.data?.frubix_managed?.enabled) {
+        setIsFrubixManaged(true);
       }
     }).catch(() => {});
   }, [project.id]);
@@ -101,6 +105,32 @@ export function IntegrationsTab({ project }: IntegrationsTabProps) {
           )}
         </CardContent>
       </Card>
+
+      {isFrubixManaged && (
+        <Card className="border-indigo-200 bg-indigo-50/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                  <MessageCircle className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Chat Managed by Frubix</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Agent replies for this project are handled in Frubix</p>
+                </div>
+              </div>
+              <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Active
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Customer messages from the widget are forwarded to Frubix. AI responses are disabled on LinoChat — all conversations are managed by Frubix agents.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

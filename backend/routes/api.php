@@ -369,7 +369,19 @@ Route::middleware('auth:sanctum')->prefix('oauth/clients')->group(function () {
     Route::delete('/{client}', [OAuthClientController::class, 'destroy']);
 });
 
-// ─── Example: OAuth-protected API endpoints (accessible by 3rd-party apps) ──
-// Usage: middleware('oauth:chats:read') — validates Bearer token + required scope
-// Route::middleware('oauth:chats:read')->get('/v1/chats', ...);
-// Route::middleware('oauth:tickets:read')->get('/v1/tickets', ...);
+// ─── OAuth-protected V1 API endpoints (accessible by 3rd-party apps like Frubix) ──
+// Usage: middleware('oauth:scope') — validates Bearer token + required scope
+
+// Projects
+Route::middleware('oauth:projects:read')->get('/v1/projects', [ProjectController::class, 'index']);
+Route::middleware('oauth:projects:read')->get('/v1/projects/{id}', [ProjectController::class, 'show']);
+
+// Chats
+Route::middleware('oauth:chats:read')->get('/v1/chats', [AgentController::class, 'chats']);
+Route::middleware('oauth:chats:read')->get('/v1/chats/{chatId}', [AgentController::class, 'show']);
+Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/message', [AgentController::class, 'sendMessage']);
+Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/toggle-ai', [AgentController::class, 'toggleAi']);
+
+// Frubix managed connection (register/unregister from Frubix side)
+Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
+Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);

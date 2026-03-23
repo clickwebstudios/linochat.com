@@ -38,6 +38,7 @@ class ChatResource extends JsonResource
             'updated_at' => $this->updated_at,
             'unread_count' => $unreadCount,
             'preview' => $preview,
+            'frubix_managed' => (bool) (($this->project?->integrations['frubix_managed'] ?? [])['enabled'] ?? false),
             'project' => [
                 'id' => $this->project->id,
                 'name' => $this->project->name ?? '',

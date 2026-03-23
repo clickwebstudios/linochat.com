@@ -71,7 +71,6 @@ export interface ChatMessageAreaProps {
   onEndChat: () => void;
   sendAgentTyping: (isTyping: boolean) => void;
   formatRelativeTime: (dateString: string) => string;
-  frubixCompanyName?: string | null;
 }
 
 export function ChatMessageArea({
@@ -100,7 +99,6 @@ export function ChatMessageArea({
   onEndChat,
   sendAgentTyping,
   formatRelativeTime,
-  frubixCompanyName,
 }: ChatMessageAreaProps) {
   const agentTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -376,10 +374,12 @@ export function ChatMessageArea({
 
       {/* Input Area */}
       <div className="border-t border-[rgba(0,0,0,0.1)] p-4 bg-card shrink-0">
-        {frubixCompanyName ? (
-          <div className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-blue-50 border border-blue-200">
-            <ArrowRightLeft className="h-4 w-4 text-blue-600" />
-            <span className="text-sm text-blue-700">This chat is synced with <strong>{frubixCompanyName}</strong> on Frubix</span>
+        {activeChat?.frubix_managed ? (
+          <div className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-indigo-50 border border-indigo-200">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="text-sm text-indigo-600 font-medium">Managed by Frubix — agent replies are handled in the Frubix dashboard</span>
           </div>
         ) : !hasTakenOver ? (
           <div
