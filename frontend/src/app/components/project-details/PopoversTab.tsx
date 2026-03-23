@@ -105,16 +105,22 @@ interface PopoversTabProps {
 
 export function PopoversTab({ projectId }: PopoversTabProps) {
   const [popover, setPopover] = useState<PopoverConfig>(DEFAULT_POPOVER);
+  const [savedPopover, setSavedPopover] = useState<string>('');
   const [widgetColor, setWidgetColor] = useState('#4F46E5');
   const [activeSection, setActiveSection] = useState<PopoverSection>('design');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const isDirty = JSON.stringify(popover) !== savedPopover;
 
   useEffect(() => {
     if (!projectId) return;
     api.get<any>(`/projects/${projectId}/widget-settings`).then(res => {
       if (res.success && res.data) {
-        if (res.data.popover) setPopover(prev => ({ ...prev, ...res.data.popover }));
+        if (res.data.popover) {
+          const merged = { ...DEFAULT_POPOVER, ...res.data.popover };
+          setPopover(merged);
+          setSavedPopover(JSON.stringify(merged));
+        }
         if (res.data.color) setWidgetColor(res.data.color);
       }
     }).catch(() => {});
@@ -127,6 +133,7 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
     try {
       const res = await api.put(`/projects/${projectId}/widget-settings`, { popover });
       if (res.success) {
+        setSavedPopover(JSON.stringify(popover));
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       }
@@ -574,9 +581,9 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
       {popover.enabled && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3">
           {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
-          <Button className="bg-primary hover:bg-primary/90" onClick={handleSave} disabled={saving}>
+          <Button className="bg-primary hover:bg-primary/90" onClick={handleSave} disabled={saving || !isDirty}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Save Popover Settings
+            {isDirty ? 'Save Popover Settings' : 'Saved'}
           </Button>
         </div>
       )}

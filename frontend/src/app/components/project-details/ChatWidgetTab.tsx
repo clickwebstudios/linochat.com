@@ -242,6 +242,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const [fontSize, setFontSize] = useState('14');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+
+  const currentSnapshot = JSON.stringify({
+    widgetColor, widgetPosition, widgetTitle, welcomeMessage, buttonText, widgetDesign,
+    widgetActive, greetingEnabled, greetingDelay, greetingMessage, fontSize,
+    widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, schedule,
+  });
+  const isDirty = savedSnapshot !== '' && currentSnapshot !== savedSnapshot;
 
   // Load widget settings from API when project is available
   useEffect(() => {
@@ -292,8 +300,16 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         if (project?.color) setWidgetColor(project.color);
       }
     };
-    loadSettings();
+    loadSettings().then(() => {
+      // Set snapshot after state settles (next tick)
+      setTimeout(() => setSavedSnapshot('pending'), 0);
+    });
   }, [project?.id]);
+
+  // Capture snapshot once settings are loaded
+  useEffect(() => {
+    if (savedSnapshot === 'pending') setSavedSnapshot(currentSnapshot);
+  }, [savedSnapshot, currentSnapshot]);
 
   const handleSaveSettings = async () => {
     if (!project?.id) return;
@@ -323,6 +339,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         schedule,
       });
       if (response.success) {
+        setSavedSnapshot(currentSnapshot);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       }
@@ -887,9 +904,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           {/* Fixed save bar */}
           <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3">
             {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleSaveSettings} disabled={saving}>
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleSaveSettings} disabled={saving || !isDirty}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save Widget Settings
+              {isDirty ? 'Save Widget Settings' : 'Saved'}
             </Button>
           </div>
           </div>
