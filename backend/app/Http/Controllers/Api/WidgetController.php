@@ -590,9 +590,7 @@ class WidgetController extends Controller
             $aiResponse = null;
             $chat->refresh(); // Ensure we have latest agent_id/status (agent may have taken over)
             // Never use AI when an agent has taken over (agent_id is set)
-            // Skip AI when Frubix manages the conversation
-            $shouldAiReply = !$isFrubixManaged
-                && $chat->ai_enabled !== false
+            $shouldAiReply = $chat->ai_enabled !== false
                 && !$chat->agent_id
                 && ($chat->status === 'ai_handling'
                     || $chat->status === 'waiting');
@@ -605,6 +603,23 @@ class WidgetController extends Controller
                         'id' => null,
                         'content' => 'Sorry, I\'m having trouble responding right now. Please try again later.',
                     ];
+                }
+            }
+
+            // Forward AI response to Frubix so the full conversation is mirrored
+            if ($isFrubixManaged && $aiResponse && !empty($aiResponse['content'])) {
+                try {
+                    $frubixUrl = rtrim($frubixManaged['api_url'], '/');
+                    Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/linochat/messages", [
+                        'sender_name'              => 'LinoChat AI',
+                        'sender_type'              => 'agent',
+                        'message'                  => $aiResponse['content'],
+                        'channel'                  => 'linochat',
+                        'source'                   => 'linochat',
+                        'external_conversation_id' => (string) $chat->id,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to forward AI response to Frubix', ['error' => $e->getMessage()]);
                 }
             }
 

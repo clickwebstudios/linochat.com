@@ -379,7 +379,7 @@ export function ChatMessageArea({
             <svg viewBox="0 0 24 24" className="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span className="text-sm text-indigo-600 font-medium">Managed by Frubix — agent replies are handled in the Frubix dashboard</span>
+            <span className="text-sm text-indigo-600 font-medium">Synced with Frubix — AI is active, agents can take over from Frubix</span>
           </div>
         ) : !hasTakenOver ? (
           <div
