@@ -342,7 +342,11 @@ class WidgetLoaderController extends Controller
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
     function processPollData(data) {
-        console.log('[LinoChat] poll data received, msgs:', data && data.data ? (data.data.messages || []).length : 0);
+        var cnt = data && data.data ? (data.data.messages || []).length : 0;
+        console.log('[LinoChat] poll received ' + cnt + ' msgs');
+        // Temporary: show poll status in widget title bar
+        var hdr = document.querySelector('#linochat-window [style*="font-weight"]');
+        if (hdr && hdr.dataset) hdr.dataset.poll = (parseInt(hdr.dataset.poll||'0')+1) + '/' + cnt;
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
@@ -353,20 +357,23 @@ class WidgetLoaderController extends Controller
             if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
         }
         var msgs = d.messages || [];
+        var added = 0;
         msgs.forEach(function(m) {
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
                 if (ADDED_MESSAGE_IDS['agent-joined']) return;
                 ADDED_MESSAGE_IDS['agent-joined'] = true;
             }
-            if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
             var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
             addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+            added++;
         });
+        if (added > 0) console.log('[LinoChat] Added ' + added + ' new messages');
     }
 
     function pollChatState() {
-        if (!CHAT_ID || !CUSTOMER_ID) return;
+        console.log('[LinoChat] pollChatState called, CHAT_ID=' + CHAT_ID);
+        if (!CHAT_ID || !CUSTOMER_ID) { console.log('[LinoChat] skip poll - no chat/customer'); return; }
         var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
         var script = document.createElement('script');
@@ -377,7 +384,8 @@ class WidgetLoaderController extends Controller
             if (script.parentNode) script.parentNode.removeChild(script);
             processPollData(data);
         };
-        script.onerror = function() {
+        script.onerror = function(e) {
+            console.log('[LinoChat] JSONP script error', e);
             if (!done) { delete window[cb]; }
             if (script.parentNode) script.parentNode.removeChild(script);
         };
@@ -706,7 +714,7 @@ class WidgetLoaderController extends Controller
     
     function addMessage(content, type, messageId, playSound, metadata) {
         var container = document.getElementById('linochat-messages');
-        if (!container) return;
+        if (!container) { console.log('[LinoChat] addMessage SKIP - no container! type=' + type + ' content=' + (content||'').substring(0,20)); return; }
         
         var welcomeEl = document.getElementById('linochat-welcome');
         if (welcomeEl) welcomeEl.remove();
@@ -1509,7 +1517,8 @@ CSS;
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Cross-Origin-Resource-Policy', 'cross-origin')
             ->header('Access-Control-Allow-Origin', '*')
-            ->header('Cache-Control', 'public, max-age=300');
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
 
     /**
