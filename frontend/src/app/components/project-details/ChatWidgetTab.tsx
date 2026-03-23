@@ -364,7 +364,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   return (
     <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
-            <aside className="w-full lg:w-56 shrink-0">
+            <aside className="w-full lg:w-48 shrink-0">
               <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
                 <span className="text-sm font-medium">Enabled</span>
                 <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
