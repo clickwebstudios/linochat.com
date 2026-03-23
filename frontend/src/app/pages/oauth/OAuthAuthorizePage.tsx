@@ -114,11 +114,8 @@ export default function OAuthAuthorizePage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-4">
           {/* LinoChat branding */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <ShieldCheck className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">LinoChat</span>
+          <div className="flex items-center justify-center mb-6">
+            <img src="/logo-horizontal.svg" alt="LinoChat" className="h-10" />
           </div>
 
           <h1 className="text-xl font-semibold text-foreground">
@@ -127,6 +124,26 @@ export default function OAuthAuthorizePage() {
           <p className="text-sm text-muted-foreground mt-1">
             Signed in as <span className="font-medium">{user?.email}</span>
           </p>
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() => {
+                const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+                useAuthStore.getState().logout();
+                navigate(`/login?return_to=${returnTo}`, { replace: true });
+              }}
+            >
+              Switch account
+            </button>
+            <span className="text-xs text-muted-foreground">·</span>
+            <a
+              href={`/register?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+              className="text-xs text-primary hover:underline"
+            >
+              Create account
+            </a>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -142,10 +159,7 @@ export default function OAuthAuthorizePage() {
               scopeEntries.map(([scope, description]) => (
                 <div key={scope} className="flex items-start gap-3 px-4 py-3">
                   <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{description}</p>
-                    <code className="text-xs text-muted-foreground">{scope}</code>
-                  </div>
+                  <p className="text-sm font-medium text-foreground">{description}</p>
                 </div>
               ))
             )}

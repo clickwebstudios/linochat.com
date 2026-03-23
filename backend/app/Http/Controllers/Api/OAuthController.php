@@ -20,6 +20,7 @@ class OAuthController extends Controller
         'tickets:read'   => 'View your support tickets',
         'tickets:write'  => 'Create and update tickets on your behalf',
         'projects:read'  => 'View your projects',
+        'projects:write' => 'Manage project integrations',
         'knowledge:read' => 'Access your knowledge base articles',
         'users:read'     => 'View your team members',
     ];

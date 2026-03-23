@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class OAuthAuthorizationCode extends Model
 {
+    protected $table = 'oauth_authorization_codes';
+
     protected $fillable = [
         'oauth_client_id',
         'user_id',
