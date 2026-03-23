@@ -342,8 +342,6 @@ class WidgetLoaderController extends Controller
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
     function processPollData(data) {
-        var cnt = data && data.data ? (data.data.messages || []).length : 0;
-        console.log('[LinoChat] poll received ' + cnt + ' msgs');
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
@@ -428,8 +426,7 @@ class WidgetLoaderController extends Controller
     }
 
     function pollChatState() {
-        console.log('[LinoChat] pollChatState called, CHAT_ID=' + CHAT_ID);
-        if (!CHAT_ID || !CUSTOMER_ID) { console.log('[LinoChat] skip poll - no chat/customer'); return; }
+        if (!CHAT_ID || !CUSTOMER_ID) return;
         var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
         var script = document.createElement('script');
@@ -441,7 +438,6 @@ class WidgetLoaderController extends Controller
             processPollData(data);
         };
         script.onerror = function(e) {
-            console.log('[LinoChat] JSONP script error', e);
             if (!done) { delete window[cb]; }
             if (script.parentNode) script.parentNode.removeChild(script);
         };
@@ -770,7 +766,7 @@ class WidgetLoaderController extends Controller
     
     function addMessage(content, type, messageId, playSound, metadata) {
         var container = document.getElementById('linochat-messages');
-        if (!container) { console.log('[LinoChat] addMessage SKIP - no container! type=' + type + ' content=' + (content||'').substring(0,20)); return; }
+        if (!container) return;
         
         var welcomeEl = document.getElementById('linochat-welcome');
         if (welcomeEl) welcomeEl.remove();
