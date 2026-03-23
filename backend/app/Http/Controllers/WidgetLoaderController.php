@@ -118,7 +118,17 @@ class WidgetLoaderController extends Controller
         try {
             var s = document.createElement('style');
             s.id = 'linochat-inline-styles';
-            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100%!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important}#linochat-button{bottom:20px!important;right:20px!important}}';
+            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100%!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
+            + '@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
+            + '@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 12px transparent}}'
+            + '@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'
+            + '@keyframes lc-wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}'
+            + '@keyframes lc-tada{0%,100%{transform:scale(1) rotate(0)}10%,20%{transform:scale(0.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}'
+            + '@keyframes lc-heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}'
+            + '@keyframes lc-rubber-band{0%,100%{transform:scaleX(1)}30%{transform:scaleX(1.25) scaleY(0.75)}40%{transform:scaleX(0.75) scaleY(1.25)}50%{transform:scaleX(1.15) scaleY(0.85)}65%{transform:scaleX(0.95) scaleY(1.05)}75%{transform:scaleX(1.05) scaleY(0.95)}}'
+            + '@keyframes lc-swing{20%{transform:rotate(15deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}100%{transform:rotate(0)}}'
+            + '@keyframes lc-jello{0%,100%{transform:skewX(0) skewY(0)}22%{transform:skewX(-12.5deg) skewY(-12.5deg)}33%{transform:skewX(6.25deg) skewY(6.25deg)}44%{transform:skewX(-3.125deg) skewY(-3.125deg)}55%{transform:skewX(1.5625deg) skewY(1.5625deg)}66%{transform:skewX(-0.78125deg) skewY(-0.78125deg)}}'
+            + '@keyframes lc-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}';
             document.head.appendChild(s);
         } catch (e) {}
     }
@@ -467,11 +477,31 @@ class WidgetLoaderController extends Controller
         }
         if (button) {
             if (CONFIG.design !== 'gradient') button.style.background = color;
+            else button.style.background = CONFIG.gradient || 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
             button.style.bottom = posStyles.bottom;
             button.style.right = posStyles.right;
             button.style.top = posStyles.top;
             button.style.left = posStyles.left;
             button.innerHTML = DEFAULT_ICON;
+            // Apply animation
+            var anim = CONFIG.animation || 'none';
+            if (anim && anim !== 'none') {
+                var animMap = {bounce:'lc-bounce',pulse:'lc-pulse',shake:'lc-shake',wobble:'lc-wobble',tada:'lc-tada',heartbeat:'lc-heartbeat','rubber-band':'lc-rubber-band',swing:'lc-swing',jello:'lc-jello',float:'lc-float'};
+                var animName = animMap[anim];
+                if (animName) {
+                    var repeat = CONFIG.animation_repeat || 'infinite';
+                    var delay = CONFIG.animation_delay || '0';
+                    var duration = CONFIG.animation_duration || 'default';
+                    var dur = duration === 'default' ? '1s' : duration + 's';
+                    button.style.animation = animName + ' ' + dur + ' ease-in-out ' + (delay !== '0' ? delay + 's' : '0s') + ' ' + repeat;
+                    var stopAfter = CONFIG.animation_stop_after;
+                    if (stopAfter && stopAfter !== '0') {
+                        setTimeout(function() { button.style.animation = 'none'; }, parseInt(stopAfter) * 1000);
+                    }
+                }
+            } else {
+                button.style.animation = 'none';
+            }
         }
         
         if (window_) {
