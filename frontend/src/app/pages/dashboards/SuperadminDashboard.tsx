@@ -122,7 +122,7 @@ interface PlatformStats {
   csat_score: string;
 }
 
-export default function SuperadminDashboard({ hideHeader = false, sectionOverride }: { hideHeader?: boolean; sectionOverride?: string } = {}) {
+export default function SuperadminDashboard({ hideHeader = false, sectionOverride, onSwitchToCompany }: { hideHeader?: boolean; sectionOverride?: string; onSwitchToCompany?: (id: string) => void } = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -283,6 +283,16 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   const [companyDetailTab, setCompanyDetailTab] = useState('overview');
 
   // Read location state for deep-linking into a company detail view
+  // Listen for cross-component company view events
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail;
+      if (id) { setViewingCompanyId(id); setCompanyDetailTab('overview'); }
+    };
+    window.addEventListener('sa-view-company', handler);
+    return () => window.removeEventListener('sa-view-company', handler);
+  }, []);
+
   useEffect(() => {
     const state = location.state as { viewingCompanyId?: string; companyDetailTab?: string } | null;
     if (state?.viewingCompanyId && activeSection === 'companies') {
@@ -413,7 +423,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
               stats={platformStats}
               isLoading={isLoadingStats}
               companies={companies}
-              onViewCompany={(id) => { setActiveSection('companies'); setViewingCompanyId(id); setCompanyDetailTab('overview'); }}
+              onViewCompany={(id) => { if (onSwitchToCompany) { onSwitchToCompany(id); } else { setActiveSection('companies'); setViewingCompanyId(id); setCompanyDetailTab('overview'); } }}
             />
           )}
 
