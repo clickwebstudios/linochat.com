@@ -805,12 +805,12 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       Note: HTTP URLs are blocked on HTTPS sites (mixed content). Use a URL starting with https:// for production.
                     </p>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => {
-                      const code = `<script>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const code = `<script>
   (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
     script.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
@@ -819,12 +819,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     document.body.appendChild(script);
   });
 </script>`;
-                      navigator.clipboard.writeText(code);
-                    }}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Code
-                  </Button>
+                        navigator.clipboard.writeText(code);
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Code
+                    </Button>
+                    <VerifyInstallButton projectId={project?.id} />
+                  </div>
                 </div>
               </div>
             )}
@@ -1297,6 +1299,41 @@ function WidgetScheduleConfig({
             ))}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// --- Verify Installation Button ---
+function VerifyInstallButton({ projectId }: { projectId?: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'fail'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleVerify = async () => {
+    if (!projectId) return;
+    setStatus('loading');
+    try {
+      const res = await api.post<any>(`/projects/${projectId}/verify-widget`, {});
+      if (res.success && res.data) {
+        setStatus(res.data.installed ? 'success' : 'fail');
+        setMessage(res.data.reason || '');
+      }
+    } catch {
+      setStatus('fail');
+      setMessage('Verification failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={handleVerify} disabled={status === 'loading'}>
+        {status === 'loading' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+        {status === 'success' ? '✓ Verified' : status === 'fail' ? '✗ Not Found' : 'Verify Installation'}
+      </Button>
+      {message && (
+        <span className={`text-xs ${status === 'success' ? 'text-green-600' : 'text-amber-600'}`}>
+          {message}
+        </span>
       )}
     </div>
   );

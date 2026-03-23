@@ -157,6 +157,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/projects/{project_id}/widget-settings', [WidgetSettingsController::class, 'update']);
     Route::delete('/projects/{project_id}/widget-settings', [WidgetSettingsController::class, 'reset']);
     Route::get('/projects/{project_id}/embed-code', [WidgetSettingsController::class, 'embedCode']);
+    Route::post('/projects/{project_id}/verify-widget', [WidgetSettingsController::class, 'verifyInstallation']);
 });
 
 // AI Settings API (auth required)

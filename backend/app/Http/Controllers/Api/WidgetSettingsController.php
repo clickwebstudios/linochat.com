@@ -354,4 +354,73 @@ HTML;
             ],
         ]);
     }
+
+    /**
+     * Verify widget installation on the project's website.
+     */
+    public function verifyInstallation(Request $request, string $project_id)
+    {
+        $user = auth('api')->user();
+        $project = Project::where('id', $project_id)->where('status', 'active')->first();
+
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        $hasAccess = $project->user_id === $user->id ||
+                     $user->projects()->where('projects.id', $project_id)->exists() ||
+                     $user->role === 'superadmin';
+
+        if (!$hasAccess) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $website = $project->website;
+        if (empty($website)) {
+            return response()->json([
+                'success' => true,
+                'data' => ['installed' => false, 'reason' => 'No website URL configured for this project.'],
+            ]);
+        }
+
+        // Ensure URL has protocol
+        if (!str_starts_with($website, 'http')) {
+            $website = 'https://' . $website;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(10)
+                ->withHeaders(['User-Agent' => 'LinoChat-VerifyBot/1.0'])
+                ->get($website);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['installed' => false, 'reason' => "Could not reach {$website} (HTTP {$response->status()})."],
+                ]);
+            }
+
+            $html = $response->body();
+            $widgetId = $project->widget_id;
+
+            // Check for widget script presence
+            $hasWidget = str_contains($html, $widgetId) || str_contains($html, '/widget?id=') || str_contains($html, 'linochat');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'installed' => $hasWidget,
+                    'reason' => $hasWidget
+                        ? 'Widget script found on your website.'
+                        : 'Widget script not detected on your website. Make sure the embed code is added before the closing </body> tag.',
+                    'url_checked' => $website,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => true,
+                'data' => ['installed' => false, 'reason' => "Could not reach {$website}: " . $e->getMessage()],
+            ]);
+        }
+    }
 }
