@@ -168,6 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/projects/{project_id}/ai-settings/publish', [AISettingsController::class, 'publish']);
     Route::get('/projects/{project_id}/ai-settings/versions', [AISettingsController::class, 'versions']);
     Route::post('/projects/{project_id}/ai-settings/restore/{version_id}', [AISettingsController::class, 'restore']);
+    Route::post('/projects/{project_id}/ai-settings/generate-prompt', [AISettingsController::class, 'generatePrompt']);
     Route::get('/projects/{project_id}/ai-stats', [AISettingsController::class, 'stats']);
 });
 

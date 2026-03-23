@@ -27,6 +27,7 @@ import {
   Settings2,
   Database,
   BookOpen,
+  Sparkles,
   Globe,
   Trash2,
   Loader2,
@@ -492,22 +493,62 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         {/* PROMPT */}
         {active === 'prompt' && (
           <Card>
-            <CardHeader><CardTitle>System Prompt</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>System Prompt</CardTitle>
+                <p className="text-xs text-muted-foreground">{(settings.system_prompt || '').length} / 5000 characters</p>
+              </div>
               <p className="text-sm text-muted-foreground">
                 This prompt is sent to the AI at the start of every chat conversation. Changes are auto-saved as draft — click "Publish Changes" to go live.
               </p>
-              <div className="grid gap-2">
-                <Label htmlFor="system-prompt">System Prompt</Label>
-                <Textarea
-                  id="system-prompt"
-                  placeholder="You are a helpful customer support assistant for {company}..."
-                  rows={28}
-                  value={settings.system_prompt || ''}
-                  onChange={e => updateSetting('system_prompt', e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">{(settings.system_prompt || '').length} / 5000 characters</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Generate prompt section */}
+              <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Generate with AI</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">Describe your business or paste a website URL and AI will generate a system prompt for you.</p>
+                <div className="flex gap-2">
+                  <Input
+                    id="prompt-generator-input"
+                    placeholder="e.g., 'Plumbing company in Vancouver' or 'https://mysite.com'"
+                    className="flex-1"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); (document.getElementById('generate-prompt-btn') as HTMLButtonElement)?.click(); } }}
+                  />
+                  <Button
+                    id="generate-prompt-btn"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const input = (document.getElementById('prompt-generator-input') as HTMLInputElement)?.value;
+                      if (!input?.trim()) return;
+                      const btn = document.getElementById('generate-prompt-btn') as HTMLButtonElement;
+                      btn.disabled = true;
+                      btn.textContent = 'Generating...';
+                      try {
+                        const res = await api.post<any>(`/projects/${projectId}/ai-settings/generate-prompt`, { input: input.trim() });
+                        if (res.success && res.data?.prompt) {
+                          updateSetting('system_prompt', res.data.prompt);
+                          toast.success('Prompt generated! Review and publish when ready.');
+                        }
+                      } catch { toast.error('Failed to generate prompt'); }
+                      finally { btn.disabled = false; btn.textContent = 'Generate'; }
+                    }}
+                  >
+                    Generate
+                  </Button>
+                </div>
               </div>
+
+              <Textarea
+                id="system-prompt"
+                placeholder="You are a helpful customer support assistant for {company}. You help customers with..."
+                className="min-h-[500px] font-mono text-sm"
+                value={settings.system_prompt || ''}
+                onChange={e => updateSetting('system_prompt', e.target.value)}
+              />
               <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <div className="flex gap-2">
                   <BookOpen className="h-4 w-4 text-primary shrink-0 mt-0.5" />
