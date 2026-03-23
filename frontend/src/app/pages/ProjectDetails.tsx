@@ -393,7 +393,7 @@ export default function ProjectDetails() {
               </TabsList>
             </div>
 
-            <TabsContent value="overview" className="space-y-4">
+            <TabsContent value="overview" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <OverviewTab
                 project={project}
                 isSuperadmin={isSuperadmin}
@@ -404,7 +404,7 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            <TabsContent value="tickets" className="space-y-4">
+            <TabsContent value="tickets" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <TicketsTab
                 basePath={basePath}
                 projectId={project?.id}
@@ -412,7 +412,7 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            <TabsContent value="team" className="space-y-4">
+            <TabsContent value="team" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <TeamTab
                 project={project}
                 isSuperadmin={isSuperadmin}
@@ -423,11 +423,11 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            <TabsContent value="activity" className="space-y-4">
+            <TabsContent value="activity" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <ActivityTab projectId={projectId || ''} />
             </TabsContent>
 
-            <TabsContent value="chat-widget" className="space-y-4">
+            <TabsContent value="chat-widget" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <ChatWidgetTab
                 project={project}
                 widgetId={widgetId}
@@ -436,22 +436,22 @@ export default function ProjectDetails() {
               />
             </TabsContent>
 
-            <TabsContent value="popovers" className="space-y-4">
+            <TabsContent value="popovers" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <PopoversTab projectId={projectId} />
             </TabsContent>
 
-            <TabsContent value="ai-settings" className="space-y-4">
+            <TabsContent value="ai-settings" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <AISettingsTab projectId={projectId} />
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4">
+            <TabsContent value="settings" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <SettingsTab
                 project={project}
                 onSaved={(updated) => setProject(updated)}
               />
             </TabsContent>
 
-            <TabsContent value="integrations" className="space-y-4">
+            <TabsContent value="integrations" forceMount className="space-y-4 data-[state=inactive]:hidden">
               <IntegrationsTab project={project} />
             </TabsContent>
           </Tabs>
