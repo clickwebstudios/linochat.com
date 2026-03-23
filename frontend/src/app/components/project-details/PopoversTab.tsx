@@ -572,12 +572,12 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
 
       {/* Fixed save bar */}
       {popover.enabled && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center gap-3">
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3">
+          {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
           <Button className="bg-primary hover:bg-primary/90" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Save Popover Settings
           </Button>
-          {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
         </div>
       )}
     </div>
