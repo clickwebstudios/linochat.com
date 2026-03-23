@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
+import { Switch } from '../ui/switch';
 import {
   Select,
   SelectContent,
@@ -335,10 +336,20 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
     );
   }
 
+  if (!settings.ai_enabled) {
+    return (
+      <AIShowcase onActivate={() => updateSetting('ai_enabled', true)} />
+    );
+  }
+
   return (
     <div className="flex gap-6">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0">
+      <aside className="w-48 shrink-0">
+        <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
+          <span className="text-sm font-medium">Enabled</span>
+          <Switch checked={settings.ai_enabled} onCheckedChange={v => updateSetting('ai_enabled', v)} />
+        </div>
         <nav className="space-y-1">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
@@ -528,14 +539,6 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
           <Card>
             <CardHeader><CardTitle>AI Bot Configuration</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <Label className="text-base">Enable AI Bot</Label>
-                  <p className="text-sm text-muted-foreground">Allow AI to automatically respond to customer inquiries</p>
-                </div>
-                <Checkbox checked={settings.ai_enabled} onCheckedChange={v => updateSetting('ai_enabled', !!v)} />
-              </div>
-
               <div className="grid gap-2">
                 <Label htmlFor="ai-name">AI Assistant Name</Label>
                 <Input id="ai-name" value={settings.ai_name} onChange={e => updateSetting('ai_name', e.target.value)} placeholder="AI Assistant" maxLength={50} />
@@ -801,6 +804,68 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
             </Card>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// --- AI Showcase (when disabled) ---
+const AI_FEATURES = [
+  { icon: '🤖', title: 'AI Chat Assistant', desc: 'Automatically respond to customer inquiries 24/7 with context-aware, intelligent answers.' },
+  { icon: '📚', title: 'Knowledge Base Integration', desc: 'AI references your KB articles to give accurate, consistent answers to common questions.' },
+  { icon: '🧠', title: 'Auto-Learn', desc: 'AI learns from resolved conversations and automatically creates KB articles from successful interactions.' },
+  { icon: '🌐', title: 'Multi-Language Support', desc: 'Respond in English, Spanish, French, German, or auto-detect the customer\'s language.' },
+  { icon: '🔄', title: 'Smart Handover', desc: 'Transfers to human agents when needed, collects contact info, or suggests KB articles first.' },
+  { icon: '📊', title: 'Performance Tracking', desc: 'Monitor resolution rates, response quality, and customer feedback to continuously improve.' },
+] as const;
+
+function AIShowcase({ onActivate }: { onActivate: () => void }) {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => { setIdx(i => (i + 1) % AI_FEATURES.length); setFading(false); }, 300);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (i: number) => { if (i === idx) return; setFading(true); setTimeout(() => { setIdx(i); setFading(false); }, 300); };
+  const current = AI_FEATURES[idx];
+
+  return (
+    <div className="flex flex-col items-center py-8 space-y-6 max-w-2xl mx-auto">
+      <div className="text-center space-y-3">
+        <h3 className="text-xl font-semibold">AI Assistant</h3>
+        <p className="text-sm text-muted-foreground">Supercharge your support with AI-powered automation.</p>
+        <Button size="sm" onClick={onActivate}>
+          Activate AI Assistant
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-4 w-full">
+        <button onClick={() => goTo((idx - 1 + AI_FEATURES.length) % AI_FEATURES.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">‹</span>
+        </button>
+        <div className="flex-1 flex flex-col items-center gap-4">
+          <div
+            className="w-full rounded-xl border bg-muted/20 p-10 flex flex-col items-center gap-4 min-h-[250px] justify-center"
+            style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
+          >
+            <span className="text-5xl">{current.icon}</span>
+            <h4 className="text-lg font-semibold text-center">{current.title}</h4>
+            <p className="text-sm text-muted-foreground text-center max-w-md">{current.desc}</p>
+          </div>
+          <div className="flex gap-1.5">
+            {AI_FEATURES.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+            ))}
+          </div>
+        </div>
+        <button onClick={() => goTo((idx + 1) % AI_FEATURES.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">›</span>
+        </button>
       </div>
     </div>
   );
