@@ -141,18 +141,8 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
   const updateBtn = (key: 'primary_button' | 'secondary_button', patch: Partial<PopoverButtonConfig>) =>
     setPopover(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
 
-  const saveButton = (
-    <div className="flex gap-2 items-center pt-2">
-      <Button className="bg-primary hover:bg-primary/90" onClick={handleSave} disabled={saving}>
-        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        Save Popover Settings
-      </Button>
-      {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
-    </div>
-  );
-
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 pb-16">
       {/* Sidebar — only shown when enabled */}
       {popover.enabled && (
       <aside className="w-full lg:w-48 shrink-0">
@@ -294,7 +284,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                   </div>
                 </div>
 
-                {saveButton}
               </div>
             )}
 
@@ -321,7 +310,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     </div>
                   )}
                 </div>
-                {saveButton}
               </div>
             )}
 
@@ -393,7 +381,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     </div>
                   )}
                 </div>
-                {saveButton}
               </div>
             )}
 
@@ -414,7 +401,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     <Input value={popover.online_status_text} onChange={e => update({ online_status_text: e.target.value })} placeholder="Support Online" />
                   </div>
                 )}
-                {saveButton}
               </div>
             )}
 
@@ -492,7 +478,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     </p>
                   </div>
                 </div>
-                {saveButton}
               </div>
             )}
 
@@ -526,7 +511,6 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
                     </div>
                   )}
                 </div>
-                {saveButton}
               </div>
             )}
           </div>
@@ -584,6 +568,17 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
         </div>
       ) : (
         <PopoverShowcase popover={popover} update={update} widgetColor={widgetColor} />
+      )}
+
+      {/* Fixed save bar */}
+      {popover.enabled && (
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center gap-3">
+          <Button className="bg-primary hover:bg-primary/90" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Save Popover Settings
+          </Button>
+          {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
+        </div>
       )}
     </div>
   );

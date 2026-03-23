@@ -333,22 +333,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     }
   };
 
-  const saveButton = (
-    <div className="flex gap-2 items-center pt-2">
-      <Button
-        className="bg-primary hover:bg-primary/90"
-        onClick={handleSaveSettings}
-        disabled={saving}
-      >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        Save Widget Settings
-      </Button>
-      {saveSuccess && (
-        <span className="text-sm text-green-600">Saved! Changes will appear on your website within 30 seconds.</span>
-      )}
-    </div>
-  );
-
   if (!widgetActive) {
     return (
       <WidgetDesignShowcase
@@ -362,7 +346,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 pb-16">
             {/* Sidebar */}
             <aside className="w-full lg:w-48 shrink-0">
               <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
@@ -550,7 +534,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </Select>
                 </div>
 
-                {saveButton}
               </div>
             )}
 
@@ -629,7 +612,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </div>
                 )}
 
-                {saveButton}
               </div>
             )}
 
@@ -755,7 +737,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </div>
                 )}
 
-                {saveButton}
               </div>
             )}
 
@@ -774,7 +755,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   showOfflinePreview={showOfflinePreview}
                   setShowOfflinePreview={setShowOfflinePreview}
                 />
-                {saveButton}
               </div>
             )}
 
@@ -903,6 +883,15 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                 </div>
               </div>
             </div>
+
+          {/* Fixed save bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center gap-3">
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleSaveSettings} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Widget Settings
+            </Button>
+            {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
+          </div>
           </div>
   );
 }
