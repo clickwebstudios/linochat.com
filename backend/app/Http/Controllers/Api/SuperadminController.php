@@ -308,6 +308,7 @@ class SuperadminController extends Controller
             return response()->json(['success' => false, 'message' => 'Company not found'], 404);
         }
         $projects = $company->ownedProjects()
+            ->where('status', 'active')
             ->withCount(['agents', 'chats', 'tickets'])
             ->get();
         $projectIds = $projects->pluck('id');
@@ -604,7 +605,8 @@ class SuperadminController extends Controller
     {
         $perPage = $request->input('per_page', 20);
         
-        $projects = Project::withCount(['agents', 'chats', 'tickets'])
+        $projects = Project::where('status', 'active')
+            ->withCount(['agents', 'chats', 'tickets'])
             ->with('owner:id,company_name,first_name,last_name,email')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
