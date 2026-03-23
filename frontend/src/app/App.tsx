@@ -177,6 +177,7 @@ export default function App() {
               <Route path="/superadmin/select-view" element={<ProtectedRoute><SuperadminSelectView /></ProtectedRoute>} />
               <Route path="/superadmin/dashboard" element={<ProtectedRoute><SuperadminPlatform /></ProtectedRoute>} />
               <Route path="/superadmin/companies" element={<ProtectedRoute><SuperadminPlatform /></ProtectedRoute>} />
+              <Route path="/superadmin/project/:projectId" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
 
               {/* Superadmin Layout Routes (with sidebar — for detail pages) */}
               <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Superadmin" /></ErrorBoundary></ProtectedRoute>}>
@@ -190,7 +191,6 @@ export default function App() {
                 <Route path="/superadmin/chats/:chatId" element={<ChatDetails />} />
                 <Route path="/superadmin/tickets/:ticketId" element={<TicketDetails />} />
                 <Route path="/superadmin/users/:agentId" element={<AgentDetails />} />
-                <Route path="/superadmin/project/:projectId" element={<ProjectDetails />} />
                 <Route path="/superadmin/ai-article-generator" element={<AIArticleGenerator />} />
                 <Route path="/superadmin/create-article" element={<CreateArticle />} />
                 <Route path="/superadmin/knowledge/article/:articleId" element={<ArticleDetails />} />
