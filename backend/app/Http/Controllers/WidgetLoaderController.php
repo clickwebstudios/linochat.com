@@ -341,44 +341,49 @@ class WidgetLoaderController extends Controller
     }
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
+    function processPollData(data) {
+        if (!data || !data.success || !data.data) return;
+        var d = data.data;
+        CHAT_STATUS = d.status || CHAT_STATUS;
+        updateChatStatus({ status: d.status, agent_name: d.agent_name });
+        if (d.status === 'active' && d.agent_name && !ADDED_MESSAGE_IDS['agent-joined']) {
+            ADDED_MESSAGE_IDS['agent-joined'] = true;
+            addMessage(d.agent_name + ' has joined the chat.', 'system');
+            if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
+        }
+        var msgs = d.messages || [];
+        msgs.forEach(function(m) {
+            if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
+            if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
+                if (ADDED_MESSAGE_IDS['agent-joined']) return;
+                ADDED_MESSAGE_IDS['agent-joined'] = true;
+            }
+            if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
+            var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
+            addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+        });
+    }
+
     function pollChatState() {
         if (!CHAT_ID || !CUSTOMER_ID) return;
-        var cb = 'linochat_poll_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        var script = document.createElement('script');
-        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?callback=' + encodeURIComponent(cb) + '&chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID);
-        var done = false;
-        function finish() {
-            if (done) return;
-            done = true;
-            delete window[cb];
-            if (script.parentNode) script.parentNode.removeChild(script);
-        }
-        window[cb] = function(data) {
-            finish();
-            if (!data || !data.success || !data.data) return;
-            var d = data.data;
-            CHAT_STATUS = d.status || CHAT_STATUS;
-            updateChatStatus({ status: d.status, agent_name: d.agent_name });
-            if (d.status === 'active' && d.agent_name && !ADDED_MESSAGE_IDS['agent-joined']) {
-                ADDED_MESSAGE_IDS['agent-joined'] = true;
-                addMessage(d.agent_name + ' has joined the chat.', 'system');
-                if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
-            }
-            var msgs = d.messages || [];
-            msgs.forEach(function(m) {
-                if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
-                if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
-                    if (ADDED_MESSAGE_IDS['agent-joined']) return;
-                    ADDED_MESSAGE_IDS['agent-joined'] = true;
-                }
-                if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
-                var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
-                addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID);
+        // Try fetch first, fall back to JSONP if blocked by CSP
+        fetch(url, { headers: FETCH_HEADERS })
+            .then(function(r) { return r.json(); })
+            .then(processPollData)
+            .catch(function() {
+                // Fetch blocked by CSP — use JSONP fallback
+                var cb = 'linochat_poll_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                var script = document.createElement('script');
+                window[cb] = function(data) {
+                    delete window[cb];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                    processPollData(data);
+                };
+                script.onerror = function() { delete window[cb]; if (script.parentNode) script.parentNode.removeChild(script); };
+                script.src = url + '&callback=' + encodeURIComponent(cb);
+                document.head.appendChild(script);
             });
-        };
-        script.onerror = finish;
-        script.src = url;
-        document.head.appendChild(script);
     }
     
     function startPollingWhenWaiting() {
