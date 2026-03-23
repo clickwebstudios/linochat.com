@@ -54,9 +54,10 @@ interface OverviewSectionProps {
   } | null;
   isLoading?: boolean;
   companies?: { id: string; name: string; email: string; plan: string; created_at: string }[];
+  onViewCompany?: (companyId: string) => void;
 }
 
-export function OverviewSection({ revenueData, userGrowthData, setActiveSection, stats, isLoading, companies = [] }: OverviewSectionProps) {
+export function OverviewSection({ revenueData, userGrowthData, setActiveSection, stats, isLoading, companies = [], onViewCompany }: OverviewSectionProps) {
   const navigate = useNavigate();
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [totalOnline, setTotalOnline] = useState(0);
@@ -186,7 +187,7 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                   <div
                     key={company.id}
                     className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                    onClick={() => navigate(`/superadmin/company/${company.id}`)}
+                    onClick={() => onViewCompany ? onViewCompany(company.id) : navigate(`/superadmin/company/${company.id}`)}
                   >
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-primary text-primary-foreground">

@@ -115,7 +115,7 @@ export default function SuperadminPlatform() {
       {/* Content */}
       <div className="flex-1">
         {activeTab === 'overview' && (
-          <SuperadminDashboard hideHeader sectionOverride="overview" />
+          <SuperadminDashboard hideHeader sectionOverride="overview" onSwitchToCompany={(id) => { setActiveTab('companies'); setTimeout(() => { window.dispatchEvent(new CustomEvent('sa-view-company', { detail: id })); }, 100); }} />
         )}
 
         {activeTab === 'companies' && (
