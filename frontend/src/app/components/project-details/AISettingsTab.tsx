@@ -229,11 +229,12 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
     if (!projectId) return;
     setVersionsLoading(true);
     try {
-      const r = await api.get(`/projects/${projectId}/ai-settings/versions`);
-      const data = (r as any).data?.data;
-      setVersions(data?.data ?? data ?? []);
+      const r = await api.get<any>(`/projects/${projectId}/ai-settings/versions`);
+      const paginated = r.data;
+      const items = Array.isArray(paginated) ? paginated : (paginated?.data ?? []);
+      setVersions(items);
     } catch {
-      toast.error('Failed to load version history');
+      setVersions([]);
     } finally {
       setVersionsLoading(false);
     }
@@ -259,7 +260,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
   }
 
   useEffect(() => {
-    if (active === 'versions') loadVersions();
+    // Versions loaded on demand via History dropdown
   }, [active]);
 
   // Training
