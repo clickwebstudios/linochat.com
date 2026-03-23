@@ -412,6 +412,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
               selectedCompanyId={selectedCompanyId}
               stats={platformStats}
               isLoading={isLoadingStats}
+              companies={companies}
             />
           )}
 

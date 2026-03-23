@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -13,9 +14,30 @@ import {
   Globe,
   Headphones,
   Building2,
+  Monitor,
+  Smartphone,
+  Tablet,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../../api/client';
+
+interface LiveVisitor {
+  id: string;
+  customer_id: string;
+  customer_name: string | null;
+  current_page: string | null;
+  referral_source: string;
+  browser: string;
+  device: string;
+  project_name: string;
+  started_at: string;
+  last_seen_at: string;
+  pages_count: number;
+  pages_visited: { url: string; title: string; timestamp: string }[];
+}
 
 interface OverviewSectionProps {
   revenueData: { month: string; revenue: number }[];
@@ -31,10 +53,28 @@ interface OverviewSectionProps {
     avg_response_time?: string;
   } | null;
   isLoading?: boolean;
+  companies?: { id: string; name: string; email: string; plan: string; created_at: string }[];
 }
 
-export function OverviewSection({ revenueData, userGrowthData, setActiveSection, stats, isLoading }: OverviewSectionProps) {
+export function OverviewSection({ revenueData, userGrowthData, setActiveSection, stats, isLoading, companies = [] }: OverviewSectionProps) {
   const navigate = useNavigate();
+  const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
+  const [totalOnline, setTotalOnline] = useState(0);
+  const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLive = () => {
+      api.get<any>('/superadmin/live-visitors').then(res => {
+        if (res.success && res.data) {
+          setLiveVisitors(res.data.visitors || []);
+          setTotalOnline(res.data.total_online || 0);
+        }
+      }).catch(() => {});
+    };
+    fetchLive();
+    const interval = setInterval(fetchLive, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -50,10 +90,6 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.monthly_revenue || '$0'}</p>
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      +12.5% from last month
-                    </p>
                   </>
                 )}
               </div>
@@ -74,10 +110,6 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
                 ) : (
                   <>
                     <p className="text-2xl font-bold">{stats?.total_users || 0}</p>
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      +8.2% from last month
-                    </p>
                   </>
                 )}
               </div>
@@ -137,110 +169,43 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Latest Sign Ups */}
+        {/* Latest Sign Ups — from real data */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Latest Sign Ups</CardTitle>
             <Badge variant="outline" className="text-primary border-primary">
-              12 This Week
+              {companies.length} Total
             </Badge>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-6')}>
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Building2 className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold truncate">NovaTech Industries</p>
-                    <span className="text-xs text-muted-foreground">2h ago</span>
+              {companies.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No companies yet.</p>
+              ) : (
+                companies.slice(0, 5).map((company) => (
+                  <div
+                    key={company.id}
+                    className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                    onClick={() => navigate(`/superadmin/company/${company.id}`)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {company.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-semibold truncate">{company.name}</p>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(company.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-1">{company.email}</p>
+                      <Badge variant="secondary" className="text-xs capitalize">{company.plan}</Badge>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-1">James Carter &middot; james@novatech.io</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-secondary text-secondary-foreground text-xs">Enterprise</Badge>
-                    <span className="text-xs text-foreground font-medium">$299/mo</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-7')}>
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-emerald-600 text-white">
-                    <Building2 className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold truncate">GreenLeaf Organics</p>
-                    <span className="text-xs text-muted-foreground">5h ago</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">Priya Sharma &middot; priya@greenleaf.com</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-primary text-primary-foreground text-xs">Pro</Badge>
-                    <span className="text-xs text-foreground font-medium">$79/mo</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-8')}>
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-orange-600 text-white">
-                    <Building2 className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold truncate">BrightPath Education</p>
-                    <span className="text-xs text-muted-foreground">Yesterday</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">Marcus Lee &middot; marcus@brightpath.edu</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-primary text-primary-foreground text-xs">Pro</Badge>
-                    <span className="text-xs text-foreground font-medium">$79/mo</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-9')}>
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-rose-600 text-white">
-                    <Building2 className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold truncate">Apex Fitness Co</p>
-                    <span className="text-xs text-muted-foreground">Yesterday</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">Sofia Ramirez &middot; sofia@apexfitness.com</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="text-xs">Starter</Badge>
-                    <span className="text-xs text-foreground font-medium">$29/mo</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer" onClick={() => navigate('/superadmin/company/comp-10')}>
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-cyan-600 text-white">
-                    <Building2 className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold truncate">CloudSync Solutions</p>
-                    <span className="text-xs text-muted-foreground">2 days ago</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">Daniel Nguyen &middot; daniel@cloudsync.dev</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-secondary text-secondary-foreground text-xs">Enterprise</Badge>
-                    <span className="text-xs text-foreground font-medium">$299/mo</span>
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
             <div className="mt-4 pt-4 border-t">
               <Button variant="outline" className="w-full" size="sm" onClick={() => setActiveSection('companies')}>
@@ -250,66 +215,81 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
           </CardContent>
         </Card>
 
-        {/* Live Visitors */}
+        {/* Live Visitors — real-time data */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Live Visitors</CardTitle>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-green-600 rounded-full animate-pulse"></div>
-              <Badge variant="outline" className="text-green-600 border-green-600">
-                234 Online
+              {totalOnline > 0 && <div className="h-2 w-2 bg-green-600 rounded-full animate-pulse" />}
+              <Badge variant="outline" className={totalOnline > 0 ? 'text-green-600 border-green-600' : ''}>
+                {totalOnline} Online
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {[
-                { initials: 'Globe', gradient: 'from-blue-500 to-purple-500', name: 'Anonymous User', time: 'Just now', company: 'TechCorp - Pricing Page', location: 'New York, US', device: 'Desktop' },
-                { initials: 'Globe', gradient: 'from-green-500 to-teal-500', name: 'Sarah K.', time: '1m ago', company: 'RetailCo - Product Catalog', location: 'London, UK', device: 'Mobile' },
-                { initials: 'Globe', gradient: 'from-orange-500 to-red-500', name: 'Michael R.', time: '2m ago', company: 'FinanceHub - Documentation', location: 'Toronto, CA', device: 'Desktop' },
-                { initials: 'Globe', gradient: 'from-pink-500 to-purple-500', name: 'Anonymous User', time: '3m ago', company: 'HealthPlus - Contact Form', location: 'Sydney, AU', device: 'Tablet' },
-                { initials: 'Globe', gradient: 'from-yellow-500 to-orange-500', name: 'Emma L.', time: '4m ago', company: 'EduLearn - Course Details', location: 'Berlin, DE', device: 'Desktop' },
-                { initials: 'Globe', gradient: 'from-indigo-500 to-blue-500', name: 'James P.', time: '5m ago', company: 'TechCorp - Features Page', location: 'Tokyo, JP', device: 'Mobile' },
-              ].map((visitor, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <div className="relative">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className={`bg-gradient-to-br ${visitor.gradient} text-white`}>
-                        <Globe className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-semibold">{visitor.name}</p>
-                      <span className="text-xs text-muted-foreground">{visitor.time}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">{visitor.company}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">{visitor.location}</Badge>
-                      <span className="text-xs text-muted-foreground">{visitor.device}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Page Views</p>
-                  <p className="text-sm font-bold">1,847</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Avg. Duration</p>
-                  <p className="text-sm font-bold">3m 24s</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Bounce Rate</p>
-                  <p className="text-sm font-bold">42%</p>
-                </div>
+            {liveVisitors.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No active visitors right now.</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {liveVisitors.map(v => {
+                  const DeviceIcon = v.device === 'Mobile' ? Smartphone : v.device === 'Tablet' ? Tablet : Monitor;
+                  const isExpanded = expandedVisitor === v.id;
+                  const timeAgo = v.last_seen_at ? getTimeAgo(v.last_seen_at) : '';
+                  const pagePath = v.current_page ? new URL(v.current_page, 'http://x').pathname : '—';
+                  return (
+                    <div key={v.id} className="bg-muted/50 rounded-lg">
+                      <div
+                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors rounded-lg"
+                        onClick={() => setExpandedVisitor(isExpanded ? null : v.id)}
+                      >
+                        <div className="relative">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              <Globe className="h-4 w-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium truncate">{v.customer_name || 'Anonymous'}</p>
+                            <span className="text-xs text-muted-foreground">{timeAgo}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{v.project_name} — {pagePath}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <DeviceIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{v.browser}</span>
+                          {isExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-3 pb-3 space-y-2">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div><span className="text-muted-foreground">Source:</span> {v.referral_source}</div>
+                            <div><span className="text-muted-foreground">Pages:</span> {v.pages_count}</div>
+                          </div>
+                          {v.pages_visited.length > 0 && (
+                            <div className="space-y-1 pt-1 border-t">
+                              <p className="text-xs font-medium text-muted-foreground">Page History</p>
+                              {v.pages_visited.map((p, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                  <span className="truncate flex-1 text-muted-foreground">{p.title || new URL(p.url, 'http://x').pathname}</span>
+                                  <span className="text-muted-foreground/60 shrink-0 ml-2">{new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -376,4 +356,12 @@ export function OverviewSection({ revenueData, userGrowthData, setActiveSection,
       </Card>
     </div>
   );
+}
+
+function getTimeAgo(dateStr: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 10) return 'Just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  return `${Math.floor(seconds / 3600)}h ago`;
 }

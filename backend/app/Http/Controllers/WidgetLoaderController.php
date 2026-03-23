@@ -378,19 +378,48 @@ class WidgetLoaderController extends Controller
     }
     
     // Send heartbeat to signal customer is still online
+    var LAST_TRACKED_URL = '';
+
     function sendHeartbeat() {
         if (!CHAT_ID || !CUSTOMER_ID) return;
         fetch(API_URL + '/api/widget/' + WIDGET_ID + '/heartbeat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
-            body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID })
+            body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, current_page: window.location.href })
         }).catch(function() {});
+    }
+
+    function sendPageView(url) {
+        if (!CHAT_ID || !CUSTOMER_ID || !url) return;
+        fetch(API_URL + '/api/widget/' + WIDGET_ID + '/page-view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+            body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, page_url: url, page_title: document.title || '' })
+        }).catch(function() {});
+    }
+
+    function trackPageChanges() {
+        LAST_TRACKED_URL = window.location.href;
+        // SPA navigation events
+        window.addEventListener('popstate', checkPageChange);
+        window.addEventListener('hashchange', checkPageChange);
+        // Poll for URL changes (covers pushState which has no event)
+        setInterval(checkPageChange, 3000);
+    }
+
+    function checkPageChange() {
+        var current = window.location.href;
+        if (current !== LAST_TRACKED_URL) {
+            LAST_TRACKED_URL = current;
+            sendPageView(current);
+        }
     }
 
     function startHeartbeat() {
         if (HEARTBEAT_INTERVAL) return;
         sendHeartbeat();
         HEARTBEAT_INTERVAL = setInterval(sendHeartbeat, 15000);
+        trackPageChanges();
     }
 
     function stopHeartbeat() {
