@@ -40,8 +40,9 @@ class OAuthTokenAuth
             }
         }
 
-        // Make user available via auth() and $request->user()
+        // Make user available via auth(), auth('api'), and $request->user()
         auth()->setUser($token->user);
+        auth('api')->setUser($token->user);
         $request->attributes->set('oauth_token', $token);
         $request->attributes->set('oauth_scopes', $tokenScopes);
 

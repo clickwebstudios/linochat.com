@@ -124,17 +124,26 @@ export default function OAuthAuthorizePage() {
           <p className="text-sm text-muted-foreground mt-1">
             Signed in as <span className="font-medium">{user?.email}</span>
           </p>
-          <button
-            type="button"
-            className="text-xs text-primary hover:underline mt-1"
-            onClick={() => {
-              const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-              useAuthStore.getState().logout();
-              navigate(`/login?return_to=${returnTo}`, { replace: true });
-            }}
-          >
-            Switch account
-          </button>
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() => {
+                const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+                useAuthStore.getState().logout();
+                navigate(`/login?return_to=${returnTo}`, { replace: true });
+              }}
+            >
+              Switch account
+            </button>
+            <span className="text-xs text-muted-foreground">·</span>
+            <a
+              href={`/register?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+              className="text-xs text-primary hover:underline"
+            >
+              Create account
+            </a>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
