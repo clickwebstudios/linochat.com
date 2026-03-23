@@ -389,6 +389,10 @@ class WidgetLoaderController extends Controller
         if (popover) popover.remove();
         var btn = document.getElementById('linochat-button');
         if (!btn) return;
+        // Ensure button is visible
+        btn.style.display = '';
+        btn.style.opacity = '1';
+        btn.style.visibility = 'visible';
         var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
         // Limit to 3 stacked bubbles — remove oldest if more
         var existingBubbles = document.querySelectorAll('.linochat-unread-bubble');
