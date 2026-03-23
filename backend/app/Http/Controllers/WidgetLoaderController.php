@@ -1100,7 +1100,7 @@ class WidgetLoaderController extends Controller
         // Start polling when waiting for agent (fallback when WebSocket fails to deliver "X has joined")
         if (CHAT_STATUS === 'waiting') startPollingWhenWaiting();
         // Poll for new messages (agent, AI) when chat is active - fallback when WebSocket fails
-        if (CHAT_STATUS === 'active' || CHAT_STATUS === 'ai_handling') startPollingMessages();
+        startPollingMessages();
         
         // Check if we need to collect contact info for ticket
         setTimeout(checkAndRequestTicket, 60000); // Check after 1 minute
