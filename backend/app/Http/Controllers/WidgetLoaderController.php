@@ -387,15 +387,17 @@ class WidgetLoaderController extends Controller
         var btn = document.getElementById('linochat-button');
         if (!btn) return;
         var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
-        // Count existing bubbles to stack them
-        var existingBubbles = document.querySelectorAll('.linochat-unread-bubble');
-        var stackOffset = 90; // base offset above button
-        for (var i = 0; i < existingBubbles.length; i++) {
-            stackOffset += existingBubbles[i].offsetHeight + 8;
-        }
         // Limit to 3 stacked bubbles — remove oldest if more
+        var existingBubbles = document.querySelectorAll('.linochat-unread-bubble');
         if (existingBubbles.length >= 3) {
             existingBubbles[0].remove();
+        }
+        // Position new bubble just above the current topmost bubble
+        var remainingBubbles = document.querySelectorAll('.linochat-unread-bubble');
+        var stackOffset = 90;
+        if (remainingBubbles.length > 0) {
+            var topBubble = remainingBubbles[remainingBubbles.length - 1];
+            stackOffset = (parseInt(topBubble.style.bottom) || 90) + topBubble.offsetHeight + 8;
         }
         var bubble = document.createElement('div');
         bubble.className = 'linochat-unread-bubble';
