@@ -365,6 +365,10 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
             <aside className="w-full lg:w-56 shrink-0">
+              <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
+                <span className="text-sm font-medium">Enabled</span>
+                <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
+              </div>
               <nav className="space-y-1">
                 {WIDGET_NAV.map(item => {
                   const Icon = item.icon;
@@ -395,21 +399,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   <h3 className="text-lg font-semibold">Appearance</h3>
                   <p className="text-sm text-muted-foreground mt-1">Customize how the chat widget looks on your website.</p>
                 </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">Widget Status</p>
-                    <p className="text-sm text-muted-foreground">
-                      {widgetActive ? 'Widget is active and visible on your website' : 'Widget is disabled and hidden from visitors'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${widgetActive ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {widgetActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
-                  </div>
-                </div>
-
                 <div className="grid gap-2">
                   <Label htmlFor="widget-name">Widget Title</Label>
                   <Input
