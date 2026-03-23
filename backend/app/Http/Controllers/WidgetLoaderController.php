@@ -413,6 +413,8 @@ class WidgetLoaderController extends Controller
             headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
             body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, current_page: window.location.href })
         }).catch(function() {});
+        // Also poll for new messages on each heartbeat
+        pollChatState();
     }
 
     function sendPageView(url) {
