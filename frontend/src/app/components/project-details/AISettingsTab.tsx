@@ -47,6 +47,7 @@ interface AISettings {
   response_language: string;
   fallback_behavior: string;
   auto_learn: boolean;
+  model: string;
 }
 
 interface AIStats {
@@ -104,6 +105,7 @@ const defaultSettings: AISettings = {
   response_language: 'auto',
   fallback_behavior: 'transfer',
   auto_learn: true,
+  model: 'gpt-4o-mini',
 };
 
 export function AISettingsTab({ projectId }: { projectId?: number | string }) {
@@ -539,6 +541,18 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
           <Card>
             <CardHeader><CardTitle>AI Bot Configuration</CardTitle></CardHeader>
             <CardContent className="space-y-6">
+              <div className="grid gap-2">
+                <Label>AI Model</Label>
+                <Select value={settings.model || 'gpt-4o-mini'} onValueChange={v => updateSetting('model', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini — Fast & affordable (~$0.003/chat)</SelectItem>
+                    <SelectItem value="gpt-4o">GPT-4o — Most capable (~$0.05/chat)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Choose between speed/cost and quality. GPT-4o Mini works great for most support scenarios.</p>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="ai-name">AI Assistant Name</Label>
                 <Input id="ai-name" value={settings.ai_name} onChange={e => updateSetting('ai_name', e.target.value)} placeholder="AI Assistant" maxLength={50} />

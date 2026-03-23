@@ -21,6 +21,7 @@ class AISettingsController extends Controller
         'response_language'    => 'auto',
         'fallback_behavior'    => 'transfer',
         'auto_learn'           => true,
+        'model'                => 'gpt-4o-mini',
     ];
 
     private array $validationRules = [
@@ -32,6 +33,7 @@ class AISettingsController extends Controller
         'response_language'    => 'nullable|string|in:en,es,fr,de,auto',
         'fallback_behavior'    => 'nullable|string|in:transfer,collect,suggest,none',
         'auto_learn'           => 'nullable|boolean',
+        'model'                => 'nullable|string|in:gpt-4o,gpt-4o-mini',
     ];
 
     private function getProject(string $project_id, $user)

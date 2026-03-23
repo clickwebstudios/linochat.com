@@ -27,7 +27,7 @@ class AiChatService
     /**
      * Default AI model
      */
-    protected string $model = 'gpt-4o';
+    protected string $model = 'gpt-4o-mini';
 
     /**
      * Maximum retries for API calls
@@ -92,6 +92,10 @@ class AiChatService
                 broadcast(new AiTyping($chat->id, false, $this->model));
                 return $this->getFallbackResponse($chat);
             }
+
+            // Set model from AI settings (default: gpt-4o-mini for cost efficiency)
+            $aiSettings = $project->ai_settings ?? [];
+            $this->model = $aiSettings['model'] ?? 'gpt-4o-mini';
 
             // Get relevant KB articles as context
             $kbContext = $this->getKbContext($project, $customerMessage);
