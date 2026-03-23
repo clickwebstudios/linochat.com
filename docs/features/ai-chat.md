@@ -10,21 +10,43 @@ Customer → Widget → WidgetController::sendMessage()
                       → OpenAI API (system prompt + chat history)
                       → Parse control tokens from AI response
                       → Execute actions (Frubix lookup, booking, ticket creation)
+                      → Log usage to ai_usage_logs
                     → Broadcast AI message via WebSocket
 ```
 
-## System Prompt
+## Model Selection
 
-Built dynamically in `AiChatService::buildSystemPrompt()` with:
-- Company name, AI name, website
-- Knowledge base articles (if any)
-- Business-specific rules (from project AI settings)
-- Control token instructions for Frubix (when connected)
-- Current date/time context
+Users choose their AI model in AI Settings → Configuration:
+
+| Model | Cost/Chat | Temperature | Use Case |
+|-------|-----------|-------------|----------|
+| `gpt-4o-mini` (default) | ~$0.003 | Configurable | Most support scenarios |
+| `gpt-4o` | ~$0.05 | Configurable | Complex queries needing highest quality |
+
+Model stored in `projects.ai_settings.model`, read by AiChatService on each conversation.
+
+## AI Settings (8 configurable fields)
+
+| Field | Used In | Effect |
+|-------|---------|--------|
+| `ai_enabled` | WidgetController | Controls whether AI responds at all |
+| `ai_name` | System prompt + widget | "Your name is {aiName}" |
+| `system_prompt` | System prompt | Custom instructions prepended to base prompt |
+| `response_tone` | System prompt | "Be direct, friendly, and {tone}" |
+| `confidence_threshold` | OpenAI temperature | 95→0.3, 85→0.5, 75→0.7, 60→0.9 |
+| `response_language` | System prompt | en/es/fr/de/auto — "Respond in {language}" |
+| `fallback_behavior` | Handover logic | transfer/collect/suggest/none |
+| `model` | OpenAI API call | gpt-4o or gpt-4o-mini |
+| `auto_learn` | ChatObserver | Auto-generates KB from resolved chats |
+
+## Draft/Publish Versioning
+
+- Changes auto-save as draft (1.5s debounce)
+- Must click "Publish Changes" to go live
+- Version history with restore capability
+- AiChatService always reads from `projects.ai_settings` (live only)
 
 ## Control Tokens
-
-The AI embeds these tokens in its responses to trigger backend actions:
 
 ### Frubix Tokens (when integration connected)
 | Token | Purpose |
@@ -33,77 +55,52 @@ The AI embeds these tokens in its responses to trigger backend actions:
 | `[CHECK_SCHEDULE: phone_or_email]` | Get customer's upcoming appointments |
 | `[CHECK_SCHEDULE: ALL]` | Get all upcoming schedule entries |
 | `[RESCHEDULE_APPOINTMENT: id][NEW_DATE: YYYY-MM-DD][NEW_TIME: HH:MM]` | Reschedule existing appointment |
-| `[CREATE_BOOKING]` | Signal that a booking should be created |
-| `[BOOKING_NAME: ...]` | Customer name for booking |
-| `[BOOKING_PHONE: ...]` | Customer phone for booking |
-| `[BOOKING_EMAIL: ...]` | Customer email for booking |
-| `[BOOKING_ADDRESS: ...]` | Service address for booking |
-| `[BOOKING_ISSUE: ...]` | Issue/service description |
-| `[BOOKING_DATE: YYYY-MM-DD]` | Preferred appointment date |
-| `[BOOKING_TIME: HH:MM]` | Preferred appointment time |
-
-### Handover Token
-| Token | Purpose |
-|-------|---------|
+| `[CREATE_BOOKING]` with `[BOOKING_DATE]` / `[BOOKING_TIME]` | Book new appointment |
 | `[HANDOVER]` | Transfer conversation to human agent |
 
-## Chat Flow
+## Fallback Behavior
 
-1. Customer sends message via widget
-2. `WidgetController::sendMessage()` checks if AI should reply (`ai_enabled && !agent_id`)
-3. `AiChatService::generateResponse()` builds system prompt + history, calls OpenAI
-4. Response parsed for control tokens
-5. If `[LOOKUP_CLIENT]` or `[CHECK_SCHEDULE]` found → execute Frubix lookup, feed results back to AI for a follow-up response
-6. If `[CREATE_BOOKING]` found → create ticket + Frubix appointment (with conflict detection)
-7. If `[HANDOVER]` found → set chat status to `waiting`, notify agents
-8. Clean response (strip tokens) → save as AI message → broadcast
+When AI triggers `[HANDOVER]`, the `fallback_behavior` setting determines what happens:
 
-## Handover Prevention (Frubix)
+| Setting | Action |
+|---------|--------|
+| `transfer` | Hand over to human agent (default) |
+| `collect` | Ask for contact info, create ticket |
+| `suggest` | Show related KB articles, offer to transfer |
+| `none` | Suppress handover, keep AI responding |
 
-When Frubix is connected and customer asks about appointments/bookings:
-- `isAppointmentRelated()` keyword detection intercepts handover intent
-- AI asks for phone/email to look up appointments instead of transferring
-- Distinguishes: "book new" vs "check existing" vs "reschedule"
+## Auto-Learn System
 
-## Booking Flow with Conflict Detection
+When `auto_learn` is enabled and a chat closes with AI resolving it (no agent takeover):
 
-1. AI collects: name, phone, email, address, issue, preferred date/time
-2. AI responds with `[CREATE_BOOKING]` + booking tags
-3. `createBookingTicket()` creates a ticket in LinoChat
-4. If Frubix connected and date/time provided:
-   a. Check schedule for conflicts on requested date
-   b. If no conflict → `FrubixService::createAppointment()`
-   c. If conflict → create ticket without appointment, note conflict in message
-5. Confirmation message sent to customer
+1. `ChatObserver` sets `resolution_type = 'ai_resolved'`
+2. `AutoLearnFromChatJob` dispatched (queued, non-blocking)
+3. Extracts Q&A pairs from conversation
+4. Calls GPT-4o-mini to generate a structured KB article
+5. Creates draft article (`is_ai_generated: true`) if topic is new
+6. Skips if conversation is too short or similar article exists
 
-## Ticket Creation from Chat
+## Customer Feedback
 
-`AiChatService::createBookingTicket()`:
-- Creates `Ticket` with customer info + full chat transcript
-- Creates initial message with transcript
-- Optionally creates Frubix appointment
-- Returns confirmation to customer with ticket number
+Widget shows 👍/👎 buttons below each AI message:
+- `POST /widget/{id}/message-feedback` saves feedback
+- Aggregated in AI Stats dashboard
+- Negative feedback flags for agent review
 
-## Agent Takeover
+## Cost Tracking
 
-When an agent takes over a chat:
-- `agent_id` is set on the chat
-- AI stops responding (`shouldAiReply` check fails when `agent_id` is set)
-- System message "Agent {name} joined the conversation"
-- Agent messages sent via `AgentController::sendMessage()`
-
-## Knowledge Base Integration
-
-If the project has knowledge base articles:
-- Articles are included in the system prompt as context
-- AI references them when answering related questions
-- Managed via `KbController` and stored in `kb_articles` table
+Every AI API call is logged to `ai_usage_logs`:
+- `input_tokens`, `output_tokens`, `model`
+- `base_cost` calculated from OpenAI pricing
+- `charged_cost` calculated using platform pricing settings (markup % or fixed price)
+- Aggregated in Superadmin → Pricing & Plans dashboard
 
 ## Key Files
 
-- `backend/app/Services/AiChatService.php` — Core AI logic, control tokens, booking flow
-- `backend/app/Http/Controllers/Api/WidgetController.php` — `sendMessage()`, `generateAIResponse()`
-- `backend/app/Http/Controllers/Api/AgentController.php` — Agent message sending
-- `backend/app/Services/FrubixService.php` — Frubix API calls from AI tokens
-- `backend/app/Models/Chat.php` — Chat model with status management
-- `backend/app/Models/ChatMessage.php` — Message storage
+- `backend/app/Services/AiChatService.php` — Core AI logic, control tokens, booking, auto-learn
+- `backend/app/Observers/ChatObserver.php` — Resolution tracking
+- `backend/app/Jobs/AutoLearnFromChatJob.php` — KB generation from chats
+- `backend/app/Http/Controllers/Api/AISettingsController.php` — Settings CRUD + versions
+- `backend/app/Http/Controllers/Api/WidgetController.php` — sendMessage, feedback
+- `backend/app/Models/AiUsageLog.php` — Cost tracking model
+- `frontend/src/app/components/project-details/AISettingsTab.tsx` — Settings UI
