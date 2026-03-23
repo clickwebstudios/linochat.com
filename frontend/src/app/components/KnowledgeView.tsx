@@ -14,7 +14,7 @@ import {
   LayoutGrid,
   Plus,
 } from 'lucide-react';
-import { mockArticles } from '../data/mockData';
+// Mock data removed — articles from API
 
 interface KnowledgeAgentViewProps {
   kbSearchQuery: string;
@@ -27,14 +27,7 @@ export function KnowledgeAgentView({ kbSearchQuery, setKbSearchQuery }: Knowledg
   const location = useLocation();
   const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/agent';
 
-  const allArticles = [
-    ...mockArticles,
-    { id: 4, title: 'Integration Setup Guide', category: 'Guides', views: 430, helpful: 29 },
-    { id: 5, title: 'Troubleshooting Common Errors', category: 'Support', views: 720, helpful: 56 },
-    { id: 6, title: 'Account Permissions & Roles', category: 'Account', views: 310, helpful: 21 },
-    { id: 7, title: 'API Documentation', category: 'Developers', views: 680, helpful: 42 },
-    { id: 8, title: 'Data Export & Reports', category: 'Billing', views: 290, helpful: 18 },
-  ];
+  const allArticles: { id: number; title: string; category: string; views: number; helpful: number }[] = [];
 
   const filteredArticles = allArticles.filter((article) => {
     const matchesSearch = kbSearchQuery
@@ -121,7 +114,7 @@ export function KnowledgeAgentView({ kbSearchQuery, setKbSearchQuery }: Knowledg
               <Eye className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-orange-700">{(mockArticles.reduce((sum, a) => sum + a.views, 0) + 2430).toLocaleString()}</p>
+              <p className="text-2xl font-bold text-orange-700">{(allArticles.reduce((sum, a) => sum + a.views, 0)).toLocaleString()}</p>
               <p className="text-sm text-orange-600">Total Views</p>
             </div>
           </CardContent>

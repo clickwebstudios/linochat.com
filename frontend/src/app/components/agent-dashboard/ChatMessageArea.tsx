@@ -31,7 +31,7 @@ import {
   Bot,
   Loader2,
 } from 'lucide-react';
-import { mockArticles } from '../../data/mockData';
+// Mock data removed
 
 interface Message {
   id: string;
@@ -428,7 +428,7 @@ export function ChatMessageArea({
                     <p className="text-sm text-muted-foreground">Insert article link into message</p>
                   </div>
                   <div className="max-h-60 overflow-y-auto">
-                    {mockArticles.slice(0, 5).map((article) => (
+                    {([] as { id: number; title: string; category: string }[]).map((article) => (
                       <button
                         key={article.id}
                         className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"

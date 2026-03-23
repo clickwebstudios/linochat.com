@@ -58,7 +58,7 @@ import {
   Link2,
   ExternalLink,
 } from 'lucide-react';
-import { mockProjects } from '../../data/mockData';
+// Mock data removed
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { api } from '../../api/client';
 import { toast } from 'sonner';
@@ -150,7 +150,7 @@ export default function TicketDetails() {
     if (ticket?.customer_email) loadCustomerTickets();
   }, [ticket?.customer_email]);
 
-  const project = ticket ? (ticket.project || mockProjects.find((p: any) => p.id === ticket.project_id)) : null;
+  const project = ticket?.project || null;
   const assignedAgentName = ticket?.assigned_agent
     ? `${ticket.assigned_agent.first_name || ''} ${ticket.assigned_agent.last_name || ''}`.trim() || ticket.assigned_agent.email
     : 'Unassigned';

@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { categoryProjectMap } from './articleMockData';
-import { mockProjects } from '../data/mockData';
+// Mock data removed
 
 export interface ArticleSidebarProps {
   article: {
@@ -86,7 +86,7 @@ export default function ArticleSidebar({
           </div>
           {(() => {
             const projId = categoryProjectMap[article.categoryId];
-            const project = projId ? mockProjects.find(p => p.id === projId) : null;
+            const project = null; // Project lookup via API if needed
             return project ? (
               <div className="flex items-center gap-3 text-sm">
                 <FolderOpen className="h-4 w-4 text-muted-foreground" />

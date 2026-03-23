@@ -25,12 +25,16 @@ class InboundEmailController extends Controller
 {
     public function handle(Request $request)
     {
-        // Verify shared secret — accept from body or query string (forwardemail.net passes it in URL)
-        $secret   = env('INBOUND_EMAIL_SECRET');
+        // Verify shared secret — required in production
+        $secret   = config('services.inbound_email.secret', env('INBOUND_EMAIL_SECRET'));
         $provided = $request->input('secret') ?? $request->query('secret');
-        if ($secret && $provided !== $secret) {
+        if (!$secret && app()->environment('production')) {
+            Log::error('InboundEmail: INBOUND_EMAIL_SECRET not configured in production');
+            return response()->json(['ok' => true]);
+        }
+        if ($secret && !hash_equals($secret, (string) $provided)) {
             Log::warning('InboundEmail: invalid secret from ' . $request->ip());
-            return response()->json(['ok' => true]); // silent — don't reveal the reason
+            return response()->json(['ok' => true]);
         }
 
         try {

@@ -122,7 +122,7 @@ interface PlatformStats {
   csat_score: string;
 }
 
-export default function SuperadminDashboard() {
+export default function SuperadminDashboard({ hideHeader = false, sectionOverride }: { hideHeader?: boolean; sectionOverride?: string } = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -158,7 +158,7 @@ export default function SuperadminDashboard() {
     'analytics': 'analytics',
     'logs': 'logs',
   };
-  const activeSection = sectionMap[urlSection] || 'overview';
+  const activeSection = sectionOverride || sectionMap[urlSection] || 'overview';
 
   // Fetch data based on active section
   useEffect(() => {
@@ -350,7 +350,7 @@ export default function SuperadminDashboard() {
   return (
     <>
       {/* Header */}
-      <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
+      {!hideHeader && <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
           <div className="flex items-center gap-4">
             <CompanySwitcher 
               selectedCompanyId={selectedCompanyId}
@@ -400,7 +400,7 @@ export default function SuperadminDashboard() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </header>
+        </header>}
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto bg-muted/50 px-6 pt-6">
