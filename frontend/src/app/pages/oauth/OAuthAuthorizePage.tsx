@@ -114,11 +114,8 @@ export default function OAuthAuthorizePage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-4">
           {/* LinoChat branding */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <ShieldCheck className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">LinoChat</span>
+          <div className="flex items-center justify-center mb-6">
+            <img src="/logo-horizontal.svg" alt="LinoChat" className="h-10" />
           </div>
 
           <h1 className="text-xl font-semibold text-foreground">
