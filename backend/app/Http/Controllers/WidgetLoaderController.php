@@ -344,9 +344,6 @@ class WidgetLoaderController extends Controller
     function processPollData(data) {
         var cnt = data && data.data ? (data.data.messages || []).length : 0;
         console.log('[LinoChat] poll received ' + cnt + ' msgs');
-        // Temporary: show poll status in widget title bar
-        var hdr = document.querySelector('#linochat-window [style*="font-weight"]');
-        if (hdr && hdr.dataset) hdr.dataset.poll = (parseInt(hdr.dataset.poll||'0')+1) + '/' + cnt;
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
