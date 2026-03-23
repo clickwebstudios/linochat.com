@@ -364,7 +364,11 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   return (
     <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
-            <aside className="w-full lg:w-56 shrink-0">
+            <aside className="w-full lg:w-48 shrink-0">
+              <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
+                <span className="text-sm font-medium">Enabled</span>
+                <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
+              </div>
               <nav className="space-y-1">
                 {WIDGET_NAV.map(item => {
                   const Icon = item.icon;
@@ -395,21 +399,6 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   <h3 className="text-lg font-semibold">Appearance</h3>
                   <p className="text-sm text-muted-foreground mt-1">Customize how the chat widget looks on your website.</p>
                 </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">Widget Status</p>
-                    <p className="text-sm text-muted-foreground">
-                      {widgetActive ? 'Widget is active and visible on your website' : 'Widget is disabled and hidden from visitors'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${widgetActive ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {widgetActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <Switch checked={widgetActive} onCheckedChange={setWidgetActive} />
-                  </div>
-                </div>
-
                 <div className="grid gap-2">
                   <Label htmlFor="widget-name">Widget Title</Label>
                   <Input
@@ -553,7 +542,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="12">Small (12px)</SelectItem>
+                      <SelectItem value="13">Medium-Small (13px)</SelectItem>
                       <SelectItem value="14">Medium (14px)</SelectItem>
+                      <SelectItem value="15">Medium-Large (15px)</SelectItem>
                       <SelectItem value="16">Large (16px)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -816,12 +807,12 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                       Note: HTTP URLs are blocked on HTTPS sites (mixed content). Use a URL starting with https:// for production.
                     </p>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => {
-                      const code = `<script>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const code = `<script>
   (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
     var script = document.createElement('script');
     script.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
@@ -830,12 +821,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     document.body.appendChild(script);
   });
 </script>`;
-                      navigator.clipboard.writeText(code);
-                    }}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Code
-                  </Button>
+                        navigator.clipboard.writeText(code);
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Code
+                    </Button>
+                    <VerifyInstallButton projectId={project?.id} />
+                  </div>
                 </div>
               </div>
             )}
@@ -1313,6 +1306,41 @@ function WidgetScheduleConfig({
   );
 }
 
+// --- Verify Installation Button ---
+function VerifyInstallButton({ projectId }: { projectId?: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'fail'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleVerify = async () => {
+    if (!projectId) return;
+    setStatus('loading');
+    try {
+      const res = await api.post<any>(`/projects/${projectId}/verify-widget`, {});
+      if (res.success && res.data) {
+        setStatus(res.data.installed ? 'success' : 'fail');
+        setMessage(res.data.reason || '');
+      }
+    } catch {
+      setStatus('fail');
+      setMessage('Verification failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={handleVerify} disabled={status === 'loading'}>
+        {status === 'loading' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+        {status === 'success' ? '✓ Verified' : status === 'fail' ? '✗ Not Found' : 'Verify Installation'}
+      </Button>
+      {message && (
+        <span className={`text-xs ${status === 'success' ? 'text-green-600' : 'text-amber-600'}`}>
+          {message}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // --- Widget Design Showcase (when widget inactive) ---
 const WIDGET_DESIGNS_SHOWCASE = [
   { id: 'modern', name: 'Modern', desc: 'Round shadow design with clean layout' },
@@ -1344,41 +1372,69 @@ function WidgetDesignShowcase({ color, title, welcomeMessage, onActivate, onSele
   const current = WIDGET_DESIGNS_SHOWCASE[idx];
 
   return (
-    <div className="flex flex-col items-center py-8 space-y-6">
-      <div className="text-center space-y-3 max-w-md">
-        <h3 className="text-xl font-semibold">Widget Designs</h3>
+    <div className="flex flex-col items-center py-6 space-y-4 max-w-3xl mx-auto">
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold">Widget Designs</h3>
         <p className="text-sm text-muted-foreground">Preview available designs and activate your widget.</p>
         <Button size="sm" onClick={() => { onSelectDesign(current.id); onActivate(); }}>
           Activate Widget
         </Button>
       </div>
-      <div className="flex items-center gap-4 w-full">
-        <button onClick={() => goTo((idx - 1 + WIDGET_DESIGNS_SHOWCASE.length) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+      <div className="flex items-center gap-3 w-full">
+        <button onClick={() => goTo((idx - 1 + WIDGET_DESIGNS_SHOWCASE.length) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
           <span className="text-muted-foreground text-lg">‹</span>
         </button>
-        <div className="flex-1 flex flex-col items-center gap-4">
-          <div className="bg-muted rounded-lg border relative w-full flex items-end justify-end p-4" style={{ minHeight: 400, opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-            <WidgetPreview
-              design={current.id}
-              color={color}
-              title={title}
-              welcomeMessage={welcomeMessage}
-              showOfflinePreview={false}
-              offlineBehavior="hide"
-              offlineMessage=""
-            />
+        <div className="flex-1 flex flex-col items-center gap-3">
+          {/* Preview with website mockup background */}
+          <div className="rounded-xl border overflow-hidden relative w-full" style={{ height: 340, opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <div className="absolute inset-0 bg-white p-4 space-y-3">
+              <div className="flex items-center gap-2 pb-3 border-b">
+                <div className="w-6 h-6 rounded bg-blue-600" />
+                <div className="h-3 w-20 bg-gray-200 rounded" />
+                <div className="ml-auto flex gap-3">
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="pt-4 space-y-2 max-w-xs">
+                <div className="h-6 w-56 bg-gray-100 rounded" />
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-3 w-4/5 bg-gray-100 rounded" />
+              </div>
+              <div className="pt-2 flex gap-2">
+                <div className="h-8 w-24 bg-blue-100 rounded-lg" />
+                <div className="h-8 w-20 bg-gray-100 rounded-lg" />
+              </div>
+              <div className="pt-4 grid grid-cols-3 gap-3">
+                <div className="h-16 bg-gray-50 rounded border" />
+                <div className="h-16 bg-gray-50 rounded border" />
+                <div className="h-16 bg-gray-50 rounded border" />
+              </div>
+            </div>
+            <div className="absolute bottom-3 right-3">
+              <WidgetPreview
+                design={current.id}
+                color={color}
+                title={title}
+                welcomeMessage={welcomeMessage}
+                showOfflinePreview={false}
+                offlineBehavior="hide"
+                offlineMessage=""
+              />
+            </div>
           </div>
-          <div className="text-center space-y-1" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-            <h4 className="text-lg font-semibold">{current.name}</h4>
-            <p className="text-sm text-muted-foreground">{current.desc}</p>
+          <div className="text-center space-y-0.5" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <h4 className="text-sm font-semibold">{current.name}</h4>
+            <p className="text-xs text-muted-foreground">{current.desc}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {WIDGET_DESIGNS_SHOWCASE.map((_, i) => (
               <button key={i} onClick={() => goTo(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
             ))}
           </div>
         </div>
-        <button onClick={() => goTo((idx + 1) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+        <button onClick={() => goTo((idx + 1) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
           <span className="text-muted-foreground text-lg">›</span>
         </button>
       </div>

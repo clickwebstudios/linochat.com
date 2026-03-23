@@ -707,10 +707,10 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'urgent') return (
-    <div className="relative bg-white rounded-xl shadow-xl border overflow-hidden" style={{ width: w, borderTopColor: '#f59e0b', borderTopWidth: 3 }}>
+    <div className="relative bg-white rounded-xl shadow-xl border overflow-hidden" style={{ width: w, borderTopColor: color, borderTopWidth: 3 }}>
       {closeBtn}
       <div className="p-5 pt-6 space-y-4">
-        <span className="bg-amber-100 text-amber-600 px-2 py-1 rounded text-xs font-bold">⚡ {badge_text}</span>
+        <span className="px-2 py-1 rounded text-xs font-bold" style={{ background: color + '20', color }}>⚡ {badge_text}</span>
         <div>
           <h3 className="text-lg font-extrabold text-gray-900 uppercase">{heading}</h3>
           <p className="text-sm text-gray-600 mt-1">{description}</p>
@@ -727,15 +727,15 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
   );
 
   if (design === 'luxury') return (
-    <div className="relative bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ width: w, borderTop: '3px solid', borderImage: 'linear-gradient(90deg, #b8860b, #daa520, #b8860b) 1' }}>
+    <div className="relative bg-[#faf9f6] rounded-lg shadow-xl overflow-hidden" style={{ width: w, borderTop: `3px solid ${color}` }}>
       {closeBtn}
       <div className="p-8 text-center space-y-5">
         <div className="text-3xl">🏠</div>
         <h3 className="text-2xl text-gray-800" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>{heading}</h3>
-        <div className="w-10 h-px bg-gray-300 mx-auto" />
+        <div className="w-10 h-px mx-auto" style={{ background: color }} />
         <p className="text-xs text-gray-500 uppercase tracking-[0.15em]">{description}</p>
-        {primary_button.action !== 'none' && <button className="w-full py-3.5 border border-gray-400 text-gray-700 text-xs font-semibold uppercase tracking-[0.15em] rounded">{primary_button.text}</button>}
-        {secondary_button.action !== 'none' && <button className="w-full py-3.5 bg-gray-900 text-white text-xs font-semibold uppercase tracking-[0.15em] rounded">{secondary_button.text}</button>}
+        {primary_button.action !== 'none' && <button className="w-full py-3.5 border text-xs font-semibold uppercase tracking-[0.15em] rounded" style={{ borderColor: color, color }}>{primary_button.text}</button>}
+        {secondary_button.action !== 'none' && <button className="w-full py-3.5 text-white text-xs font-semibold uppercase tracking-[0.15em] rounded" style={{ background: color }}>{secondary_button.text}</button>}
         <div className="text-xs text-gray-400 uppercase tracking-[0.15em]">Exclusivity Guaranteed</div>
       </div>
     </div>
@@ -763,21 +763,21 @@ function PopoverPreview({ popover, color }: { popover: PopoverConfig; color: str
       <div className="p-6 pt-8 space-y-4">
         {show_online_status && (
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-200">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />{online_status_text}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border" style={{ background: color + '10', color, borderColor: color + '30' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />{online_status_text}
             </span>
           </div>
         )}
         <h3 className="text-lg font-semibold text-gray-900 text-center">{heading}</h3>
         <p className="text-sm text-gray-500 text-center">{description}</p>
         {primary_button.action !== 'none' && (
-          <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-            <span className="flex items-center gap-2">{primary_button.icon} {primary_button.text}</span><span className="text-gray-400">›</span>
+          <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50" style={{ borderColor: color + '40' }}>
+            <span className="flex items-center gap-2"><span style={{ color }}>{primary_button.icon}</span> {primary_button.text}</span><span style={{ color }}>›</span>
           </button>
         )}
         {secondary_button.action !== 'none' && (
-          <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-            <span className="flex items-center gap-2">{secondary_button.icon} {secondary_button.text}</span><span className="text-gray-400">›</span>
+          <button className="w-full flex items-center justify-between p-3.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50" style={{ borderColor: color + '40' }}>
+            <span className="flex items-center gap-2"><span style={{ color }}>{secondary_button.icon}</span> {secondary_button.text}</span><span style={{ color }}>›</span>
           </button>
         )}
       </div>
