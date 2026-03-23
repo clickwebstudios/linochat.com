@@ -134,6 +134,7 @@ Route::group([
         Route::get('/messages', [WidgetController::class, 'messages']);
         Route::match(['get', 'post'], '/init', [WidgetController::class, 'init']);
         Route::match(['get', 'post'], '/heartbeat', [WidgetController::class, 'heartbeat']);
+        Route::post('/page-view', [WidgetController::class, 'pageView']);
     });
 
     // Typing/lightweight write — generous limit (shared with reads)
@@ -328,6 +329,7 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::put('/agents/{agentId}', [SuperadminController::class, 'updateAgent']);
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
+    Route::get('/live-visitors', [SuperadminController::class, 'liveVisitors']);
     Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
 });
 

@@ -726,12 +726,74 @@ class WidgetController extends Controller
             return response()->json(['success' => false], 422);
         }
 
-        $updated = Chat::where('id', $chatId)
+        $chat = Chat::where('id', $chatId)
             ->where('customer_id', $customerId)
             ->whereHas('project', fn ($q) => $q->where('widget_id', $widget_id))
-            ->update(['customer_last_seen_at' => now()]);
+            ->first();
 
-        return response()->json(['success' => $updated > 0]);
+        if (!$chat) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $updates = ['customer_last_seen_at' => now()];
+
+        // Update current page if provided
+        $currentPage = $request->input('current_page') ?? $request->query('current_page');
+        if ($currentPage) {
+            $metadata = $chat->metadata ?? [];
+            $metadata['current_page'] = $currentPage;
+            $updates['metadata'] = $metadata;
+        }
+
+        $chat->update($updates);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Track page view — widget sends this when visitor navigates to a new page.
+     */
+    public function pageView(Request $request, string $widget_id)
+    {
+        $chatId = $request->input('chat_id');
+        $customerId = $request->input('customer_id');
+        $pageUrl = $request->input('page_url');
+        $pageTitle = $request->input('page_title', '');
+
+        if (!$chatId || !$customerId || !$pageUrl) {
+            return response()->json(['success' => false], 422);
+        }
+
+        $chat = Chat::where('id', $chatId)
+            ->where('customer_id', $customerId)
+            ->whereHas('project', fn ($q) => $q->where('widget_id', $widget_id))
+            ->first();
+
+        if (!$chat) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $metadata = $chat->metadata ?? [];
+        $metadata['current_page'] = $pageUrl;
+
+        $pagesVisited = $metadata['pages_visited'] ?? [];
+        $pagesVisited[] = [
+            'url' => $pageUrl,
+            'title' => $pageTitle,
+            'timestamp' => now()->toIso8601String(),
+        ];
+        // Keep last 50 entries
+        if (count($pagesVisited) > 50) {
+            $pagesVisited = array_slice($pagesVisited, -50);
+        }
+        $metadata['pages_visited'] = $pagesVisited;
+
+        $chat->update([
+            'metadata' => $metadata,
+            'customer_last_seen_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
