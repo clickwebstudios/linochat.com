@@ -567,7 +567,7 @@ class WidgetController extends Controller
             if ($isFrubixManaged) {
                 try {
                     $frubixUrl = rtrim($frubixManaged['api_url'], '/');
-                    Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/v1/messages", [
+                    Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/linochat/messages", [
                         'sender_name'              => $chat->customer_name ?: 'Visitor',
                         'sender_email'             => $chat->customer_email,
                         'sender_type'              => 'customer',
