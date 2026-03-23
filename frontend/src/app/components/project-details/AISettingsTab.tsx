@@ -637,12 +637,21 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <Label className="text-base">Auto-learn from Conversations</Label>
-                  <p className="text-sm text-muted-foreground">AI learns from resolved tickets and approved responses</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Auto-learn from Conversations</Label>
+                    <p className="text-xs text-muted-foreground">AI learns from resolved chats and creates KB articles automatically</p>
+                  </div>
+                  <Switch checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', v)} />
                 </div>
-                <Checkbox checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', !!v)} />
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Auto-create Knowledge Base</Label>
+                    <p className="text-xs text-muted-foreground">Generate KB articles from website content and training documents</p>
+                  </div>
+                  <Switch checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', v)} />
+                </div>
               </div>
 
               <Button variant="outline" onClick={() => { setSettings(defaultSettings); autosaveDraft(defaultSettings); }}>Reset to Defaults</Button>
