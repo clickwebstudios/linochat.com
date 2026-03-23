@@ -380,8 +380,8 @@ Route::middleware('oauth:projects:read')->get('/v1/projects/{id}', [ProjectContr
 Route::middleware('oauth:chats:read')->get('/v1/chats', [AgentController::class, 'chats']);
 Route::middleware('oauth:chats:read')->get('/v1/chats/{chatId}', [AgentController::class, 'show']);
 Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/message', [AgentController::class, 'sendMessage']);
-Route::middleware('oauth:chats:read')->post('/v1/chats/{chatId}/toggle-ai', [AgentController::class, 'toggleAi']);
+Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/toggle-ai', [AgentController::class, 'toggleAi']);
 
 // Frubix managed connection (register/unregister from Frubix side)
-Route::middleware('oauth:projects:read')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
-Route::middleware('oauth:projects:read')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);
+Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
+Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);

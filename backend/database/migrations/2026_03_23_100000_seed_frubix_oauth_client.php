@@ -18,7 +18,7 @@ return new class extends Migration
             'client_id'     => env('FRUBIX_OAUTH_CLIENT_ID', 'frubix_' . Str::random(32)),
             'client_secret' => env('FRUBIX_OAUTH_CLIENT_SECRET', Str::random(64)),
             'redirect_uri'  => env('FRUBIX_OAUTH_REDIRECT_URI', 'https://frubix.com/api/oauth/linochat/callback'),
-            'scopes'        => ['chats:read', 'chats:write', 'projects:read'],
+            'scopes'        => ['chats:read', 'chats:write', 'projects:read', 'projects:write'],
             'is_active'     => true,
         ]);
     }
