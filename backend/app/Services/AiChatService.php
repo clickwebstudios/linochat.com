@@ -277,6 +277,9 @@ class AiChatService
                 'metadata' => $metadata,
             ]);
             
+            // Track AI usage and cost
+            $this->logAiUsage($chat, $response, $tokensUsed);
+
             // Increment view count for referenced articles
             foreach ($kbContext as $article) {
                 $article->increment('views_count');
@@ -333,6 +336,9 @@ class AiChatService
                 return [
                     'content' => $response->choices[0]->message->content,
                     'tokens_used' => $response->usage->totalTokens ?? 0,
+                    'input_tokens' => $response->usage->promptTokens ?? 0,
+                    'output_tokens' => $response->usage->completionTokens ?? 0,
+                    'model' => $this->model,
                 ];
 
             } catch (TimeoutException $e) {
@@ -1454,5 +1460,43 @@ class AiChatService
     {
         $parts = explode(':', $time);
         return ((int) ($parts[0] ?? 0)) * 60 + ((int) ($parts[1] ?? 0));
+    }
+
+    private function logAiUsage(Chat $chat, ?array $response, int $totalTokens): void
+    {
+        try {
+            $inputTokens = $response['input_tokens'] ?? 0;
+            $outputTokens = $response['output_tokens'] ?? 0;
+            $model = $response['model'] ?? $this->model;
+
+            // Get pricing config
+            $pricing = \App\Models\PlatformSetting::getValue('ai_pricing', []);
+            $modelPricing = $pricing[$model] ?? ['mode' => 'markup', 'markup_percent' => 200, 'base_cost_input_per_1m' => 0.15, 'base_cost_output_per_1m' => 0.60];
+
+            // Calculate base cost
+            $baseCost = ($inputTokens / 1_000_000) * ($modelPricing['base_cost_input_per_1m'] ?? 0.15)
+                      + ($outputTokens / 1_000_000) * ($modelPricing['base_cost_output_per_1m'] ?? 0.60);
+
+            // Calculate charged cost
+            $mode = $modelPricing['mode'] ?? 'markup';
+            if ($mode === 'fixed') {
+                $chargedCost = (float) ($modelPricing['fixed_price'] ?? $baseCost);
+            } else {
+                $markupPercent = (float) ($modelPricing['markup_percent'] ?? 200);
+                $chargedCost = $baseCost * (1 + $markupPercent / 100);
+            }
+
+            \App\Models\AiUsageLog::create([
+                'project_id' => $chat->project_id,
+                'chat_id' => $chat->id,
+                'model' => $model,
+                'input_tokens' => $inputTokens,
+                'output_tokens' => $outputTokens,
+                'base_cost' => round($baseCost, 6),
+                'charged_cost' => round($chargedCost, 6),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to log AI usage', ['error' => $e->getMessage()]);
+        }
     }
 }

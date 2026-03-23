@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
@@ -26,6 +26,13 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Loader2 } from 'lucide-react';
+import { api } from '../../api/client';
+import { toast } from 'sonner';
 
 type PlatformTab = 'overview' | 'companies' | 'activity' | 'pricing' | 'transactions' | 'analytics' | 'settings';
 
@@ -143,12 +150,8 @@ export default function SuperadminPlatform() {
         )}
 
         {activeTab === 'pricing' && (
-          <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-lg font-semibold mb-4">Pricing & Plans</h2>
-            <div className="text-center py-20 text-muted-foreground">
-              <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Plan management and pricing configuration coming soon.</p>
-            </div>
+          <div className="p-6">
+            <PricingTab />
           </div>
         )}
 
@@ -172,6 +175,171 @@ export default function SuperadminPlatform() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// --- Pricing Tab ---
+interface ModelPricing {
+  mode: 'markup' | 'fixed';
+  markup_percent: number;
+  fixed_price: number;
+  base_cost_input_per_1m: number;
+  base_cost_output_per_1m: number;
+}
+
+interface UsageStats {
+  totals: { calls: number; input_tokens: number; output_tokens: number; base_cost: number; charged_cost: number; profit: number };
+  by_model: { model: string; calls: number; base_cost: number; charged_cost: number }[];
+  by_project: { project_name: string; calls: number; base_cost: number; charged_cost: number }[];
+}
+
+const MODEL_LABELS: Record<string, string> = { 'gpt-4o': 'GPT-4o', 'gpt-4o-mini': 'GPT-4o Mini' };
+
+function PricingTab() {
+  const [pricing, setPricing] = useState<Record<string, ModelPricing>>({});
+  const [usage, setUsage] = useState<UsageStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      api.get<any>('/superadmin/platform-settings/ai_pricing'),
+      api.get<any>('/superadmin/ai-usage-stats'),
+    ]).then(([pricingRes, usageRes]) => {
+      if (pricingRes.success && pricingRes.data) setPricing(pricingRes.data);
+      if (usageRes.success && usageRes.data) setUsage(usageRes.data);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const updateModel = (model: string, patch: Partial<ModelPricing>) => {
+    setPricing(prev => ({ ...prev, [model]: { ...prev[model], ...patch } }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put('/superadmin/platform-settings/ai_pricing', { value: pricing });
+      toast.success('Pricing saved');
+    } catch { toast.error('Failed to save'); }
+    finally { setSaving(false); }
+  };
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const fmt = (n: number) => n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">AI Model Pricing</h2>
+          <p className="text-sm text-muted-foreground">Set margins for each AI model. Customers are charged based on these settings.</p>
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Save Pricing
+        </Button>
+      </div>
+
+      {/* Model Pricing Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(pricing).map(([model, mp]) => {
+          const avgCostPer1k = (mp.base_cost_input_per_1m * 2 + mp.base_cost_output_per_1m * 0.3) / 1000;
+          const chargedPer1k = mp.mode === 'fixed' ? mp.fixed_price : avgCostPer1k * (1 + mp.markup_percent / 100);
+          return (
+            <Card key={model}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{MODEL_LABELS[model] || model}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-muted-foreground">Input cost:</span> ${mp.base_cost_input_per_1m}/1M tokens</div>
+                  <div><span className="text-muted-foreground">Output cost:</span> ${mp.base_cost_output_per_1m}/1M tokens</div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-xs">Pricing Mode</Label>
+                  <Select value={mp.mode} onValueChange={v => updateModel(model, { mode: v as 'markup' | 'fixed' })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="markup">Markup Percentage</SelectItem>
+                      <SelectItem value="fixed">Fixed Price per Chat</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {mp.mode === 'markup' ? (
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Markup (%)</Label>
+                    <Input type="number" value={mp.markup_percent} onChange={e => updateModel(model, { markup_percent: parseInt(e.target.value) || 0 })} />
+                    <p className="text-xs text-muted-foreground">Customer pays base cost + {mp.markup_percent}% = ~{fmt(chargedPer1k)}/chat</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Fixed Price per Chat ($)</Label>
+                    <Input type="number" step="0.001" value={mp.fixed_price} onChange={e => updateModel(model, { fixed_price: parseFloat(e.target.value) || 0 })} />
+                    <p className="text-xs text-muted-foreground">Customer pays ${mp.fixed_price} per conversation</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Usage Stats */}
+      {usage && (
+        <>
+          <h2 className="text-lg font-semibold pt-4">Usage Summary (Last 30 Days)</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">API Calls</p><p className="text-2xl font-bold">{usage.totals.calls.toLocaleString()}</p></CardContent></Card>
+            <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Base Cost</p><p className="text-2xl font-bold">{fmt(usage.totals.base_cost)}</p></CardContent></Card>
+            <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Revenue</p><p className="text-2xl font-bold text-green-600">{fmt(usage.totals.charged_cost)}</p></CardContent></Card>
+            <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Profit</p><p className="text-2xl font-bold text-primary">{fmt(usage.totals.profit)}</p></CardContent></Card>
+          </div>
+
+          {usage.by_model.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">By Model</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {usage.by_model.map(m => (
+                    <div key={m.model} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <span className="font-medium">{MODEL_LABELS[m.model] || m.model}</span>
+                      <div className="flex gap-6 text-sm text-muted-foreground">
+                        <span>{m.calls} calls</span>
+                        <span>Cost: {fmt(m.base_cost)}</span>
+                        <span className="text-green-600">Revenue: {fmt(m.charged_cost)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {usage.by_project.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">By Project (Top 10)</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {usage.by_project.map(p => (
+                    <div key={p.project_name} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <span className="font-medium">{p.project_name}</span>
+                      <div className="flex gap-6 text-sm text-muted-foreground">
+                        <span>{p.calls} calls</span>
+                        <span>Cost: {fmt(p.base_cost)}</span>
+                        <span className="text-green-600">Revenue: {fmt(p.charged_cost)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
