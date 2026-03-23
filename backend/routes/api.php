@@ -380,6 +380,7 @@ Route::middleware('oauth:projects:read')->get('/v1/projects/{id}', [ProjectContr
 Route::middleware('oauth:chats:read')->get('/v1/chats', [AgentController::class, 'chats']);
 Route::middleware('oauth:chats:read')->get('/v1/chats/{chatId}', [AgentController::class, 'show']);
 Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/message', [AgentController::class, 'sendMessage']);
+Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/typing', [AgentController::class, 'typing']);
 Route::middleware('oauth:chats:write')->post('/v1/chats/{chatId}/toggle-ai', [AgentController::class, 'toggleAi']);
 
 // Frubix managed connection (register/unregister from Frubix side)

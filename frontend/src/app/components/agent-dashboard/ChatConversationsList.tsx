@@ -176,6 +176,12 @@ export function ChatConversationsList({
                             {project.name}
                           </span>
                         )}
+                        {chat.has_frubix && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 border border-indigo-200">
+                            <svg className="w-2.5 h-2.5" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#6366F1"/><text x="16" y="22" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="system-ui">F</text></svg>
+                            Frubix
+                          </span>
+                        )}
                       </div>
                       {(chat.unread > 0 || chat.unread_count > 0) && (
                         <span className="bg-primary text-white text-xs font-medium h-5 min-w-[25px] px-2 rounded-lg flex items-center justify-center flex-shrink-0">

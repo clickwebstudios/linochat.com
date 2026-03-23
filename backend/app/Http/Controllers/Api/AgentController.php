@@ -449,10 +449,11 @@ class AgentController extends Controller
 
         $user = auth('api')->user();
         
-        // Superadmin can type in any chat, agents only in assigned chats
+        // Superadmin and OAuth clients can type in any chat, agents only in assigned chats
         $chatQuery = Chat::where('id', $chat_id);
-        
-        if ($user->role !== 'superadmin') {
+        $isOAuth = $request->attributes->has('oauth_token');
+
+        if ($user->role !== 'superadmin' && !$isOAuth) {
             $chatQuery->where('agent_id', $user->id);
         }
         
@@ -870,18 +871,21 @@ class AgentController extends Controller
                 : ($chat->agent_id ? 'active' : 'waiting'),
         ]);
 
-        // Add system message about AI status change
-        $systemMessage = ChatMessage::create([
-            'chat_id' => $chat->id,
-            'sender_type' => 'system',
-            'content' => $newAiStatus 
-                ? 'AI assistant has been enabled for this chat.'
-                : 'AI assistant has been disabled. A human agent will assist you.',
-        ]);
+        // Add system message about AI status change (skip for Frubix-managed projects)
+        $isFrubixManaged = (bool) ($chat->project?->integrations['frubix_managed']['enabled'] ?? false);
+        if (!$isFrubixManaged) {
+            $systemMessage = ChatMessage::create([
+                'chat_id' => $chat->id,
+                'sender_type' => 'system',
+                'content' => $newAiStatus
+                    ? 'AI assistant has been enabled for this chat.'
+                    : 'AI assistant has been disabled. A human agent will assist you.',
+            ]);
+            broadcast(new MessageSent($systemMessage))->toOthers();
+        }
 
-        // Broadcast status update and message
+        // Broadcast status update
         broadcast(new ChatStatusUpdated($chat->id, $chat->status, $chat->agent_id, $user->name));
-        broadcast(new MessageSent($systemMessage))->toOthers();
 
         return response()->json([
             'success' => true,
