@@ -13,7 +13,6 @@ use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Services\AiChatService;
-use App\Services\FrubixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -559,9 +558,6 @@ class WidgetController extends Controller
             $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
             broadcast(new MessageSent($message))->toOthers();
 
-            // Forward message to Frubix if integrated
-            $this->forwardToFrubix($project, $message, $chat, 'customer');
-
             $aiResponse = null;
             $chat->refresh(); // Ensure we have latest agent_id/status (agent may have taken over)
             // Never use AI when an agent has taken over (agent_id is set)
@@ -1065,38 +1061,44 @@ class WidgetController extends Controller
             $aiMessage = ChatMessage::find($response['id']);
             if ($aiMessage) {
                 broadcast(new MessageSent($aiMessage))->toOthers();
-                // Forward AI response to Frubix as agent message
-                $this->forwardToFrubix($project, $aiMessage, $chat, 'agent');
             }
         }
-
+        
         return $response;
     }
 
-    private function forwardToFrubix(Project $project, ChatMessage $message, Chat $chat, string $senderType): void
+    /**
+     * Save customer feedback on an AI message (thumbs up/down).
+     */
+    public function messageFeedback(Request $request, string $widget_id)
     {
-        try {
-            $frubixConfig = $project->integrations['frubix'] ?? null;
-            if (!$frubixConfig || empty($frubixConfig['access_token'])) {
-                return;
-            }
+        $validator = Validator::make($request->all(), [
+            'message_id' => 'required|string',
+            'customer_id' => 'required|string',
+            'feedback' => 'required|string|in:positive,negative',
+        ]);
 
-            FrubixService::sendMessage($frubixConfig, [
-                'message' => $message->content,
-                'sender_name' => $chat->customer_name ?? 'Customer',
-                'sender_phone' => $chat->customer_phone ?? null,
-                'sender_email' => $chat->customer_email ?? null,
-                'sender_type' => $senderType,
-                'channel' => 'linochat',
-                'source' => 'linochat',
-                'external_id' => (string) $message->id,
-                'external_conversation_id' => (string) $chat->id,
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Frubix message forward failed', [
-                'chat_id' => $chat->id,
-                'error' => $e->getMessage(),
-            ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false], 422);
         }
+
+        $project = Project::where('widget_id', $widget_id)->first();
+        if (!$project) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $message = ChatMessage::where('id', $request->input('message_id'))
+            ->where('is_ai', true)
+            ->whereHas('chat', fn ($q) => $q->where('project_id', $project->id)
+                ->where('customer_id', $request->input('customer_id')))
+            ->first();
+
+        if (!$message) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $message->update(['feedback' => $request->input('feedback')]);
+
+        return response()->json(['success' => true]);
     }
 }

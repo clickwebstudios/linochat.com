@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\ChatObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy(ChatObserver::class)]
 class Chat extends Model
 {
     use HasFactory;
@@ -23,6 +26,7 @@ class Chat extends Model
         'last_message_at',
         'customer_last_seen_at',
         'metadata',
+        'resolution_type',
     ];
 
     protected $casts = [

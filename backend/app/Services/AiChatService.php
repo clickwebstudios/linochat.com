@@ -111,8 +111,13 @@ class AiChatService
             // Build messages array
             $messages = $this->buildMessages($systemPrompt, $conversationHistory, $customerMessage);
             
+            // Map confidence_threshold to temperature: higher confidence = lower temperature
+            $confidenceThreshold = $aiSettings['confidence_threshold'] ?? 75;
+            $temperatureMap = [95 => 0.3, 85 => 0.5, 75 => 0.7, 60 => 0.9];
+            $temperature = $temperatureMap[$confidenceThreshold] ?? 0.7;
+
             // Call OpenAI API with retry logic
-            $response = $this->callOpenAIWithRetry($apiKey, $messages);
+            $response = $this->callOpenAIWithRetry($apiKey, $messages, $temperature);
 
             // If all retries failed
             if ($response === null) {
@@ -165,6 +170,47 @@ class AiChatService
                         'model' => $this->model,
                     ];
                 }
+
+                // Apply fallback_behavior setting
+                $fallbackBehavior = $aiSettings['fallback_behavior'] ?? 'transfer';
+                if ($fallbackBehavior === 'none') {
+                    // Strip handover tag and return AI response as-is
+                    $cleanContent = $this->cleanAiResponse(str_replace('[HANDOVER]', '', $aiContent));
+                    $aiMessage = ChatMessage::create([
+                        'chat_id' => $chat->id,
+                        'sender_type' => 'ai',
+                        'content' => $cleanContent,
+                        'is_ai' => true,
+                        'metadata' => ['model' => $this->model, 'tokens_used' => $tokensUsed, 'handover_suppressed' => true],
+                    ]);
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return ['id' => $aiMessage->id, 'content' => $cleanContent, 'sender_type' => 'ai', 'created_at' => $aiMessage->created_at, 'model' => $this->model];
+                } elseif ($fallbackBehavior === 'collect') {
+                    // Ask for contact info instead of transferring
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return $this->createContactRequestResponse($chat, $aiContent);
+                } elseif ($fallbackBehavior === 'suggest') {
+                    // Suggest KB articles before transferring
+                    $suggestions = $this->getKbContext($project, $customerMessage);
+                    $suggestContent = $this->cleanAiResponse(str_replace('[HANDOVER]', '', $aiContent));
+                    if (!empty($suggestions)) {
+                        $suggestContent .= "\n\nHere are some articles that might help:\n";
+                        foreach (array_slice($suggestions, 0, 3) as $article) {
+                            $suggestContent .= "• {$article['title']}\n";
+                        }
+                        $suggestContent .= "\nWould you still like to speak with a human agent?";
+                    }
+                    $aiMessage = ChatMessage::create([
+                        'chat_id' => $chat->id,
+                        'sender_type' => 'ai',
+                        'content' => $suggestContent,
+                        'is_ai' => true,
+                        'metadata' => ['model' => $this->model, 'tokens_used' => $tokensUsed, 'fallback' => 'suggest'],
+                    ]);
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return ['id' => $aiMessage->id, 'content' => $suggestContent, 'sender_type' => 'ai', 'created_at' => $aiMessage->created_at, 'model' => $this->model];
+                }
+                // Default: transfer to human
                 broadcast(new AiTyping($chat->id, false, $this->model));
                 return $this->createHandoverResponse($chat, $aiContent);
             }
@@ -263,7 +309,7 @@ class AiChatService
     /**
      * Call OpenAI API with retry logic
      */
-    protected function callOpenAIWithRetry(string $apiKey, array $messages): ?array
+    protected function callOpenAIWithRetry(string $apiKey, array $messages, float $temperature = 0.7): ?array
     {
         $lastException = null;
 
@@ -276,7 +322,7 @@ class AiChatService
                 $response = $client->chat()->create([
                     'model' => $this->model,
                     'messages' => $messages,
-                    'temperature' => 0.7,
+                    'temperature' => $temperature,
                     'max_tokens' => 300,
                 ]);
 
@@ -513,8 +559,15 @@ class AiChatService
         // Response tone from settings
         $tone = $aiSettings['response_tone'] ?? 'professional';
 
-        $prompt .= "TODAY'S DATE: " . now()->format('Y-m-d (l)') . ". Use this year (" . now()->year . ") for all dates unless the customer explicitly specifies a different year.\n\n";
-        $prompt .= "LANGUAGE: Always respond in English, regardless of the language the customer uses.\n\n";
+        $language = $aiSettings['response_language'] ?? 'auto';
+        $languageMap = [
+            'en' => 'Always respond in English.',
+            'es' => 'Always respond in Spanish (Español).',
+            'fr' => 'Always respond in French (Français).',
+            'de' => 'Always respond in German (Deutsch).',
+            'auto' => 'Respond in the same language the customer uses. If unsure, default to English.',
+        ];
+        $prompt .= "LANGUAGE: " . ($languageMap[$language] ?? $languageMap['auto']) . "\n\n";
         $prompt .= "RULES:\n";
         $prompt .= "1. Greet the customer warmly at the start of a new conversation and ask for their name. Example: 'Hi! Welcome to {$companyName}. How can I help you today? Could I get your name please?'\n";
         $prompt .= "2. Answer questions confidently and directly as a company representative. Use 'we offer', 'we don't offer', 'our services include', etc.\n";
@@ -533,7 +586,6 @@ class AiChatService
         $prompt .= "    Once you have ALL details confirmed, you MUST append the [CREATE_BOOKING] tag and ALL booking tags at the END of your reply. This is NOT optional — without these tags, the booking will NOT be created in our system. Example:\n";
         $prompt .= "    'Great, your booking is confirmed! [CREATE_BOOKING][BOOKING_NAME: John Doe][BOOKING_PHONE: 555-1234][BOOKING_EMAIL: john@example.com][BOOKING_ADDRESS: 123 Main St][BOOKING_ISSUE: Fix dishwasher — leaking water from bottom]'\n";
         $prompt .= "    NEVER say 'booked', 'scheduled', or 'confirmed' without including [CREATE_BOOKING] and all the booking tags. If you say it's booked without the tags, the booking will be LOST.\n";
-        $prompt .= "    CRITICAL: Each booking tag MUST contain the ACTUAL value from the conversation. NEVER use placeholders like 'Provided earlier', 'See above', 'As mentioned', etc. Go back through the conversation and copy the real phone number, real email, real address. If you cannot find a value, ASK the customer again.\n";
         $prompt .= "    The BOOKING_ISSUE must summarize EVERYTHING the customer told you about their problem — appliance type, brand, model, symptoms, urgency, etc.\n";
 
         // Add Frubix integration rules if connected
@@ -881,23 +933,16 @@ class AiChatService
             }
 
             try {
-                // Build scheduled_at from date + time
-                $scheduledAt = null;
-                if ($bookingDate) {
-                    $scheduledAt = $bookingDate . ($bookingTime ? ' ' . $bookingTime . ':00' : ' 09:00:00');
-                } else {
-                    $scheduledAt = now()->addDay()->format('Y-m-d 09:00:00');
-                }
-
                 $appointmentData = array_filter([
                     'customer_name' => $name,
-                    'phone' => $phone,
-                    'email' => $email,
+                    'customer_phone' => $phone,
+                    'customer_email' => $email,
                     'address' => $address,
-                    'job_type' => 'general',
-                    'description' => $issue ?? 'Booked via LinoChat',
+                    'job_type' => $issue ? Str::limit($issue, 100) : 'Service Request',
                     'notes' => $issue ?? 'Booked via LinoChat',
-                    'scheduled_at' => $scheduledAt,
+                    'scheduled_date' => $bookingDate,
+                    'scheduled_time' => $bookingTime,
+                    'duration' => 60,
                 ]);
                 if (!$conflictMessage) {
                     FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
@@ -955,9 +1000,13 @@ class AiChatService
             }
         }
 
-        // Email to project team (owner + assigned agents)
+        // Email to company admin(s)
         if ($project) {
-            $adminEmails = $project->agents()->pluck('email')->filter()->toArray();
+            $adminEmails = User::where('company_id', $project->company_id)
+                ->where('role', 'admin')
+                ->pluck('email')
+                ->filter()
+                ->toArray();
             if ($project->user && $project->user->email) {
                 $adminEmails[] = $project->user->email;
             }
@@ -989,23 +1038,6 @@ class AiChatService
                     'title' => 'New booking request',
                     'description' => ($name ?? 'A customer') . ' submitted a booking request.',
                 ]);
-            }
-        }
-
-        // Create lead in Frubix if integration is enabled
-        if ($project && $frubixConfig) {
-            try {
-                FrubixService::createLead($frubixConfig, [
-                    'name'   => $name ?: ($email ? explode('@', $email)[0] : 'Customer'),
-                    'email'  => $email,
-                    'phone'  => $phone,
-                    'source' => 'linochat',
-                    'status' => 'new',
-                    'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] Booking request" . ($issue ? ": {$issue}" : ''),
-                ]);
-                Log::error('Frubix lead created for booking ticket', ['ticket_id' => $ticket->id]);
-            } catch (\Exception $e) {
-                Log::error('Failed to create Frubix lead for booking', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
             }
         }
 
