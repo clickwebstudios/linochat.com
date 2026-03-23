@@ -20,7 +20,8 @@ class AutoLearnFromChatJob implements ShouldQueue
     public int $timeout = 60;
 
     public function __construct(
-        private int $chatId
+        private int $chatId,
+        private string $resolutionType = 'unknown'
     ) {}
 
     public function handle(): void
@@ -29,31 +30,58 @@ class AutoLearnFromChatJob implements ShouldQueue
         if (!$chat || !$chat->project) return;
 
         $project = $chat->project;
-        $aiSettings = $project->ai_settings ?? [];
+        if (!($project->ai_settings['auto_learn'] ?? false)) return;
 
-        if (!($aiSettings['auto_learn'] ?? false)) return;
-
-        // Get conversation messages (customer + AI only, skip system)
+        // Get all conversation messages (customer + AI + agent, skip system)
         $messages = $chat->messages()
-            ->whereIn('sender_type', ['customer', 'ai'])
+            ->whereIn('sender_type', ['customer', 'ai', 'agent'])
             ->orderBy('created_at')
-            ->limit(20)
+            ->limit(30)
             ->get();
 
-        if ($messages->count() < 2) return; // Need at least 1 Q&A pair
+        if ($messages->count() < 2) return;
 
-        // Build conversation transcript
+        // Detect agent corrections: agent message right after AI message
+        $corrections = [];
+        $prevMsg = null;
+        foreach ($messages as $msg) {
+            if ($prevMsg && $prevMsg->sender_type === 'ai' && $msg->sender_type === 'agent') {
+                $corrections[] = [
+                    'ai_said' => $prevMsg->content,
+                    'agent_corrected' => $msg->content,
+                ];
+                // Flag the AI message metadata
+                $prevMsg->update(['metadata' => array_merge($prevMsg->metadata ?? [], ['agent_corrected' => true])]);
+            }
+            $prevMsg = $msg;
+        }
+
+        // Build transcript
         $transcript = $messages->map(function ($msg) {
-            $role = $msg->sender_type === 'customer' ? 'Customer' : 'AI';
+            $role = match ($msg->sender_type) {
+                'customer' => 'Customer',
+                'ai' => 'AI',
+                'agent' => 'Agent',
+                default => 'System',
+            };
             return "{$role}: {$msg->content}";
         })->join("\n\n");
 
-        // Check if this is a substantial enough conversation to learn from
         $customerMessages = $messages->where('sender_type', 'customer');
         if ($customerMessages->count() < 1) return;
 
         $apiKey = config('openai.api_key');
         if (!$apiKey) return;
+
+        // Build context about the conversation type
+        $extraContext = '';
+        if ($this->resolutionType === 'agent_resolved') {
+            $extraContext = "\nNote: This chat was handled by a human agent. The agent's responses are the authoritative answers — prioritize learning from what the AGENT said, not the AI.\n";
+        }
+        if (!empty($corrections)) {
+            $correctionText = collect($corrections)->map(fn($c) => "- AI said: \"{$c['ai_said']}\"\n  Agent corrected to: \"{$c['agent_corrected']}\"")->join("\n");
+            $extraContext .= "\nAgent corrections detected (AI was wrong, agent provided correct answer):\n{$correctionText}\n";
+        }
 
         try {
             $client = OpenAI::client($apiKey);
@@ -64,7 +92,7 @@ class AutoLearnFromChatJob implements ShouldQueue
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are a knowledge base specialist. Given a successfully resolved customer support conversation, extract the key question/topic and create a concise help article. Return JSON:
+                        'content' => 'You are a knowledge base specialist. Given a resolved customer support conversation, extract useful Q&A and create a concise help article. If agent corrections are present, the agent\'s answer is the correct one — create the article based on the agent\'s response, not the AI\'s. Return JSON:
 {
   "should_create": true/false,
   "title": "Article title (question form preferred)",
@@ -72,11 +100,11 @@ class AutoLearnFromChatJob implements ShouldQueue
   "content": "Clear, well-structured answer in markdown. Include the resolution steps.",
   "tags": ["tag1", "tag2"]
 }
-Set should_create to false if the conversation is too generic, personal, or not useful as a knowledge article (e.g., just greetings, off-topic chat).',
+Set should_create to false if the conversation is too generic, personal, or not useful as a knowledge article.',
                     ],
                     [
                         'role' => 'user',
-                        'content' => "Company: {$project->name}\n\nConversation:\n{$transcript}",
+                        'content' => "Company: {$project->name}\n{$extraContext}\nConversation:\n{$transcript}",
                     ],
                 ],
                 'max_tokens' => 1000,
@@ -87,7 +115,7 @@ Set should_create to false if the conversation is too generic, personal, or not 
             $parsed = json_decode($raw, true);
 
             if (!($parsed['should_create'] ?? false) || empty($parsed['title'])) {
-                Log::info('AutoLearn: skipped — conversation not suitable for KB', ['chat_id' => $this->chatId]);
+                Log::info('AutoLearn: skipped', ['chat_id' => $this->chatId, 'type' => $this->resolutionType]);
                 return;
             }
 
@@ -97,17 +125,15 @@ Set should_create to false if the conversation is too generic, personal, or not 
                 ->first();
 
             if ($existing) {
-                Log::info('AutoLearn: similar article exists, skipping', ['chat_id' => $this->chatId, 'existing_id' => $existing->id]);
+                Log::info('AutoLearn: similar article exists', ['chat_id' => $this->chatId, 'existing_id' => $existing->id]);
                 return;
             }
 
-            // Find or create category
             $category = $project->kbCategories()->firstOrCreate(
                 ['name' => $parsed['category'] ?? 'FAQ'],
                 ['slug' => \Illuminate\Support\Str::slug($parsed['category'] ?? 'faq')]
             );
 
-            // Create draft KB article
             KbArticle::create([
                 'project_id' => $project->id,
                 'category_id' => $category->id,
@@ -121,8 +147,10 @@ Set should_create to false if the conversation is too generic, personal, or not 
                 'author_id' => null,
             ]);
 
-            Log::info('AutoLearn: KB article created from resolved chat', [
+            Log::info('AutoLearn: KB article created', [
                 'chat_id' => $this->chatId,
+                'type' => $this->resolutionType,
+                'corrections' => count($corrections),
                 'title' => $parsed['title'],
                 'project_id' => $project->id,
             ]);

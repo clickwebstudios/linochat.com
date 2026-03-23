@@ -4,6 +4,13 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
+import { Switch } from '../ui/switch';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -20,6 +27,7 @@ import {
   Settings2,
   Database,
   BookOpen,
+  Sparkles,
   Globe,
   Trash2,
   Loader2,
@@ -35,7 +43,7 @@ import { Input } from '../ui/input';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 
-type SidebarSection = 'overview' | 'prompt' | 'configuration' | 'training' | 'versions';
+type SidebarSection = 'overview' | 'prompt' | 'configuration' | 'training';
 
 interface AISettings {
   ai_enabled: boolean;
@@ -46,6 +54,7 @@ interface AISettings {
   response_language: string;
   fallback_behavior: string;
   auto_learn: boolean;
+  model: string;
 }
 
 interface AIStats {
@@ -91,7 +100,6 @@ const NAV_ITEMS = [
   { id: 'prompt' as SidebarSection, label: 'Prompt', icon: MessageSquare },
   { id: 'configuration' as SidebarSection, label: 'Configuration', icon: Settings2 },
   { id: 'training' as SidebarSection, label: 'Training Data Sources', icon: Database },
-  { id: 'versions' as SidebarSection, label: 'Version History', icon: History },
 ];
 
 const defaultSettings: AISettings = {
@@ -103,6 +111,7 @@ const defaultSettings: AISettings = {
   response_language: 'auto',
   fallback_behavior: 'transfer',
   auto_learn: true,
+  model: 'gpt-4o-mini',
 };
 
 export function AISettingsTab({ projectId }: { projectId?: number | string }) {
@@ -221,11 +230,12 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
     if (!projectId) return;
     setVersionsLoading(true);
     try {
-      const r = await api.get(`/projects/${projectId}/ai-settings/versions`);
-      const data = (r as any).data?.data;
-      setVersions(data?.data ?? data ?? []);
+      const r = await api.get<any>(`/projects/${projectId}/ai-settings/versions`);
+      const paginated = r.data;
+      const items = Array.isArray(paginated) ? paginated : (paginated?.data ?? []);
+      setVersions(items);
     } catch {
-      toast.error('Failed to load version history');
+      setVersions([]);
     } finally {
       setVersionsLoading(false);
     }
@@ -251,7 +261,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
   }
 
   useEffect(() => {
-    if (active === 'versions') loadVersions();
+    // Versions loaded on demand via History dropdown
   }, [active]);
 
   // Training
@@ -335,10 +345,20 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
     );
   }
 
+  if (!settings.ai_enabled) {
+    return (
+      <AIShowcase onActivate={() => updateSetting('ai_enabled', true)} />
+    );
+  }
+
   return (
     <div className="flex gap-6">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0">
+      <aside className="w-48 shrink-0">
+        <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
+          <span className="text-sm font-medium">Enabled</span>
+          <Switch checked={settings.ai_enabled} onCheckedChange={v => updateSetting('ai_enabled', v)} />
+        </div>
         <nav className="space-y-1">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
@@ -381,29 +401,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 space-y-4 min-w-0">
-        {/* Publish banner */}
-        {hasUnpublishedChanges && (
-          <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-            <div className="flex items-center gap-2 text-sm text-orange-700">
-              <AlertCircle className="h-4 w-4" />
-              <span>You have unpublished changes (draft auto-saved)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
-                Discard Draft
-              </Button>
-              <Button
-                size="sm"
-                onClick={publishSettings}
-                disabled={publishing}
-                className="bg-primary hover:bg-primary/90 text-xs"
-              >
-                {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : 'Publish Changes'}
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="flex-1 space-y-4 min-w-0 pb-16">
 
         {/* OVERVIEW */}
         {active === 'overview' && (
@@ -495,22 +493,62 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         {/* PROMPT */}
         {active === 'prompt' && (
           <Card>
-            <CardHeader><CardTitle>System Prompt</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>System Prompt</CardTitle>
+                <p className="text-xs text-muted-foreground">{(settings.system_prompt || '').length} / 5000 characters</p>
+              </div>
               <p className="text-sm text-muted-foreground">
                 This prompt is sent to the AI at the start of every chat conversation. Changes are auto-saved as draft — click "Publish Changes" to go live.
               </p>
-              <div className="grid gap-2">
-                <Label htmlFor="system-prompt">System Prompt</Label>
-                <Textarea
-                  id="system-prompt"
-                  placeholder="You are a helpful customer support assistant for {company}..."
-                  rows={28}
-                  value={settings.system_prompt || ''}
-                  onChange={e => updateSetting('system_prompt', e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">{(settings.system_prompt || '').length} / 5000 characters</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Generate prompt section */}
+              <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Generate with AI</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">Describe your business or paste a website URL and AI will generate a system prompt for you.</p>
+                <div className="flex gap-2">
+                  <Input
+                    id="prompt-generator-input"
+                    placeholder="e.g., 'Plumbing company in Vancouver' or 'https://mysite.com'"
+                    className="flex-1"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); (document.getElementById('generate-prompt-btn') as HTMLButtonElement)?.click(); } }}
+                  />
+                  <Button
+                    id="generate-prompt-btn"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const input = (document.getElementById('prompt-generator-input') as HTMLInputElement)?.value;
+                      if (!input?.trim()) return;
+                      const btn = document.getElementById('generate-prompt-btn') as HTMLButtonElement;
+                      btn.disabled = true;
+                      btn.textContent = 'Generating...';
+                      try {
+                        const res = await api.post<any>(`/projects/${projectId}/ai-settings/generate-prompt`, { input: input.trim() });
+                        if (res.success && res.data?.prompt) {
+                          updateSetting('system_prompt', res.data.prompt);
+                          toast.success('Prompt generated! Review and publish when ready.');
+                        }
+                      } catch { toast.error('Failed to generate prompt'); }
+                      finally { btn.disabled = false; btn.textContent = 'Generate'; }
+                    }}
+                  >
+                    Generate
+                  </Button>
+                </div>
               </div>
+
+              <Textarea
+                id="system-prompt"
+                placeholder="You are a helpful customer support assistant for {company}. You help customers with..."
+                className="min-h-[500px] font-mono text-sm"
+                value={settings.system_prompt || ''}
+                onChange={e => updateSetting('system_prompt', e.target.value)}
+              />
               <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <div className="flex gap-2">
                   <BookOpen className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -528,12 +566,16 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
           <Card>
             <CardHeader><CardTitle>AI Bot Configuration</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <Label className="text-base">Enable AI Bot</Label>
-                  <p className="text-sm text-muted-foreground">Allow AI to automatically respond to customer inquiries</p>
-                </div>
-                <Checkbox checked={settings.ai_enabled} onCheckedChange={v => updateSetting('ai_enabled', !!v)} />
+              <div className="grid gap-2">
+                <Label>AI Model</Label>
+                <Select value={settings.model || 'gpt-4o-mini'} onValueChange={v => updateSetting('model', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini — Fast & affordable (~$0.003/chat)</SelectItem>
+                    <SelectItem value="gpt-4o">GPT-4o — Most capable (~$0.05/chat)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Choose between speed/cost and quality. GPT-4o Mini works great for most support scenarios.</p>
               </div>
 
               <div className="grid gap-2">
@@ -595,12 +637,21 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <Label className="text-base">Auto-learn from Conversations</Label>
-                  <p className="text-sm text-muted-foreground">AI learns from resolved tickets and approved responses</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Auto-learn from Conversations</Label>
+                    <p className="text-xs text-muted-foreground">AI learns from resolved chats and creates KB articles automatically</p>
+                  </div>
+                  <Switch checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', v)} />
                 </div>
-                <Checkbox checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', !!v)} />
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Auto-create Knowledge Base</Label>
+                    <p className="text-xs text-muted-foreground">Generate KB articles from website content and training documents</p>
+                  </div>
+                  <Switch checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', v)} />
+                </div>
               </div>
 
               <Button variant="outline" onClick={() => { setSettings(defaultSettings); autosaveDraft(defaultSettings); }}>Reset to Defaults</Button>
@@ -609,75 +660,6 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         )}
 
         {/* VERSION HISTORY */}
-        {active === 'versions' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Version History
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={loadVersions} disabled={versionsLoading}>
-                  {versionsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {versionsLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : versions.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <History className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No published versions yet. Make changes and publish to create your first version.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {versions.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                          v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          v{v.version_number}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">Version {v.version_number}</p>
-                            {v.status === 'published' && (
-                              <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Live</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Published {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                            {' '}by {v.published_by}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {v.ai_name} &bull; {v.response_tone}
-                          </p>
-                        </div>
-                      </div>
-                      {v.status !== 'published' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => restoreVersion(v.id)}
-                          disabled={restoringId === v.id}
-                          className="shrink-0"
-                        >
-                          {restoringId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RotateCcw className="h-3.5 w-3.5 mr-1" />}
-                          Restore
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
         {/* TRAINING DATA SOURCES */}
         {active === 'training' && (
           <>
@@ -801,6 +783,130 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
             </Card>
           </>
         )}
+      </div>
+
+      {/* Fixed bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {draftStatus === 'saving' && <span className="text-xs text-muted-foreground">Saving draft...</span>}
+          {draftStatus === 'saved' && <span className="text-xs text-green-600">Draft saved</span>}
+          {hasUnpublishedChanges && draftStatus === 'idle' && (
+            <span className="text-xs text-orange-500 flex items-center gap-1"><CloudOff className="h-3 w-3" /> Unpublished changes</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasUnpublishedChanges && (
+            <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
+              Discard
+            </Button>
+          )}
+          <DropdownMenu onOpenChange={(open) => { if (open && versions.length === 0) loadVersions(); }}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <History className="h-3.5 w-3.5" />
+                History
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 max-h-72 overflow-y-auto">
+              {versionsLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : versions.length === 0 ? (
+                <div className="text-center py-4 text-xs text-muted-foreground">No published versions yet</div>
+              ) : (
+                versions.map(v => (
+                  <DropdownMenuItem key={v.id} className="flex items-center justify-between py-2.5 cursor-pointer" onSelect={(e) => { if (v.status !== 'published') { e.preventDefault(); restoreVersion(v.id); } }}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                        v{v.version_number}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium">{v.ai_name} · {v.response_tone}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </div>
+                      </div>
+                    </div>
+                    {v.status === 'published' ? (
+                      <span className="text-xs text-green-600 font-medium shrink-0">Live</span>
+                    ) : (
+                      <span className="text-xs text-primary shrink-0">{restoringId === v.id ? '...' : 'Restore'}</span>
+                    )}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            size="sm"
+            onClick={publishSettings}
+            disabled={publishing || !hasUnpublishedChanges}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : hasUnpublishedChanges ? 'Publish Changes' : 'Published'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- AI Showcase (when disabled) ---
+const AI_FEATURES = [
+  { icon: '🤖', title: 'AI Chat Assistant', desc: 'Automatically respond to customer inquiries 24/7 with context-aware, intelligent answers.' },
+  { icon: '📚', title: 'Knowledge Base Integration', desc: 'AI references your KB articles to give accurate, consistent answers to common questions.' },
+  { icon: '🧠', title: 'Auto-Learn', desc: 'AI learns from resolved conversations and automatically creates KB articles from successful interactions.' },
+  { icon: '🌐', title: 'Multi-Language Support', desc: 'Respond in English, Spanish, French, German, or auto-detect the customer\'s language.' },
+  { icon: '🔄', title: 'Smart Handover', desc: 'Transfers to human agents when needed, collects contact info, or suggests KB articles first.' },
+  { icon: '📊', title: 'Performance Tracking', desc: 'Monitor resolution rates, response quality, and customer feedback to continuously improve.' },
+] as const;
+
+function AIShowcase({ onActivate }: { onActivate: () => void }) {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => { setIdx(i => (i + 1) % AI_FEATURES.length); setFading(false); }, 300);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (i: number) => { if (i === idx) return; setFading(true); setTimeout(() => { setIdx(i); setFading(false); }, 300); };
+  const current = AI_FEATURES[idx];
+
+  return (
+    <div className="flex flex-col items-center py-8 space-y-6 max-w-2xl mx-auto">
+      <div className="text-center space-y-3">
+        <h3 className="text-xl font-semibold">AI Assistant</h3>
+        <p className="text-sm text-muted-foreground">Supercharge your support with AI-powered automation.</p>
+        <Button size="sm" onClick={onActivate}>
+          Activate AI Assistant
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-4 w-full">
+        <button onClick={() => goTo((idx - 1 + AI_FEATURES.length) % AI_FEATURES.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">‹</span>
+        </button>
+        <div className="flex-1 flex flex-col items-center gap-4">
+          <div
+            className="w-full rounded-xl border bg-muted/20 p-10 flex flex-col items-center gap-4 min-h-[250px] justify-center"
+            style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
+          >
+            <span className="text-5xl">{current.icon}</span>
+            <h4 className="text-lg font-semibold text-center">{current.title}</h4>
+            <p className="text-sm text-muted-foreground text-center max-w-md">{current.desc}</p>
+          </div>
+          <div className="flex gap-1.5">
+            {AI_FEATURES.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+            ))}
+          </div>
+        </div>
+        <button onClick={() => goTo((idx + 1) % AI_FEATURES.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+          <span className="text-muted-foreground text-lg">›</span>
+        </button>
       </div>
     </div>
   );

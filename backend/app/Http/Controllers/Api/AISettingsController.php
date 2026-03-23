@@ -21,6 +21,7 @@ class AISettingsController extends Controller
         'response_language'    => 'auto',
         'fallback_behavior'    => 'transfer',
         'auto_learn'           => true,
+        'model'                => 'gpt-4o-mini',
     ];
 
     private array $validationRules = [
@@ -32,6 +33,7 @@ class AISettingsController extends Controller
         'response_language'    => 'nullable|string|in:en,es,fr,de,auto',
         'fallback_behavior'    => 'nullable|string|in:transfer,collect,suggest,none',
         'auto_learn'           => 'nullable|boolean',
+        'model'                => 'nullable|string|in:gpt-4o,gpt-4o-mini',
     ];
 
     private function getProject(string $project_id, $user)
@@ -311,5 +313,75 @@ class AISettingsController extends Controller
                 'negative_feedback'     => $negativeFeedback,
             ],
         ]);
+    }
+
+    /**
+     * Generate a system prompt from a description or website URL.
+     */
+    public function generatePrompt(Request $request, string $project_id)
+    {
+        $user = auth('api')->user();
+        $project = $this->getProject($project_id, $user);
+
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        $input = $request->input('input', '');
+        if (empty(trim($input))) {
+            return response()->json(['success' => false, 'message' => 'Input required'], 422);
+        }
+
+        $apiKey = config('openai.api_key');
+        if (!$apiKey) {
+            return response()->json(['success' => false, 'message' => 'OpenAI not configured'], 500);
+        }
+
+        // If input looks like a URL, fetch the website content
+        $context = $input;
+        if (preg_match('/^https?:\/\//', $input) || preg_match('/\.\w{2,}$/', $input)) {
+            $url = preg_match('/^https?:\/\//', $input) ? $input : 'https://' . $input;
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                    ->withHeaders(['User-Agent' => 'LinoChat-Bot/1.0'])
+                    ->get($url);
+                if ($response->successful()) {
+                    $html = $response->body();
+                    $text = strip_tags(preg_replace(['/<script[^>]*>.*?<\/script>/si', '/<style[^>]*>.*?<\/style>/si'], '', $html));
+                    $text = preg_replace('/\s+/', ' ', $text);
+                    $context = "Website content from {$url}:\n" . substr(trim($text), 0, 6000);
+                }
+            } catch (\Exception $e) {
+                $context = "Business description: {$input}";
+            }
+        }
+
+        try {
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are an expert at writing AI customer support system prompts. Given a business description or website content, generate a comprehensive system prompt that instructs an AI assistant how to handle customer inquiries for this specific business. Include: company overview, services offered, tone/personality, what topics to handle, escalation rules, and things to avoid. Keep it under 3000 characters. Write in second person ("You are...").',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Company name: {$project->name}\n\n{$context}",
+                    ],
+                ],
+                'max_tokens' => 1500,
+                'temperature' => 0.7,
+            ]);
+
+            $prompt = $response->choices[0]->message->content ?? '';
+
+            return response()->json([
+                'success' => true,
+                'data' => ['prompt' => trim($prompt)],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Generation failed: ' . $e->getMessage()], 500);
+        }
     }
 }

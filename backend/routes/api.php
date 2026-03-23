@@ -168,6 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/projects/{project_id}/ai-settings/publish', [AISettingsController::class, 'publish']);
     Route::get('/projects/{project_id}/ai-settings/versions', [AISettingsController::class, 'versions']);
     Route::post('/projects/{project_id}/ai-settings/restore/{version_id}', [AISettingsController::class, 'restore']);
+    Route::post('/projects/{project_id}/ai-settings/generate-prompt', [AISettingsController::class, 'generatePrompt']);
     Route::get('/projects/{project_id}/ai-stats', [AISettingsController::class, 'stats']);
 });
 
@@ -332,6 +333,9 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
     Route::get('/live-visitors', [SuperadminController::class, 'liveVisitors']);
+    Route::get('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'show']);
+    Route::put('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'update']);
+    Route::get('/ai-usage-stats', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'aiUsageStats']);
     Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
 });
 

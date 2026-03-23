@@ -9,26 +9,22 @@ class ChatObserver
 {
     public function updating(Chat $chat): void
     {
-        // Only act when status changes to 'closed'
         if (!$chat->isDirty('status') || $chat->status !== 'closed') {
             return;
         }
 
-        // Determine resolution type
-        if ($chat->agent_id) {
-            $chat->resolution_type = 'agent_resolved';
-        } else {
-            $chat->resolution_type = 'ai_resolved';
-        }
+        $chat->resolution_type = $chat->agent_id ? 'agent_resolved' : 'ai_resolved';
     }
 
     public function updated(Chat $chat): void
     {
-        // Dispatch auto-learn job when chat is AI-resolved
-        if ($chat->wasChanged('status') && $chat->status === 'closed' && $chat->resolution_type === 'ai_resolved') {
+        // Dispatch auto-learn for BOTH AI-resolved and agent-resolved chats
+        if ($chat->wasChanged('status') && $chat->status === 'closed') {
             $project = $chat->project;
             if ($project && ($project->ai_settings['auto_learn'] ?? false)) {
-                AutoLearnFromChatJob::dispatch($chat->id)->delay(now()->addSeconds(10));
+                // Agent-resolved chats are higher quality — learn from them too
+                AutoLearnFromChatJob::dispatch($chat->id, $chat->resolution_type ?? 'unknown')
+                    ->delay(now()->addSeconds(10));
             }
         }
     }

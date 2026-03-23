@@ -27,7 +27,7 @@ class AiChatService
     /**
      * Default AI model
      */
-    protected string $model = 'gpt-4o';
+    protected string $model = 'gpt-4o-mini';
 
     /**
      * Maximum retries for API calls
@@ -92,6 +92,10 @@ class AiChatService
                 broadcast(new AiTyping($chat->id, false, $this->model));
                 return $this->getFallbackResponse($chat);
             }
+
+            // Set model from AI settings (default: gpt-4o-mini for cost efficiency)
+            $aiSettings = $project->ai_settings ?? [];
+            $this->model = $aiSettings['model'] ?? 'gpt-4o-mini';
 
             // Get relevant KB articles as context
             $kbContext = $this->getKbContext($project, $customerMessage);
@@ -273,6 +277,9 @@ class AiChatService
                 'metadata' => $metadata,
             ]);
             
+            // Track AI usage and cost
+            $this->logAiUsage($chat, $response, $tokensUsed);
+
             // Increment view count for referenced articles
             foreach ($kbContext as $article) {
                 $article->increment('views_count');
@@ -329,6 +336,9 @@ class AiChatService
                 return [
                     'content' => $response->choices[0]->message->content,
                     'tokens_used' => $response->usage->totalTokens ?? 0,
+                    'input_tokens' => $response->usage->promptTokens ?? 0,
+                    'output_tokens' => $response->usage->completionTokens ?? 0,
+                    'model' => $this->model,
                 ];
 
             } catch (TimeoutException $e) {
@@ -392,6 +402,17 @@ class AiChatService
             ->where('is_published', true)
             ->with('category')
             ->get();
+
+        // Try RAG (embedding-based search) first
+        $articlesWithEmbeddings = $articles->filter(fn($a) => !empty($a->embedding));
+        if ($articlesWithEmbeddings->count() >= 2) {
+            $ragResult = $this->searchByEmbedding($message, $articlesWithEmbeddings);
+            if (!empty($ragResult)) {
+                Log::info('KB RAG search', ['project_id' => $project->id, 'results' => count($ragResult)]);
+                return $ragResult;
+            }
+        }
+        // Fall back to keyword search
 
         if ($articles->isEmpty()) {
             return [];
@@ -490,6 +511,64 @@ class AiChatService
         return $topArticles;
     }
     
+    /**
+     * Search KB articles using OpenAI embeddings (RAG).
+     */
+    protected function searchByEmbedding(string $query, $articles): array
+    {
+        $apiKey = config('openai.api_key');
+        if (!$apiKey) return [];
+
+        try {
+            $client = \OpenAI::client($apiKey);
+
+            // Embed the customer's query
+            $response = $client->embeddings()->create([
+                'model' => 'text-embedding-3-small',
+                'input' => substr($query, 0, 2000),
+            ]);
+
+            $queryEmbedding = $response->embeddings[0]->embedding;
+
+            // Compute cosine similarity against each article
+            $scored = [];
+            foreach ($articles as $article) {
+                $similarity = $this->cosineSimilarity($queryEmbedding, $article->embedding);
+                if ($similarity > 0.3) {
+                    $scored[] = ['article' => $article, 'score' => $similarity];
+                }
+            }
+
+            // Sort by score descending, take top 3
+            usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
+            return array_slice(array_column($scored, 'article'), 0, 3);
+
+        } catch (\Exception $e) {
+            Log::warning('RAG embedding search failed, falling back to keyword', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Cosine similarity between two vectors.
+     */
+    protected function cosineSimilarity(array $a, array $b): float
+    {
+        $dotProduct = 0.0;
+        $normA = 0.0;
+        $normB = 0.0;
+        $len = min(count($a), count($b));
+
+        for ($i = 0; $i < $len; $i++) {
+            $dotProduct += $a[$i] * $b[$i];
+            $normA += $a[$i] * $a[$i];
+            $normB += $b[$i] * $b[$i];
+        }
+
+        $denominator = sqrt($normA) * sqrt($normB);
+        return $denominator > 0 ? $dotProduct / $denominator : 0.0;
+    }
+
     /**
      * Extract meaningful phrases from message for better matching
      */
@@ -1450,5 +1529,43 @@ class AiChatService
     {
         $parts = explode(':', $time);
         return ((int) ($parts[0] ?? 0)) * 60 + ((int) ($parts[1] ?? 0));
+    }
+
+    private function logAiUsage(Chat $chat, ?array $response, int $totalTokens): void
+    {
+        try {
+            $inputTokens = $response['input_tokens'] ?? 0;
+            $outputTokens = $response['output_tokens'] ?? 0;
+            $model = $response['model'] ?? $this->model;
+
+            // Get pricing config
+            $pricing = \App\Models\PlatformSetting::getValue('ai_pricing', []);
+            $modelPricing = $pricing[$model] ?? ['mode' => 'markup', 'markup_percent' => 200, 'base_cost_input_per_1m' => 0.15, 'base_cost_output_per_1m' => 0.60];
+
+            // Calculate base cost
+            $baseCost = ($inputTokens / 1_000_000) * ($modelPricing['base_cost_input_per_1m'] ?? 0.15)
+                      + ($outputTokens / 1_000_000) * ($modelPricing['base_cost_output_per_1m'] ?? 0.60);
+
+            // Calculate charged cost
+            $mode = $modelPricing['mode'] ?? 'markup';
+            if ($mode === 'fixed') {
+                $chargedCost = (float) ($modelPricing['fixed_price'] ?? $baseCost);
+            } else {
+                $markupPercent = (float) ($modelPricing['markup_percent'] ?? 200);
+                $chargedCost = $baseCost * (1 + $markupPercent / 100);
+            }
+
+            \App\Models\AiUsageLog::create([
+                'project_id' => $chat->project_id,
+                'chat_id' => $chat->id,
+                'model' => $model,
+                'input_tokens' => $inputTokens,
+                'output_tokens' => $outputTokens,
+                'base_cost' => round($baseCost, 6),
+                'charged_cost' => round($chargedCost, 6),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to log AI usage', ['error' => $e->getMessage()]);
+        }
     }
 }

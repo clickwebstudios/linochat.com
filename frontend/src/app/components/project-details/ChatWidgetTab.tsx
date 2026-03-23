@@ -1936,7 +1936,7 @@ function WidgetPreview({
                   <div className="flex gap-2">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex-shrink-0"></div>
                     <div className="bg-white rounded-xl rounded-tl-sm p-3 shadow-lg max-w-[80%] border border-purple-100">
-                      <p className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium" style={{ fontSize: fontSizePx }}>{welcomeMessage}</p>
+                      <p className="text-gray-900 font-medium" style={{ fontSize: fontSizePx }}>{welcomeMessage}</p>
                     </div>
                   </div>
                 </div>
