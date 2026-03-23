@@ -127,6 +127,17 @@ export default function OAuthAuthorizePage() {
           <p className="text-sm text-muted-foreground mt-1">
             Signed in as <span className="font-medium">{user?.email}</span>
           </p>
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline mt-1"
+            onClick={() => {
+              const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+              useAuthStore.getState().logout();
+              navigate(`/login?return_to=${returnTo}`, { replace: true });
+            }}
+          >
+            Switch account
+          </button>
         </CardHeader>
 
         <CardContent className="space-y-4">
