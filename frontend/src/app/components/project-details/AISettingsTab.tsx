@@ -563,107 +563,91 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
 
         {/* CONFIGURATION */}
         {active === 'configuration' && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">AI Bot Configuration</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Left column */}
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="grid gap-2">
-                      <Label>AI Model</Label>
-                      <Select value={settings.model || 'gpt-4o-mini'} onValueChange={v => updateSetting('model', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gpt-4o-mini">GPT-4o Mini (~$0.003/chat)</SelectItem>
-                          <SelectItem value="gpt-4o">GPT-4o (~$0.05/chat)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>AI Assistant Name</Label>
-                      <Input value={settings.ai_name} onChange={e => updateSetting('ai_name', e.target.value)} placeholder="AI Assistant" maxLength={50} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Response Tone</Label>
-                      <Select value={settings.response_tone} onValueChange={v => updateSetting('response_tone', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="friendly">Friendly</SelectItem>
-                          <SelectItem value="casual">Casual</SelectItem>
-                          <SelectItem value="formal">Formal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <Label className="text-sm font-medium">Auto-learn from Conversations</Label>
-                        <p className="text-xs text-muted-foreground">AI creates KB articles from resolved chats</p>
-                      </div>
-                      <Switch checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', v)} />
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardHeader><CardTitle>AI Bot Configuration</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-2">
+                <Label>AI Model</Label>
+                <Select value={settings.model || 'gpt-4o-mini'} onValueChange={v => updateSetting('model', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini — Fast & affordable (~$0.003/chat)</SelectItem>
+                    <SelectItem value="gpt-4o">GPT-4o — Most capable (~$0.05/chat)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Choose between speed/cost and quality. GPT-4o Mini works great for most support scenarios.</p>
               </div>
 
-              {/* Right column */}
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="grid gap-2">
-                      <Label>Confidence Threshold</Label>
-                      <Select value={String(settings.confidence_threshold)} onValueChange={v => updateSetting('confidence_threshold', parseInt(v))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="60">60% — Creative</SelectItem>
-                          <SelectItem value="75">75% — Balanced</SelectItem>
-                          <SelectItem value="85">85% — Accurate</SelectItem>
-                          <SelectItem value="95">95% — Strict</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Response Language</Label>
-                      <Select value={settings.response_language} onValueChange={v => updateSetting('response_language', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">Auto-detect</SelectItem>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="es">Spanish</SelectItem>
-                          <SelectItem value="fr">French</SelectItem>
-                          <SelectItem value="de">German</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Fallback Behavior</Label>
-                      <Select value={settings.fallback_behavior} onValueChange={v => updateSetting('fallback_behavior', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="transfer">Transfer to human</SelectItem>
-                          <SelectItem value="collect">Collect contact info</SelectItem>
-                          <SelectItem value="suggest">Suggest articles</SelectItem>
-                          <SelectItem value="none">Keep responding</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <Button variant="outline" size="sm" onClick={() => { setSettings(defaultSettings); autosaveDraft(defaultSettings); }}>Reset to Defaults</Button>
-                  </CardContent>
-                </Card>
+              <div className="grid gap-2">
+                <Label htmlFor="ai-name">AI Assistant Name</Label>
+                <Input id="ai-name" value={settings.ai_name} onChange={e => updateSetting('ai_name', e.target.value)} placeholder="AI Assistant" maxLength={50} />
+                <p className="text-sm text-muted-foreground">The name customers will see when the AI responds</p>
               </div>
-            </div>
-          </div>
+
+              <div className="grid gap-2">
+                <Label>Response Tone</Label>
+                <Select value={settings.response_tone} onValueChange={v => updateSetting('response_tone', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="friendly">Friendly</SelectItem>
+                    <SelectItem value="casual">Casual</SelectItem>
+                    <SelectItem value="formal">Formal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Confidence Threshold</Label>
+                <Select value={String(settings.confidence_threshold)} onValueChange={v => updateSetting('confidence_threshold', parseInt(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="60">60% — More responses, less accurate</SelectItem>
+                    <SelectItem value="75">75% — Balanced (Recommended)</SelectItem>
+                    <SelectItem value="85">85% — Fewer responses, more accurate</SelectItem>
+                    <SelectItem value="95">95% — Only very confident responses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Response Language</Label>
+                <Select value={settings.response_language} onValueChange={v => updateSetting('response_language', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto-detect</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Fallback Behavior</Label>
+                <Select value={settings.fallback_behavior} onValueChange={v => updateSetting('fallback_behavior', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="transfer">Transfer to human agent</SelectItem>
+                    <SelectItem value="collect">Collect contact info</SelectItem>
+                    <SelectItem value="suggest">Suggest related articles</SelectItem>
+                    <SelectItem value="none">Do nothing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label className="text-base">Auto-learn from Conversations</Label>
+                  <p className="text-sm text-muted-foreground">AI learns from resolved tickets and approved responses</p>
+                </div>
+                <Checkbox checked={settings.auto_learn} onCheckedChange={v => updateSetting('auto_learn', !!v)} />
+              </div>
+
+              <Button variant="outline" onClick={() => { setSettings(defaultSettings); autosaveDraft(defaultSettings); }}>Reset to Defaults</Button>
+            </CardContent>
+          </Card>
         )}
 
         {/* VERSION HISTORY */}
