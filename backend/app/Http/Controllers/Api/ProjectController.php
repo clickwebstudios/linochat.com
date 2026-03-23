@@ -25,13 +25,14 @@ class ProjectController extends Controller
         
         // Superadmin: all projects or filtered by company
         if ($user->role === 'superadmin') {
-            $query = Project::query();
+            $query = Project::where('status', 'active');
             if ($companyId) {
                 $query->where('user_id', $companyId);
             }
             $projects = $query->withCount(['agents', 'chats', 'tickets'])->paginate(100);
         } elseif ($type === 'owned') {
             $projects = $user->ownedProjects()
+                ->where('status', 'active')
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
         } elseif ($type === 'assigned') {
@@ -40,11 +41,12 @@ class ProjectController extends Controller
                 ->paginate(20);
         } else {
             // All projects (owned + assigned)
-            $ownedIds = $user->ownedProjects()->pluck('id');
+            $ownedIds = $user->ownedProjects()->where('status', 'active')->pluck('id');
             $assignedIds = $user->projects()->pluck('projects.id');
             $allIds = $ownedIds->merge($assignedIds)->unique();
-            
+
             $projects = Project::whereIn('id', $allIds)
+                ->where('status', 'active')
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
         }
@@ -63,6 +65,7 @@ class ProjectController extends Controller
         $user = auth('api')->user();
         
         $project = Project::where('id', $project_id)
+            ->where('status', 'active')
             ->with(['agents', 'kbCategories.articles'])
             ->withCount(['chats', 'tickets'])
             ->first();
