@@ -6,6 +6,12 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Switch } from '../ui/switch';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,7 +42,7 @@ import { Input } from '../ui/input';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 
-type SidebarSection = 'overview' | 'prompt' | 'configuration' | 'training' | 'versions';
+type SidebarSection = 'overview' | 'prompt' | 'configuration' | 'training';
 
 interface AISettings {
   ai_enabled: boolean;
@@ -93,7 +99,6 @@ const NAV_ITEMS = [
   { id: 'prompt' as SidebarSection, label: 'Prompt', icon: MessageSquare },
   { id: 'configuration' as SidebarSection, label: 'Configuration', icon: Settings2 },
   { id: 'training' as SidebarSection, label: 'Training Data Sources', icon: Database },
-  { id: 'versions' as SidebarSection, label: 'Version History', icon: History },
 ];
 
 const defaultSettings: AISettings = {
@@ -394,29 +399,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 space-y-4 min-w-0">
-        {/* Publish banner */}
-        {hasUnpublishedChanges && (
-          <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-            <div className="flex items-center gap-2 text-sm text-orange-700">
-              <AlertCircle className="h-4 w-4" />
-              <span>You have unpublished changes (draft auto-saved)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
-                Discard Draft
-              </Button>
-              <Button
-                size="sm"
-                onClick={publishSettings}
-                disabled={publishing}
-                className="bg-primary hover:bg-primary/90 text-xs"
-              >
-                {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : 'Publish Changes'}
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="flex-1 space-y-4 min-w-0 pb-16">
 
         {/* OVERVIEW */}
         {active === 'overview' && (
@@ -626,75 +609,6 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         )}
 
         {/* VERSION HISTORY */}
-        {active === 'versions' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Version History
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={loadVersions} disabled={versionsLoading}>
-                  {versionsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {versionsLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : versions.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <History className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No published versions yet. Make changes and publish to create your first version.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {versions.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                          v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          v{v.version_number}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">Version {v.version_number}</p>
-                            {v.status === 'published' && (
-                              <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Live</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Published {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                            {' '}by {v.published_by}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {v.ai_name} &bull; {v.response_tone}
-                          </p>
-                        </div>
-                      </div>
-                      {v.status !== 'published' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => restoreVersion(v.id)}
-                          disabled={restoringId === v.id}
-                          className="shrink-0"
-                        >
-                          {restoringId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RotateCcw className="h-3.5 w-3.5 mr-1" />}
-                          Restore
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
         {/* TRAINING DATA SOURCES */}
         {active === 'training' && (
           <>
@@ -818,6 +732,68 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
             </Card>
           </>
         )}
+      </div>
+
+      {/* Fixed bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {draftStatus === 'saving' && <span className="text-xs text-muted-foreground">Saving draft...</span>}
+          {draftStatus === 'saved' && <span className="text-xs text-green-600">Draft saved</span>}
+          {hasUnpublishedChanges && draftStatus === 'idle' && (
+            <span className="text-xs text-orange-500 flex items-center gap-1"><CloudOff className="h-3 w-3" /> Unpublished changes</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasUnpublishedChanges && (
+            <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
+              Discard
+            </Button>
+          )}
+          <DropdownMenu onOpenChange={(open) => { if (open && versions.length === 0) loadVersions(); }}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <History className="h-3.5 w-3.5" />
+                History
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 max-h-72 overflow-y-auto">
+              {versionsLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : versions.length === 0 ? (
+                <div className="text-center py-4 text-xs text-muted-foreground">No published versions yet</div>
+              ) : (
+                versions.map(v => (
+                  <DropdownMenuItem key={v.id} className="flex items-center justify-between py-2.5 cursor-pointer" onSelect={(e) => { if (v.status !== 'published') { e.preventDefault(); restoreVersion(v.id); } }}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                        v{v.version_number}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium">{v.ai_name} · {v.response_tone}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </div>
+                      </div>
+                    </div>
+                    {v.status === 'published' ? (
+                      <span className="text-xs text-green-600 font-medium shrink-0">Live</span>
+                    ) : (
+                      <span className="text-xs text-primary shrink-0">{restoringId === v.id ? '...' : 'Restore'}</span>
+                    )}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            size="sm"
+            onClick={publishSettings}
+            disabled={publishing || !hasUnpublishedChanges}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : hasUnpublishedChanges ? 'Publish Changes' : 'Published'}
+          </Button>
+        </div>
       </div>
     </div>
   );
