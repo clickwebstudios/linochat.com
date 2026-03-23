@@ -704,9 +704,13 @@ class WidgetLoaderController extends Controller
     
     function processSendResponse(data) {
         if (data.success && data.data) {
-            // Track the customer message ID so poll skips it
-            if (data.data.message && data.data.message.id) ADDED_MESSAGE_IDS[data.data.message.id] = true;
+            // Track the customer message and AI response IDs so poll skips them
+            if (data.data.message && data.data.message.id) {
+                ADDED_MESSAGE_IDS[data.data.message.id] = true;
+                NOTIFIED_MSG_IDS[data.data.message.id] = true;
+            }
             if (data.data.ai_response) {
+                if (data.data.ai_response.id) NOTIFIED_MSG_IDS[data.data.ai_response.id] = true;
                 addMessage(data.data.ai_response.content, 'ai', data.data.ai_response.id, true);
             }
             return;
@@ -1163,10 +1167,11 @@ class WidgetLoaderController extends Controller
         });
         
         MESSAGES.forEach(function(m) {
-            var type = m.sender_type === 'customer' ? 'customer' : 
-                      m.sender_type === 'system' ? 'system' : 
+            var type = m.sender_type === 'customer' ? 'customer' :
+                      m.sender_type === 'system' ? 'system' :
                       m.sender_type === 'ai' ? 'ai' : 'agent';
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) ADDED_MESSAGE_IDS['agent-joined'] = true;
+            if (m.id) NOTIFIED_MSG_IDS[m.id] = true;
             addMessage(m.content, type, m.id, false, m.metadata);
         });
         
