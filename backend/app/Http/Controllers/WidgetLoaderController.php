@@ -342,6 +342,7 @@ class WidgetLoaderController extends Controller
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
     function processPollData(data) {
+        console.log('[LinoChat] poll data received, msgs:', data && data.data ? (data.data.messages || []).length : 0);
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
@@ -365,13 +366,15 @@ class WidgetLoaderController extends Controller
     }
 
     function pollChatState() {
+        console.log('[LinoChat] polling... CHAT_ID=' + CHAT_ID + ' CUSTOMER_ID=' + (CUSTOMER_ID ? CUSTOMER_ID.substring(0,10) : 'null'));
         if (!CHAT_ID || !CUSTOMER_ID) return;
-        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID);
+        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now();
         // Try fetch first, fall back to JSONP if blocked by CSP
-        fetch(url, { headers: FETCH_HEADERS })
+        fetch(url, { headers: FETCH_HEADERS, cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(processPollData)
-            .catch(function() {
+            .catch(function(err) {
+                console.log('[LinoChat] fetch failed, trying JSONP:', err.message || err);
                 // Fetch blocked by CSP — use JSONP fallback
                 var cb = 'linochat_poll_' + Date.now() + '_' + Math.random().toString(36).slice(2);
                 var script = document.createElement('script');
