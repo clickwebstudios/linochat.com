@@ -644,11 +644,6 @@ class WidgetLoaderController extends Controller
             if (data.data.message && data.data.message.id) ADDED_MESSAGE_IDS[data.data.message.id] = true;
             if (data.data.ai_response) {
                 addMessage(data.data.ai_response.content, 'ai', data.data.ai_response.id, true);
-            } else if (data.data.chat_status === 'waiting') {
-                addMessage('Transferring to human agent...', 'system');
-            } else if (data.data.chat_status !== 'active') {
-                // Only show fallback when not active - when agent has taken over, they will reply
-                addMessage('Thanks for your message! We\'ll get back to you soon.', 'ai', null, true);
             }
             return;
         }
