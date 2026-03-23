@@ -342,8 +342,6 @@ class WidgetLoaderController extends Controller
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
     function processPollData(data) {
-        var cnt = data && data.data ? (data.data.messages || []).length : 0;
-        console.log('[LinoChat] poll received ' + cnt + ' msgs');
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
@@ -385,23 +383,39 @@ class WidgetLoaderController extends Controller
     function showUnreadBubble(text) {
         var existing = document.getElementById('linochat-unread-bubble');
         if (existing) existing.remove();
-        // Hide greeting bubble to avoid overlap
+        // Hide greeting bubble
         var greeting = document.getElementById('linochat-greeting');
         if (greeting) greeting.remove();
         var btn = document.getElementById('linochat-button');
         if (!btn) return;
         var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
+        // Limit to 3 stacked bubbles — remove oldest if more
+        var existingBubbles = document.querySelectorAll('.linochat-unread-bubble');
+        if (existingBubbles.length >= 3) {
+            existingBubbles[0].remove();
+        }
+        // Position new bubble just above the current topmost bubble
+        var remainingBubbles = document.querySelectorAll('.linochat-unread-bubble');
+        var stackOffset = 90;
+        if (remainingBubbles.length > 0) {
+            var topBubble = remainingBubbles[remainingBubbles.length - 1];
+            stackOffset = (parseInt(topBubble.style.bottom) || 90) + topBubble.offsetHeight + 8;
+        }
         var bubble = document.createElement('div');
-        bubble.id = 'linochat-unread-bubble';
+        bubble.className = 'linochat-unread-bubble';
         var preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
         bubble.innerHTML = '<div style="font-size:13px;color:#111;line-height:1.4">' + preview.replace(/</g, '&lt;') + '</div>';
-        bubble.style.cssText = 'position:fixed;bottom:90px;' + pos + ':20px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 36px 12px 14px;max-width:260px;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s';
+        bubble.style.cssText = 'position:fixed;bottom:' + stackOffset + 'px;' + pos + ':20px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 36px 12px 14px;max-width:260px;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s';
         var close = document.createElement('span');
-        close.textContent = '\\u00d7';
+        close.innerHTML = '&times;';
         close.style.cssText = 'position:absolute;top:6px;right:10px;cursor:pointer;font-size:16px;color:#9ca3af;line-height:1';
         close.onclick = function(e) { e.stopPropagation(); bubble.remove(); };
         bubble.appendChild(close);
-        bubble.onclick = function() { bubble.remove(); var b = document.getElementById('linochat-button'); if (b) b.click(); };
+        bubble.onclick = function() {
+            // Remove all notification bubbles
+            document.querySelectorAll('.linochat-unread-bubble').forEach(function(b) { b.remove(); });
+            var b = document.getElementById('linochat-button'); if (b) b.click();
+        };
         document.body.appendChild(bubble);
         // Add unread badge to button
         var badge = document.getElementById('linochat-unread-badge');
@@ -416,8 +430,7 @@ class WidgetLoaderController extends Controller
     }
 
     function pollChatState() {
-        console.log('[LinoChat] pollChatState called, CHAT_ID=' + CHAT_ID);
-        if (!CHAT_ID || !CUSTOMER_ID) { console.log('[LinoChat] skip poll - no chat/customer'); return; }
+        if (!CHAT_ID || !CUSTOMER_ID) return;
         var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
         var script = document.createElement('script');
@@ -429,7 +442,6 @@ class WidgetLoaderController extends Controller
             processPollData(data);
         };
         script.onerror = function(e) {
-            console.log('[LinoChat] JSONP script error', e);
             if (!done) { delete window[cb]; }
             if (script.parentNode) script.parentNode.removeChild(script);
         };
@@ -594,7 +606,7 @@ class WidgetLoaderController extends Controller
         }
         
         if (sendBtn) {
-            sendBtn.style.background = color;
+            sendBtn.style.background = (CONFIG.design === 'gradient' && CONFIG.gradient) ? CONFIG.gradient : color;
         }
     }
     
@@ -746,10 +758,12 @@ class WidgetLoaderController extends Controller
 
     function getMsgStyles() {
         var c = CONFIG ? (CONFIG.color || '#155dfc') : '#155dfc';
+        // Use gradient for customer bubbles if gradient design is active
+        var customerBg = (CONFIG && CONFIG.design === 'gradient' && CONFIG.gradient) ? CONFIG.gradient : c;
         var fs = getCfgFontSize();
         return {
             base: 'max-width:80%;min-width:60px;padding:10px 14px;border-radius:12px;word-wrap:break-word;font-size:' + fs + ';line-height:1.4;display:flex;flex-direction:column',
-            customer: 'background:' + c + ';color:white;align-self:flex-end;border-bottom-right-radius:4px',
+            customer: 'background:' + customerBg + ';color:white;align-self:flex-end;border-bottom-right-radius:4px',
             ai: 'background:#faf5ff;color:#111827;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.1);border:1px solid #f3e8ff',
             agent: 'background:white;color:#111827;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.1)',
             system: 'background:#f3f4f6;color:#6b7280;align-self:center;font-size:12px;font-style:italic'
@@ -758,7 +772,7 @@ class WidgetLoaderController extends Controller
     
     function addMessage(content, type, messageId, playSound, metadata) {
         var container = document.getElementById('linochat-messages');
-        if (!container) { console.log('[LinoChat] addMessage SKIP - no container! type=' + type + ' content=' + (content||'').substring(0,20)); return; }
+        if (!container) return;
         
         var welcomeEl = document.getElementById('linochat-welcome');
         if (welcomeEl) welcomeEl.remove();
@@ -1087,9 +1101,8 @@ class WidgetLoaderController extends Controller
             window_.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
                 input.focus();
-                // Clear notification bubble and badge
-                var bubble = document.getElementById('linochat-unread-bubble');
-                if (bubble) bubble.remove();
+                // Clear all notification bubbles and badge
+                document.querySelectorAll('.linochat-unread-bubble').forEach(function(b) { b.remove(); });
                 var badge = document.getElementById('linochat-unread-badge');
                 if (badge) badge.remove();
             }
@@ -1317,28 +1330,40 @@ class WidgetLoaderController extends Controller
         }, delay);
     }
 
+    // Open chat from popover or greeting
+    function openChat() {
+        var btn = document.getElementById('linochat-button');
+        if (btn) btn.click();
+    }
+
     // Popover system
     function showPopover() {
         if (!CONFIG || !CONFIG.popover || !CONFIG.popover.enabled) return;
         var po = CONFIG.popover;
         var SK = 'linochat_popover_shown';
-        if (po.show_once_per_session && sessionStorage.getItem(SK)) return;
+        var maxDisplays = po.max_displays_per_session || 1;
+        var shown = parseInt(sessionStorage.getItem(SK) || '0', 10);
+        if (shown >= maxDisplays) return;
         // Page targeting
         if (po.show_on_pages === 'specific' && po.page_urls && po.page_urls.length > 0) {
             var path = window.location.pathname;
             var match = po.page_urls.some(function(u) { return path.indexOf(u) !== -1; });
             if (!match) return;
         }
+        // Overlay style from config
+        var overlayType = po.overlay || 'dark';
+        var overlayBg = overlayType === 'dark' ? 'rgba(0,0,0,0.3)' : overlayType === 'light' ? 'rgba(255,255,255,0.5)' : 'transparent';
+        var overlayBlur = po.overlay_blur ? 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);' : '';
         function render() {
             if (document.getElementById('linochat-popover')) return;
             var overlay = document.createElement('div');
             overlay.id = 'linochat-popover';
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:' + overlayBg + ';' + overlayBlur;
             var color = CONFIG.color || '#4F46E5';
             var html = buildPopoverHTML(po, color);
             overlay.innerHTML = html;
             document.body.appendChild(overlay);
-            sessionStorage.setItem(SK, '1');
+            sessionStorage.setItem(SK, String(shown + 1));
             // Close handlers
             overlay.addEventListener('click', function(e) { if (e.target === overlay) closePopover(); });
             var closeBtn = overlay.querySelector('[data-popover-close]');
