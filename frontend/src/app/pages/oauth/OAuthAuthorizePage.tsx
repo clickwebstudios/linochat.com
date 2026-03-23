@@ -153,10 +153,7 @@ export default function OAuthAuthorizePage() {
               scopeEntries.map(([scope, description]) => (
                 <div key={scope} className="flex items-start gap-3 px-4 py-3">
                   <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{description}</p>
-                    <code className="text-xs text-muted-foreground">{scope}</code>
-                  </div>
+                  <p className="text-sm font-medium text-foreground">{description}</p>
                 </div>
               ))
             )}
