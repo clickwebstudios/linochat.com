@@ -379,17 +379,19 @@ export default function ProjectDetails() {
 
           {/* Tabs */}
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="tickets">Tickets</TabsTrigger>
-              <TabsTrigger value="team">Team Members</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
-              <TabsTrigger value="popovers">Popovers</TabsTrigger>
-              <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            </TabsList>
+            <div className={`bg-card -mx-6 px-6 pb-0 ${isSuperadmin ? 'sticky top-14 z-40 border-b' : ''}`}>
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="tickets">Tickets</TabsTrigger>
+                <TabsTrigger value="team">Team Members</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
+                <TabsTrigger value="popovers">Popovers</TabsTrigger>
+                <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="integrations">Integrations</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview" className="space-y-4">
               <OverviewTab
