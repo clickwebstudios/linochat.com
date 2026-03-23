@@ -689,7 +689,31 @@ class WidgetLoaderController extends Controller
         var text = document.createElement('div');
         text.textContent = content;
         msg.appendChild(text);
-        
+
+        // Feedback buttons for AI messages
+        if (type === 'ai' && messageId) {
+            var fbWrap = document.createElement('div');
+            fbWrap.style.cssText = 'display:flex;gap:4px;margin-top:6px';
+            ['👍', '👎'].forEach(function(emoji, idx) {
+                var fb = document.createElement('button');
+                fb.textContent = emoji;
+                fb.style.cssText = 'background:none;border:1px solid #e5e7eb;border-radius:4px;padding:2px 8px;font-size:12px;cursor:pointer;opacity:0.6;transition:opacity 0.2s';
+                fb.onmouseover = function() { fb.style.opacity = '1'; };
+                fb.onmouseout = function() { fb.style.opacity = '0.6'; };
+                fb.onclick = function() {
+                    var feedbackType = idx === 0 ? 'positive' : 'negative';
+                    fetch(API_URL + '/api/widget/' + WIDGET_ID + '/message-feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message_id: messageId, customer_id: CUSTOMER_ID, feedback: feedbackType })
+                    }).catch(function() {});
+                    fbWrap.innerHTML = '<span style="font-size:11px;color:#9ca3af;">Thanks!</span>';
+                };
+                fbWrap.appendChild(fb);
+            });
+            msg.appendChild(fbWrap);
+        }
+
         var atts = (metadata && metadata.attachments) ? metadata.attachments : [];
         if (atts.length > 0) {
             var attWrap = document.createElement('div');

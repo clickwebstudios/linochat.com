@@ -111,8 +111,13 @@ class AiChatService
             // Build messages array
             $messages = $this->buildMessages($systemPrompt, $conversationHistory, $customerMessage);
             
+            // Map confidence_threshold to temperature: higher confidence = lower temperature
+            $confidenceThreshold = $aiSettings['confidence_threshold'] ?? 75;
+            $temperatureMap = [95 => 0.3, 85 => 0.5, 75 => 0.7, 60 => 0.9];
+            $temperature = $temperatureMap[$confidenceThreshold] ?? 0.7;
+
             // Call OpenAI API with retry logic
-            $response = $this->callOpenAIWithRetry($apiKey, $messages);
+            $response = $this->callOpenAIWithRetry($apiKey, $messages, $temperature);
 
             // If all retries failed
             if ($response === null) {
@@ -165,6 +170,47 @@ class AiChatService
                         'model' => $this->model,
                     ];
                 }
+
+                // Apply fallback_behavior setting
+                $fallbackBehavior = $aiSettings['fallback_behavior'] ?? 'transfer';
+                if ($fallbackBehavior === 'none') {
+                    // Strip handover tag and return AI response as-is
+                    $cleanContent = $this->cleanAiResponse(str_replace('[HANDOVER]', '', $aiContent));
+                    $aiMessage = ChatMessage::create([
+                        'chat_id' => $chat->id,
+                        'sender_type' => 'ai',
+                        'content' => $cleanContent,
+                        'is_ai' => true,
+                        'metadata' => ['model' => $this->model, 'tokens_used' => $tokensUsed, 'handover_suppressed' => true],
+                    ]);
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return ['id' => $aiMessage->id, 'content' => $cleanContent, 'sender_type' => 'ai', 'created_at' => $aiMessage->created_at, 'model' => $this->model];
+                } elseif ($fallbackBehavior === 'collect') {
+                    // Ask for contact info instead of transferring
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return $this->createContactRequestResponse($chat, $aiContent);
+                } elseif ($fallbackBehavior === 'suggest') {
+                    // Suggest KB articles before transferring
+                    $suggestions = $this->getKbContext($project, $customerMessage);
+                    $suggestContent = $this->cleanAiResponse(str_replace('[HANDOVER]', '', $aiContent));
+                    if (!empty($suggestions)) {
+                        $suggestContent .= "\n\nHere are some articles that might help:\n";
+                        foreach (array_slice($suggestions, 0, 3) as $article) {
+                            $suggestContent .= "• {$article['title']}\n";
+                        }
+                        $suggestContent .= "\nWould you still like to speak with a human agent?";
+                    }
+                    $aiMessage = ChatMessage::create([
+                        'chat_id' => $chat->id,
+                        'sender_type' => 'ai',
+                        'content' => $suggestContent,
+                        'is_ai' => true,
+                        'metadata' => ['model' => $this->model, 'tokens_used' => $tokensUsed, 'fallback' => 'suggest'],
+                    ]);
+                    broadcast(new AiTyping($chat->id, false, $this->model));
+                    return ['id' => $aiMessage->id, 'content' => $suggestContent, 'sender_type' => 'ai', 'created_at' => $aiMessage->created_at, 'model' => $this->model];
+                }
+                // Default: transfer to human
                 broadcast(new AiTyping($chat->id, false, $this->model));
                 return $this->createHandoverResponse($chat, $aiContent);
             }
@@ -263,7 +309,7 @@ class AiChatService
     /**
      * Call OpenAI API with retry logic
      */
-    protected function callOpenAIWithRetry(string $apiKey, array $messages): ?array
+    protected function callOpenAIWithRetry(string $apiKey, array $messages, float $temperature = 0.7): ?array
     {
         $lastException = null;
 
@@ -276,7 +322,7 @@ class AiChatService
                 $response = $client->chat()->create([
                     'model' => $this->model,
                     'messages' => $messages,
-                    'temperature' => 0.7,
+                    'temperature' => $temperature,
                     'max_tokens' => 300,
                 ]);
 
@@ -513,7 +559,15 @@ class AiChatService
         // Response tone from settings
         $tone = $aiSettings['response_tone'] ?? 'professional';
 
-        $prompt .= "LANGUAGE: Always respond in English, regardless of the language the customer uses.\n\n";
+        $language = $aiSettings['response_language'] ?? 'auto';
+        $languageMap = [
+            'en' => 'Always respond in English.',
+            'es' => 'Always respond in Spanish (Español).',
+            'fr' => 'Always respond in French (Français).',
+            'de' => 'Always respond in German (Deutsch).',
+            'auto' => 'Respond in the same language the customer uses. If unsure, default to English.',
+        ];
+        $prompt .= "LANGUAGE: " . ($languageMap[$language] ?? $languageMap['auto']) . "\n\n";
         $prompt .= "RULES:\n";
         $prompt .= "1. Greet the customer warmly at the start of a new conversation and ask for their name. Example: 'Hi! Welcome to {$companyName}. How can I help you today? Could I get your name please?'\n";
         $prompt .= "2. Answer questions confidently and directly as a company representative. Use 'we offer', 'we don't offer', 'our services include', etc.\n";

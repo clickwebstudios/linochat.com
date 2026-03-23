@@ -278,15 +278,37 @@ class AISettingsController extends Controller
                 'created_at'   => $a->created_at?->toISOString(),
             ]);
 
+        // Auto-learn metrics
+        $autoLearnedArticles = KbArticle::whereHas('category', fn($q) => $q->where('project_id', $project_id))
+            ->where('is_ai_generated', true)
+            ->count();
+
+        // Resolution breakdown (using new resolution_type field)
+        $aiResolvedCount = $project->chats()->where('resolution_type', 'ai_resolved')->count();
+        $agentResolvedCount = $project->chats()->where('resolution_type', 'agent_resolved')->count();
+        $abandonedCount = $project->chats()->where('resolution_type', 'abandoned')->count();
+
+        // Feedback summary
+        $positiveFeedback = \App\Models\ChatMessage::whereHas('chat', fn($q) => $q->where('project_id', $project_id))
+            ->where('feedback', 'positive')->count();
+        $negativeFeedback = \App\Models\ChatMessage::whereHas('chat', fn($q) => $q->where('project_id', $project_id))
+            ->where('feedback', 'negative')->count();
+
         return response()->json([
             'success' => true,
             'data' => [
-                'resolution_rate'   => $resolutionRate,
-                'articles_indexed'  => $articlesCount,
-                'total_articles'    => $totalArticles,
-                'total_chats'       => $totalChats,
-                'ai_handled_chats'  => $aiHandledChats,
-                'recent_articles'   => $recentArticles,
+                'resolution_rate'       => $resolutionRate,
+                'articles_indexed'      => $articlesCount,
+                'total_articles'        => $totalArticles,
+                'total_chats'           => $totalChats,
+                'ai_handled_chats'      => $aiHandledChats,
+                'recent_articles'       => $recentArticles,
+                'auto_learned_articles' => $autoLearnedArticles,
+                'ai_resolved'           => $aiResolvedCount,
+                'agent_resolved'        => $agentResolvedCount,
+                'abandoned'             => $abandonedCount,
+                'positive_feedback'     => $positiveFeedback,
+                'negative_feedback'     => $negativeFeedback,
             ],
         ]);
     }

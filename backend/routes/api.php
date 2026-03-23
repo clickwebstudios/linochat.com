@@ -135,6 +135,7 @@ Route::group([
         Route::match(['get', 'post'], '/init', [WidgetController::class, 'init']);
         Route::match(['get', 'post'], '/heartbeat', [WidgetController::class, 'heartbeat']);
         Route::post('/page-view', [WidgetController::class, 'pageView']);
+        Route::post('/message-feedback', [WidgetController::class, 'messageFeedback']);
     });
 
     // Typing/lightweight write — generous limit (shared with reads)
