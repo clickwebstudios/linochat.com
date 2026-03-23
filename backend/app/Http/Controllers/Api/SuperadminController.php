@@ -1032,6 +1032,52 @@ class SuperadminController extends Controller
     }
 
     /**
+     * Get live visitors across all projects.
+     */
+    public function liveVisitors(Request $request)
+    {
+        $threshold = now()->subMinutes(2);
+
+        $activeChats = Chat::where('customer_last_seen_at', '>=', $threshold)
+            ->with('project:id,name,website')
+            ->get();
+
+        $visitors = $activeChats->map(function ($chat) {
+            $meta = $chat->metadata ?? [];
+            $pagesVisited = $meta['pages_visited'] ?? [];
+            return [
+                'id' => $chat->id,
+                'customer_id' => $chat->customer_id,
+                'customer_name' => $chat->customer_name,
+                'customer_email' => $chat->customer_email,
+                'current_page' => $meta['current_page'] ?? null,
+                'referrer' => $meta['referrer'] ?? null,
+                'referral_source' => $meta['referral_source'] ?? 'Direct',
+                'browser' => $meta['browser'] ?? '—',
+                'device' => $meta['device'] ?? '—',
+                'project_name' => $chat->project->name ?? '—',
+                'project_website' => $chat->project->website ?? '',
+                'started_at' => $chat->created_at?->toIso8601String(),
+                'last_seen_at' => $chat->customer_last_seen_at?->toIso8601String(),
+                'pages_count' => count($pagesVisited),
+                'pages_visited' => array_slice($pagesVisited, -10),
+            ];
+        });
+
+        // Aggregate by project
+        $byProject = $visitors->groupBy('project_name')->map->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_online' => $visitors->count(),
+                'visitors' => $visitors->values(),
+                'by_project' => $byProject,
+            ],
+        ]);
+    }
+
+    /**
      * Impersonate a user — returns a token for the target user.
      * Only superadmins can do this.
      */
