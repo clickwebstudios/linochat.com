@@ -1082,7 +1082,14 @@ class WidgetLoaderController extends Controller
         function toggleWindow() {
             var isOpen = window_.style.display === 'flex';
             window_.style.display = isOpen ? 'none' : 'flex';
-            if (!isOpen) input.focus();
+            if (!isOpen) {
+                input.focus();
+                // Clear notification bubble and badge
+                var bubble = document.getElementById('linochat-unread-bubble');
+                if (bubble) bubble.remove();
+                var badge = document.getElementById('linochat-unread-badge');
+                if (badge) badge.remove();
+            }
         }
         
         button.addEventListener('click', toggleWindow);
