@@ -371,7 +371,45 @@ class WidgetLoaderController extends Controller
             addMessage(m.content, type, m.id, type !== 'system', m.metadata);
             added++;
         });
-        if (added > 0) console.log('[LinoChat] Added ' + added + ' new messages');
+        if (added > 0) {
+            // Show notification bubble + sound if widget is closed
+            var win = document.getElementById('linochat-window');
+            var isClosed = !win || win.style.display === 'none';
+            if (isClosed) {
+                playIncomingMessageSound();
+                showUnreadBubble(msgs[msgs.length - 1].content || 'New message');
+            }
+        }
+    }
+
+    function showUnreadBubble(text) {
+        var existing = document.getElementById('linochat-unread-bubble');
+        if (existing) existing.remove();
+        var btn = document.getElementById('linochat-button');
+        if (!btn) return;
+        var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
+        var bubble = document.createElement('div');
+        bubble.id = 'linochat-unread-bubble';
+        var preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+        bubble.innerHTML = '<div style="font-size:13px;color:#111;line-height:1.4">' + preview.replace(/</g, '&lt;') + '</div>';
+        bubble.style.cssText = 'position:fixed;bottom:90px;' + pos + ':20px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 36px 12px 14px;max-width:260px;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s';
+        var close = document.createElement('span');
+        close.textContent = '\\u00d7';
+        close.style.cssText = 'position:absolute;top:6px;right:10px;cursor:pointer;font-size:16px;color:#9ca3af;line-height:1';
+        close.onclick = function(e) { e.stopPropagation(); bubble.remove(); };
+        bubble.appendChild(close);
+        bubble.onclick = function() { bubble.remove(); var b = document.getElementById('linochat-button'); if (b) b.click(); };
+        document.body.appendChild(bubble);
+        // Add unread badge to button
+        var badge = document.getElementById('linochat-unread-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.id = 'linochat-unread-badge';
+            badge.style.cssText = 'position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:#ef4444;border-radius:50%;border:2px solid white;z-index:1';
+            btn.style.position = 'relative';
+            btn.appendChild(badge);
+        }
+        setTimeout(function() { bubble.style.opacity = '1'; bubble.style.transform = 'translateY(0)'; }, 50);
     }
 
     function pollChatState() {
@@ -814,7 +852,7 @@ class WidgetLoaderController extends Controller
         var posStyles = POSITION_STYLES[position] || POSITION_STYLES['bottom-right'];
         // Apply design-specific button shape
         if (design === 'gradient') {
-            button.style.background = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            button.style.background = CONFIG.gradient || 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
             button.style.width = '67px'; button.style.height = '67px'; button.style.borderRadius = '9999px';
             button.innerHTML = DEFAULT_ICON;
         } else if (design === 'friendly') {
@@ -989,9 +1027,10 @@ class WidgetLoaderController extends Controller
                 + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.8;line-height:1;">×</span>'
                 + '</div></div>';
         } else if (design === 'gradient') {
-            btnBg = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            var grad = CONFIG.gradient || 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            btnBg = grad;
             winW = 320; winRadius = '12px'; msgBg = 'linear-gradient(135deg,rgba(239,246,255,0.8),rgba(245,243,255,0.8),rgba(253,242,248,0.8))';
-            headerHTML = '<div id="linochat-header" style="background:linear-gradient(to right,#3b82f6,#8b5cf6,#ec4899);color:white;padding:16px;">'
+            headerHTML = '<div id="linochat-header" style="background:' + grad + ';color:white;padding:16px;">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;">'
                 + '<div style="display:flex;align-items:center;gap:10px;">'
                 + '<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
