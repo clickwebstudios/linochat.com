@@ -30,6 +30,7 @@ import {
   Code,
   Sparkles,
   Clock,
+  RotateCcw,
   Plus,
   Trash2,
   Globe,
@@ -832,71 +833,76 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
 
             </div>
 
-            {/* ── Live Preview (always visible) ── */}
+            {/* ── Live Preview (actual widget in iframe) ── */}
             <div className="hidden xl:block w-[750px] shrink-0">
               <div className="sticky top-4">
-                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
-                <div className="rounded-lg border border-border relative overflow-hidden" style={{ minHeight: '500px' }}>
-                    {/* Fake website background */}
-                    <div className="absolute inset-0 bg-white p-6 space-y-4">
-                      <div className="flex items-center gap-3 pb-4 border-b">
-                        <div className="w-8 h-8 rounded bg-blue-600" />
-                        <div className="h-4 w-24 bg-gray-200 rounded" />
-                        <div className="ml-auto flex gap-4">
-                          <div className="h-3 w-14 bg-gray-200 rounded" />
-                          <div className="h-3 w-14 bg-gray-200 rounded" />
-                          <div className="h-3 w-14 bg-gray-200 rounded" />
-                          <div className="h-3 w-14 bg-gray-200 rounded" />
-                        </div>
-                      </div>
-                      <div className="pt-8 space-y-3 max-w-md">
-                        <div className="h-8 w-72 bg-gray-100 rounded" />
-                        <div className="h-4 w-full bg-gray-100 rounded" />
-                        <div className="h-4 w-5/6 bg-gray-100 rounded" />
-                        <div className="h-4 w-2/3 bg-gray-100 rounded" />
-                      </div>
-                      <div className="pt-4 flex gap-3">
-                        <div className="h-10 w-32 bg-blue-100 rounded-lg" />
-                        <div className="h-10 w-28 bg-gray-100 rounded-lg" />
-                      </div>
-                      <div className="pt-8 grid grid-cols-3 gap-4">
-                        <div className="h-28 bg-gray-50 rounded-lg border" />
-                        <div className="h-28 bg-gray-50 rounded-lg border" />
-                        <div className="h-28 bg-gray-50 rounded-lg border" />
-                      </div>
-                      <div className="pt-4 space-y-2">
-                        <div className="h-3 w-full bg-gray-100 rounded" />
-                        <div className="h-3 w-4/5 bg-gray-100 rounded" />
-                        <div className="h-3 w-3/4 bg-gray-100 rounded" />
-                      </div>
-                    </div>
-                    <div className={`absolute ${
-                      widgetPosition === 'bottom-right' ? 'bottom-4 right-4' :
-                      widgetPosition === 'bottom-left' ? 'bottom-4 left-4' :
-                      widgetPosition === 'top-right' ? 'top-4 right-4' :
-                      'top-4 left-4'
-                    } ${widgetAnimation && widgetAnimation !== 'none' ? `animate-widget-${widgetAnimation}` : ''}`}
-                    style={widgetAnimation && widgetAnimation !== 'none' ? {
-                      animationIterationCount: animRepeat === 'infinite' ? 'infinite' : animRepeat,
-                      animationDelay: animDelay !== '0' ? `${animDelay}s` : undefined,
-                      ...(animDuration !== 'default' ? { animationDuration: `${animDuration}s` } : {}),
-                    } as React.CSSProperties : undefined}>
-                      <WidgetPreview
-                        design={widgetDesign}
-                        color={widgetColor}
-                        position={widgetPosition}
-                        title={widgetTitle}
-                        welcomeMessage={welcomeMessage}
-                        buttonText={buttonText}
-                        showOfflinePreview={showOfflinePreview}
-                        offlineBehavior={offlineBehavior}
-                        offlineMessage={offlineMessage}
-                        greetingEnabled={greetingEnabled}
-                        greetingMessage={greetingMessage}
-                        fontSize={fontSize}
-                        gradient={widgetGradient}
-                      />
-                    </div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Live Preview</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      const iframe = document.getElementById('widget-preview-iframe') as HTMLIFrameElement;
+                      if (iframe) iframe.src = iframe.src; // force reload
+                    }}
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" /> Refresh
+                  </Button>
+                </div>
+                <div className="rounded-lg border border-border overflow-hidden bg-white" style={{ height: '600px' }}>
+                  <iframe
+                    id="widget-preview-iframe"
+                    srcDoc={`<!DOCTYPE html>
+<html><head><style>
+body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
+.mock-nav { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #e5e7eb; }
+.mock-logo { width: 32px; height: 32px; background: #2563eb; border-radius: 6px; }
+.mock-bar { height: 12px; background: #e5e7eb; border-radius: 4px; }
+.mock-content { padding: 40px 24px; }
+.mock-h { height: 28px; width: 300px; background: #f3f4f6; border-radius: 6px; margin-bottom: 12px; }
+.mock-p { height: 12px; background: #f3f4f6; border-radius: 4px; margin-bottom: 8px; }
+.mock-btns { display: flex; gap: 10px; margin-top: 20px; }
+.mock-btn { height: 40px; border-radius: 8px; }
+.mock-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+.mock-card { height: 100px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; }
+</style></head><body>
+<div class="mock-nav">
+  <div class="mock-logo"></div>
+  <div class="mock-bar" style="width:100px"></div>
+  <div style="margin-left:auto;display:flex;gap:16px">
+    <div class="mock-bar" style="width:60px"></div>
+    <div class="mock-bar" style="width:60px"></div>
+    <div class="mock-bar" style="width:60px"></div>
+  </div>
+</div>
+<div class="mock-content">
+  <div class="mock-h"></div>
+  <div class="mock-p" style="width:100%"></div>
+  <div class="mock-p" style="width:85%"></div>
+  <div class="mock-p" style="width:70%"></div>
+  <div class="mock-btns">
+    <div class="mock-btn" style="width:130px;background:#dbeafe"></div>
+    <div class="mock-btn" style="width:110px;background:#f3f4f6"></div>
+  </div>
+  <div class="mock-cards">
+    <div class="mock-card"></div>
+    <div class="mock-card"></div>
+    <div class="mock-card"></div>
+  </div>
+</div>
+<script>
+(function() {
+  var s = document.createElement('script');
+  s.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
+  s.async = true;
+  document.body.appendChild(s);
+})();
+</script>
+</body></html>`}
+                    className="w-full h-full border-0"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                  />
                 </div>
               </div>
             </div>
