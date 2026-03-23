@@ -384,7 +384,7 @@ class WidgetLoaderController extends Controller
     // Poll for new messages when chat is active (fallback when WebSocket fails to deliver agent messages)
     function startPollingMessages() {
         if (POLL_MESSAGES_INTERVAL) return;
-        POLL_MESSAGES_INTERVAL = setInterval(pollChatState, 8000);
+        POLL_MESSAGES_INTERVAL = setInterval(pollChatState, 5000);
     }
     
     // Send heartbeat to signal customer is still online
@@ -556,6 +556,7 @@ class WidgetLoaderController extends Controller
             localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
             MESSAGES = data.data.messages || [];
             connectWebSocket();
+            startPollingMessages();
             return data.data;
         }
         throw new Error('Failed to init chat');

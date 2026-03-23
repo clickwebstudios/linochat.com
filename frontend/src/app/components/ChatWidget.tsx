@@ -101,6 +101,27 @@ export default function ChatWidget({
     }
   }, [isOpen, widgetId]);
 
+  // Poll for new messages every 5s (fallback when WebSocket is unavailable)
+  useEffect(() => {
+    if (!chatId || !customerId || !widgetId || !isOpen) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`${apiBase}/widget/${widgetId}/messages?chat_id=${chatId}&customer_id=${customerId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setMessages(prev => {
+            if (data.data.length > prev.length) {
+              return data.data;
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    }, 5000);
+    return () => clearInterval(poll);
+  }, [chatId, customerId, widgetId, isOpen, apiBase]);
+
   const sendCustomerTyping = (isTyping: boolean) => {
     if (!chatId || !customerId || !widgetId) return;
     fetch(`${apiBase}/widget/${widgetId}/typing`, {
