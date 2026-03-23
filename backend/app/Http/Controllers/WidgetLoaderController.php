@@ -1354,7 +1354,7 @@ class WidgetLoaderController extends Controller
 })();
 JS;
 
-        return $this->widgetScriptResponse($js, 60);
+        return $this->widgetScriptResponse($js, 0);
     }
     
     /**
@@ -1472,6 +1472,6 @@ CSS;
             ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
             ->header('Access-Control-Max-Age', '86400')
             ->header('Vary', 'Origin')
-            ->header('Cache-Control', 'public, max-age=' . $maxAge);
+            ->header('Cache-Control', $maxAge > 0 ? 'public, max-age=' . $maxAge : 'no-cache, no-store, must-revalidate');
     }
 }
