@@ -342,7 +342,8 @@ class WidgetLoaderController extends Controller
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
     function processPollData(data) {
-        console.log('[LinoChat] poll data received, msgs:', data && data.data ? (data.data.messages || []).length : 0);
+        var cnt = data && data.data ? (data.data.messages || []).length : 0;
+        console.log('[LinoChat] poll received ' + cnt + ' msgs');
         if (!data || !data.success || !data.data) return;
         var d = data.data;
         CHAT_STATUS = d.status || CHAT_STATUS;
@@ -353,20 +354,67 @@ class WidgetLoaderController extends Controller
             if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
         }
         var msgs = d.messages || [];
+        var added = 0;
         msgs.forEach(function(m) {
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
+            // Skip customer messages from poll — they're already rendered optimistically on send
+            if (m.sender_type === 'customer') {
+                if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
+                if (window._lcSentMsgs && window._lcSentMsgs[m.content]) delete window._lcSentMsgs[m.content];
+                return;
+            }
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
                 if (ADDED_MESSAGE_IDS['agent-joined']) return;
                 ADDED_MESSAGE_IDS['agent-joined'] = true;
             }
-            if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
-            var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
-            addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+            var type = m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
+            addMessage(m.content, type, m.id, type !== 'system', m.metadata);
+            added++;
         });
+        if (added > 0) {
+            // Show notification bubble + sound if widget is closed
+            var win = document.getElementById('linochat-window');
+            var isClosed = !win || win.style.display === 'none';
+            if (isClosed) {
+                playIncomingMessageSound();
+                showUnreadBubble(msgs[msgs.length - 1].content || 'New message');
+            }
+        }
+    }
+
+    function showUnreadBubble(text) {
+        var existing = document.getElementById('linochat-unread-bubble');
+        if (existing) existing.remove();
+        var btn = document.getElementById('linochat-button');
+        if (!btn) return;
+        var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
+        var bubble = document.createElement('div');
+        bubble.id = 'linochat-unread-bubble';
+        var preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+        bubble.innerHTML = '<div style="font-size:13px;color:#111;line-height:1.4">' + preview.replace(/</g, '&lt;') + '</div>';
+        bubble.style.cssText = 'position:fixed;bottom:90px;' + pos + ':20px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 36px 12px 14px;max-width:260px;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s';
+        var close = document.createElement('span');
+        close.textContent = '\\u00d7';
+        close.style.cssText = 'position:absolute;top:6px;right:10px;cursor:pointer;font-size:16px;color:#9ca3af;line-height:1';
+        close.onclick = function(e) { e.stopPropagation(); bubble.remove(); };
+        bubble.appendChild(close);
+        bubble.onclick = function() { bubble.remove(); var b = document.getElementById('linochat-button'); if (b) b.click(); };
+        document.body.appendChild(bubble);
+        // Add unread badge to button
+        var badge = document.getElementById('linochat-unread-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.id = 'linochat-unread-badge';
+            badge.style.cssText = 'position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:#ef4444;border-radius:50%;border:2px solid white;z-index:1';
+            btn.style.position = 'relative';
+            btn.appendChild(badge);
+        }
+        setTimeout(function() { bubble.style.opacity = '1'; bubble.style.transform = 'translateY(0)'; }, 50);
     }
 
     function pollChatState() {
-        if (!CHAT_ID || !CUSTOMER_ID) return;
+        console.log('[LinoChat] pollChatState called, CHAT_ID=' + CHAT_ID);
+        if (!CHAT_ID || !CUSTOMER_ID) { console.log('[LinoChat] skip poll - no chat/customer'); return; }
         var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
         var script = document.createElement('script');
@@ -377,7 +425,8 @@ class WidgetLoaderController extends Controller
             if (script.parentNode) script.parentNode.removeChild(script);
             processPollData(data);
         };
-        script.onerror = function() {
+        script.onerror = function(e) {
+            console.log('[LinoChat] JSONP script error', e);
             if (!done) { delete window[cb]; }
             if (script.parentNode) script.parentNode.removeChild(script);
         };
@@ -616,6 +665,9 @@ class WidgetLoaderController extends Controller
     // Send message - try fetch first, fallback to JSONP when CSP blocks fetch
     function sendMessage(content) {
         addMessage(content, 'customer');
+        // Track sent content so poll can dedup (optimistic messages have no ID)
+        if (!window._lcSentMsgs) window._lcSentMsgs = {};
+        window._lcSentMsgs[content] = true;
 
         return sendMessageFetch(content).catch(function() {
             return sendMessageJsonp(content);
@@ -626,13 +678,10 @@ class WidgetLoaderController extends Controller
     
     function processSendResponse(data) {
         if (data.success && data.data) {
+            // Track the customer message ID so poll skips it
+            if (data.data.message && data.data.message.id) ADDED_MESSAGE_IDS[data.data.message.id] = true;
             if (data.data.ai_response) {
                 addMessage(data.data.ai_response.content, 'ai', data.data.ai_response.id, true);
-            } else if (data.data.chat_status === 'waiting') {
-                addMessage('Transferring to human agent...', 'system');
-            } else if (data.data.chat_status !== 'active') {
-                // Only show fallback when not active - when agent has taken over, they will reply
-                addMessage('Thanks for your message! We\'ll get back to you soon.', 'ai', null, true);
             }
             return;
         }
@@ -706,7 +755,7 @@ class WidgetLoaderController extends Controller
     
     function addMessage(content, type, messageId, playSound, metadata) {
         var container = document.getElementById('linochat-messages');
-        if (!container) return;
+        if (!container) { console.log('[LinoChat] addMessage SKIP - no container! type=' + type + ' content=' + (content||'').substring(0,20)); return; }
         
         var welcomeEl = document.getElementById('linochat-welcome');
         if (welcomeEl) welcomeEl.remove();
@@ -803,7 +852,7 @@ class WidgetLoaderController extends Controller
         var posStyles = POSITION_STYLES[position] || POSITION_STYLES['bottom-right'];
         // Apply design-specific button shape
         if (design === 'gradient') {
-            button.style.background = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            button.style.background = CONFIG.gradient || 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
             button.style.width = '67px'; button.style.height = '67px'; button.style.borderRadius = '9999px';
             button.innerHTML = DEFAULT_ICON;
         } else if (design === 'friendly') {
@@ -978,9 +1027,10 @@ class WidgetLoaderController extends Controller
                 + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.8;line-height:1;">×</span>'
                 + '</div></div>';
         } else if (design === 'gradient') {
-            btnBg = 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            var grad = CONFIG.gradient || 'linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899)';
+            btnBg = grad;
             winW = 320; winRadius = '12px'; msgBg = 'linear-gradient(135deg,rgba(239,246,255,0.8),rgba(245,243,255,0.8),rgba(253,242,248,0.8))';
-            headerHTML = '<div id="linochat-header" style="background:linear-gradient(to right,#3b82f6,#8b5cf6,#ec4899);color:white;padding:16px;">'
+            headerHTML = '<div id="linochat-header" style="background:' + grad + ';color:white;padding:16px;">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;">'
                 + '<div style="display:flex;align-items:center;gap:10px;">'
                 + '<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
@@ -1032,7 +1082,14 @@ class WidgetLoaderController extends Controller
         function toggleWindow() {
             var isOpen = window_.style.display === 'flex';
             window_.style.display = isOpen ? 'none' : 'flex';
-            if (!isOpen) input.focus();
+            if (!isOpen) {
+                input.focus();
+                // Clear notification bubble and badge
+                var bubble = document.getElementById('linochat-unread-bubble');
+                if (bubble) bubble.remove();
+                var badge = document.getElementById('linochat-unread-badge');
+                if (badge) badge.remove();
+            }
         }
         
         button.addEventListener('click', toggleWindow);
@@ -1509,7 +1566,8 @@ CSS;
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Cross-Origin-Resource-Policy', 'cross-origin')
             ->header('Access-Control-Allow-Origin', '*')
-            ->header('Cache-Control', 'public, max-age=300');
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
 
     /**
