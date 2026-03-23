@@ -1344,41 +1344,69 @@ function WidgetDesignShowcase({ color, title, welcomeMessage, onActivate, onSele
   const current = WIDGET_DESIGNS_SHOWCASE[idx];
 
   return (
-    <div className="flex flex-col items-center py-8 space-y-6">
-      <div className="text-center space-y-3 max-w-md">
-        <h3 className="text-xl font-semibold">Widget Designs</h3>
+    <div className="flex flex-col items-center py-6 space-y-4 max-w-3xl mx-auto">
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold">Widget Designs</h3>
         <p className="text-sm text-muted-foreground">Preview available designs and activate your widget.</p>
         <Button size="sm" onClick={() => { onSelectDesign(current.id); onActivate(); }}>
           Activate Widget
         </Button>
       </div>
-      <div className="flex items-center gap-4 w-full">
-        <button onClick={() => goTo((idx - 1 + WIDGET_DESIGNS_SHOWCASE.length) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+      <div className="flex items-center gap-3 w-full">
+        <button onClick={() => goTo((idx - 1 + WIDGET_DESIGNS_SHOWCASE.length) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
           <span className="text-muted-foreground text-lg">‹</span>
         </button>
-        <div className="flex-1 flex flex-col items-center gap-4">
-          <div className="bg-muted rounded-lg border relative w-full flex items-end justify-end p-4" style={{ minHeight: 400, opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-            <WidgetPreview
-              design={current.id}
-              color={color}
-              title={title}
-              welcomeMessage={welcomeMessage}
-              showOfflinePreview={false}
-              offlineBehavior="hide"
-              offlineMessage=""
-            />
+        <div className="flex-1 flex flex-col items-center gap-3">
+          {/* Preview with website mockup background */}
+          <div className="rounded-xl border overflow-hidden relative w-full" style={{ height: 340, opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <div className="absolute inset-0 bg-white p-4 space-y-3">
+              <div className="flex items-center gap-2 pb-3 border-b">
+                <div className="w-6 h-6 rounded bg-blue-600" />
+                <div className="h-3 w-20 bg-gray-200 rounded" />
+                <div className="ml-auto flex gap-3">
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                  <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="pt-4 space-y-2 max-w-xs">
+                <div className="h-6 w-56 bg-gray-100 rounded" />
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-3 w-4/5 bg-gray-100 rounded" />
+              </div>
+              <div className="pt-2 flex gap-2">
+                <div className="h-8 w-24 bg-blue-100 rounded-lg" />
+                <div className="h-8 w-20 bg-gray-100 rounded-lg" />
+              </div>
+              <div className="pt-4 grid grid-cols-3 gap-3">
+                <div className="h-16 bg-gray-50 rounded border" />
+                <div className="h-16 bg-gray-50 rounded border" />
+                <div className="h-16 bg-gray-50 rounded border" />
+              </div>
+            </div>
+            <div className="absolute bottom-3 right-3">
+              <WidgetPreview
+                design={current.id}
+                color={color}
+                title={title}
+                welcomeMessage={welcomeMessage}
+                showOfflinePreview={false}
+                offlineBehavior="hide"
+                offlineMessage=""
+              />
+            </div>
           </div>
-          <div className="text-center space-y-1" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-            <h4 className="text-lg font-semibold">{current.name}</h4>
-            <p className="text-sm text-muted-foreground">{current.desc}</p>
+          <div className="text-center space-y-0.5" style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+            <h4 className="text-sm font-semibold">{current.name}</h4>
+            <p className="text-xs text-muted-foreground">{current.desc}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {WIDGET_DESIGNS_SHOWCASE.map((_, i) => (
               <button key={i} onClick={() => goTo(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
             ))}
           </div>
         </div>
-        <button onClick={() => goTo((idx + 1) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
+        <button onClick={() => goTo((idx + 1) % WIDGET_DESIGNS_SHOWCASE.length)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-muted shrink-0">
           <span className="text-muted-foreground text-lg">›</span>
         </button>
       </div>
