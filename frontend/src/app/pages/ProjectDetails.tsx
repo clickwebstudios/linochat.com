@@ -214,7 +214,30 @@ export default function ProjectDetails() {
     <>
       {/* Header */}
       {isSuperadmin ? (
-        <SuperadminTopbar />
+        <header className="bg-card border-b px-6 sticky top-0 z-50">
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/superadmin/companies')} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div className="h-5 w-px bg-border" />
+              <Building2 className="h-5 w-5 text-primary" />
+              <span className="font-semibold">Platform Management</span>
+              <Badge variant="outline" className="text-xs">Superadmin</Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium">{user ? `${user.first_name} ${user.last_name}` : 'Admin'}</div>
+              </div>
+              <Avatar>
+                <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                  {user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` : 'AD'}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </header>
       ) : (
         <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
           <div className="flex items-center gap-4">
