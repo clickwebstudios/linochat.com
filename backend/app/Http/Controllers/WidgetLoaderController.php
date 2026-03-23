@@ -118,7 +118,7 @@ class WidgetLoaderController extends Controller
         try {
             var s = document.createElement('style');
             s.id = 'linochat-inline-styles';
-            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100%!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
+            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100%!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
             + '@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
             + '@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 12px transparent}}'
             + '@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'
@@ -277,6 +277,16 @@ class WidgetLoaderController extends Controller
                 var msgType = msg.sender_type === 'system' ? 'system' : (msg.sender_type === 'ai' ? 'ai' : 'agent');
                 if (msg.sender_type === 'system' && / has joined the chat\.$/.test(msg.content)) ADDED_MESSAGE_IDS['agent-joined'] = true;
                 addMessage(msg.content, msgType, msg.id, msgType !== 'system', msg.metadata);
+                // Show notification bubble if chat window is closed
+                if (msg.id && msgType !== 'system' && !NOTIFIED_MSG_IDS[msg.id]) {
+                    NOTIFIED_MSG_IDS[msg.id] = true;
+                    var win = document.getElementById('linochat-window');
+                    var isClosed = !win || win.style.display === 'none';
+                    if (isClosed) {
+                        playIncomingMessageSound();
+                        showUnreadBubble(msg.content || 'New message');
+                    }
+                }
             }
         } else if (data.event === 'chat.status') {
             CHAT_STATUS = data.data.status;
@@ -341,6 +351,8 @@ class WidgetLoaderController extends Controller
     }
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
+    var NOTIFIED_MSG_IDS = {};
+
     function processPollData(data) {
         if (!data || !data.success || !data.data) return;
         var d = data.data;
@@ -352,13 +364,13 @@ class WidgetLoaderController extends Controller
             if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
         }
         var msgs = d.messages || [];
-        var added = 0;
+        var newAgentMsg = null;
         msgs.forEach(function(m) {
+            // Track all message IDs to prevent future duplicates
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
-            // Skip customer messages from poll — they're already rendered optimistically on send
+            // Skip customer messages — already rendered optimistically
             if (m.sender_type === 'customer') {
                 if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
-                if (window._lcSentMsgs && window._lcSentMsgs[m.content]) delete window._lcSentMsgs[m.content];
                 return;
             }
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
@@ -367,25 +379,36 @@ class WidgetLoaderController extends Controller
             }
             var type = m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
             addMessage(m.content, type, m.id, type !== 'system', m.metadata);
-            added++;
+            // Track for notification (only agent/ai, not system)
+            if (m.id && !NOTIFIED_MSG_IDS[m.id] && type !== 'system') {
+                NOTIFIED_MSG_IDS[m.id] = true;
+                newAgentMsg = m;
+            }
         });
-        if (added > 0) {
-            // Show notification bubble + sound if widget is closed
+        // Show notification bubble if widget is closed and there's a new agent/AI message
+        if (newAgentMsg) {
             var win = document.getElementById('linochat-window');
             var isClosed = !win || win.style.display === 'none';
             if (isClosed) {
                 playIncomingMessageSound();
-                showUnreadBubble(msgs[msgs.length - 1].content || 'New message');
+                showUnreadBubble(newAgentMsg.content || 'New message');
             }
         }
     }
 
     function showUnreadBubble(text) {
         // Hide greeting bubble
+        // Hide greeting and popover
         var greeting = document.getElementById('linochat-greeting');
         if (greeting) greeting.remove();
+        var popover = document.getElementById('linochat-popover');
+        if (popover) popover.remove();
         var btn = document.getElementById('linochat-button');
         if (!btn) return;
+        // Ensure button is visible (keep display:flex for icon centering, keep position:fixed)
+        btn.style.display = 'flex';
+        btn.style.opacity = '1';
+        btn.style.visibility = 'visible';
         var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
         // Limit to 3 stacked bubbles — remove oldest if more
         var existingBubbles = document.querySelectorAll('.linochat-unread-bubble');
@@ -421,7 +444,6 @@ class WidgetLoaderController extends Controller
             badge = document.createElement('span');
             badge.id = 'linochat-unread-badge';
             badge.style.cssText = 'position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:#ef4444;border-radius:50%;border:2px solid white;z-index:1';
-            btn.style.position = 'relative';
             btn.appendChild(badge);
         }
         setTimeout(function() { bubble.style.opacity = '1'; bubble.style.transform = 'translateY(0)'; }, 50);
@@ -640,6 +662,13 @@ class WidgetLoaderController extends Controller
             CUSTOMER_ID = data.data.customer_id;
             localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
             MESSAGES = data.data.messages || [];
+            // Pre-populate tracking so existing messages don't trigger notifications
+            MESSAGES.forEach(function(m) {
+                if (m.id) {
+                    ADDED_MESSAGE_IDS[m.id] = true;
+                    NOTIFIED_MSG_IDS[m.id] = true;
+                }
+            });
             connectWebSocket();
             startPollingMessages();
             return data.data;
@@ -691,9 +720,13 @@ class WidgetLoaderController extends Controller
     
     function processSendResponse(data) {
         if (data.success && data.data) {
-            // Track the customer message ID so poll skips it
-            if (data.data.message && data.data.message.id) ADDED_MESSAGE_IDS[data.data.message.id] = true;
+            // Track the customer message and AI response IDs so poll skips them
+            if (data.data.message && data.data.message.id) {
+                ADDED_MESSAGE_IDS[data.data.message.id] = true;
+                NOTIFIED_MSG_IDS[data.data.message.id] = true;
+            }
             if (data.data.ai_response) {
+                if (data.data.ai_response.id) NOTIFIED_MSG_IDS[data.data.ai_response.id] = true;
                 addMessage(data.data.ai_response.content, 'ai', data.data.ai_response.id, true);
             }
             return;
@@ -769,15 +802,15 @@ class WidgetLoaderController extends Controller
     }
     
     function addMessage(content, type, messageId, playSound, metadata) {
-        var container = document.getElementById('linochat-messages');
-        if (!container) return;
-        
-        var welcomeEl = document.getElementById('linochat-welcome');
-        if (welcomeEl) welcomeEl.remove();
-        
         // Skip if already added (avoids duplicate from API response + WebSocket arriving in either order)
         if (messageId && ADDED_MESSAGE_IDS[messageId]) return;
         if (messageId) ADDED_MESSAGE_IDS[messageId] = true;
+
+        var container = document.getElementById('linochat-messages');
+        if (!container) return;
+
+        var welcomeEl = document.getElementById('linochat-welcome');
+        if (welcomeEl) welcomeEl.remove();
         if (playSound && (type === 'ai' || type === 'agent')) playIncomingMessageSound();
         
         var typing = document.getElementById('linochat-typing');
@@ -1150,10 +1183,11 @@ class WidgetLoaderController extends Controller
         });
         
         MESSAGES.forEach(function(m) {
-            var type = m.sender_type === 'customer' ? 'customer' : 
-                      m.sender_type === 'system' ? 'system' : 
+            var type = m.sender_type === 'customer' ? 'customer' :
+                      m.sender_type === 'system' ? 'system' :
                       m.sender_type === 'ai' ? 'ai' : 'agent';
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) ADDED_MESSAGE_IDS['agent-joined'] = true;
+            if (m.id) NOTIFIED_MSG_IDS[m.id] = true;
             addMessage(m.content, type, m.id, false, m.metadata);
         });
         
@@ -1461,7 +1495,6 @@ class WidgetLoaderController extends Controller
                     if (btn) {
                         var dot = document.createElement('span');
                         dot.style.cssText = 'position:absolute;top:4px;right:4px;width:10px;height:10px;background:#ef4444;border-radius:50%;border:2px solid white;';
-                        btn.style.position = 'relative';
                         btn.appendChild(dot);
                     }
                     return;
