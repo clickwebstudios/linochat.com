@@ -1486,7 +1486,7 @@ CSS;
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Cross-Origin-Resource-Policy', 'cross-origin')
             ->header('Access-Control-Allow-Origin', '*')
-            ->header('Cache-Control', 'public, max-age=3600');
+            ->header('Cache-Control', 'public, max-age=300');
     }
 
     /**
