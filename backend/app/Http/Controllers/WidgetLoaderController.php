@@ -357,12 +357,14 @@ class WidgetLoaderController extends Controller
         var added = 0;
         msgs.forEach(function(m) {
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
+            // Skip customer messages from poll — they're already rendered optimistically on send
+            if (m.sender_type === 'customer') { if (m.id) ADDED_MESSAGE_IDS[m.id] = true; return; }
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
                 if (ADDED_MESSAGE_IDS['agent-joined']) return;
                 ADDED_MESSAGE_IDS['agent-joined'] = true;
             }
-            var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
-            addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+            var type = m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
+            addMessage(m.content, type, m.id, type !== 'system', m.metadata);
             added++;
         });
         if (added > 0) console.log('[LinoChat] Added ' + added + ' new messages');
