@@ -589,8 +589,10 @@ class WidgetController extends Controller
 
             $aiResponse = null;
             $chat->refresh(); // Ensure we have latest agent_id/status (agent may have taken over)
-            // Never use AI when an agent has taken over (agent_id is set)
-            $shouldAiReply = $chat->ai_enabled !== false
+            // Never use AI when Frubix is managing this project (Frubix handles all responses)
+            // or when an agent has taken over (agent_id is set)
+            $shouldAiReply = !$isFrubixManaged
+                && $chat->ai_enabled !== false
                 && !$chat->agent_id
                 && ($chat->status === 'ai_handling'
                     || $chat->status === 'waiting');
