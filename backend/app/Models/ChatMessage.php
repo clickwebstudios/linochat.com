@@ -18,6 +18,7 @@ class ChatMessage extends Model
         'is_ai',
         'metadata',
         'read_at',
+        'feedback',
     ];
 
     protected $casts = [

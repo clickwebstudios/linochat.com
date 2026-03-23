@@ -1066,4 +1066,39 @@ class WidgetController extends Controller
         
         return $response;
     }
+
+    /**
+     * Save customer feedback on an AI message (thumbs up/down).
+     */
+    public function messageFeedback(Request $request, string $widget_id)
+    {
+        $validator = Validator::make($request->all(), [
+            'message_id' => 'required|string',
+            'customer_id' => 'required|string',
+            'feedback' => 'required|string|in:positive,negative',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false], 422);
+        }
+
+        $project = Project::where('widget_id', $widget_id)->first();
+        if (!$project) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $message = ChatMessage::where('id', $request->input('message_id'))
+            ->where('is_ai', true)
+            ->whereHas('chat', fn ($q) => $q->where('project_id', $project->id)
+                ->where('customer_id', $request->input('customer_id')))
+            ->first();
+
+        if (!$message) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $message->update(['feedback' => $request->input('feedback')]);
+
+        return response()->json(['success' => true]);
+    }
 }
