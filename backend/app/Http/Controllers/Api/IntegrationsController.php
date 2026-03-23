@@ -13,7 +13,16 @@ class IntegrationsController extends Controller
 {
     private function getProject(int $projectId): ?Project
     {
-        return Project::find($projectId);
+        $user = auth('api')->user();
+        if ($user->role === 'superadmin') {
+            return Project::find($projectId);
+        }
+        return Project::where('id', $projectId)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('agents', fn($q) => $q->where('users.id', $user->id));
+            })
+            ->first();
     }
 
     /**

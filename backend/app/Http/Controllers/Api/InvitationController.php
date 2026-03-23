@@ -252,19 +252,19 @@ class InvitationController extends Controller
             'accepted_at' => now(),
         ]);
 
-        // Generate tokens for auto-login
-        $token = auth('api')->login($user);
-        $refreshToken = auth('api')->claims(['refresh' => true])->fromUser($user);
+        // Generate Sanctum tokens for auto-login
+        $accessToken  = $user->createToken('access-token')->plainTextToken;
+        $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Invitation accepted successfully',
             'data' => [
-                'access_token' => $token,
+                'access_token'  => $accessToken,
                 'refresh_token' => $refreshToken,
-                'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
-                'user' => $user,
+                'token_type'    => 'bearer',
+                'expires_in'    => 3600,
+                'user'          => $user,
             ],
         ]);
     }

@@ -24,7 +24,7 @@ class WidgetEmbedController extends Controller
             ], 404);
         }
 
-        $apiUrl = env('APP_URL', 'http://localhost:8000');
+        $apiUrl = config('app.url', 'http://localhost:8000');
         $welcomeMessage = "Hi there! How can we help you today?";
         
         // Generate embed code (single script: widget.js?id=)

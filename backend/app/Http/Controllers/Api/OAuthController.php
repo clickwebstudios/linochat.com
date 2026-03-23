@@ -9,7 +9,6 @@ use App\Models\OAuthClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class OAuthController extends Controller
 {

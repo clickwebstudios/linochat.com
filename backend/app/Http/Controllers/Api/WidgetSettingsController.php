@@ -316,7 +316,7 @@ class WidgetSettingsController extends Controller
             ], 403);
         }
 
-        $apiUrl = env('APP_URL', 'http://localhost:8000');
+        $apiUrl = config('app.url', 'http://localhost:8000');
         $widgetId = $project->widget_id;
 
         $embedCode = <<<HTML
