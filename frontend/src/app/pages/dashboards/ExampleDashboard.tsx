@@ -22,7 +22,7 @@ import {
   DashboardSection 
 } from '../../components/layouts';
 import { AdminSidebar } from '../../components/AdminSidebar';
-import { mockStats } from '../../data/mockData';
+const mockStats = { activeChats: 0, openTickets: 0, avgResponseTime: '—', satisfaction: '—' };
 import { 
   AreaChart, 
   Area, 

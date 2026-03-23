@@ -26,7 +26,7 @@ import {
   ExternalLink,
   FolderKanban,
 } from 'lucide-react';
-import { mockCompanies, mockAgents, mockChats } from '../data/mockData';
+// Mock data removed — all data from API
 import { SuperadminTopbar } from '../components/superadmin/SuperadminTopbar';
 import { useLayout } from '../components/layouts/LayoutContext';
 import { useAuthStore } from '../stores/authStore';
@@ -81,7 +81,7 @@ export default function ProjectDetails() {
     loadProject();
   }, [projectId]);
 
-  const company = project ? mockCompanies.find(c => c.id === project.company_id) : null;
+  const company = null; // Company data loaded separately if needed
   
   // Load project agents from API
   const [projectAgents, setProjectAgents] = useState<any[]>([]);
@@ -99,7 +99,7 @@ export default function ProjectDetails() {
       }
     } catch (error) {
       console.error('Failed to load project agents:', error);
-      setProjectAgents(project ? mockAgents.filter(a => a.companyId === project.company_id) : []);
+      setProjectAgents([]);
     } finally {
       setLoadingAgents(false);
     }
@@ -120,7 +120,7 @@ export default function ProjectDetails() {
     loadInvitations();
   }, [loadProjectAgents, loadInvitations]);
   
-  const projectChatsList = project ? mockChats.filter(c => c.projectId === project.id) : [];
+  const projectChatsList: any[] = []; // Chats loaded via API in chat components
 
   const { toggleMobileSidebar } = useLayout();
   const { user, logout } = useAuthStore();

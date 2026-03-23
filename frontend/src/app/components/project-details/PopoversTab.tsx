@@ -152,17 +152,16 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
   );
 
   return (
-    <div className="flex gap-6">
-      {/* Sidebar */}
-      <aside className="w-48 shrink-0">
-        {/* Enable toggle at top of sidebar */}
+    <div className="flex flex-col lg:flex-row gap-6">
+      {/* Sidebar — only shown when enabled */}
+      {popover.enabled && (
+      <aside className="w-full lg:w-48 shrink-0">
         <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
           <span className="text-sm font-medium">Enabled</span>
           <Switch checked={popover.enabled} onCheckedChange={v => update({ enabled: v })} />
         </div>
 
-        {popover.enabled && (
-          <nav className="space-y-1">
+        <nav className="space-y-1">
             {POPOVER_NAV.map(item => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
@@ -182,14 +181,14 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
               );
             })}
           </nav>
-        )}
       </aside>
+      )}
 
       {/* Content + Preview */}
       {popover.enabled ? (
         <div className="flex-1 flex gap-6 min-w-0">
           {/* Settings Panel */}
-          <div className="w-[400px] shrink-0 space-y-4">
+          <div className="w-full lg:w-[400px] shrink-0 space-y-4">
             {/* Design */}
             {activeSection === 'design' && (
               <div className="space-y-4">
@@ -638,12 +637,9 @@ function PopoverShowcase({
         <p className="text-sm text-muted-foreground">
           Engage visitors with targeted messages. Pick a design and enable to get started.
         </p>
-        <div className="flex items-center justify-center gap-3 pt-1">
-          <span className="text-sm font-medium text-muted-foreground">Enable Popovers</span>
-          <Switch checked={popover.enabled} onCheckedChange={v => {
-            update({ enabled: v, design: current.id });
-          }} />
-        </div>
+        <Button size="sm" onClick={() => update({ enabled: true, design: current.id })}>
+          Activate Popover
+        </Button>
       </div>
 
       {/* Carousel */}

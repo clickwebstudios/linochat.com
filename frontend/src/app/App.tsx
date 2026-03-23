@@ -40,6 +40,8 @@ const AIArticleGenerator = lazy(() => import('./pages/AIArticleGenerator'));
 const CreateArticle = lazy(() => import('./pages/CreateArticle'));
 const ArticleDetails = lazy(() => import('./pages/ArticleDetails'));
 const BillingPage = lazy(() => import('./pages/dashboards/BillingPage'));
+const SuperadminSelectView = lazy(() => import('./pages/dashboards/SuperadminSelectView'));
+const SuperadminPlatform = lazy(() => import('./pages/dashboards/SuperadminPlatform'));
 const OAuthAuthorizePage = lazy(() => import('./pages/oauth/OAuthAuthorizePage'));
 const OAuthAppsPage = lazy(() => import('./pages/oauth/OAuthAppsPage'));
 const FrubixCallbackPage = lazy(() => import('./pages/oauth/FrubixCallbackPage').then(m => ({ default: m.FrubixCallbackPage })));
@@ -171,9 +173,13 @@ export default function App() {
                 <Route path="/admin/notifications" element={<NotificationsPage />} />
               </Route>
 
-              {/* Superadmin Layout Routes */}
+              {/* Superadmin standalone pages (no sidebar) */}
+              <Route path="/superadmin/select-view" element={<ProtectedRoute><SuperadminSelectView /></ProtectedRoute>} />
+              <Route path="/superadmin/dashboard" element={<ProtectedRoute><SuperadminPlatform /></ProtectedRoute>} />
+              <Route path="/superadmin/companies" element={<ProtectedRoute><SuperadminPlatform /></ProtectedRoute>} />
+
+              {/* Superadmin Layout Routes (with sidebar — for detail pages) */}
               <Route element={<ProtectedRoute><ErrorBoundary><AgentAdminLayout role="Superadmin" /></ErrorBoundary></ProtectedRoute>}>
-                <Route path="/superadmin/dashboard" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/chats" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/tickets" element={<AgentDashboard role="Superadmin" />} />
                 <Route path="/superadmin/knowledge" element={<AgentDashboard role="Superadmin" />} />
@@ -191,7 +197,6 @@ export default function App() {
                 <Route path="/superadmin/profile-settings" element={<ProfileSettings />} />
                 <Route path="/superadmin/billing" element={<BillingPage />} />
                 <Route path="/superadmin/notifications" element={<NotificationsPage />} />
-                <Route path="/superadmin/companies" element={<SuperadminDashboard />} />
                 <Route path="/superadmin/company/:companyId" element={<CompanyDetails />} />
                 <Route path="/superadmin/agent/:agentId" element={<SuperadminAgentDetails />} />
                 <Route path="/superadmin/user/:userId" element={<UserDetails />} />

@@ -1030,4 +1030,56 @@ class SuperadminController extends Controller
             default => 'Starter'
         };
     }
+
+    /**
+     * Impersonate a user — returns a token for the target user.
+     * Only superadmins can do this.
+     */
+    public function impersonate(Request $request, string $userId)
+    {
+        $superadmin = auth('api')->user();
+        if (!$superadmin || $superadmin->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $targetUser = User::find($userId);
+        if (!$targetUser) {
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+        }
+
+        // Audit log
+        \Illuminate\Support\Facades\Log::info('Superadmin impersonation', [
+            'superadmin_id' => $superadmin->id,
+            'superadmin_email' => $superadmin->email,
+            'target_user_id' => $targetUser->id,
+            'target_user_email' => $targetUser->email,
+            'target_user_role' => $targetUser->role,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        // Create a token for the target user
+        $token = $targetUser->createToken('impersonation', ['*'], now()->addHours(8));
+        $project = $targetUser->ownedProjects()->first() ?? $targetUser->projects()->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'access_token' => $token->plainTextToken,
+                'user' => [
+                    'id' => (string) $targetUser->id,
+                    'first_name' => $targetUser->first_name ?? explode(' ', $targetUser->name ?? '')[0],
+                    'last_name' => $targetUser->last_name ?? (explode(' ', $targetUser->name ?? '')[1] ?? ''),
+                    'email' => $targetUser->email,
+                    'role' => $targetUser->role,
+                    'status' => $targetUser->status ?? 'Active',
+                ],
+                'project' => $project ? [
+                    'id' => (string) $project->id,
+                    'name' => $project->name,
+                ] : null,
+                'impersonated_by' => (string) $superadmin->id,
+            ],
+        ]);
+    }
 }

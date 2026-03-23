@@ -77,7 +77,7 @@ export default function SuperadminCreateArticle() {
   useEffect(() => {
     if (companyId) {
       setIsLoadingCompanies(true);
-      api.get<Company[]>('/api/superadmin/companies')
+      api.get<Company[]>('/superadmin/companies')
         .then(response => {
           setCompanies(response.data);
         })

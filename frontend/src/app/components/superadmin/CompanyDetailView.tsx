@@ -3,6 +3,13 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import {
   Edit,
   Building2,
   ArrowLeft,
@@ -12,9 +19,14 @@ import {
   AlertCircle,
   Archive,
   Loader2,
+  LogIn,
+  User,
 } from 'lucide-react';
 import { api } from '../../api/client';
+import { useAuthStore } from '../../stores/authStore';
+import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CompanyOverviewTab } from './CompanyOverviewTab';
 import { CompanyProjectsTab } from './CompanyProjectsTab';
 import { CompanyPlanTab } from './CompanyPlanTab';
@@ -105,6 +117,10 @@ export function CompanyDetailView({
   const [companyTickets, setCompanyTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loginAsOpen, setLoginAsOpen] = useState(false);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
 
   const [invitedMembers, setInvitedMembers] = useState<
     { id: string; name: string; email: string; role: 'Admin' | 'Agent' }[]
@@ -176,6 +192,31 @@ export function CompanyDetailView({
       fetchCompanyData();
     }
   }, [viewingCompanyId]);
+
+  const handleImpersonate = async (agent: Agent) => {
+    setImpersonating(agent.id);
+    try {
+      const res = await api.post<any>(`/superadmin/impersonate/${agent.id}`, {});
+      if (res.success && res.data) {
+        const currentToken = localStorage.getItem('access_token');
+        if (currentToken) {
+          localStorage.setItem('superadmin_token', currentToken);
+          localStorage.setItem('superadmin_user', JSON.stringify(currentUser));
+        }
+        localStorage.setItem('access_token', res.data.access_token);
+        localStorage.setItem('impersonated_by', res.data.impersonated_by);
+        useAuthStore.getState().setUser(res.data.user);
+        toast.success(`Logged in as ${agent.name}`);
+        setLoginAsOpen(false);
+        if (res.data.user.role === 'admin') navigate('/admin/dashboard', { replace: true });
+        else navigate('/agent/dashboard', { replace: true });
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to login as user');
+    } finally {
+      setImpersonating(null);
+    }
+  };
 
   // Calculate total tickets from projects
   const totalTickets = companyProjects.reduce((sum, p) => sum + (p.tickets || 0), 0);
@@ -367,6 +408,9 @@ export function CompanyDetailView({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setLoginAsOpen(true)}>
+                <LogIn className="h-4 w-4 mr-1.5" />Login as
+              </Button>
               <Button variant="outline" size="sm" onClick={handleOpenEditDialog} disabled={isArchived}>
                 <Edit className="h-4 w-4 mr-1.5" />Edit
               </Button>
@@ -586,6 +630,42 @@ export function CompanyDetailView({
         setArchiveReason={setArchiveReason}
         handleArchiveCompany={handleArchiveCompany}
       />
+
+      {/* Login As Dialog */}
+      <Dialog open={loginAsOpen} onOpenChange={setLoginAsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login as User</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            Select a user from {company?.name} to impersonate.
+          </p>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {companyAgents.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No users found in this company.</p>
+            ) : (
+              companyAgents.map(agent => (
+                <div key={agent.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                      {agent.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{agent.name}</div>
+                    <div className="text-xs text-muted-foreground">{agent.email}</div>
+                  </div>
+                  <Badge variant="outline" className="text-xs capitalize shrink-0">{agent.role}</Badge>
+                  <Button size="sm" variant="outline" onClick={() => handleImpersonate(agent)} disabled={impersonating === agent.id}>
+                    {impersonating === agent.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <User className="h-3.5 w-3.5 mr-1" />}
+                    Login
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

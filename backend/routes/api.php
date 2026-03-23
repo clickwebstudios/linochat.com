@@ -42,14 +42,18 @@ Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 're
 Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
 
 Route::group(['prefix' => 'auth'], function () {
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('register', [AuthController::class, 'register']);
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('login', [AuthController::class, 'login']);
+        Route::post('register', [AuthController::class, 'register']);
+        Route::post('google', [AuthController::class, 'googleCallback']);
+    });
+    Route::middleware('throttle:5,1')->group(function () {
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('reset-password', [AuthController::class, 'resetPassword']);
+        Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode']);
+    });
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode']);
     Route::post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
-    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('reset-password', [AuthController::class, 'resetPassword']);
-    Route::post('google', [AuthController::class, 'googleCallback']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
@@ -324,6 +328,7 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::put('/agents/{agentId}', [SuperadminController::class, 'updateAgent']);
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
+    Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
