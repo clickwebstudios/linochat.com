@@ -874,18 +874,21 @@ class AgentController extends Controller
                 : ($chat->agent_id ? 'active' : 'waiting'),
         ]);
 
-        // Add system message about AI status change
-        $systemMessage = ChatMessage::create([
-            'chat_id' => $chat->id,
-            'sender_type' => 'system',
-            'content' => $newAiStatus 
-                ? 'AI assistant has been enabled for this chat.'
-                : 'AI assistant has been disabled. A human agent will assist you.',
-        ]);
+        // Add system message about AI status change (skip for Frubix-managed projects)
+        $isFrubixManaged = (bool) ($chat->project?->integrations['frubix_managed']['enabled'] ?? false);
+        if (!$isFrubixManaged) {
+            $systemMessage = ChatMessage::create([
+                'chat_id' => $chat->id,
+                'sender_type' => 'system',
+                'content' => $newAiStatus
+                    ? 'AI assistant has been enabled for this chat.'
+                    : 'AI assistant has been disabled. A human agent will assist you.',
+            ]);
+            broadcast(new MessageSent($systemMessage))->toOthers();
+        }
 
-        // Broadcast status update and message
+        // Broadcast status update
         broadcast(new ChatStatusUpdated($chat->id, $chat->status, $chat->agent_id, $user->name));
-        broadcast(new MessageSent($systemMessage))->toOthers();
 
         return response()->json([
             'success' => true,
