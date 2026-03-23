@@ -341,6 +341,8 @@ class WidgetLoaderController extends Controller
     }
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
+    var NOTIFIED_MSG_IDS = {};
+
     function processPollData(data) {
         if (!data || !data.success || !data.data) return;
         var d = data.data;
@@ -352,13 +354,13 @@ class WidgetLoaderController extends Controller
             if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
         }
         var msgs = d.messages || [];
-        var added = 0;
+        var newAgentMsg = null;
         msgs.forEach(function(m) {
+            // Track all message IDs to prevent future duplicates
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
-            // Skip customer messages from poll — they're already rendered optimistically on send
+            // Skip customer messages — already rendered optimistically
             if (m.sender_type === 'customer') {
                 if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
-                if (window._lcSentMsgs && window._lcSentMsgs[m.content]) delete window._lcSentMsgs[m.content];
                 return;
             }
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
@@ -367,15 +369,19 @@ class WidgetLoaderController extends Controller
             }
             var type = m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
             addMessage(m.content, type, m.id, type !== 'system', m.metadata);
-            added++;
+            // Track for notification (only agent/ai, not system)
+            if (m.id && !NOTIFIED_MSG_IDS[m.id] && type !== 'system') {
+                NOTIFIED_MSG_IDS[m.id] = true;
+                newAgentMsg = m;
+            }
         });
-        if (added > 0) {
-            // Show notification bubble + sound if widget is closed
+        // Show notification bubble if widget is closed and there's a new agent/AI message
+        if (newAgentMsg) {
             var win = document.getElementById('linochat-window');
             var isClosed = !win || win.style.display === 'none';
             if (isClosed) {
                 playIncomingMessageSound();
-                showUnreadBubble(msgs[msgs.length - 1].content || 'New message');
+                showUnreadBubble(newAgentMsg.content || 'New message');
             }
         }
     }
