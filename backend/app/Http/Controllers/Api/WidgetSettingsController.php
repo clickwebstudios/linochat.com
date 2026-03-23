@@ -150,7 +150,7 @@ class WidgetSettingsController extends Controller
             'greeting_enabled'  => 'nullable|boolean',
             'greeting_delay'    => 'nullable|integer|min:0|max:3600',
             'greeting_message'  => 'nullable|string|max:500',
-            'font_size'         => 'nullable|integer|in:12,14,16',
+            'font_size'         => 'nullable|integer|in:12,13,14,15,16',
             'animation'         => 'nullable|string|max:50',
             'animation_repeat'  => 'nullable|string|max:20',
             'animation_delay'   => 'nullable|string|max:10',

@@ -542,7 +542,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="12">Small (12px)</SelectItem>
+                      <SelectItem value="13">Medium-Small (13px)</SelectItem>
                       <SelectItem value="14">Medium (14px)</SelectItem>
+                      <SelectItem value="15">Medium-Large (15px)</SelectItem>
                       <SelectItem value="16">Large (16px)</SelectItem>
                     </SelectContent>
                   </Select>
