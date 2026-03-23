@@ -366,27 +366,29 @@ class WidgetLoaderController extends Controller
     }
 
     function pollChatState() {
-        console.log('[LinoChat] polling... CHAT_ID=' + CHAT_ID + ' CUSTOMER_ID=' + (CUSTOMER_ID ? CUSTOMER_ID.substring(0,10) : 'null'));
         if (!CHAT_ID || !CUSTOMER_ID) return;
-        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now();
-        // Try fetch first, fall back to JSONP if blocked by CSP
-        fetch(url, { headers: FETCH_HEADERS, cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(processPollData)
-            .catch(function(err) {
-                console.log('[LinoChat] fetch failed, trying JSONP:', err.message || err);
-                // Fetch blocked by CSP — use JSONP fallback
-                var cb = 'linochat_poll_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-                var script = document.createElement('script');
-                window[cb] = function(data) {
-                    delete window[cb];
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                    processPollData(data);
-                };
-                script.onerror = function() { delete window[cb]; if (script.parentNode) script.parentNode.removeChild(script); };
-                script.src = url + '&callback=' + encodeURIComponent(cb);
-                document.head.appendChild(script);
-            });
+        var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
+        var script = document.createElement('script');
+        var done = false;
+        window[cb] = function(data) {
+            done = true;
+            delete window[cb];
+            if (script.parentNode) script.parentNode.removeChild(script);
+            processPollData(data);
+        };
+        script.onerror = function() {
+            if (!done) { delete window[cb]; }
+            if (script.parentNode) script.parentNode.removeChild(script);
+        };
+        setTimeout(function() {
+            if (!done) {
+                delete window[cb];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            }
+        }, 10000);
+        script.src = url;
+        document.head.appendChild(script);
     }
     
     function startPollingWhenWaiting() {
