@@ -211,7 +211,7 @@ export default function ProjectDetails() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       {isSuperadmin ? (
         <header className="bg-card border-b px-6 sticky top-0 z-50">
@@ -302,7 +302,7 @@ export default function ProjectDetails() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 p-6">
           {/* Back Button & Actions */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -477,6 +477,6 @@ export default function ProjectDetails() {
         onOpenChange={setEditProjectDialogOpen}
         project={project}
       />
-    </>
+    </div>
   );
 }
