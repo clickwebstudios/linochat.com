@@ -117,8 +117,12 @@ class ProjectController extends Controller
 
         $user = auth('api')->user();
 
-        // Normalize website URL for comparison (lowercase, strip trailing slash)
-        $website = rtrim(strtolower($request->input('website')), '/');
+        // Normalize website URL — ensure https:// prefix
+        $website = $request->input('website');
+        if ($website && !preg_match('/^https?:\/\//', $website)) {
+            $website = 'https://' . $website;
+        }
+        $website = rtrim(strtolower($website), '/');
         $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])->first();
         if ($duplicate) {
             return response()->json([
@@ -133,7 +137,7 @@ class ProjectController extends Controller
             'name' => $request->input('name'),
             'slug' => Str::slug($request->input('name')) . '-' . Str::random(6),
             'widget_id' => 'wc_' . Str::random(32),
-            'website' => $request->input('website'),
+            'website' => $website,
             'color' => $request->input('color', '#4F46E5'),
             'description' => $request->input('description'),
             'status' => 'active',
@@ -193,7 +197,11 @@ class ProjectController extends Controller
 
         // Check for duplicate website URL (excluding current project)
         if ($request->has('website')) {
-            $website = rtrim(strtolower($request->input('website')), '/');
+            $website = $request->input('website');
+            if ($website && !preg_match('/^https?:\/\//', $website)) {
+                $website = 'https://' . $website;
+            }
+            $website = rtrim(strtolower($website), '/');
             $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])
                 ->where('id', '!=', $project_id)
                 ->first();
@@ -213,6 +221,11 @@ class ProjectController extends Controller
             if ($request->has($field)) {
                 $updates[$field] = $request->input($field);
             }
+        }
+
+        // Ensure website has https:// prefix
+        if (isset($updates['website']) && $updates['website'] && !preg_match('/^https?:\/\//', $updates['website'])) {
+            $updates['website'] = 'https://' . $updates['website'];
         }
 
         // Update slug if name changed

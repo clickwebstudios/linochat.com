@@ -66,7 +66,7 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 pt-6 space-y-1">
+      <nav className="flex-1 p-3 pt-6 pb-16 space-y-1">
         {navItems
           .filter(item => item.showFor.includes(role))
           .map(item => (
