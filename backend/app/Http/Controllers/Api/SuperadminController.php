@@ -1047,6 +1047,17 @@ class SuperadminController extends Controller
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
+        // Audit log
+        \Illuminate\Support\Facades\Log::info('Superadmin impersonation', [
+            'superadmin_id' => $superadmin->id,
+            'superadmin_email' => $superadmin->email,
+            'target_user_id' => $targetUser->id,
+            'target_user_email' => $targetUser->email,
+            'target_user_role' => $targetUser->role,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         // Create a token for the target user
         $token = $targetUser->createToken('impersonation', ['*'], now()->addHours(8));
         $project = $targetUser->ownedProjects()->first() ?? $targetUser->projects()->first();

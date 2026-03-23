@@ -362,9 +362,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
-            <aside className="w-56 shrink-0">
+            <aside className="w-full lg:w-56 shrink-0">
               <nav className="space-y-1">
                 {WIDGET_NAV.map(item => {
                   const Icon = item.icon;
@@ -843,7 +843,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             </div>
 
             {/* ── Live Preview (always visible) ── */}
-            <div className="w-[750px] shrink-0">
+            <div className="hidden xl:block w-[750px] shrink-0">
               <div className="sticky top-4">
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Live Preview</p>
                 <div className="rounded-lg border border-border relative overflow-hidden" style={{ minHeight: '500px' }}>
