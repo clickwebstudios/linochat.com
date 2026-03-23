@@ -403,6 +403,17 @@ class AiChatService
             ->with('category')
             ->get();
 
+        // Try RAG (embedding-based search) first
+        $articlesWithEmbeddings = $articles->filter(fn($a) => !empty($a->embedding));
+        if ($articlesWithEmbeddings->count() >= 2) {
+            $ragResult = $this->searchByEmbedding($message, $articlesWithEmbeddings);
+            if (!empty($ragResult)) {
+                Log::info('KB RAG search', ['project_id' => $project->id, 'results' => count($ragResult)]);
+                return $ragResult;
+            }
+        }
+        // Fall back to keyword search
+
         if ($articles->isEmpty()) {
             return [];
         }
@@ -500,6 +511,64 @@ class AiChatService
         return $topArticles;
     }
     
+    /**
+     * Search KB articles using OpenAI embeddings (RAG).
+     */
+    protected function searchByEmbedding(string $query, $articles): array
+    {
+        $apiKey = config('openai.api_key');
+        if (!$apiKey) return [];
+
+        try {
+            $client = \OpenAI::client($apiKey);
+
+            // Embed the customer's query
+            $response = $client->embeddings()->create([
+                'model' => 'text-embedding-3-small',
+                'input' => substr($query, 0, 2000),
+            ]);
+
+            $queryEmbedding = $response->embeddings[0]->embedding;
+
+            // Compute cosine similarity against each article
+            $scored = [];
+            foreach ($articles as $article) {
+                $similarity = $this->cosineSimilarity($queryEmbedding, $article->embedding);
+                if ($similarity > 0.3) {
+                    $scored[] = ['article' => $article, 'score' => $similarity];
+                }
+            }
+
+            // Sort by score descending, take top 3
+            usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
+            return array_slice(array_column($scored, 'article'), 0, 3);
+
+        } catch (\Exception $e) {
+            Log::warning('RAG embedding search failed, falling back to keyword', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Cosine similarity between two vectors.
+     */
+    protected function cosineSimilarity(array $a, array $b): float
+    {
+        $dotProduct = 0.0;
+        $normA = 0.0;
+        $normB = 0.0;
+        $len = min(count($a), count($b));
+
+        for ($i = 0; $i < $len; $i++) {
+            $dotProduct += $a[$i] * $b[$i];
+            $normA += $a[$i] * $a[$i];
+            $normB += $b[$i] * $b[$i];
+        }
+
+        $denominator = sqrt($normA) * sqrt($normB);
+        return $denominator > 0 ? $dotProduct / $denominator : 0.0;
+    }
+
     /**
      * Extract meaningful phrases from message for better matching
      */
