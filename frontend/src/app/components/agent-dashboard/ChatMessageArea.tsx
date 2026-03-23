@@ -374,13 +374,17 @@ export function ChatMessageArea({
 
       {/* Input Area */}
       <div className="border-t border-[rgba(0,0,0,0.1)] p-4 bg-card shrink-0">
-        {activeChat?.frubix_managed ? (
-          <div className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-indigo-50 border border-indigo-200">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            <span className="text-sm text-indigo-600 font-medium">Synced with Frubix — AI is active, agents can take over from Frubix</span>
-          </div>
+        {activeChat?.has_frubix ? (
+          <a
+            href="https://frubix.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#6366F1"/><text x="16" y="22" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="system-ui">F</text></svg>
+            <span className="text-sm text-indigo-600 font-medium">Managed by Frubix — agent replies are handled in the Frubix dashboard</span>
+            <svg className="h-3.5 w-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" /></svg>
+          </a>
         ) : !hasTakenOver ? (
           <div
             className="flex items-center justify-center gap-2 h-12 rounded-[10px] bg-[#f9fafb] border border-[#d1d5dc] cursor-pointer hover:bg-muted transition-colors"

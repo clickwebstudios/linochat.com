@@ -703,14 +703,23 @@ class WidgetController extends Controller
             $agentName = $agent?->name;
         }
 
-        return response()->json([
+        $data = [
             'success' => true,
             'data' => [
                 'messages' => $messages,
                 'status' => $chat->status,
                 'agent_name' => $agentName,
             ],
-        ]);
+        ];
+
+        $callback = $request->query('callback');
+        if ($callback && preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $callback)) {
+            return response($callback . '(' . json_encode($data) . ');', 200)
+                ->header('Content-Type', 'application/javascript; charset=utf-8')
+                ->header('Access-Control-Allow-Origin', '*');
+        }
+
+        return response()->json($data);
     }
 
     /**

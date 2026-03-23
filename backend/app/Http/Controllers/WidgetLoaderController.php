@@ -341,33 +341,54 @@ class WidgetLoaderController extends Controller
     }
     
     // Poll for chat updates when waiting for agent (fallback when WebSocket fails)
+    function processPollData(data) {
+        console.log('[LinoChat] poll data received, msgs:', data && data.data ? (data.data.messages || []).length : 0);
+        if (!data || !data.success || !data.data) return;
+        var d = data.data;
+        CHAT_STATUS = d.status || CHAT_STATUS;
+        updateChatStatus({ status: d.status, agent_name: d.agent_name });
+        if (d.status === 'active' && d.agent_name && !ADDED_MESSAGE_IDS['agent-joined']) {
+            ADDED_MESSAGE_IDS['agent-joined'] = true;
+            addMessage(d.agent_name + ' has joined the chat.', 'system');
+            if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
+        }
+        var msgs = d.messages || [];
+        msgs.forEach(function(m) {
+            if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
+            if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
+                if (ADDED_MESSAGE_IDS['agent-joined']) return;
+                ADDED_MESSAGE_IDS['agent-joined'] = true;
+            }
+            if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
+            var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
+            addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
+        });
+    }
+
     function pollChatState() {
         if (!CHAT_ID || !CUSTOMER_ID) return;
-        fetch(API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID), { headers: FETCH_HEADERS })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (!data.success || !data.data) return;
-                var d = data.data;
-                CHAT_STATUS = d.status || CHAT_STATUS;
-                updateChatStatus({ status: d.status, agent_name: d.agent_name });
-                if (d.status === 'active' && d.agent_name && !ADDED_MESSAGE_IDS['agent-joined']) {
-                    ADDED_MESSAGE_IDS['agent-joined'] = true;
-                    addMessage(d.agent_name + ' has joined the chat.', 'system');
-                    if (POLL_CHAT_INTERVAL) { clearInterval(POLL_CHAT_INTERVAL); POLL_CHAT_INTERVAL = null; }
-                }
-                var msgs = d.messages || [];
-                msgs.forEach(function(m) {
-                    if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
-                    if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
-                        if (ADDED_MESSAGE_IDS['agent-joined']) return;
-                        ADDED_MESSAGE_IDS['agent-joined'] = true;
-                    }
-                    if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
-                    var type = m.sender_type === 'customer' ? 'customer' : m.sender_type === 'system' ? 'system' : m.sender_type === 'ai' ? 'ai' : 'agent';
-                    addMessage(m.content, type, m.id, type !== 'system' && type !== 'customer', m.metadata);
-                });
-            })
-            .catch(function(e) {});
+        var cb = 'lc_p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        var url = API_URL + '/api/widget/' + WIDGET_ID + '/messages?chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) + '&_=' + Date.now() + '&callback=' + encodeURIComponent(cb);
+        var script = document.createElement('script');
+        var done = false;
+        window[cb] = function(data) {
+            done = true;
+            delete window[cb];
+            if (script.parentNode) script.parentNode.removeChild(script);
+            processPollData(data);
+        };
+        script.onerror = function() {
+            if (!done) { delete window[cb]; }
+            if (script.parentNode) script.parentNode.removeChild(script);
+        };
+        setTimeout(function() {
+            if (!done) {
+                delete window[cb];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            }
+        }, 10000);
+        script.src = url;
+        document.head.appendChild(script);
     }
     
     function startPollingWhenWaiting() {
@@ -384,7 +405,7 @@ class WidgetLoaderController extends Controller
     // Poll for new messages when chat is active (fallback when WebSocket fails to deliver agent messages)
     function startPollingMessages() {
         if (POLL_MESSAGES_INTERVAL) return;
-        POLL_MESSAGES_INTERVAL = setInterval(pollChatState, 8000);
+        POLL_MESSAGES_INTERVAL = setInterval(pollChatState, 5000);
     }
     
     // Send heartbeat to signal customer is still online
@@ -397,6 +418,8 @@ class WidgetLoaderController extends Controller
             headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
             body: JSON.stringify({ chat_id: CHAT_ID, customer_id: CUSTOMER_ID, current_page: window.location.href })
         }).catch(function() {});
+        // Also poll for new messages on each heartbeat
+        pollChatState();
     }
 
     function sendPageView(url) {
@@ -556,6 +579,7 @@ class WidgetLoaderController extends Controller
             localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
             MESSAGES = data.data.messages || [];
             connectWebSocket();
+            startPollingMessages();
             return data.data;
         }
         throw new Error('Failed to init chat');
@@ -1081,7 +1105,7 @@ class WidgetLoaderController extends Controller
         // Start polling when waiting for agent (fallback when WebSocket fails to deliver "X has joined")
         if (CHAT_STATUS === 'waiting') startPollingWhenWaiting();
         // Poll for new messages (agent, AI) when chat is active - fallback when WebSocket fails
-        if (CHAT_STATUS === 'active' || CHAT_STATUS === 'ai_handling') startPollingMessages();
+        startPollingMessages();
         
         // Check if we need to collect contact info for ticket
         setTimeout(checkAndRequestTicket, 60000); // Check after 1 minute
@@ -1485,7 +1509,7 @@ CSS;
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Cross-Origin-Resource-Policy', 'cross-origin')
             ->header('Access-Control-Allow-Origin', '*')
-            ->header('Cache-Control', 'public, max-age=3600');
+            ->header('Cache-Control', 'public, max-age=300');
     }
 
     /**

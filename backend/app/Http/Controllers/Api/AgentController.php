@@ -453,10 +453,11 @@ class AgentController extends Controller
 
         $user = auth('api')->user();
         
-        // Superadmin can type in any chat, agents only in assigned chats
+        // Superadmin and OAuth clients can type in any chat, agents only in assigned chats
         $chatQuery = Chat::where('id', $chat_id);
-        
-        if ($user->role !== 'superadmin') {
+        $isOAuth = $request->attributes->has('oauth_token');
+
+        if ($user->role !== 'superadmin' && !$isOAuth) {
             $chatQuery->where('agent_id', $user->id);
         }
         
