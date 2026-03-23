@@ -413,6 +413,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
               stats={platformStats}
               isLoading={isLoadingStats}
               companies={companies}
+              onViewCompany={(id) => { setActiveSection('companies'); setViewingCompanyId(id); setCompanyDetailTab('overview'); }}
             />
           )}
 
