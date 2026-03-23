@@ -358,7 +358,11 @@ class WidgetLoaderController extends Controller
         msgs.forEach(function(m) {
             if (m.id && ADDED_MESSAGE_IDS[m.id]) return;
             // Skip customer messages from poll — they're already rendered optimistically on send
-            if (m.sender_type === 'customer') { if (m.id) ADDED_MESSAGE_IDS[m.id] = true; return; }
+            if (m.sender_type === 'customer') {
+                if (m.id) ADDED_MESSAGE_IDS[m.id] = true;
+                if (window._lcSentMsgs && window._lcSentMsgs[m.content]) delete window._lcSentMsgs[m.content];
+                return;
+            }
             if (m.sender_type === 'system' && / has joined the chat\.$/.test(m.content)) {
                 if (ADDED_MESSAGE_IDS['agent-joined']) return;
                 ADDED_MESSAGE_IDS['agent-joined'] = true;
@@ -623,6 +627,9 @@ class WidgetLoaderController extends Controller
     // Send message - try fetch first, fallback to JSONP when CSP blocks fetch
     function sendMessage(content) {
         addMessage(content, 'customer');
+        // Track sent content so poll can dedup (optimistic messages have no ID)
+        if (!window._lcSentMsgs) window._lcSentMsgs = {};
+        window._lcSentMsgs[content] = true;
 
         return sendMessageFetch(content).catch(function() {
             return sendMessageJsonp(content);
@@ -633,6 +640,8 @@ class WidgetLoaderController extends Controller
     
     function processSendResponse(data) {
         if (data.success && data.data) {
+            // Track the customer message ID so poll skips it
+            if (data.data.message && data.data.message.id) ADDED_MESSAGE_IDS[data.data.message.id] = true;
             if (data.data.ai_response) {
                 addMessage(data.data.ai_response.content, 'ai', data.data.ai_response.id, true);
             } else if (data.data.chat_status === 'waiting') {
