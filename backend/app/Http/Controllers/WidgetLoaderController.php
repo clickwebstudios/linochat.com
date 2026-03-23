@@ -382,8 +382,11 @@ class WidgetLoaderController extends Controller
 
     function showUnreadBubble(text) {
         // Hide greeting bubble
+        // Hide greeting and popover
         var greeting = document.getElementById('linochat-greeting');
         if (greeting) greeting.remove();
+        var popover = document.getElementById('linochat-popover');
+        if (popover) popover.remove();
         var btn = document.getElementById('linochat-button');
         if (!btn) return;
         var pos = CONFIG && CONFIG.position === 'bottom-left' ? 'left' : 'right';
