@@ -245,12 +245,25 @@ class AiChatService
                 }
             }
 
-            // Extract and save customer name if AI detected it
+            // Extract and save customer details if AI detected them
             $cleanedContent = $this->cleanAiResponse($aiContent);
-            $customerName = $this->extractCustomerName($aiContent);
-            if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
-                $chat->update(['customer_name' => $customerName]);
+            $customerName = $this->extractCustomerName($aiContent, $customerMessage);
+            $chatUpdates = [];
+            $metaUpdates = $chat->metadata ?? [];
+            $notRealName = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $currentName = $chat->customer_name ?? '';
+            if ($customerName && (empty($currentName) || in_array($currentName, $notRealName, true) || strlen($currentName) <= 2)) {
+                $chatUpdates['customer_name'] = $customerName;
             }
+            // Extract phone/email from customer's message
+            if (preg_match('/\b(\+?\d[\d\s\-().]{7,15}\d)\b/', $customerMessage, $pm) && empty($metaUpdates['customer_phone'])) {
+                $metaUpdates['customer_phone'] = preg_replace('/[^\d+]/', '', $pm[1]);
+            }
+            if (preg_match('/[\w.+-]+@[\w-]+\.[\w.]+/', $customerMessage, $em) && empty($chat->customer_email)) {
+                $chatUpdates['customer_email'] = $em[0];
+            }
+            if (!empty($metaUpdates)) $chatUpdates['metadata'] = $metaUpdates;
+            if (!empty($chatUpdates)) $chat->update($chatUpdates);
 
             // Create and save AI message with KB references
             $metadata = [
@@ -615,6 +628,60 @@ class AiChatService
     }
 
     /**
+     * Generate suggested replies for an agent to use (does NOT save messages).
+     */
+    public function suggestReplies(Chat $chat, Project $project, int $count = 3): array
+    {
+        $apiKey = config('openai.api_key');
+        if (empty($apiKey) || $apiKey === 'sk-test-key-placeholder') {
+            return [];
+        }
+
+        $aiSettings = $project->ai_settings ?? [];
+        $this->model = $aiSettings['model'] ?? 'gpt-4o-mini';
+
+        $lastCustomerMsg = $chat->messages()
+            ->where('sender_type', 'customer')
+            ->orderByDesc('created_at')
+            ->value('content') ?? '';
+
+        $kbContext = $this->getKbContext($project, $lastCustomerMsg);
+        $conversationHistory = $this->getConversationHistory($chat);
+        $systemPrompt = $this->buildSystemPrompt($project, $kbContext);
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt . "\n\nYou are now generating suggested replies for a human agent. Generate exactly {$count} short, contextual reply options the agent can send to the customer. Return ONLY a JSON array of strings, no other text."],
+            ...array_map(fn ($h) => $h, $conversationHistory),
+        ];
+
+        if ($lastCustomerMsg) {
+            $messages[] = ['role' => 'user', 'content' => $lastCustomerMsg];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => "Generate {$count} suggested agent replies as a JSON array of strings."];
+
+        try {
+            $client = OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model' => $this->model,
+                'messages' => $messages,
+                'temperature' => 0.8,
+                'max_tokens' => 500,
+            ]);
+
+            $content = trim($response->choices[0]->message->content ?? '');
+            // Strip markdown code fences if present
+            $content = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', $content);
+            $suggestions = json_decode($content, true);
+
+            return is_array($suggestions) ? array_slice($suggestions, 0, $count) : [];
+        } catch (\Throwable $e) {
+            Log::warning('AI suggest replies failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
      * Build system prompt
      */
     protected function buildSystemPrompt(Project $project, array $kbContext): string
@@ -776,8 +843,10 @@ class AiChatService
 
         // Extract and save customer name if AI detected it before handover
         if ($aiContent) {
-            $customerName = $this->extractCustomerName($aiContent);
-            if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
+            $customerName = $this->extractCustomerName($aiContent, $customerMessage);
+            $notRealName2 = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $curName = $chat->customer_name ?? '';
+            if ($customerName && (empty($curName) || in_array($curName, $notRealName2, true) || strlen($curName) <= 2)) {
                 $chat->update(['customer_name' => $customerName]);
             }
         }
@@ -873,12 +942,37 @@ class AiChatService
     /**
      * Extract customer name from AI response if present
      */
-    protected function extractCustomerName(string $response): ?string
+    protected function extractCustomerName(string $response, ?string $customerMessage = null): ?string
     {
+        // 1. Check for explicit [CUSTOMER_NAME:] tag
         if (preg_match('/\[CUSTOMER_NAME:\s*([^\]]+)\]/i', $response, $matches)) {
             $name = trim($matches[1]);
             if (strlen($name) >= 2 && strlen($name) <= 100) {
                 return $name;
+            }
+        }
+
+        // 2. Fallback: extract from AI response patterns like "Thank you, Alex!" or "Hi Alex,"
+        if (preg_match('/(?:Thank you|Thanks|Hi|Hello|Nice to meet you),?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)[!.,]/', $response, $matches)) {
+            $name = trim($matches[1]);
+            // Exclude common false positives
+            $exclude = ['Welcome', 'There', 'Sure', 'Great', 'How', 'What', 'Please', 'Let'];
+            if (strlen($name) >= 2 && strlen($name) <= 50 && !in_array($name, $exclude)) {
+                return $name;
+            }
+        }
+
+        // 3. Fallback: if customer message is a short name-like response (1-3 capitalized words)
+        if ($customerMessage) {
+            $msg = trim($customerMessage);
+            // Patterns: "Alex", "Alex James", "my name is Alex James", "I'm Alex", "it's Alex"
+            if (preg_match('/^(?:(?:my name is|i\'?m|it\'?s|this is|i am|name:?)\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/i', $msg, $matches)) {
+                $name = trim($matches[1]);
+                // Capitalize properly
+                $name = implode(' ', array_map('ucfirst', explode(' ', strtolower($name))));
+                if (strlen($name) >= 2 && strlen($name) <= 50) {
+                    return $name;
+                }
             }
         }
 

@@ -111,6 +111,15 @@ class WidgetController extends Controller
             'next_online_at' => null,
         ];
 
+        // For Frubix-managed projects, check if Frubix agents are online
+        $frubixManaged = $project->integrations['frubix_managed'] ?? null;
+        if ($frubixManaged && ($frubixManaged['enabled'] ?? false)) {
+            $frubixOnline = cache()->get("frubix_agent_online:{$project->id}", true);
+            if (!$frubixOnline) {
+                return array_merge($defaults, ['is_online' => false]);
+            }
+        }
+
         if ($mode === 'always') {
             return $defaults;
         }
@@ -554,6 +563,21 @@ class WidgetController extends Controller
             ], 404);
         }
 
+        // Auto-reopen closed chats when customer sends a new message
+        if ($chat->status === 'closed') {
+            $chat->update([
+                'status' => 'ai_handling',
+                'ai_enabled' => true,
+                'agent_id' => null,
+            ]);
+            ChatMessage::create([
+                'chat_id' => $chat->id,
+                'sender_type' => 'system',
+                'content' => 'Customer returned — chat reopened.',
+            ]);
+            broadcast(new \App\Events\ChatStatusUpdated($chat->id, 'ai_handling'));
+        }
+
         try {
             $message = ChatMessage::create([
                 'chat_id' => $chat->id,
@@ -563,7 +587,38 @@ class WidgetController extends Controller
                 'is_ai' => false,
             ]);
 
-            $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
+            // Extract name/phone/email from customer message and update chat immediately
+            $chatMeta = $chat->metadata ?? [];
+            $chatUpdates = ['last_message_at' => now(), 'customer_last_seen_at' => now()];
+            $customerMsg = $input['message'];
+
+            // Extract name from customer message (e.g. "Alex James", "my name is Alex", "I'm Alex")
+            $notRealName = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $currentName = $chat->customer_name ?? '';
+            $needsName = empty($currentName) || in_array($currentName, $notRealName, true) || strlen($currentName) <= 2;
+            if ($needsName) {
+                if (preg_match('/^(?:(?:my name is|i\'?m|it\'?s|this is|i am|name:?)\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/i', trim($customerMsg), $nm)) {
+                    $name = implode(' ', array_map('ucfirst', explode(' ', strtolower(trim($nm[1])))));
+                    $exclude = ['Hello', 'Hi', 'Hey', 'Yes', 'No', 'Ok', 'Sure', 'Thanks', 'Thank', 'Please', 'Need', 'Want', 'How', 'What', 'Where', 'When', 'Why'];
+                    if (strlen($name) >= 2 && strlen($name) <= 50 && !in_array($name, $exclude)) {
+                        $chatUpdates['customer_name'] = $name;
+                    }
+                }
+            }
+
+            // Extract phone number
+            if (preg_match('/\b(\+?\d[\d\s\-().]{7,15}\d)\b/', $customerMsg, $pm) && empty($chatMeta['customer_phone'])) {
+                $chatMeta['customer_phone'] = preg_replace('/[^\d+]/', '', $pm[1]);
+                $chatUpdates['metadata'] = $chatMeta;
+            }
+
+            // Extract email
+            if (preg_match('/[\w.+-]+@[\w-]+\.[\w.]+/', $customerMsg, $em) && empty($chat->customer_email)) {
+                $chatUpdates['customer_email'] = $em[0];
+            }
+            $chat->update($chatUpdates);
+            $chat->refresh();
+
             broadcast(new MessageSent($message))->toOthers();
 
             // Forward to Frubix if this project is Frubix-managed
@@ -573,14 +628,26 @@ class WidgetController extends Controller
             if ($isFrubixManaged) {
                 try {
                     $frubixUrl = rtrim($frubixManaged['api_url'], '/');
+                    $chatMeta = $chat->metadata ?? [];
                     Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/linochat/messages", [
                         'sender_name'              => $chat->customer_name ?: 'Visitor',
                         'sender_email'             => $chat->customer_email,
+                        'sender_phone'             => $chatMeta['customer_phone'] ?? null,
                         'sender_type'              => 'customer',
-                        'message'                  => $input['message'],
+                        'message'                  => $customerMsg,
                         'channel'                  => 'linochat',
                         'source'                   => 'linochat',
                         'external_conversation_id' => (string) $chat->id,
+                        'metadata'                 => [
+                            'customer_name'  => $chat->customer_name,
+                            'customer_email' => $chat->customer_email,
+                            'customer_phone' => $chatMeta['customer_phone'] ?? null,
+                            'device'         => $chatMeta['device'] ?? null,
+                            'browser'        => $chatMeta['browser'] ?? null,
+                            'location'       => $chatMeta['location'] ?? $chatMeta['city'] ?? null,
+                            'referrer'       => $chatMeta['referrer'] ?? null,
+                            'current_page'   => $chatMeta['current_page'] ?? null,
+                        ],
                     ]);
                 } catch (\Throwable $e) {
                     Log::warning('Failed to forward message to Frubix', ['error' => $e->getMessage()]);
@@ -589,7 +656,7 @@ class WidgetController extends Controller
 
             $aiResponse = null;
             $chat->refresh(); // Ensure we have latest agent_id/status (agent may have taken over)
-            // Never use AI when an agent has taken over (agent_id is set)
+            // Never use AI when an agent has taken over (agent_id is set) or AI is disabled
             $shouldAiReply = $chat->ai_enabled !== false
                 && !$chat->agent_id
                 && ($chat->status === 'ai_handling'

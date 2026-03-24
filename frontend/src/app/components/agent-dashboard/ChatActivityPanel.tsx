@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Phone,
 } from 'lucide-react';
 
 interface ActivityData {
@@ -149,6 +150,14 @@ export function ChatActivityPanel({
               </button>
               {showCustomerDetails && (
                 <div className="p-3 pt-0 border-t border-[rgba(0,0,0,0.1)] space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><User className="h-3 w-3" /><span>Name</span></div>
+                    <p className="text-sm font-medium text-[#0a0a0a]">{activeChat?.customer_name && !['Guest', 'Visitor', 'Hello', 'Hi', 'Hey'].includes(activeChat.customer_name) ? activeChat.customer_name : '\u2014'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Phone className="h-3 w-3" /><span>Phone</span></div>
+                    <p className="text-sm font-medium text-[#0a0a0a]">{(activeChat?.metadata as any)?.customer_phone || '\u2014'}</p>
+                  </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs text-[#6a7282]"><Mail className="h-3 w-3" /><span>Email</span></div>
                     <p className="text-sm font-medium text-[#0a0a0a]">{activity.customer_email || activeChat?.customer_email || '\u2014'}</p>

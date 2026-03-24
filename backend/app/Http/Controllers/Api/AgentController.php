@@ -862,17 +862,16 @@ class AgentController extends Controller
             ], 403);
         }
 
-        // Toggle AI enabled status
-        $newAiStatus = !$chat->ai_enabled;
+        // Explicit set if provided, otherwise toggle
+        $newAiStatus = $request->has('ai_enabled') ? (bool) $request->input('ai_enabled') : !$chat->ai_enabled;
         
         // Update chat
         $chat->update([
             'ai_enabled' => $newAiStatus,
-            // If AI is being disabled and no agent assigned, set to waiting
-            // If AI is being enabled, set to ai_handling if no agent
-            'status' => $newAiStatus 
-                ? ($chat->agent_id ? $chat->status : 'ai_handling')
-                : ($chat->agent_id ? 'active' : 'waiting'),
+            // When enabling AI: clear agent_id and set to ai_handling so AI can respond
+            // When disabling AI: keep agent_id, set to active/waiting
+            'agent_id' => $newAiStatus ? null : $chat->agent_id,
+            'status' => $newAiStatus ? 'ai_handling' : ($chat->agent_id ? 'active' : 'waiting'),
         ]);
 
         // Add system message about AI status change (skip for Frubix-managed projects)
@@ -930,5 +929,26 @@ class AgentController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Generate AI-powered reply suggestions for an agent.
+     * POST /v1/chats/{chatId}/suggest-replies
+     */
+    public function suggestReplies(Request $request, string $chatId)
+    {
+        $chat = Chat::with('project')->where('id', $chatId)->first();
+
+        if (!$chat) {
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+
+        $aiService = app(\App\Services\AiChatService::class);
+        $suggestions = $aiService->suggestReplies($chat, $chat->project);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['suggestions' => $suggestions],
+        ]);
     }
 }
