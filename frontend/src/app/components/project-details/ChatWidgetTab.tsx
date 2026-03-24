@@ -638,6 +638,28 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
             {/* ── Animations ── */}
             {activeSection === 'animations' && (
               <div className="space-y-4">
+                <style>{`
+                  @keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+                  @keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 10px transparent}}
+                  @keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+                  @keyframes lc-wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+                  @keyframes lc-tada{0%,100%{transform:scale(1) rotate(0)}10%,20%{transform:scale(0.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}
+                  @keyframes lc-heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
+                  @keyframes lc-rubber-band{0%,100%{transform:scaleX(1)}30%{transform:scaleX(1.25) scaleY(0.75)}40%{transform:scaleX(0.75) scaleY(1.25)}50%{transform:scaleX(1.15) scaleY(0.85)}65%{transform:scaleX(0.95) scaleY(1.05)}75%{transform:scaleX(1.05) scaleY(0.95)}}
+                  @keyframes lc-swing{20%{transform:rotate(15deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}100%{transform:rotate(0)}}
+                  @keyframes lc-jello{0%,100%{transform:skewX(0) skewY(0)}22%{transform:skewX(-12.5deg) skewY(-12.5deg)}33%{transform:skewX(6.25deg) skewY(6.25deg)}44%{transform:skewX(-3.125deg) skewY(-3.125deg)}55%{transform:skewX(1.5625deg) skewY(1.5625deg)}66%{transform:skewX(-0.78125deg) skewY(-0.78125deg)}}
+                  @keyframes lc-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+                  .animate-widget-bounce{animation:lc-bounce 1s ease-in-out infinite}
+                  .animate-widget-pulse{animation:lc-pulse 1s ease-in-out infinite}
+                  .animate-widget-shake{animation:lc-shake 0.6s ease-in-out infinite}
+                  .animate-widget-wobble{animation:lc-wobble 0.8s ease-in-out infinite}
+                  .animate-widget-tada{animation:lc-tada 1s ease-in-out infinite}
+                  .animate-widget-heartbeat{animation:lc-heartbeat 1.2s ease-in-out infinite}
+                  .animate-widget-rubber-band{animation:lc-rubber-band 1s ease-in-out infinite}
+                  .animate-widget-swing{animation:lc-swing 1s ease-in-out infinite}
+                  .animate-widget-jello{animation:lc-jello 1s ease-in-out infinite}
+                  .animate-widget-float{animation:lc-float 2s ease-in-out infinite}
+                `}</style>
                 <div>
                   <h3 className="text-lg font-semibold">Button Animation</h3>
                   <p className="text-sm text-muted-foreground mt-1">
