@@ -999,258 +999,169 @@ class AiChatService
         $email = null;
         $address = null;
         $issue = null;
+        $bookingDate = null;
+        $bookingTime = null;
 
-        if (preg_match('/\[BOOKING_NAME:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $name = trim($m[1]);
-        }
-        if (preg_match('/\[BOOKING_PHONE:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $phone = trim($m[1]);
-        }
-        if (preg_match('/\[BOOKING_EMAIL:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $email = trim($m[1]);
-        }
-        if (preg_match('/\[BOOKING_ADDRESS:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $address = trim($m[1]);
-        }
-        if (preg_match('/\[BOOKING_ISSUE:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $issue = trim($m[1]);
-        }
+        if (preg_match('/\[BOOKING_NAME:\s*([^\]]+)\]/i', $aiContent, $m)) $name = trim($m[1]);
+        if (preg_match('/\[BOOKING_PHONE:\s*([^\]]+)\]/i', $aiContent, $m)) $phone = trim($m[1]);
+        if (preg_match('/\[BOOKING_EMAIL:\s*([^\]]+)\]/i', $aiContent, $m)) $email = trim($m[1]);
+        if (preg_match('/\[BOOKING_ADDRESS:\s*([^\]]+)\]/i', $aiContent, $m)) $address = trim($m[1]);
+        if (preg_match('/\[BOOKING_ISSUE:\s*([^\]]+)\]/i', $aiContent, $m)) $issue = trim($m[1]);
+        if (preg_match('/\[BOOKING_DATE:\s*([^\]]+)\]/i', $aiContent, $m)) $bookingDate = trim($m[1]);
+        if (preg_match('/\[BOOKING_TIME:\s*([^\]]+)\]/i', $aiContent, $m)) $bookingTime = trim($m[1]);
 
         // Update chat with customer details
-        $chat->update(array_filter([
-            'customer_name' => $name,
-            'customer_email' => $email,
-        ]));
+        $chat->update(array_filter(['customer_name' => $name, 'customer_email' => $email]));
 
-        // Build description with issue summary and chat history
-        $description = '';
-        if ($issue) {
-            $description .= "Issue Details: {$issue}\n\n";
+        $project = $project ?? $chat->project ?? Project::find($chat->project_id);
+        $frubixConfig = $project ? $this->getFrubixIntegration($project) : null;
+        $cleanContent = $this->cleanAiResponse($aiContent);
+
+        // ── FRUBIX-MANAGED PATH: route booking to Frubix, skip Linochat ticket ──
+        if ($frubixConfig) {
+            return $this->createFrubixBooking($chat, $frubixConfig, $project, $cleanContent, compact('name', 'phone', 'email', 'address', 'issue', 'bookingDate', 'bookingTime'));
         }
-        $description .= "Customer Details:\n";
-        $description .= "Name: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}\n\n";
+
+        // ── LINOCHAT-ONLY PATH: create Linochat ticket + emails (no Frubix) ──
+        $description = '';
+        if ($issue) $description .= "Issue Details: {$issue}\n\n";
+        $description .= "Customer Details:\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}\n\n";
         $description .= "Chat Transcript:\n\n";
-        $messages = $chat->messages()->orderBy('created_at', 'asc')->get();
-        foreach ($messages as $msg) {
-            $sender = $msg->sender_type === 'customer' ? 'Customer'
-                : ($msg->sender_type === 'agent' ? 'Agent' : 'AI');
+        foreach ($chat->messages()->orderBy('created_at', 'asc')->get() as $msg) {
+            $sender = $msg->sender_type === 'customer' ? 'Customer' : ($msg->sender_type === 'agent' ? 'Agent' : 'AI');
             $description .= "[{$sender}]: {$msg->content}\n\n";
         }
 
-        // Create ticket with full booking details
         $ticket = Ticket::create([
-            'project_id' => $chat->project_id,
-            'chat_id' => $chat->id,
+            'project_id' => $chat->project_id, 'chat_id' => $chat->id,
             'customer_name' => $name ?? $chat->customer_name ?? 'Unknown',
-            'customer_email' => $email,
-            'customer_phone' => $phone,
-            'service_address' => $address,
+            'customer_email' => $email, 'customer_phone' => $phone, 'service_address' => $address,
             'subject' => 'Booking: ' . ($issue ? Str::limit($issue, 60) . ' — ' : '') . ($name ?? 'Customer') . ' — ' . now()->format('M d, Y H:i'),
-            'description' => $description,
-            'status' => 'open',
-            'priority' => 'high',
-            'category' => 'Booking',
+            'description' => $description, 'status' => 'open', 'priority' => 'high', 'category' => 'Booking',
         ]);
-
         TicketMessage::create([
-            'ticket_id' => $ticket->id,
-            'sender_type' => 'customer',
-            'sender_id' => $email ?? $chat->customer_id,
-            'content' => "Booking request created from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nService Address: {$address}" . ($issue ? "\n\nIssue Details: {$issue}" : ''),
+            'ticket_id' => $ticket->id, 'sender_type' => 'customer', 'sender_id' => $email ?? $chat->customer_id,
+            'content' => "Booking request from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nAddress: {$address}" . ($issue ? "\n\nIssue: {$issue}" : ''),
         ]);
 
-        // Create Frubix appointment if integration is connected
-        $frubixBooked = false;
-        $bookingDate = null;
-        $bookingTime = null;
-        $project = $project ?? $chat->project ?? Project::find($chat->project_id);
-        $frubixConfig = $project ? $this->getFrubixIntegration($project) : null;
-        Log::info('Frubix booking check', [
-            'chat_id' => $chat->id,
-            'project_id' => $chat->project_id,
-            'project_loaded' => $project ? true : false,
-            'frubix_config' => $frubixConfig ? 'FOUND' : 'NULL',
-            'ai_content_has_booking_date' => str_contains($aiContent, '[BOOKING_DATE'),
-        ]);
-        if ($frubixConfig) {
-            if (preg_match('/\[BOOKING_DATE:\s*([^\]]+)\]/i', $aiContent, $m)) {
-                $bookingDate = trim($m[1]);
-            }
-            if (preg_match('/\[BOOKING_TIME:\s*([^\]]+)\]/i', $aiContent, $m)) {
-                $bookingTime = trim($m[1]);
-            }
-
-            // Check for schedule conflicts before booking
-            $conflictMessage = null;
-            if ($bookingDate) {
-                try {
-                    $existingSlots = FrubixService::getSchedule($frubixConfig, [
-                        'date' => $bookingDate,
-                    ], $project);
-                    if (!empty($existingSlots) && $bookingTime) {
-                        $requestedMinutes = $this->timeToMinutes($bookingTime);
-                        foreach ($existingSlots as $slot) {
-                            $slotTime = $slot['scheduled_time'] ?? null;
-                            $slotDuration = $slot['duration'] ?? 60;
-                            if ($slotTime) {
-                                $slotStart = $this->timeToMinutes($slotTime);
-                                $slotEnd = $slotStart + $slotDuration;
-                                if ($requestedMinutes >= $slotStart && $requestedMinutes < $slotEnd) {
-                                    $conflictMessage = "The {$bookingTime} slot on {$bookingDate} is already taken.";
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                } catch (\Exception $e) {
-                    Log::warning('Frubix schedule conflict check failed', ['error' => $e->getMessage()]);
-                }
-            }
-
-            try {
-                $appointmentData = array_filter([
-                    'customer_name' => $name,
-                    'customer_phone' => $phone,
-                    'customer_email' => $email,
-                    'address' => $address,
-                    'job_type' => $issue ? Str::limit($issue, 100) : 'Service Request',
-                    'notes' => $issue ?? 'Booked via LinoChat',
-                    'scheduled_date' => $bookingDate,
-                    'scheduled_time' => $bookingTime,
-                    'duration' => 60,
-                ]);
-                if (!$conflictMessage) {
-                    FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
-                }
-                $frubixBooked = !$conflictMessage;
-                Log::info('Frubix appointment created', [
-                    'chat_id' => $chat->id,
-                    'ticket_id' => $ticket->id,
-                    'date' => $bookingDate,
-                    'time' => $bookingTime,
-                    'data' => $appointmentData,
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Frubix appointment FAILED', ['error' => $e->getMessage()]);
-            }
-
-            // Create client in Frubix (bookings = confirmed customers, not leads)
-            if ($frubixBooked) {
-                try {
-                    FrubixService::createClient($frubixConfig, array_filter([
-                        'name' => $name,
-                        'phone' => $phone,
-                        'email' => $email,
-                        'address' => $address,
-                        'source' => 'linochat',
-                    ]), $project);
-                    Log::info('Frubix client created from booking', ['name' => $name, 'phone' => $phone]);
-                } catch (\Exception $e) {
-                    Log::warning('Frubix client creation failed', ['error' => $e->getMessage()]);
-                }
-            }
-        }
-
-        // Clean the AI content for display (remove tags)
-        $cleanContent = $this->cleanAiResponse($aiContent);
-        $confirmationNote = $frubixBooked
-            ? "\n\nYour appointment has been booked" . ($bookingDate ? " for {$bookingDate}" . ($bookingTime ? " at {$bookingTime}" : '') : '') . " (Ticket #{$ticket->ticket_number}). We'll see you then!"
-            : ($conflictMessage ?? null
-                ? "\n\n{$conflictMessage} Your booking request has been submitted (Ticket #{$ticket->ticket_number}) and our team will help find an available time."
-                : "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.");
-
+        $confirmationNote = "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
         $message = ChatMessage::create([
-            'chat_id' => $chat->id,
-            'sender_type' => 'ai',
-            'content' => $cleanContent . $confirmationNote,
-            'is_ai' => true,
-            'metadata' => [
-                'model' => $this->model,
-                'booking_created' => true,
-                'ticket_id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number,
-                'booking_details' => compact('name', 'phone', 'email', 'address'),
-            ],
+            'chat_id' => $chat->id, 'sender_type' => 'ai', 'content' => $cleanContent . $confirmationNote, 'is_ai' => true,
+            'metadata' => ['model' => $this->model, 'booking_created' => true, 'ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number],
         ]);
 
-        // Send email notifications
+        // Send Linochat emails + notifications
         $ticket->refresh();
         $project = $chat->project()->with('agents')->first();
-
         $companyId = $project->company_id ?? null;
-
-        // Email to customer
         if ($email) {
             try {
                 $ticketUrl = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
                 Mail::to($email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl));
-                NotificationLog::record('email', 'Ticket Created — Customer', "Booking ticket #{$ticket->ticket_number} created for {$name}. Subject: {$ticket->subject}" . ($issue ? "\nIssue: {$issue}" : ''), $email, 'sent', $companyId);
+            } catch (\Exception $e) { Log::error('Ticket email to customer failed', ['error' => $e->getMessage()]); }
+        }
+        if ($project) {
+            $adminEmails = array_unique(array_merge(
+                User::where('company_id', $project->company_id)->where('role', 'admin')->pluck('email')->filter()->toArray(),
+                $project->user?->email ? [$project->user->email] : []
+            ));
+            foreach ($adminEmails as $ae) {
+                try { Mail::to($ae)->send(new NewTicketMail($ticket)); } catch (\Exception $e) {}
+            }
+            foreach ($project->agents->pluck('id')->merge([$project->user_id])->unique()->filter() as $agentId) {
+                \App\Models\AppNotification::create(['user_id' => $agentId, 'type' => 'alert', 'title' => 'New booking request', 'description' => ($name ?? 'A customer') . ' submitted a booking request.']);
+            }
+        }
+        ActivityLog::log('ticket_created', "Booking ticket #{$ticket->ticket_number} created", ($name ?? 'Customer') . " requested a booking. Phone: {$phone}, Email: {$email}", ['company_id' => $companyId, 'project_id' => $chat->project_id]);
+
+        return ['id' => $message->id, 'content' => $message->content, 'sender_type' => 'ai', 'created_at' => $message->created_at, 'model' => $this->model, 'booking_created' => true, 'ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number];
+    }
+
+    /**
+     * Frubix-managed booking: create appointment + client in Frubix, skip Linochat ticket/emails.
+     */
+    protected function createFrubixBooking(Chat $chat, array $frubixConfig, Project $project, string $cleanContent, array $details): array
+    {
+        ['name' => $name, 'phone' => $phone, 'email' => $email, 'address' => $address, 'issue' => $issue, 'bookingDate' => $bookingDate, 'bookingTime' => $bookingTime] = $details;
+
+        $frubixBooked = false;
+        $conflictMessage = null;
+
+        // Build scheduled_at datetime (Frubix expects ISO datetime, not separate date/time)
+        $scheduledAt = null;
+        if ($bookingDate) {
+            $scheduledAt = $bookingDate . ($bookingTime ? "T{$bookingTime}:00" : 'T09:00:00');
+        }
+
+        // Create appointment in Frubix
+        try {
+            $appointmentData = array_filter([
+                'customer_name' => $name,
+                'phone' => $phone,
+                'email' => $email,
+                'address' => $address,
+                'job_type' => $issue ? Str::limit($issue, 100) : 'general',
+                'description' => $issue ?? 'Service Request',
+                'notes' => 'Booked via LinoChat AI',
+                'scheduled_at' => $scheduledAt,
+            ]);
+
+            $result = FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
+            $frubixBooked = true;
+            Log::info('Frubix appointment created', ['chat_id' => $chat->id, 'data' => $appointmentData]);
+        } catch (\Exception $e) {
+            $body = $e->getMessage();
+            // Check if it's a 409 conflict with available slots
+            if (str_contains($body, 'not available') || str_contains($body, '409')) {
+                $conflictMessage = "The requested time slot is not available.";
+            }
+            Log::error('Frubix appointment creation failed', ['error' => $body]);
+        }
+
+        // Create client in Frubix (after appointment)
+        if ($frubixBooked) {
+            try {
+                FrubixService::createClient($frubixConfig, array_filter([
+                    'name' => $name, 'phone' => $phone, 'email' => $email, 'address' => $address, 'source' => 'linochat',
+                ]), $project);
+                Log::info('Frubix client created from booking', ['name' => $name]);
             } catch (\Exception $e) {
-                Log::error('Failed to send ticket email to customer', ['error' => $e->getMessage()]);
-                NotificationLog::record('email', 'Ticket Created — Customer', "Booking ticket #{$ticket->ticket_number} for {$name}", $email, 'failed', $companyId);
+                Log::warning('Frubix client creation failed (may already exist)', ['error' => $e->getMessage()]);
             }
         }
 
-        // Email to company admin(s)
-        if ($project) {
-            $adminEmails = User::where('company_id', $project->company_id)
-                ->where('role', 'admin')
-                ->pluck('email')
-                ->filter()
-                ->toArray();
-            if ($project->user && $project->user->email) {
-                $adminEmails[] = $project->user->email;
-            }
-            $adminEmails = array_unique($adminEmails);
-            foreach ($adminEmails as $adminEmail) {
-                try {
-                    Mail::to($adminEmail)->send(new NewTicketMail($ticket));
-                    NotificationLog::record('email', 'New Ticket — Admin', "New booking ticket #{$ticket->ticket_number} from {$name}. Subject: {$ticket->subject}" . ($issue ? "\nIssue: {$issue}" : ''), $adminEmail, 'sent', $companyId);
-                } catch (\Exception $e) {
-                    Log::error('Failed to send ticket email to admin', ['email' => $adminEmail, 'error' => $e->getMessage()]);
-                    NotificationLog::record('email', 'New Ticket — Admin', "Booking ticket #{$ticket->ticket_number} from {$name}", $adminEmail, 'failed', $companyId);
-                }
-            }
-        }
+        // Build confirmation message
+        $confirmationNote = $frubixBooked
+            ? "\n\nYour appointment has been booked" . ($bookingDate ? " for {$bookingDate}" . ($bookingTime ? " at {$bookingTime}" : '') : '') . ". We'll see you then!"
+            : ($conflictMessage
+                ? "\n\n{$conflictMessage} Our team will contact you to find an available time."
+                : "\n\nYour booking request has been submitted. Our team will reach out to confirm shortly.");
 
-        // Log activity
-        ActivityLog::log('ticket_created', "Booking ticket #{$ticket->ticket_number} created", ($name ?? 'Customer') . " requested a booking" . ($issue ? ": {$issue}" : '') . ". Phone: {$phone}, Email: {$email}", [
-            'company_id' => $companyId,
-            'project_id' => $chat->project_id,
+        $message = ChatMessage::create([
+            'chat_id' => $chat->id, 'sender_type' => 'ai', 'content' => $cleanContent . $confirmationNote, 'is_ai' => true,
+            'metadata' => ['model' => $this->model, 'booking_created' => true, 'frubix_booked' => $frubixBooked, 'booking_details' => compact('name', 'phone', 'email', 'address', 'bookingDate', 'bookingTime')],
         ]);
 
-        // Notify agents in-app
-        if ($project) {
-            $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values();
-            foreach ($agentIds as $agentId) {
-                \App\Models\AppNotification::create([
-                    'user_id' => $agentId,
-                    'type' => 'alert',
-                    'title' => 'New booking request',
-                    'description' => ($name ?? 'A customer') . ' submitted a booking request.',
+        // Forward booking summary to Frubix Messages (so it appears in the conversation)
+        $frubixManaged = $project->integrations['frubix_managed'] ?? null;
+        if ($frubixManaged && ($frubixManaged['enabled'] ?? false)) {
+            try {
+                $frubixUrl = rtrim($frubixManaged['api_url'] ?? $frubixConfig['url'], '/');
+                $token = $frubixManaged['api_token'] ?? $frubixConfig['access_token'];
+                \Illuminate\Support\Facades\Http::withToken($token)->post("{$frubixUrl}/api/linochat/messages", [
+                    'sender_name' => $chat->customer_name ?: ($name ?? 'Visitor'),
+                    'sender_type' => 'agent',
+                    'message' => "Booking confirmed for {$name}." . ($bookingDate ? " Date: {$bookingDate}" : '') . ($bookingTime ? " Time: {$bookingTime}" : '') . ($issue ? "\nService: {$issue}" : '') . "\nPhone: {$phone}" . ($email ? "\nEmail: {$email}" : ''),
+                    'channel' => 'linochat',
+                    'source' => 'linochat',
+                    'external_conversation_id' => (string) $chat->id,
                 ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to forward booking to Frubix Messages', ['error' => $e->getMessage()]);
             }
         }
 
-        Log::info('Booking ticket created from AI chat', [
-            'chat_id' => $chat->id,
-            'ticket_id' => $ticket->id,
-            'customer_name' => $name,
-            'customer_phone' => $phone,
-            'customer_email' => $email,
-            'service_address' => $address,
-        ]);
-
-        return [
-            'id' => $message->id,
-            'content' => $message->content,
-            'sender_type' => 'ai',
-            'created_at' => $message->created_at,
-            'model' => $this->model,
-            'booking_created' => true,
-            'ticket_id' => $ticket->id,
-            'ticket_number' => $ticket->ticket_number,
-        ];
+        return ['id' => $message->id, 'content' => $message->content, 'sender_type' => 'ai', 'created_at' => $message->created_at, 'model' => $this->model, 'booking_created' => true, 'frubix_booked' => $frubixBooked];
     }
 
     /**
