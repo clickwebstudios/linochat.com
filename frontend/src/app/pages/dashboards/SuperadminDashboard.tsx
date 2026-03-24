@@ -182,7 +182,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   const fetchCompanies = async () => {
     setIsLoadingCompanies(true);
     try {
-      const response = await api.get<Company[]>('/superadmin/companies');
+      const response = await api.get<Company[]>('/superadmin/companies?per_page=100');
       setCompanies(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
@@ -314,8 +314,8 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   // Company selection state from store
   const { selectedCompanyId, setSelectedCompany: setSelectedCompanyInStore } = useSuperadminStore();
 
-  // Filter data by selected company
-  const filteredCompanies = selectedCompanyId 
+  // Filter data by selected company (but show all on the companies list section)
+  const filteredCompanies = (selectedCompanyId && activeSection !== 'companies')
     ? companies.filter(c => c.id === selectedCompanyId)
     : companies;
   
