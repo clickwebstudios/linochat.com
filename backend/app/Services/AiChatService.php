@@ -247,7 +247,7 @@ class AiChatService
 
             // Extract and save customer details if AI detected them
             $cleanedContent = $this->cleanAiResponse($aiContent);
-            $customerName = $this->extractCustomerName($aiContent);
+            $customerName = $this->extractCustomerName($aiContent, $customerMessage);
             $chatUpdates = [];
             $metaUpdates = $chat->metadata ?? [];
             if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
@@ -841,7 +841,7 @@ class AiChatService
 
         // Extract and save customer name if AI detected it before handover
         if ($aiContent) {
-            $customerName = $this->extractCustomerName($aiContent);
+            $customerName = $this->extractCustomerName($aiContent, $customerMessage);
             if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
                 $chat->update(['customer_name' => $customerName]);
             }
@@ -938,12 +938,37 @@ class AiChatService
     /**
      * Extract customer name from AI response if present
      */
-    protected function extractCustomerName(string $response): ?string
+    protected function extractCustomerName(string $response, ?string $customerMessage = null): ?string
     {
+        // 1. Check for explicit [CUSTOMER_NAME:] tag
         if (preg_match('/\[CUSTOMER_NAME:\s*([^\]]+)\]/i', $response, $matches)) {
             $name = trim($matches[1]);
             if (strlen($name) >= 2 && strlen($name) <= 100) {
                 return $name;
+            }
+        }
+
+        // 2. Fallback: extract from AI response patterns like "Thank you, Alex!" or "Hi Alex,"
+        if (preg_match('/(?:Thank you|Thanks|Hi|Hello|Nice to meet you),?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)[!.,]/', $response, $matches)) {
+            $name = trim($matches[1]);
+            // Exclude common false positives
+            $exclude = ['Welcome', 'There', 'Sure', 'Great', 'How', 'What', 'Please', 'Let'];
+            if (strlen($name) >= 2 && strlen($name) <= 50 && !in_array($name, $exclude)) {
+                return $name;
+            }
+        }
+
+        // 3. Fallback: if customer message is a short name-like response (1-3 capitalized words)
+        if ($customerMessage) {
+            $msg = trim($customerMessage);
+            // Patterns: "Alex", "Alex James", "my name is Alex James", "I'm Alex", "it's Alex"
+            if (preg_match('/^(?:(?:my name is|i\'?m|it\'?s|this is|i am|name:?)\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/i', $msg, $matches)) {
+                $name = trim($matches[1]);
+                // Capitalize properly
+                $name = implode(' ', array_map('ucfirst', explode(' ', strtolower($name))));
+                if (strlen($name) >= 2 && strlen($name) <= 50) {
+                    return $name;
+                }
             }
         }
 
