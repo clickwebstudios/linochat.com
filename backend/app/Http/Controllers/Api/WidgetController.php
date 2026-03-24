@@ -593,7 +593,10 @@ class WidgetController extends Controller
             $customerMsg = $input['message'];
 
             // Extract name from customer message (e.g. "Alex James", "my name is Alex", "I'm Alex")
-            if (empty($chat->customer_name) || $chat->customer_name === 'Guest') {
+            $notRealName = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $currentName = $chat->customer_name ?? '';
+            $needsName = empty($currentName) || in_array($currentName, $notRealName, true) || strlen($currentName) <= 2;
+            if ($needsName) {
                 if (preg_match('/^(?:(?:my name is|i\'?m|it\'?s|this is|i am|name:?)\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/i', trim($customerMsg), $nm)) {
                     $name = implode(' ', array_map('ucfirst', explode(' ', strtolower(trim($nm[1])))));
                     $exclude = ['Hello', 'Hi', 'Hey', 'Yes', 'No', 'Ok', 'Sure', 'Thanks', 'Thank', 'Please', 'Need', 'Want', 'How', 'What', 'Where', 'When', 'Why'];

@@ -250,7 +250,9 @@ class AiChatService
             $customerName = $this->extractCustomerName($aiContent, $customerMessage);
             $chatUpdates = [];
             $metaUpdates = $chat->metadata ?? [];
-            if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
+            $notRealName = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $currentName = $chat->customer_name ?? '';
+            if ($customerName && (empty($currentName) || in_array($currentName, $notRealName, true) || strlen($currentName) <= 2)) {
                 $chatUpdates['customer_name'] = $customerName;
             }
             // Extract phone/email from customer's message
@@ -842,7 +844,9 @@ class AiChatService
         // Extract and save customer name if AI detected it before handover
         if ($aiContent) {
             $customerName = $this->extractCustomerName($aiContent, $customerMessage);
-            if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
+            $notRealName2 = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
+            $curName = $chat->customer_name ?? '';
+            if ($customerName && (empty($curName) || in_array($curName, $notRealName2, true) || strlen($curName) <= 2)) {
                 $chat->update(['customer_name' => $customerName]);
             }
         }
