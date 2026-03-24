@@ -897,4 +897,25 @@ class AgentController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Generate AI-powered reply suggestions for an agent.
+     * POST /v1/chats/{chatId}/suggest-replies
+     */
+    public function suggestReplies(Request $request, string $chatId)
+    {
+        $chat = Chat::with('project')->where('id', $chatId)->first();
+
+        if (!$chat) {
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+
+        $aiService = app(\App\Services\AiChatService::class);
+        $suggestions = $aiService->suggestReplies($chat, $chat->project);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['suggestions' => $suggestions],
+        ]);
+    }
 }

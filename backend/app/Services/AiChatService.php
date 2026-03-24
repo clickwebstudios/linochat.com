@@ -615,6 +615,60 @@ class AiChatService
     }
 
     /**
+     * Generate suggested replies for an agent to use (does NOT save messages).
+     */
+    public function suggestReplies(Chat $chat, Project $project, int $count = 3): array
+    {
+        $apiKey = config('openai.api_key');
+        if (empty($apiKey) || $apiKey === 'sk-test-key-placeholder') {
+            return [];
+        }
+
+        $aiSettings = $project->ai_settings ?? [];
+        $this->model = $aiSettings['model'] ?? 'gpt-4o-mini';
+
+        $lastCustomerMsg = $chat->messages()
+            ->where('sender_type', 'customer')
+            ->orderByDesc('created_at')
+            ->value('content') ?? '';
+
+        $kbContext = $this->getKbContext($project, $lastCustomerMsg);
+        $conversationHistory = $this->getConversationHistory($chat);
+        $systemPrompt = $this->buildSystemPrompt($project, $kbContext);
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt . "\n\nYou are now generating suggested replies for a human agent. Generate exactly {$count} short, contextual reply options the agent can send to the customer. Return ONLY a JSON array of strings, no other text."],
+            ...array_map(fn ($h) => $h, $conversationHistory),
+        ];
+
+        if ($lastCustomerMsg) {
+            $messages[] = ['role' => 'user', 'content' => $lastCustomerMsg];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => "Generate {$count} suggested agent replies as a JSON array of strings."];
+
+        try {
+            $client = OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model' => $this->model,
+                'messages' => $messages,
+                'temperature' => 0.8,
+                'max_tokens' => 500,
+            ]);
+
+            $content = trim($response->choices[0]->message->content ?? '');
+            // Strip markdown code fences if present
+            $content = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', $content);
+            $suggestions = json_decode($content, true);
+
+            return is_array($suggestions) ? array_slice($suggestions, 0, $count) : [];
+        } catch (\Throwable $e) {
+            Log::warning('AI suggest replies failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
      * Build system prompt
      */
     protected function buildSystemPrompt(Project $project, array $kbContext): string
