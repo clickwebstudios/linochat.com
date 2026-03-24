@@ -65,7 +65,7 @@ interface Company {
   email: string;
   plan: string;
   projects_count: number;
-  agents_count: number;
+  users_count: number;
   created_at: string;
   status: string;
 }
@@ -182,7 +182,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   const fetchCompanies = async () => {
     setIsLoadingCompanies(true);
     try {
-      const response = await api.get<Company[]>('/superadmin/companies');
+      const response = await api.get<Company[]>('/superadmin/companies?per_page=100');
       setCompanies(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
@@ -314,8 +314,8 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   // Company selection state from store
   const { selectedCompanyId, setSelectedCompany: setSelectedCompanyInStore } = useSuperadminStore();
 
-  // Filter data by selected company
-  const filteredCompanies = selectedCompanyId 
+  // Filter data by selected company (but show all on the companies list section)
+  const filteredCompanies = (selectedCompanyId && activeSection !== 'companies')
     ? companies.filter(c => c.id === selectedCompanyId)
     : companies;
   
@@ -487,7 +487,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                         <TableHead>Company</TableHead>
                         <TableHead>Plan</TableHead>
                         <TableHead>Projects</TableHead>
-                        <TableHead>Agents</TableHead>
+                        <TableHead>Users</TableHead>
                         <TableHead>Sign Up Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -538,7 +538,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <Headphones className="h-4 w-4 text-green-600" />
-                                <span className="font-semibold">{company.agents_count}</span>
+                                <span className="font-semibold">{company.users_count}</span>
                               </div>
                             </div>
                           </TableCell>

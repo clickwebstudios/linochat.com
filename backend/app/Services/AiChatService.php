@@ -114,7 +114,35 @@ class AiChatService
             
             // Build messages array
             $messages = $this->buildMessages($systemPrompt, $conversationHistory, $customerMessage);
-            
+
+            // Proactively inject real availability data when booking flow mentions a date
+            // This prevents the AI from hallucinating about slot availability
+            $frubixConfig = $this->getFrubixIntegration($project);
+            if ($frubixConfig) {
+                $fullContext = $customerMessage . ' ' . implode(' ', array_map(fn($m) => $m['content'] ?? '', array_slice($conversationHistory, -6)));
+                $detectedDate = null;
+                if (preg_match('/\b(tomorrow)\b/i', $fullContext)) {
+                    $detectedDate = date('Y-m-d', strtotime('tomorrow'));
+                } elseif (preg_match('/\b(\d{4}-\d{2}-\d{2})\b/', $fullContext, $dm)) {
+                    $detectedDate = $dm[1];
+                } elseif (preg_match('/\b(next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/i', $fullContext, $dm)) {
+                    $p = strtotime($dm[1]);
+                    if ($p) $detectedDate = date('Y-m-d', $p);
+                }
+                if ($detectedDate && preg_match('/\b(book|appoint|schedul|slot|avail|time|when|pm|am|\d+\s*(?:am|pm))\b/i', $fullContext)) {
+                    try {
+                        $realSlots = FrubixService::checkAvailability($frubixConfig, $detectedDate, 60, $project);
+                        $slots = $realSlots['slots'] ?? [];
+                        if (!empty($slots)) {
+                            $slotList = collect($slots)->pluck('display')->implode(', ');
+                            $messages[] = ['role' => 'system', 'content' => "REAL-TIME AVAILABILITY DATA for {$detectedDate}: The following time slots are AVAILABLE: {$slotList}. Use ONLY this data when discussing availability — do NOT guess or make up which slots are taken. If the customer's requested time is in this list, it IS available."];
+                        }
+                    } catch (\Exception $e) {
+                        // Availability check failed, let AI proceed without data
+                    }
+                }
+            }
+
             // Map confidence_threshold to temperature: higher confidence = lower temperature
             $confidenceThreshold = $aiSettings['confidence_threshold'] ?? 75;
             $temperatureMap = [95 => 0.3, 85 => 0.5, 75 => 0.7, 60 => 0.9];
@@ -144,6 +172,46 @@ class AiChatService
                     if ($followUp) {
                         $aiContent = $followUp['content'];
                         $tokensUsed += $followUp['tokens_used'] ?? 0;
+                    }
+                }
+            }
+
+            // Correct AI hallucinations about slot availability
+            // If the AI claims a slot is taken/unavailable but we haven't verified, check now
+            if (preg_match('/\b(taken|unavailable|not available|already booked|fully booked|no.*available)\b/i', $aiContent)) {
+                $frubixConfig = $this->getFrubixIntegration($project);
+                if ($frubixConfig) {
+                    // Extract a date from conversation context (customer message or AI response)
+                    $dateContext = $customerMessage . ' ' . $aiContent;
+                    $detectedDate = null;
+                    if (preg_match('/\b(tomorrow)\b/i', $dateContext)) {
+                        $detectedDate = date('Y-m-d', strtotime('tomorrow'));
+                    } elseif (preg_match('/\b(\d{4}-\d{2}-\d{2})\b/', $dateContext, $dm)) {
+                        $detectedDate = $dm[1];
+                    } elseif (preg_match('/\b(next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/i', $dateContext, $dm)) {
+                        $parsed = strtotime($dm[1]);
+                        if ($parsed) $detectedDate = date('Y-m-d', $parsed);
+                    }
+
+                    if ($detectedDate) {
+                        try {
+                            $realAvailability = FrubixService::checkAvailability($frubixConfig, $detectedDate, 60, $project);
+                            $realSlots = $realAvailability['slots'] ?? [];
+                            if (!empty($realSlots)) {
+                                $slotList = collect($realSlots)->take(8)->map(fn ($s) => $s['display'])->implode(', ');
+                                // Re-call AI with real availability data
+                                $messages[] = ['role' => 'assistant', 'content' => $aiContent];
+                                $messages[] = ['role' => 'system', 'content' => "CORRECTION: You incorrectly told the customer a time slot was taken. The actual available slots for {$detectedDate} are: {$slotList}. Please correct yourself — apologize briefly and present these REAL available times. Do not make up availability — use ONLY the times listed above."];
+                                $corrected = $this->callOpenAIWithRetry($apiKey, $messages);
+                                if ($corrected) {
+                                    $aiContent = $corrected['content'];
+                                    $tokensUsed += $corrected['tokens_used'] ?? 0;
+                                    Log::info('Corrected AI availability hallucination', ['date' => $detectedDate, 'slots' => $slotList]);
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            Log::warning('Availability correction check failed', ['error' => $e->getMessage()]);
+                        }
                     }
                 }
             }
@@ -1074,7 +1142,7 @@ class AiChatService
             foreach ($adminEmails as $ae) {
                 try { Mail::to($ae)->send(new NewTicketMail($ticket)); } catch (\Exception $e) {}
             }
-            foreach ($project->agents->pluck('id')->merge([$project->user_id])->unique()->filter() as $agentId) {
+            foreach ($project->getCompanyAgentIds() as $agentId) {
                 \App\Models\AppNotification::create(['user_id' => $agentId, 'type' => 'alert', 'title' => 'New booking request', 'description' => ($name ?? 'A customer') . ' submitted a booking request.']);
             }
         }
@@ -1094,34 +1162,66 @@ class AiChatService
         $conflictMessage = null;
 
         // Build scheduled_at datetime (Frubix expects ISO datetime, not separate date/time)
+        // Parse relative dates/times into proper format
+        // AI may send "Tomorrow", "Next Monday", "2 PM", "4:30 PM" instead of ISO format
         $scheduledAt = null;
+        $dateStr = null;
         if ($bookingDate) {
-            $scheduledAt = $bookingDate . ($bookingTime ? "T{$bookingTime}:00" : 'T09:00:00');
+            $parsedDate = strtotime($bookingDate);
+            $dateStr = $parsedDate ? date('Y-m-d', $parsedDate) : $bookingDate;
+
+            // Parse time — handle "2 PM", "4:30 PM", "14:00", etc.
+            $timeStr = '09:00:00';
+            if ($bookingTime) {
+                $parsedTime = strtotime($bookingTime);
+                $timeStr = $parsedTime ? date('H:i:s', $parsedTime) : "{$bookingTime}:00";
+            }
+
+            $scheduledAt = "{$dateStr}T{$timeStr}";
         }
 
-        // Create appointment in Frubix
-        try {
-            $appointmentData = array_filter([
-                'customer_name' => $name,
-                'phone' => $phone,
-                'email' => $email,
-                'address' => $address,
-                'job_type' => $issue ? Str::limit($issue, 100) : 'general',
-                'description' => $issue ?? 'Service Request',
-                'notes' => 'Booked via LinoChat AI',
-                'scheduled_at' => $scheduledAt,
-            ]);
-
-            $result = FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
-            $frubixBooked = true;
-            Log::info('Frubix appointment created', ['chat_id' => $chat->id, 'data' => $appointmentData]);
-        } catch (\Exception $e) {
-            $body = $e->getMessage();
-            // Check if it's a 409 conflict with available slots
-            if (str_contains($body, 'not available') || str_contains($body, '409')) {
-                $conflictMessage = "The requested time slot is not available.";
+        // Verify availability before creating (don't trust AI hallucinations)
+        if ($scheduledAt && $dateStr) {
+            try {
+                $availability = FrubixService::checkAvailability($frubixConfig, $dateStr, 60, $project);
+                $slots = $availability['slots'] ?? [];
+                // Extract hour in 24h format from the parsed time
+                $requestedHour = $timeStr ? substr($timeStr, 0, 2) : '09';
+                $slotAvailable = collect($slots)->contains(fn ($s) => str_starts_with($s['time'] ?? '', $requestedHour));
+                if (!$slotAvailable && !empty($slots)) {
+                    $slotList = collect($slots)->take(6)->pluck('display')->implode(', ');
+                    $conflictMessage = "The requested time is not available. Available slots for {$dateStr}: {$slotList}";
+                    Log::info('Booking slot unavailable, suggesting alternatives', ['date' => $dateStr, 'time' => $bookingTime, 'available' => $slotList]);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Pre-booking availability check failed, proceeding anyway', ['error' => $e->getMessage()]);
             }
-            Log::error('Frubix appointment creation failed', ['error' => $body]);
+        }
+
+        // Create appointment in Frubix (skip if conflict detected)
+        if (!$conflictMessage) {
+            try {
+                $appointmentData = array_filter([
+                    'customer_name' => $name,
+                    'phone' => $phone,
+                    'email' => $email,
+                    'address' => $address,
+                    'job_type' => 'general',
+                    'description' => $issue ?? 'Service Request',
+                    'notes' => 'Booked via LinoChat AI',
+                    'scheduled_at' => $scheduledAt,
+                ]);
+
+                $result = FrubixService::createAppointment($frubixConfig, $appointmentData, $project);
+                $frubixBooked = true;
+                Log::info('Frubix appointment created', ['chat_id' => $chat->id, 'data' => $appointmentData]);
+            } catch (\Exception $e) {
+                $body = $e->getMessage();
+                if (str_contains($body, 'not available') || str_contains($body, '409')) {
+                    $conflictMessage = "The requested time slot is not available.";
+                }
+                Log::error('Frubix appointment creation failed', ['error' => $body]);
+            }
         }
 
         // Create client in Frubix (after appointment)

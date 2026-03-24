@@ -12,7 +12,7 @@ import {
 } from '../ui/table';
 import {
   FolderKanban,
-  Headphones,
+  MessageSquare,
   Activity,
   CreditCard,
   TrendingUp,
@@ -61,6 +61,8 @@ interface CompanyOverviewTabProps {
   company: Company;
   companyProjects: Project[];
   companyAgents: Agent[];
+  companyChats?: any[];
+  activityLogs?: any[];
   totalTickets: number;
   defaultMeta: {
     email: string;
@@ -78,6 +80,8 @@ export function CompanyOverviewTab({
   company,
   companyProjects,
   companyAgents,
+  companyChats,
+  activityLogs,
   totalTickets,
   defaultMeta,
   isArchived,
@@ -105,12 +109,12 @@ export function CompanyOverviewTab({
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Headphones className="h-5 w-5 text-green-600" />
+              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Agents</p>
-                <p className="text-xl font-bold">{companyAgents.length}</p>
+                <p className="text-xs text-muted-foreground">Total Chats</p>
+                <p className="text-xl font-bold">{companyChats?.length || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -201,7 +205,7 @@ export function CompanyOverviewTab({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Agent</TableHead>
+                    <TableHead>Member</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>Resolved</TableHead>
@@ -237,7 +241,7 @@ export function CompanyOverviewTab({
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-6">No agents assigned</p>
+              <p className="text-sm text-muted-foreground text-center py-6">No members in this company</p>
             )}
           </CardContent>
         </Card>
@@ -263,10 +267,10 @@ export function CompanyOverviewTab({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm text-muted-foreground">Storage</span>
-                  <span className="text-sm font-semibold">34%</span>
+                  <span className="text-sm font-semibold">0%</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '34%' }}></div>
+                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '0%' }}></div>
                 </div>
               </div>
               <div>
@@ -287,44 +291,24 @@ export function CompanyOverviewTab({
             <CardTitle className="text-base">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
-                <div className="h-7 w-7 bg-green-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <Headphones className="h-3.5 w-3.5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm">New agent added: <span className="font-semibold">James Wilson</span></p>
-                  <p className="text-xs text-muted-foreground">2 hours ago</p>
-                </div>
+            {activityLogs && activityLogs.length > 0 ? (
+              <div className="space-y-3">
+                {activityLogs.slice(0, 5).map((log: any, i: number) => (
+                  <div key={log.id || i} className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
+                    <div className="h-7 w-7 bg-primary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                      <Activity className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{log.title}</p>
+                      {log.description && <p className="text-xs text-muted-foreground truncate">{log.description}</p>}
+                      <p className="text-xs text-muted-foreground">{log.created_at ? new Date(log.created_at).toLocaleDateString() : ''}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
-                <div className="h-7 w-7 bg-primary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <FolderKanban className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm">Project <span className="font-semibold">Mobile App</span> created</p>
-                  <p className="text-xs text-muted-foreground">1 day ago</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
-                <div className="h-7 w-7 bg-secondary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <CreditCard className="h-3.5 w-3.5 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-sm">Payment received: <span className="font-semibold">{defaultMeta.mrr}</span></p>
-                  <p className="text-xs text-muted-foreground">3 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-2.5 bg-muted/50 rounded-lg">
-                <div className="h-7 w-7 bg-orange-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <TrendingUp className="h-3.5 w-3.5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm">Plan upgraded from <span className="font-semibold">Starter to {company.plan}</span></p>
-                  <p className="text-xs text-muted-foreground">1 week ago</p>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
+            )}
           </CardContent>
         </Card>
       </div>

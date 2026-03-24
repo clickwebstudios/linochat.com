@@ -341,19 +341,24 @@ class AISettingsController extends Controller
         $context = $input;
         if (preg_match('/^https?:\/\//', $input) || preg_match('/\.\w{2,}$/', $input)) {
             $url = preg_match('/^https?:\/\//', $input) ? $input : 'https://' . $input;
-            try {
-                $response = \Illuminate\Support\Facades\Http::timeout(5)->connectTimeout(3)
-                    ->withHeaders(['User-Agent' => 'LinoChat-Bot/1.0'])
-                    ->get($url);
-                if ($response->successful()) {
-                    $html = $response->body();
-                    $text = strip_tags(preg_replace(['/<script[^>]*>.*?<\/script>/si', '/<style[^>]*>.*?<\/style>/si'], '', $html));
-                    $text = preg_replace('/\s+/', ' ', $text);
-                    $context = "Website content from {$url}:\n" . substr(trim($text), 0, 4000);
+            // Block SSRF: reject internal/private IPs
+            $host = parse_url($url, PHP_URL_HOST);
+            $ip = $host ? gethostbyname($host) : null;
+            $isPrivate = $ip && $ip !== $host && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+            if (!$isPrivate) {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::timeout(5)->connectTimeout(3)
+                        ->withHeaders(['User-Agent' => 'LinoChat-Bot/1.0'])
+                        ->get($url);
+                    if ($response->successful()) {
+                        $html = $response->body();
+                        $text = strip_tags(preg_replace(['/<script[^>]*>.*?<\/script>/si', '/<style[^>]*>.*?<\/style>/si'], '', $html));
+                        $text = preg_replace('/\s+/', ' ', $text);
+                        $context = "Website content from {$url}:\n" . substr(trim($text), 0, 4000);
+                    }
+                } catch (\Exception $e) {
+                    $context = "Business website: {$url}";
                 }
-            } catch (\Exception $e) {
-                // Website fetch failed, use URL as context
-                $context = "Business website: {$url}";
             }
         }
 
@@ -385,7 +390,8 @@ class AISettingsController extends Controller
                 'data' => ['prompt' => trim($prompt)],
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Generation failed: ' . $e->getMessage()], 500);
+            \Log::error('Prompt generation failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Prompt generation failed. Please try again.'], 500);
         }
     }
 }

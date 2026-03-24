@@ -37,15 +37,17 @@ class FrubixWebhookController extends Controller
             return response()->json(['success' => false, 'message' => 'Frubix not connected for this project'], 400);
         }
 
-        // Verify webhook signature if configured
+        // Verify webhook signature (required — fail closed if no secret configured)
         $secret = $frubixConfig['webhook_secret'] ?? null;
-        if ($secret) {
-            $signature = $request->header('X-Frubix-Signature');
-            $expected = hash_hmac('sha256', $request->getContent(), $secret);
-            if (!$signature || !hash_equals($expected, $signature)) {
-                Log::warning('Frubix webhook signature mismatch', ['project_id' => $projectId]);
-                return response()->json(['success' => false, 'message' => 'Invalid signature'], 403);
-            }
+        if (!$secret) {
+            Log::error('Frubix webhook rejected: no webhook_secret configured', ['project_id' => $projectId]);
+            return response()->json(['success' => false, 'message' => 'Webhook secret not configured'], 403);
+        }
+        $signature = $request->header('X-Frubix-Signature');
+        $expected = hash_hmac('sha256', $request->getContent(), $secret);
+        if (!$signature || !hash_equals($expected, $signature)) {
+            Log::warning('Frubix webhook signature mismatch', ['project_id' => $projectId]);
+            return response()->json(['success' => false, 'message' => 'Invalid signature'], 403);
         }
 
         Log::info('Frubix webhook received', ['event' => $event, 'project_id' => $projectId]);

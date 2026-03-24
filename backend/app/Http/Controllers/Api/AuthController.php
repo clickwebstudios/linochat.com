@@ -31,7 +31,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email'    => 'required|email',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -42,15 +42,33 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // Per-email lockout: 5 failed attempts within 15 minutes
+        $lockoutKey = 'login_attempts:' . strtolower($request->input('email'));
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($lockoutKey, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($lockoutKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many login attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user || !Hash::check($request->input('password'), $user->password)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($lockoutKey, 900); // 15 min decay
+            \Log::warning('Failed login attempt', [
+                'email' => $request->input('email'),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',
                 'errors'  => ['email' => ['Invalid credentials']],
             ], 401);
         }
+
+        \Illuminate\Support\Facades\RateLimiter::clear($lockoutKey);
 
         return $this->respondWithToken($user);
     }
@@ -64,10 +82,10 @@ class AuthController extends Controller
             'first_name'   => 'required|string|max:100',
             'last_name'    => 'required|string|max:100',
             'email'        => 'required|string|email|max:255|unique:users',
-            'password'     => 'required|string|min:6|confirmed',
+            'password'     => 'required|string|min:8|confirmed',
             'website'      => 'required|url|max:255',
             'company_name' => 'required|string|max:255',
-            'role'         => 'sometimes|string|in:admin,agent,superadmin',
+            // Role is always 'admin' for self-registration (agents are invited)
         ]);
 
         if ($validator->fails()) {
@@ -78,7 +96,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $role = $request->input('role', 'admin');
+
 
         $user = User::create([
             'first_name'   => $request->first_name,
@@ -86,7 +104,7 @@ class AuthController extends Controller
             'company_name' => $request->company_name,
             'email'        => $request->email,
             'password'     => Hash::make($request->password),
-            'role'         => $role,
+            'role'         => 'admin',
             'status'       => 'Active',
             'join_date'    => now(),
         ]);
@@ -237,7 +255,7 @@ class AuthController extends Controller
 
         EmailVerificationCode::where('email', $email)->delete();
 
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $code = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
 
         EmailVerificationCode::create([
             'email'      => $email,
@@ -383,6 +401,14 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($pat->expires_at && $pat->expires_at->isPast()) {
+            $pat->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Refresh token has expired',
+            ], 401);
+        }
+
         $user = $pat->tokenable;
         // Revoke old tokens and issue fresh ones
         $user->tokens()->delete();
@@ -441,7 +467,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'token'    => 'required|string',
             'email'    => 'required|email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {

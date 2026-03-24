@@ -98,13 +98,15 @@ class IntegrationsController extends Controller
             return response()->json(['success' => false, 'message' => 'Missing code or state'], 400);
         }
 
-        // Decode state to get project_id
+        // Decode and validate state (project_id + CSRF nonce)
         $stateData = json_decode(base64_decode($state), true);
         $projectId = $stateData['project_id'] ?? null;
+        $storedState = session('frubix_oauth_state');
 
-        if (!$projectId) {
-            return response()->json(['success' => false, 'message' => 'Invalid state'], 400);
+        if (!$projectId || !$storedState || $state !== $storedState) {
+            return response()->json(['success' => false, 'message' => 'Invalid or expired OAuth state'], 400);
         }
+        session()->forget('frubix_oauth_state');
 
         $project = Project::find($projectId);
         if (!$project) {
@@ -202,7 +204,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix client search failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -221,7 +223,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix schedule fetch failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -239,7 +241,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix appointment creation failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -257,7 +259,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix appointment update failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 

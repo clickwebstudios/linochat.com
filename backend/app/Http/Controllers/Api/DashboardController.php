@@ -15,10 +15,7 @@ class DashboardController extends Controller
     public function stats(Request $request)
     {
         $user = auth('api')->user();
-        
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $stats = [
             'active_chats' => Chat::whereIn('project_id', $allProjectIds)
@@ -44,25 +41,23 @@ class DashboardController extends Controller
     public function ticketVolume(Request $request)
     {
         $user = auth('api')->user();
-        
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $volume = [];
+        $startDate = now()->subDays(6)->startOfDay();
 
+        $counts = Ticket::whereIn('project_id', $allProjectIds)
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('count', 'date');
+
+        $volume = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $dayName = $days[$date->dayOfWeekIso - 1];
-            
-            $count = Ticket::whereIn('project_id', $allProjectIds)
-                ->whereDate('created_at', $date->toDateString())
-                ->count();
-            
             $volume[] = [
-                'day' => $dayName,
-                'count' => $count,
+                'day' => $days[$date->dayOfWeekIso - 1],
+                'count' => $counts[$date->toDateString()] ?? 0,
             ];
         }
 

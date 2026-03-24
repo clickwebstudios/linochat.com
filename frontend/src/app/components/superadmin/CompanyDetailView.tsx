@@ -115,6 +115,7 @@ export function CompanyDetailView({
   const [companyAgents, setCompanyAgents] = useState<Agent[]>([]);
   const [companyChats, setCompanyChats] = useState<Chat[]>([]);
   const [companyTickets, setCompanyTickets] = useState<Ticket[]>([]);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginAsOpen, setLoginAsOpen] = useState(false);
@@ -165,6 +166,13 @@ export function CompanyDetailView({
         }
 
         try {
+          const activityResponse = await api.get<any>(`/activity-log?company_id=${viewingCompanyId}`);
+          setActivityLogs(Array.isArray(activityResponse.data) ? activityResponse.data : []);
+        } catch {
+          setActivityLogs([]);
+        }
+
+        try {
           const invitationsResponse = await api.get(`/superadmin/companies/${viewingCompanyId}/invitations`);
           const invs = invitationsResponse.data || [];
           setInvitedMembers(
@@ -198,11 +206,6 @@ export function CompanyDetailView({
     try {
       const res = await api.post<any>(`/superadmin/impersonate/${agent.id}`, {});
       if (res.success && res.data) {
-        const currentToken = localStorage.getItem('access_token');
-        if (currentToken) {
-          localStorage.setItem('superadmin_token', currentToken);
-          localStorage.setItem('superadmin_user', JSON.stringify(currentUser));
-        }
         localStorage.setItem('access_token', res.data.access_token);
         localStorage.setItem('impersonated_by', res.data.impersonated_by);
         useAuthStore.getState().setUser(res.data.user);
@@ -464,6 +467,8 @@ export function CompanyDetailView({
             company={company}
             companyProjects={companyProjects}
             companyAgents={companyAgents}
+            companyChats={companyChats}
+            activityLogs={activityLogs}
             totalTickets={totalTickets}
             defaultMeta={defaultMeta}
             isArchived={isArchived}

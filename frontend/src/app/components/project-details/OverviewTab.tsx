@@ -23,28 +23,9 @@ interface OverviewTabProps {
   onAddMemberClick: () => void;
 }
 
-const ticketTrendData = [
-  { day: 'Mon', created: 12, resolved: 9 },
-  { day: 'Tue', created: 15, resolved: 13 },
-  { day: 'Wed', created: 8, resolved: 11 },
-  { day: 'Thu', created: 18, resolved: 14 },
-  { day: 'Fri', created: 11, resolved: 10 },
-  { day: 'Sat', created: 5, resolved: 6 },
-  { day: 'Sun', created: 3, resolved: 4 },
-];
-
-const chatVolumeData = [
-  { hour: '8am', chats: 12 },
-  { hour: '9am', chats: 28 },
-  { hour: '10am', chats: 35 },
-  { hour: '11am', chats: 42 },
-  { hour: '12pm', chats: 31 },
-  { hour: '1pm', chats: 38 },
-  { hour: '2pm', chats: 45 },
-  { hour: '3pm', chats: 39 },
-  { hour: '4pm', chats: 28 },
-  { hour: '5pm', chats: 18 },
-];
+// Placeholder — will be populated from API when real analytics endpoints exist
+const ticketTrendData: { day: string; created: number; resolved: number }[] = [];
+const chatVolumeData: { hour: string; chats: number }[] = [];
 
 export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList: _projectChatsList, onAddMemberClick }: OverviewTabProps) {
   const navigate = useNavigate();

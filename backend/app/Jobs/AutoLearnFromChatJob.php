@@ -157,6 +157,7 @@ Set should_create to false if the conversation is too generic, personal, or not 
 
         } catch (\Exception $e) {
             Log::error('AutoLearn failed', ['chat_id' => $this->chatId, 'error' => $e->getMessage()]);
+            throw $e; // Re-throw so the job retries instead of silently succeeding
         }
     }
 }

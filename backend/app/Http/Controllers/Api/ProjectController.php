@@ -21,15 +21,12 @@ class ProjectController extends Controller
         $user = auth('api')->user();
         
         $type = $request->input('type', 'all');
-        $companyId = $request->input('company_id');
-        
-        // Superadmin: all projects or filtered by company
-        if ($user->role === 'superadmin') {
-            $query = Project::where('status', 'active');
-            if ($companyId) {
-                $query->where('user_id', $companyId);
-            }
-            $projects = $query->withCount(['agents', 'chats', 'tickets'])->paginate(100);
+        $companyProjectIds = $user->resolveProjectIds($request->input('company_id'));
+
+        if ($user->isSuperadmin() && !$companyProjectIds) {
+            // Superadmin with no company filter: all projects
+            $projects = Project::where('status', 'active')
+                ->withCount(['agents', 'chats', 'tickets'])->paginate(100);
         } elseif ($type === 'owned') {
             $projects = $user->ownedProjects()
                 ->where('status', 'active')
@@ -37,15 +34,11 @@ class ProjectController extends Controller
                 ->paginate(20);
         } elseif ($type === 'assigned') {
             $projects = $user->projects()
+                ->when($companyProjectIds, fn ($q) => $q->whereIn('projects.id', $companyProjectIds))
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
         } else {
-            // All projects (owned + assigned)
-            $ownedIds = $user->ownedProjects()->where('status', 'active')->pluck('id');
-            $assignedIds = $user->projects()->pluck('projects.id');
-            $allIds = $ownedIds->merge($assignedIds)->unique();
-
-            $projects = Project::whereIn('id', $allIds)
+            $projects = Project::whereIn('id', $companyProjectIds ?? Project::pluck('id'))
                 ->where('status', 'active')
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
