@@ -57,7 +57,7 @@ export default function SuperadminPlatform() {
       <header className="bg-card border-b px-6 sticky top-0 z-50">
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/superadmin/select-view')} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/superadmin/dashboard')} className="gap-1.5">
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
@@ -84,7 +84,7 @@ export default function SuperadminPlatform() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/superadmin/select-view')}>
+                <DropdownMenuItem onClick={() => navigate('/superadmin/dashboard')}>
                   <User className="mr-2 h-4 w-4" /> Switch View
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
