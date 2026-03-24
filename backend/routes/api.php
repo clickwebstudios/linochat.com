@@ -387,3 +387,4 @@ Route::middleware('oauth:chats:read')->post('/v1/chats/{chatId}/suggest-replies'
 // Frubix managed connection (register/unregister from Frubix side)
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);
+Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/agent-status', [IntegrationsController::class, 'frubixAgentStatus']);

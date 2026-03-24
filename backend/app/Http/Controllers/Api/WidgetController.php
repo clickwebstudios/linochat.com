@@ -111,6 +111,15 @@ class WidgetController extends Controller
             'next_online_at' => null,
         ];
 
+        // For Frubix-managed projects, check if Frubix agents are online
+        $frubixManaged = $project->integrations['frubix_managed'] ?? null;
+        if ($frubixManaged && ($frubixManaged['enabled'] ?? false)) {
+            $frubixOnline = cache()->get("frubix_agent_online:{$project->id}", true);
+            if (!$frubixOnline) {
+                return array_merge($defaults, ['is_online' => false]);
+            }
+        }
+
         if ($mode === 'always') {
             return $defaults;
         }

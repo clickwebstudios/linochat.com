@@ -305,4 +305,21 @@ class IntegrationsController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Frubix connection removed.']);
     }
+
+    /**
+     * Update Frubix agent online/offline status for a project.
+     * POST /v1/projects/{projectId}/agent-status
+     */
+    public function frubixAgentStatus(Request $request, int $projectId): JsonResponse
+    {
+        $project = $this->getProject($projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $request->validate(['is_online' => 'required|boolean']);
+        $isOnline = $request->boolean('is_online');
+
+        cache()->put("frubix_agent_online:{$project->id}", $isOnline, now()->addDays(7));
+
+        return response()->json(['success' => true, 'data' => ['is_online' => $isOnline]]);
+    }
 }
