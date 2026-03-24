@@ -40,6 +40,7 @@ import {
 } from '../../components/ui/table';
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
+import PlatformAnalytics from '../../components/superadmin/PlatformAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -140,15 +141,7 @@ export default function SuperadminPlatform() {
 
         {activeTab === 'activity' && <PlatformActivityFeed />}
 
-        {activeTab === 'analytics' && (
-          <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-lg font-semibold mb-4">Platform Analytics</h2>
-            <div className="text-center py-20 text-muted-foreground">
-              <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Cross-company analytics and reporting coming soon.</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'analytics' && <PlatformAnalytics />}
 
         {activeTab === 'pricing' && (
           <div className="p-6">

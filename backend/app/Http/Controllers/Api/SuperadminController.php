@@ -1141,4 +1141,90 @@ class SuperadminController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Comprehensive analytics overview with period filtering.
+     */
+    public function analyticsOverview(Request $request)
+    {
+        $period = $request->input('period', '30d');
+        $periodDays = match ($period) {
+            '7d' => 7, '90d' => 90, '6m' => 180, '1y' => 365, default => 30,
+        };
+        $start = now()->subDays($periodDays)->startOfDay();
+        $prevStart = now()->subDays($periodDays * 2)->startOfDay();
+
+        // Chat volume by day (AI vs human)
+        $chatVolume = Chat::where('created_at', '>=', $start)
+            ->selectRaw("DATE(created_at) as date, COUNT(*) as total, SUM(CASE WHEN ai_enabled = 1 THEN 1 ELSE 0 END) as ai_handled")
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($r) => [
+                'date' => $r->date,
+                'total' => (int) $r->total,
+                'ai_handled' => (int) $r->ai_handled,
+                'human_handled' => (int) $r->total - (int) $r->ai_handled,
+            ]);
+
+        // Ticket distribution by status
+        $ticketDist = Ticket::where('created_at', '>=', $start)
+            ->selectRaw("status, COUNT(*) as count")
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        // Period comparisons
+        $currentChats = Chat::where('created_at', '>=', $start)->count();
+        $prevChats = Chat::whereBetween('created_at', [$prevStart, $start])->count();
+        $currentTickets = Ticket::where('created_at', '>=', $start)->count();
+        $prevTickets = Ticket::whereBetween('created_at', [$prevStart, $start])->count();
+        $currentUsers = User::where('created_at', '>=', $start)->where('role', '!=', 'superadmin')->count();
+        $prevUsers = User::whereBetween('created_at', [$prevStart, $start])->where('role', '!=', 'superadmin')->count();
+
+        // Top agents by resolved tickets
+        $topAgents = User::where('role', 'agent')
+            ->withCount(['tickets as resolved_count' => fn ($q) => $q->whereIn('status', ['resolved', 'closed'])->where('updated_at', '>=', $start)])
+            ->withCount(['chats as active_chats_count' => fn ($q) => $q->whereIn('status', ['active', 'waiting'])])
+            ->orderByDesc('resolved_count')
+            ->limit(10)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => (string) $a->id,
+                'name' => $a->name,
+                'resolved' => $a->resolved_count,
+                'active_chats' => $a->active_chats_count,
+                'status' => $a->last_active_at && $a->last_active_at->diffInMinutes(now()) < 5 ? 'Online' : 'Offline',
+            ]);
+
+        // Companies at risk (no recent chats/tickets)
+        $atRiskCompanies = User::where('role', 'admin')
+            ->whereDoesntHave('ownedProjects.chats', fn ($q) => $q->where('created_at', '>=', now()->subDays(14)))
+            ->whereDoesntHave('ownedProjects.tickets', fn ($q) => $q->where('created_at', '>=', now()->subDays(14)))
+            ->whereHas('ownedProjects')
+            ->limit(10)
+            ->get()
+            ->map(fn ($c) => [
+                'id' => (string) $c->id,
+                'name' => $c->company_name ?: $c->name,
+                'plan' => $this->getCompanyPlan($c),
+                'last_active' => $c->last_active_at?->toIso8601String(),
+                'days_inactive' => $c->last_active_at ? (int) $c->last_active_at->diffInDays(now()) : 999,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'period' => $period,
+                'chat_volume' => $chatVolume,
+                'ticket_distribution' => $ticketDist,
+                'comparisons' => [
+                    'chats' => ['current' => $currentChats, 'previous' => $prevChats],
+                    'tickets' => ['current' => $currentTickets, 'previous' => $prevTickets],
+                    'new_users' => ['current' => $currentUsers, 'previous' => $prevUsers],
+                ],
+                'top_agents' => $topAgents,
+                'at_risk_companies' => $atRiskCompanies,
+            ],
+        ]);
+    }
 }

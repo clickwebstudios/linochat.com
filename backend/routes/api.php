@@ -307,6 +307,7 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
     Route::get('/live-visitors', [SuperadminController::class, 'liveVisitors']);
+    Route::get('/analytics/overview', [SuperadminController::class, 'analyticsOverview']);
     Route::get('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'show']);
     Route::put('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'update']);
     Route::get('/ai-usage-stats', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'aiUsageStats']);
