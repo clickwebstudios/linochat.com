@@ -118,7 +118,7 @@ class WidgetLoaderController extends Controller
         try {
             var s = document.createElement('style');
             s.id = 'linochat-inline-styles';
-            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100dvh!important;max-height:100dvh!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}#linochat-button{bottom:20px!important;right:20px!important}}'
+            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100dvh!important;max-height:100dvh!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}#linochat-header{flex-shrink:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
             + '@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
             + '@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 12px transparent}}'
             + '@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'
@@ -1114,9 +1114,9 @@ class WidgetLoaderController extends Controller
             + ';font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;' + winBottom + winSide + '">'
             + headerHTML
             + '<div id="linochat-messages" style="box-sizing:border-box;flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:' + msgBg + ';"></div>'
-            + '<div style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;background:white;">'
-            + '<input type="text" id="linochat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--linochat-color,#d1d5db);border-radius:8px;outline:none;font-size:12px;">'
-            + '<button id="linochat-send" style="background:' + color + ';color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;">Send</button>'
+            + '<div style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;background:white;flex-shrink:0;">'
+            + '<input type="text" id="linochat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--linochat-color,#d1d5db);border-radius:8px;outline:none;font-size:16px;">'
+            + '<button id="linochat-send" style="background:' + color + ';color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;">Send</button>'
             + '</div>'
             + '</div>';
         document.body.appendChild(div);
