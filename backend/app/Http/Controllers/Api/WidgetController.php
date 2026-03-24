@@ -563,6 +563,21 @@ class WidgetController extends Controller
             ], 404);
         }
 
+        // Auto-reopen closed chats when customer sends a new message
+        if ($chat->status === 'closed') {
+            $chat->update([
+                'status' => 'ai_handling',
+                'ai_enabled' => true,
+                'agent_id' => null,
+            ]);
+            ChatMessage::create([
+                'chat_id' => $chat->id,
+                'sender_type' => 'system',
+                'content' => 'Customer returned — chat reopened.',
+            ]);
+            broadcast(new \App\Events\ChatStatusUpdated($chat->id, 'ai_handling'));
+        }
+
         try {
             $message = ChatMessage::create([
                 'chat_id' => $chat->id,
