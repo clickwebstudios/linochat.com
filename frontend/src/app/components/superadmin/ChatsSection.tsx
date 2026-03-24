@@ -31,6 +31,7 @@ interface ChatMessage {
   from: string;
   text: string;
   time: string;
+  is_ai?: boolean;
 }
 
 interface SuperadminChat {
