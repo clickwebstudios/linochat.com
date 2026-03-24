@@ -1074,7 +1074,7 @@ class AiChatService
             foreach ($adminEmails as $ae) {
                 try { Mail::to($ae)->send(new NewTicketMail($ticket)); } catch (\Exception $e) {}
             }
-            foreach ($project->agents->pluck('id')->merge([$project->user_id])->unique()->filter() as $agentId) {
+            foreach ($project->getCompanyAgentIds() as $agentId) {
                 \App\Models\AppNotification::create(['user_id' => $agentId, 'type' => 'alert', 'title' => 'New booking request', 'description' => ($name ?? 'A customer') . ' submitted a booking request.']);
             }
         }

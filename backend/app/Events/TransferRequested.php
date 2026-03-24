@@ -23,7 +23,7 @@ class TransferRequested implements ShouldBroadcast
         if (!$project) {
             return [new PrivateChannel('agent.' . $this->transfer->to_agent_id)];
         }
-        $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()
+        $agentIds = $project->getCompanyAgentIds()
             ->reject(fn ($id) => (string) $id === (string) $this->transfer->from_agent_id);
         $channels = $agentIds->map(fn ($id) => new PrivateChannel('agent.' . $id))->all();
         return $channels ?: [new PrivateChannel('agent.' . $this->transfer->to_agent_id)];

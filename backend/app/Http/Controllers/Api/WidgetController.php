@@ -380,12 +380,9 @@ class WidgetController extends Controller
             broadcast(new MessageSent($welcomeMessage))->toOthers();
 
             // Notify agents about new chat in real time (broadcast immediately, no queue)
-            $project = Project::with('agents')->find($chat->project_id);
+            $project = Project::find($chat->project_id);
             if ($project) {
-                $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values()->map(fn ($id) => (string) $id)->all();
-                if (empty($agentIds) && $project->user_id) {
-                    $agentIds = [(string) $project->user_id];
-                }
+                $agentIds = $project->getCompanyAgentIds()->map(fn ($id) => (string) $id)->all();
                 if (!empty($agentIds)) {
                     broadcast(new NewChatForAgent(
                         $chat->load(['project', 'agent', 'messages' => fn ($q) => $q->latest()->limit(1)]),
@@ -1005,10 +1002,10 @@ class WidgetController extends Controller
         // Notify all project agents so transfer modal opens automatically
         broadcast(new HumanRequested($chat->load('project')));
 
-        // Persist a notification for all project agents
-        $project = Project::with('agents')->find($chat->project_id);
+        // Persist a notification for all project agents (company-scoped)
+        $project = Project::find($chat->project_id);
         if ($project) {
-            $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter()->values();
+            $agentIds = $project->getCompanyAgentIds();
             $customerName = $chat->customer_name ?? 'A customer';
             foreach ($agentIds as $agentId) {
                 AppNotification::create([
