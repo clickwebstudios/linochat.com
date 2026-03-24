@@ -845,6 +845,7 @@ class WidgetLoaderController extends Controller
         }
         
         var text = document.createElement('div');
+        text.style.whiteSpace = 'pre-wrap';
         text.textContent = content;
         msg.appendChild(text);
 

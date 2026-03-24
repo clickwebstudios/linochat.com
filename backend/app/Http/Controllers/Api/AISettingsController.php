@@ -342,35 +342,39 @@ class AISettingsController extends Controller
         if (preg_match('/^https?:\/\//', $input) || preg_match('/\.\w{2,}$/', $input)) {
             $url = preg_match('/^https?:\/\//', $input) ? $input : 'https://' . $input;
             try {
-                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->connectTimeout(3)
                     ->withHeaders(['User-Agent' => 'LinoChat-Bot/1.0'])
                     ->get($url);
                 if ($response->successful()) {
                     $html = $response->body();
                     $text = strip_tags(preg_replace(['/<script[^>]*>.*?<\/script>/si', '/<style[^>]*>.*?<\/style>/si'], '', $html));
                     $text = preg_replace('/\s+/', ' ', $text);
-                    $context = "Website content from {$url}:\n" . substr(trim($text), 0, 6000);
+                    $context = "Website content from {$url}:\n" . substr(trim($text), 0, 4000);
                 }
             } catch (\Exception $e) {
-                $context = "Business description: {$input}";
+                // Website fetch failed, use URL as context
+                $context = "Business website: {$url}";
             }
         }
 
         try {
-            $client = \OpenAI::client($apiKey);
+            $client = \OpenAI::factory()
+                ->withApiKey($apiKey)
+                ->withHttpClient(new \GuzzleHttp\Client(['timeout' => 15, 'connect_timeout' => 5]))
+                ->make();
             $response = $client->chat()->create([
                 'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are an expert at writing AI customer support system prompts. Given a business description or website content, generate a comprehensive system prompt that instructs an AI assistant how to handle customer inquiries for this specific business. Include: company overview, services offered, tone/personality, what topics to handle, escalation rules, and things to avoid. Keep it under 3000 characters. Write in second person ("You are...").',
+                        'content' => 'You are an expert at writing AI customer support system prompts. Given a business description or website content, generate a comprehensive system prompt for this specific business. Include: company overview, services offered, tone/personality, topics to handle, escalation rules, and things to avoid. Keep it under 2500 characters. Write in second person ("You are...").',
                     ],
                     [
                         'role' => 'user',
                         'content' => "Company name: {$project->name}\n\n{$context}",
                     ],
                 ],
-                'max_tokens' => 1500,
+                'max_tokens' => 1000,
                 'temperature' => 0.7,
             ]);
 

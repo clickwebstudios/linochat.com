@@ -528,14 +528,22 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                       btn.disabled = true;
                       btn.textContent = 'Generating...';
                       try {
-                        const res = await api.post<any>(`/projects/${projectId}/ai-settings/generate-prompt`, { input: input.trim() });
-                        if (res.success && res.data?.prompt) {
-                          updateSetting('system_prompt', res.data.prompt);
+                        const res = await api.post(`/projects/${projectId}/ai-settings/generate-prompt`, { input: input.trim() }, { timeout: 30000 });
+                        const body = res.data as any;
+                        if (body.success && body.data?.prompt) {
+                          updateSetting('system_prompt', body.data.prompt);
                           toast.success('Prompt generated! Review and publish when ready.');
                         } else {
-                          toast.error(res.message || 'Failed to generate prompt');
+                          toast.error(body.message || 'Failed to generate prompt');
                         }
-                      } catch (err: any) { toast.error(err?.message || 'Failed to generate prompt'); }
+                      } catch (err: any) {
+                        const msg = err?.response?.data?.message || err?.message || '';
+                        if (msg.includes('timeout') || msg.includes('ETIMEDOUT') || err?.code === 'ECONNABORTED') {
+                          toast.error('Request timed out. Please try again.');
+                        } else {
+                          toast.error(msg || 'Failed to generate prompt');
+                        }
+                      }
                       finally { btn.disabled = false; btn.textContent = 'Generate'; }
                     }}
                   >

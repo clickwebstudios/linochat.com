@@ -136,73 +136,50 @@ class FrubixService
     }
 
     /**
-     * Send a message to Frubix.
+     * Check available time slots for a date.
      */
-    public static function sendMessage(array $integrationConfig, array $data): array
+    public static function checkAvailability(array $integrationConfig, string $date, int $duration = 60, ?Project $project = null): array
     {
         $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
-        $accessToken = $integrationConfig['access_token'] ?? null;
-        $refreshToken = $integrationConfig['refresh_token'] ?? null;
 
-        if (!$accessToken) {
+        if (!($integrationConfig['access_token'] ?? null)) {
             throw new \RuntimeException('Frubix access token not configured');
         }
 
-        $response = Http::withToken($accessToken)
-            ->post("{$baseUrl}/api/v1/messages", $data);
-
-        if ($response->status() === 401 && $refreshToken) {
-            $newTokens = self::refreshToken($integrationConfig);
-            if ($newTokens) {
-                $response = Http::withToken($newTokens['access_token'])
-                    ->post("{$baseUrl}/api/v1/messages", $data);
-            }
-        }
+        $response = self::requestWithRefresh($integrationConfig, function ($token) use ($baseUrl, $date, $duration) {
+            return Http::withToken($token)->get("{$baseUrl}/api/v1/schedule/availability", [
+                'date' => $date,
+                'duration' => $duration,
+            ]);
+        }, $project);
 
         if (!$response->successful()) {
-            throw new \RuntimeException('Failed to send Frubix message: ' . $response->body());
+            throw new \RuntimeException('Failed to check Frubix availability: ' . $response->body());
         }
 
         return $response->json('data') ?? $response->json();
     }
 
     /**
-     * Get the connected company/organization info from the OAuth token.
+     * Create a client.
      */
-    public static function getCompanyInfo(array $integrationConfig): ?array
+    public static function createClient(array $integrationConfig, array $clientData, ?Project $project = null): array
     {
-        $accessToken = $integrationConfig['access_token'] ?? null;
-        if (!$accessToken) return null;
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
 
-        try {
-            $parts = explode('.', $accessToken);
-            if (count($parts) !== 3) return null;
-
-            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-            $clientId = $payload['aud'] ?? null;
-            if (is_array($clientId)) $clientId = $clientId[0] ?? null;
-
-            if (!$clientId) return null;
-
-            // Look up the OAuth client to find the company owner
-            $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
-            $response = Http::withToken($accessToken)
-                ->get("{$baseUrl}/api/v1/company");
-
-            if ($response->successful()) {
-                $data = $response->json('data') ?? $response->json();
-                return [
-                    'company_name' => $data['name'] ?? $data['company_name'] ?? null,
-                    'company_id' => $data['id'] ?? $data['company_id'] ?? null,
-                    'user_name' => $data['user_name'] ?? null,
-                    'user_email' => $data['user_email'] ?? null,
-                ];
-            }
-        } catch (\Throwable $e) {
-            Log::error('Failed to fetch Frubix company info', ['error' => $e->getMessage()]);
+        if (!($integrationConfig['access_token'] ?? null)) {
+            throw new \RuntimeException('Frubix access token not configured');
         }
 
-        return null;
+        $response = self::requestWithRefresh($integrationConfig, function ($token) use ($baseUrl, $clientData) {
+            return Http::withToken($token)->post("{$baseUrl}/api/v1/clients", $clientData);
+        }, $project);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to create Frubix client: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
     }
 
     /**

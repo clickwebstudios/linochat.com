@@ -77,7 +77,12 @@ async function request<T>(
       headers,
     });
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(response.ok ? 'Invalid response from server' : `Server error (${response.status})`);
+    }
 
     if (!response.ok) {
       // Handle 401 - try to refresh token (skip for login/register endpoints)
