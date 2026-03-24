@@ -102,6 +102,7 @@ const STATUS_COLORS: Record<string, string> = { open: '#3B82F6', in_progress: '#
 export default function PlatformAnalytics() {
   const [period, setPeriod] = useState<string>('30d');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [dashStats, setDashStats] = useState<DashboardStats | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -110,6 +111,7 @@ export default function PlatformAnalytics() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [statsRes, dashRes, compRes, aiRes, analyticsRes] = await Promise.all([
         api.get<any>('/superadmin/stats').catch(() => null),
@@ -123,7 +125,9 @@ export default function PlatformAnalytics() {
       if (compRes?.success) setCompanies(Array.isArray(compRes.data) ? compRes.data : []);
       if (aiRes?.success) setAiUsage(aiRes.data);
       if (analyticsRes?.success) setAnalytics(analyticsRes.data);
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load analytics');
+    }
     setLoading(false);
   }, [period]);
 
@@ -149,6 +153,15 @@ export default function PlatformAnalytics() {
     return (
       <div className="flex justify-center py-24">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-24">
+        <p className="text-red-500 mb-2">{error}</p>
+        <Button variant="outline" onClick={fetchData}>Retry</Button>
       </div>
     );
   }

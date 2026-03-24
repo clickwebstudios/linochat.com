@@ -66,11 +66,6 @@ Route::group(['prefix' => 'auth'], function () {
 
 // Health check
 Route::get('/health', function () {
-    return response()->json(['status' => 'ok']);
-});
-
-// Health check route
-Route::get('/health', function () {
     return response()->json([
         'success' => true,
         'status' => 'ok',
