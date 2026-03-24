@@ -444,7 +444,7 @@ class AuthController extends Controller
         $resetUrl = rtrim(config('app.frontend_url', 'https://linochat.com'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
         try {
-            Mail::to($user->email)->send(new PasswordResetMail($user->first_name . ' ' . $user->last_name, $user->email, $resetUrl));
+            Mail::to($user->email)->send(new PasswordResetMail($user, $resetUrl));
         } catch (\Exception $e) {
             Log::error('Failed to send password reset email', ['error' => $e->getMessage()]);
             return response()->json([
