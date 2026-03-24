@@ -935,10 +935,16 @@ class AiChatService
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
         $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE|DATE|TIME):\s*[^\]]*\]/i', '', $cleaned);
         $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT|NEW_DATE|NEW_TIME|CHECK_AVAILABILITY|CREATE_LEAD):\s*[^\]]*\]/i', '', $cleaned);
-        // Convert Markdown links [text](url) to plain text - chat widget shows plain text
+        // Convert Markdown links [text](url) to plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
+        // Strip markdown bold/italic (widget shows plain text)
+        $cleaned = preg_replace('/\*{1,3}([^*]+)\*{1,3}/', '$1', $cleaned);
+        // Collapse multiple spaces on same line, but preserve line breaks
+        $cleaned = preg_replace('/[^\S\n]+/', ' ', $cleaned);
+        // Collapse 3+ consecutive newlines to 2
+        $cleaned = preg_replace('/\n{3,}/', "\n\n", $cleaned);
 
-        return trim(preg_replace('/\s+/', ' ', $cleaned));
+        return trim($cleaned);
     }
 
     /**
@@ -1044,7 +1050,7 @@ class AiChatService
             'content' => "Booking request from chat.\n\nName: {$name}\nPhone: {$phone}\nEmail: {$email}\nAddress: {$address}" . ($issue ? "\n\nIssue: {$issue}" : ''),
         ]);
 
-        $confirmationNote = "\n\nYour booking request has been submitted (Ticket #{$ticket->ticket_number}). Our team will reach out to confirm the details shortly.";
+        $confirmationNote = "\n\nYour booking request has been submitted.\nReference: #{$ticket->ticket_number}\n\nOur team will reach out to confirm the details shortly.";
         $message = ChatMessage::create([
             'chat_id' => $chat->id, 'sender_type' => 'ai', 'content' => $cleanContent . $confirmationNote, 'is_ai' => true,
             'metadata' => ['model' => $this->model, 'booking_created' => true, 'ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number],
@@ -1130,12 +1136,18 @@ class AiChatService
             }
         }
 
-        // Build confirmation message
-        $confirmationNote = $frubixBooked
-            ? "\n\nYour appointment has been booked" . ($bookingDate ? " for {$bookingDate}" . ($bookingTime ? " at {$bookingTime}" : '') : '') . ". We'll see you then!"
-            : ($conflictMessage
-                ? "\n\n{$conflictMessage} Our team will contact you to find an available time."
-                : "\n\nYour booking request has been submitted. Our team will reach out to confirm shortly.");
+        // Build confirmation message with clear formatting
+        if ($frubixBooked) {
+            $confirmationNote = "\n\nYour appointment is confirmed!\n";
+            if ($bookingDate) $confirmationNote .= "Date: {$bookingDate}\n";
+            if ($bookingTime) $confirmationNote .= "Time: {$bookingTime}\n";
+            if ($address) $confirmationNote .= "Address: {$address}\n";
+            $confirmationNote .= "\nWe look forward to seeing you!";
+        } elseif ($conflictMessage) {
+            $confirmationNote = "\n\n{$conflictMessage} Our team will contact you to find an available time.";
+        } else {
+            $confirmationNote = "\n\nYour booking request has been submitted. Our team will reach out to confirm shortly.";
+        }
 
         $message = ChatMessage::create([
             'chat_id' => $chat->id, 'sender_type' => 'ai', 'content' => $cleanContent . $confirmationNote, 'is_ai' => true,
