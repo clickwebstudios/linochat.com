@@ -587,14 +587,29 @@ class WidgetController extends Controller
                 'is_ai' => false,
             ]);
 
-            // Extract phone/email from customer message and update chat immediately
+            // Extract name/phone/email from customer message and update chat immediately
             $chatMeta = $chat->metadata ?? [];
             $chatUpdates = ['last_message_at' => now(), 'customer_last_seen_at' => now()];
             $customerMsg = $input['message'];
+
+            // Extract name from customer message (e.g. "Alex James", "my name is Alex", "I'm Alex")
+            if (empty($chat->customer_name) || $chat->customer_name === 'Guest') {
+                if (preg_match('/^(?:(?:my name is|i\'?m|it\'?s|this is|i am|name:?)\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/i', trim($customerMsg), $nm)) {
+                    $name = implode(' ', array_map('ucfirst', explode(' ', strtolower(trim($nm[1])))));
+                    $exclude = ['Hello', 'Hi', 'Hey', 'Yes', 'No', 'Ok', 'Sure', 'Thanks', 'Thank', 'Please', 'Need', 'Want', 'How', 'What', 'Where', 'When', 'Why'];
+                    if (strlen($name) >= 2 && strlen($name) <= 50 && !in_array($name, $exclude)) {
+                        $chatUpdates['customer_name'] = $name;
+                    }
+                }
+            }
+
+            // Extract phone number
             if (preg_match('/\b(\+?\d[\d\s\-().]{7,15}\d)\b/', $customerMsg, $pm) && empty($chatMeta['customer_phone'])) {
                 $chatMeta['customer_phone'] = preg_replace('/[^\d+]/', '', $pm[1]);
                 $chatUpdates['metadata'] = $chatMeta;
             }
+
+            // Extract email
             if (preg_match('/[\w.+-]+@[\w-]+\.[\w.]+/', $customerMsg, $em) && empty($chat->customer_email)) {
                 $chatUpdates['customer_email'] = $em[0];
             }
