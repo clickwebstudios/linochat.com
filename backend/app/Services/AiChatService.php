@@ -747,6 +747,8 @@ class AiChatService
             $prompt .= "    c) Once confirmed, append [RESCHEDULE_APPOINTMENT: appointment_id][NEW_DATE: YYYY-MM-DD][NEW_TIME: HH:MM] at the end of your reply. Use the appointment ID number from the schedule data.\n";
             $prompt .= "    d) The system will update the appointment and you'll get a confirmation.\n";
             $prompt .= "    Do NOT hand over for rescheduling — you can do it yourself.\n";
+            $prompt .= "16. LEAD CREATION (enquiries only): When a customer shows interest but does NOT want to book right now (e.g., 'I need a quote', 'send me info', 'I'm interested', 'maybe later', 'just looking'), collect their name, phone, and email, then append [CREATE_LEAD: Name|Phone|Email|Notes] at the end of your reply. Do NOT create a lead if the customer is booking — the booking flow creates a client automatically.\n";
+            $prompt .= "17. AVAILABILITY CHECK: When a customer wants to book and mentions a date, check available time slots BEFORE confirming by appending [CHECK_AVAILABILITY: YYYY-MM-DD] at the end of your reply. The system will return available slots. Present these times to the customer so they can pick one. Then proceed with [CREATE_BOOKING] using the chosen time.\n";
         }
 
         $prompt .= "\n";
@@ -932,7 +934,7 @@ class AiChatService
         $cleaned = preg_replace('/\[CUSTOMER_NAME:\s*[^\]]+\]/i', '', $response);
         $cleaned = str_replace(['[HANDOVER]', '[REQUEST_CONTACT]', '[CREATE_BOOKING]'], '', $cleaned);
         $cleaned = preg_replace('/\[BOOKING_(?:NAME|PHONE|EMAIL|ADDRESS|ISSUE|DATE|TIME):\s*[^\]]*\]/i', '', $cleaned);
-        $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT|NEW_DATE|NEW_TIME):\s*[^\]]*\]/i', '', $cleaned);
+        $cleaned = preg_replace('/\[(?:LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT|NEW_DATE|NEW_TIME|CHECK_AVAILABILITY|CREATE_LEAD):\s*[^\]]*\]/i', '', $cleaned);
         // Convert Markdown links [text](url) to plain text - chat widget shows plain text
         $cleaned = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $cleaned);
 
@@ -1131,6 +1133,22 @@ class AiChatService
             } catch (\Exception $e) {
                 Log::error('Frubix appointment FAILED', ['error' => $e->getMessage()]);
             }
+
+            // Create client in Frubix (bookings = confirmed customers, not leads)
+            if ($frubixBooked) {
+                try {
+                    FrubixService::createClient($frubixConfig, array_filter([
+                        'name' => $name,
+                        'phone' => $phone,
+                        'email' => $email,
+                        'address' => $address,
+                        'source' => 'linochat',
+                    ]), $project);
+                    Log::info('Frubix client created from booking', ['name' => $name, 'phone' => $phone]);
+                } catch (\Exception $e) {
+                    Log::warning('Frubix client creation failed', ['error' => $e->getMessage()]);
+                }
+            }
         }
 
         // Clean the AI content for display (remove tags)
@@ -1274,7 +1292,7 @@ class AiChatService
      */
     protected function isFrubixLookup(string $response): bool
     {
-        return preg_match('/\[(LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT):\s*[^\]]+\]/i', $response) === 1;
+        return preg_match('/\[(LOOKUP_CLIENT|CHECK_SCHEDULE|RESCHEDULE_APPOINTMENT|CREATE_LEAD|CHECK_AVAILABILITY):\s*[^\]]+\]/i', $response) === 1;
     }
 
     /**
@@ -1283,13 +1301,23 @@ class AiChatService
     protected function getFrubixIntegration(Project $project): ?array
     {
         $integrations = $project->integrations ?? [];
-        $frubix = $integrations['frubix'] ?? null;
 
-        if (!$frubix || empty($frubix['access_token'])) {
-            return null;
+        // Check legacy OAuth flow (integrations.frubix)
+        $frubix = $integrations['frubix'] ?? null;
+        if ($frubix && !empty($frubix['access_token'])) {
+            return $frubix;
         }
 
-        return $frubix;
+        // Check new managed flow (integrations.frubix_managed) — uses Sanctum API token
+        $managed = $integrations['frubix_managed'] ?? null;
+        if ($managed && ($managed['enabled'] ?? false) && !empty($managed['api_token'])) {
+            return [
+                'access_token' => $managed['api_token'],
+                'url' => $managed['api_url'] ?? 'https://frubix.com',
+            ];
+        }
+
+        return null;
     }
 
     /**
@@ -1389,11 +1417,51 @@ class AiChatService
             }
         }
 
+        // Handle availability check
+        if (preg_match('/\[CHECK_AVAILABILITY:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $date = trim($m[1]);
+            try {
+                $availability = FrubixService::checkAvailability($frubixConfig, $date, 60, $project);
+                $slots = $availability['slots'] ?? [];
+                if (!empty($slots)) {
+                    $slotList = collect($slots)->take(8)->map(fn ($s) => "- {$s['display']}")->implode("\n");
+                    $results[] = "AVAILABLE TIME SLOTS for {$date}:\n{$slotList}\n\nOffer these times to the customer. If none work, ask for a different date.";
+                } else {
+                    $results[] = "AVAILABILITY for {$date}: No available slots. Suggest the customer try a different date.";
+                }
+            } catch (\Exception $e) {
+                Log::warning('Frubix availability check failed', ['error' => $e->getMessage()]);
+                $results[] = "AVAILABILITY CHECK: Unable to check availability at this time. Proceed with the booking and our team will confirm.";
+            }
+        }
+
+        // Handle lead creation (enquiries only, not bookings)
+        if (preg_match('/\[CREATE_LEAD:\s*([^\]]+)\]/i', $aiContent, $m)) {
+            $parts = array_map('trim', explode('|', $m[1]));
+            $leadName = $parts[0] ?? null;
+            $leadPhone = $parts[1] ?? null;
+            $leadEmail = $parts[2] ?? null;
+            $leadNotes = $parts[3] ?? null;
+            try {
+                FrubixService::createLead($frubixConfig, array_filter([
+                    'name' => $leadName,
+                    'phone' => $leadPhone,
+                    'email' => $leadEmail,
+                    'source' => 'linochat',
+                    'notes' => $leadNotes ?? 'Enquiry from chat',
+                ]), $project);
+                $results[] = "LEAD CREATED: A lead has been created for {$leadName}. Confirm to the customer that their enquiry has been noted and someone will follow up.";
+            } catch (\Exception $e) {
+                Log::warning('Frubix lead creation failed', ['error' => $e->getMessage()]);
+                $results[] = "LEAD CREATION: Unable to create lead at this time. Assure the customer their enquiry has been noted.";
+            }
+        }
+
         if (empty($results)) {
             return null;
         }
 
-        return "The following information was retrieved from our system. Use it to respond to the customer naturally (do NOT mention 'Frubix' or 'system lookup' to the customer — present the info as if you already know it). Remove any [LOOKUP_CLIENT], [CHECK_SCHEDULE], [RESCHEDULE_APPOINTMENT], [NEW_DATE], or [NEW_TIME] tags from your response.\n\n" . implode("\n\n", $results);
+        return "The following information was retrieved from our system. Use it to respond to the customer naturally (do NOT mention 'Frubix' or 'system lookup' to the customer — present the info as if you already know it). Remove any [LOOKUP_CLIENT], [CHECK_SCHEDULE], [RESCHEDULE_APPOINTMENT], [NEW_DATE], [NEW_TIME], [CHECK_AVAILABILITY], or [CREATE_LEAD] tags from your response.\n\n" . implode("\n\n", $results);
     }
 
     /**

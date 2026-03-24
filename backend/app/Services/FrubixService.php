@@ -136,6 +136,53 @@ class FrubixService
     }
 
     /**
+     * Check available time slots for a date.
+     */
+    public static function checkAvailability(array $integrationConfig, string $date, int $duration = 60, ?Project $project = null): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+
+        if (!($integrationConfig['access_token'] ?? null)) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = self::requestWithRefresh($integrationConfig, function ($token) use ($baseUrl, $date, $duration) {
+            return Http::withToken($token)->get("{$baseUrl}/api/v1/schedule/availability", [
+                'date' => $date,
+                'duration' => $duration,
+            ]);
+        }, $project);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to check Frubix availability: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
+     * Create a client.
+     */
+    public static function createClient(array $integrationConfig, array $clientData, ?Project $project = null): array
+    {
+        $baseUrl = rtrim($integrationConfig['url'] ?? 'https://frubix.com', '/');
+
+        if (!($integrationConfig['access_token'] ?? null)) {
+            throw new \RuntimeException('Frubix access token not configured');
+        }
+
+        $response = self::requestWithRefresh($integrationConfig, function ($token) use ($baseUrl, $clientData) {
+            return Http::withToken($token)->post("{$baseUrl}/api/v1/clients", $clientData);
+        }, $project);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('Failed to create Frubix client: ' . $response->body());
+        }
+
+        return $response->json('data') ?? $response->json();
+    }
+
+    /**
      * Exchange authorization code for tokens.
      */
     public static function exchangeCode(string $baseUrl, string $clientId, string $clientSecret, string $code, string $redirectUri): array
