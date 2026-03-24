@@ -535,7 +535,14 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                         } else {
                           toast.error(res.message || 'Failed to generate prompt');
                         }
-                      } catch (err: any) { toast.error(err?.message || 'Failed to generate prompt'); }
+                      } catch (err: any) {
+                        const msg = err?.message || '';
+                        if (msg.includes('timeout') || msg.includes('Failed to fetch') || msg.includes('Unexpected token')) {
+                          toast.error('Request timed out. Please try again.');
+                        } else {
+                          toast.error(msg || 'Failed to generate prompt');
+                        }
+                      }
                       finally { btn.disabled = false; btn.textContent = 'Generate'; }
                     }}
                   >
