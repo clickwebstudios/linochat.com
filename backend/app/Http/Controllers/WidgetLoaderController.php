@@ -1150,6 +1150,7 @@ class WidgetLoaderController extends Controller
                 if (isMobile) {
                     button.style.display = 'flex';
                     window_.style.height = '';
+                    window_.style.maxHeight = '';
                 }
             }
         }
