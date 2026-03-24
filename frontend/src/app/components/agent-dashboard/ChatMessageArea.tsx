@@ -289,14 +289,14 @@ export function ChatMessageArea({
                   </div>
                 )}
                 <div className={`flex ${message.sender_type === 'agent' || message.sender_type === 'ai' ? 'justify-end' : 'justify-start'}`}>
-                  <div className="max-w-[70%]">
+                  <div className={`${message.sender_type === 'agent' || message.sender_type === 'ai' ? 'max-w-[70%]' : 'max-w-[65%]'}`}>
                     {/* AI Label */}
                     {message.sender_type === 'ai' && (
-                      <div className="flex items-center gap-1.5 mb-1 px-1">
+                      <div className="flex items-center gap-1.5 mb-1 px-1 justify-end">
+                        <span className="text-[10px] font-medium text-secondary">AI Assistant</span>
                         <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center">
                           <Bot className="h-2.5 w-2.5 text-white" />
                         </div>
-                        <span className="text-[10px] font-medium text-secondary">AI Assistant</span>
                       </div>
                     )}
                     {/* System Message */}
@@ -308,10 +308,10 @@ export function ChatMessageArea({
                       </div>
                     )}
                     {message.sender_type !== 'system' && (
-                      <div className={`rounded-[10px] px-3.5 py-3 shadow-sm border ${
+                      <div className={`px-3.5 py-2.5 shadow-sm border ${
                         message.sender_type === 'agent' || message.sender_type === 'ai'
-                          ? 'bg-primary text-primary-foreground border-transparent'
-                          : 'bg-card border-[rgba(0,0,0,0.1)] text-[#0a0a0a]'
+                          ? 'bg-primary text-primary-foreground border-transparent rounded-2xl rounded-br-md'
+                          : 'bg-white border-[#e5e7eb] text-[#0a0a0a] rounded-2xl rounded-bl-md'
                       }`}>
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
