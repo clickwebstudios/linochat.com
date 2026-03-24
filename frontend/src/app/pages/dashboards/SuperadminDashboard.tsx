@@ -65,7 +65,7 @@ interface Company {
   email: string;
   plan: string;
   projects_count: number;
-  agents_count: number;
+  users_count: number;
   created_at: string;
   status: string;
 }
@@ -487,7 +487,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                         <TableHead>Company</TableHead>
                         <TableHead>Plan</TableHead>
                         <TableHead>Projects</TableHead>
-                        <TableHead>Agents</TableHead>
+                        <TableHead>Users</TableHead>
                         <TableHead>Sign Up Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -538,7 +538,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <Headphones className="h-4 w-4 text-green-600" />
-                                <span className="font-semibold">{company.agents_count}</span>
+                                <span className="font-semibold">{company.users_count}</span>
                               </div>
                             </div>
                           </TableCell>

@@ -56,18 +56,22 @@ class SuperadminController extends Controller
             ->paginate($perPage);
         
         $data = $companies->map(function($company) {
-            $totalAgents = $company->ownedProjects->sum('agents_count');
-            
-            // Use company_name if available, fallback to user's full name
+            // Count all unique users in the company: agents assigned to any project + the admin
+            $agentIds = collect();
+            foreach ($company->ownedProjects as $project) {
+                $agentIds = $agentIds->merge($project->agents->pluck('id'));
+            }
+            $totalUsers = $agentIds->unique()->count() + 1; // +1 for the admin themselves
+
             $companyName = $company->company_name ?: $company->name;
-            
+
             return [
                 'id' => $company->id,
                 'name' => $companyName,
                 'email' => $company->email,
                 'plan' => $this->getCompanyPlan($company),
                 'projects_count' => $company->owned_projects_count,
-                'agents_count' => $totalAgents,
+                'users_count' => $totalUsers,
                 'created_at' => $company->created_at,
                 'status' => $company->status,
             ];

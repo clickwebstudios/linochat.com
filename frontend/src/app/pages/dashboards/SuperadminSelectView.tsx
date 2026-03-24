@@ -33,7 +33,7 @@ interface Company {
   email: string;
   plan: string;
   projects_count: number;
-  agents_count: number;
+  users_count: number;
   created_at: string;
   status: string;
 }
@@ -204,7 +204,7 @@ export default function SuperadminSelectView() {
                       <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort('projects_count')}>
                         <span className="flex items-center justify-center gap-1">Projects <ArrowUpDown className="h-3 w-3" /></span>
                       </TableHead>
-                      <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort('agents_count')}>
+                      <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort('users_count')}>
                         <span className="flex items-center justify-center gap-1">Users <ArrowUpDown className="h-3 w-3" /></span>
                       </TableHead>
                       <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('status')}>
@@ -240,7 +240,7 @@ export default function SuperadminSelectView() {
                           <Badge variant="outline" className="text-xs capitalize">{company.plan || 'free'}</Badge>
                         </TableCell>
                         <TableCell className="text-center text-sm">{company.projects_count}</TableCell>
-                        <TableCell className="text-center text-sm">{company.agents_count}</TableCell>
+                        <TableCell className="text-center text-sm">{company.users_count}</TableCell>
                         <TableCell>
                           <Badge variant={company.status === 'Active' ? 'default' : 'secondary'} className="text-xs">
                             {company.status || 'Active'}
@@ -270,7 +270,7 @@ export default function SuperadminSelectView() {
                 <span className="font-medium">{selectedCompany.name}</span>
               </div>
               <Badge variant="outline" className="text-xs ml-auto">
-                {selectedCompany.projects_count} projects · {selectedCompany.agents_count} agents
+                {selectedCompany.projects_count} projects · {selectedCompany.users_count} users
               </Badge>
             </div>
 
