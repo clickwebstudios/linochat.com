@@ -29,18 +29,9 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $user = auth('api')->user();
-        $companyId = $request->input('company_id');
-        
-        // Superadmin filtering by company
-        if ($companyId && $user->role === 'superadmin') {
-            $allProjectIds = Project::where('user_id', $companyId)->pluck('id');
-        } else {
-            $projectIds = $user->projects()->pluck('projects.id');
-            $ownedProjectIds = $user->ownedProjects()->pluck('id');
-            $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
-        }
+        $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
 
-        $query = Ticket::whereIn('project_id', $allProjectIds)
+        $query = Ticket::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
             ->with(['project', 'assignedAgent']);
 
         // Filter by status
@@ -681,10 +672,7 @@ class TicketController extends Controller
     public function stats(Request $request)
     {
         $user = auth('api')->user();
-        
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $stats = [
             'total' => Ticket::whereIn('project_id', $allProjectIds)->count(),
@@ -708,9 +696,7 @@ class TicketController extends Controller
     {
         $user = auth('api')->user();
         
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $volume = [];

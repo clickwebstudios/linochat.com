@@ -120,4 +120,68 @@ class User extends Authenticatable
     {
         return $this->hasMany(ChatTransfer::class, 'from_agent_id');
     }
+
+    // ── Company isolation helpers ───────────────────────────────────────
+
+    /**
+     * Resolve the "company owner" ID for this user.
+     * Admin → own ID. Agent → the admin who owns their assigned projects.
+     * Superadmin → null (has access to everything).
+     */
+    public function getCompanyOwnerId(): ?int
+    {
+        if ($this->isSuperadmin()) return null;
+        if ($this->isAdmin()) return (int) $this->id;
+
+        // Agent: find the admin who owns the projects this agent is assigned to
+        $ownerId = Project::whereIn('id', $this->projects()->pluck('projects.id'))
+            ->distinct()
+            ->value('user_id');
+
+        return $ownerId ? (int) $ownerId : null;
+    }
+
+    /**
+     * Get ALL project IDs that belong to this user's company.
+     * Used to scope every data query for complete company isolation.
+     */
+    public function getCompanyProjectIds(): \Illuminate\Support\Collection
+    {
+        if ($this->isSuperadmin()) return collect();
+
+        $ownerId = $this->getCompanyOwnerId();
+        if (!$ownerId) return collect();
+
+        return Project::where('user_id', $ownerId)->pluck('id');
+    }
+
+    /**
+     * Resolve project IDs for data queries.
+     * Superadmin with companyId → that company's projects.
+     * Superadmin without → all projects (null = no filter).
+     * Regular user → their company's projects.
+     */
+    public function resolveProjectIds(?string $companyId = null): ?\Illuminate\Support\Collection
+    {
+        if ($this->isSuperadmin()) {
+            return $companyId ? Project::where('user_id', $companyId)->pluck('id') : null;
+        }
+        return $this->getCompanyProjectIds();
+    }
+
+    /**
+     * Check if user can access a specific project (company-isolated).
+     * Replaces scattered $hasAccess checks throughout controllers.
+     */
+    public function canAccessProject($project): bool
+    {
+        if ($this->isSuperadmin()) return true;
+        if ((int) $project->user_id === (int) $this->id) return true;
+
+        // Agent must be assigned AND project must belong to user's company
+        $companyOwnerId = $this->getCompanyOwnerId();
+        return $companyOwnerId
+            && (int) $project->user_id === $companyOwnerId
+            && $this->projects()->where('projects.id', $project->id)->exists();
+    }
 }

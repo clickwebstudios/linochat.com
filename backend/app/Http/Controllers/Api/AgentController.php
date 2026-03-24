@@ -29,23 +29,11 @@ class AgentController extends Controller
     public function chats(Request $request)
     {
         $user = auth('api')->user();
-        $companyId = $request->input('company_id');
-        
-        // Superadmin filtering by company
-        if ($companyId && $user->role === 'superadmin') {
-            $allProjectIds = Project::where('user_id', $companyId)->pluck('id');
-        } else {
-            // Get projects where user is assigned as agent
-            $projectIds = $user->projects()->pluck('projects.id');
-            
-            // Also include user's own projects
-            $ownedProjectIds = $user->ownedProjects()->pluck('id');
-            $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
-        }
+        $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
 
         $status = $request->input('status', 'active');
-        
-        $query = Chat::whereIn('project_id', $allProjectIds)
+
+        $query = Chat::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
             ->with(['project', 'agent', 'messages' => function($q) {
                 $q->latest()->limit(1);
             }]);
@@ -524,10 +512,7 @@ class AgentController extends Controller
     public function stats(Request $request)
     {
         $user = auth('api')->user();
-        
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $stats = [
             'total_active_chats' => Chat::whereIn('project_id', $allProjectIds)
@@ -558,24 +543,13 @@ class AgentController extends Controller
     public function users(Request $request)
     {
         $user = auth('api')->user();
-        $companyId = $request->input('company_id');
+        $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
 
-        // Superadmin filtering by company
-        if ($companyId && $user->role === 'superadmin') {
-            $allProjectIds = Project::where('user_id', $companyId)->pluck('id');
-        } else {
-            $projectIds = $user->projects()->pluck('projects.id');
-            $ownedProjectIds = $user->ownedProjects()->pluck('id');
-            $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
-        }
-
-        // Get all agents from user's projects with enriched data
-        $agents = User::whereHas('projects', function ($q) use ($allProjectIds) {
-            $q->whereIn('projects.id', $allProjectIds);
+        // Get all agents from user's company projects with enriched data
+        $agents = User::where(function ($q) use ($allProjectIds) {
+            $q->whereHas('projects', fn ($q2) => $allProjectIds ? $q2->whereIn('projects.id', $allProjectIds) : $q2)
+              ->orWhereHas('ownedProjects', fn ($q2) => $allProjectIds ? $q2->whereIn('projects.id', $allProjectIds) : $q2);
         })
-            ->orWhereHas('ownedProjects', function ($q) use ($allProjectIds) {
-                $q->whereIn('projects.id', $allProjectIds);
-            })
             ->select('id', 'first_name', 'last_name', 'email', 'role', 'status', 'avatar_url', 'created_at', 'last_active_at')
             ->with(['projects:id,name', 'ownedProjects:id,name'])
             ->withCount(['chats as active_chats_count' => function ($q) {
