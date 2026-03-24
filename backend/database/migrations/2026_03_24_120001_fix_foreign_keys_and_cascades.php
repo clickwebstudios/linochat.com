@@ -19,6 +19,12 @@ return new class extends Migration
             $table->dropForeign(['author_id']);
             $table->foreign('author_id')->references('id')->on('users')->onDelete('set null');
         });
+
+        // #47: Add unique constraint on (project_id, slug) to prevent duplicate slugs
+        Schema::table('kb_articles', function (Blueprint $table) {
+            $table->dropIndex(['project_id', 'slug']); // drop existing non-unique index
+            $table->unique(['project_id', 'slug'], 'kb_articles_project_slug_unique');
+        });
     }
 
     public function down(): void
@@ -31,6 +37,8 @@ return new class extends Migration
         Schema::table('kb_articles', function (Blueprint $table) {
             $table->dropForeign(['author_id']);
             $table->foreign('author_id')->references('id')->on('users')->onDelete('cascade');
+            $table->dropUnique('kb_articles_project_slug_unique');
+            $table->index(['project_id', 'slug']);
         });
     }
 };

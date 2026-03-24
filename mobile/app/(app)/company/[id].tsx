@@ -42,7 +42,7 @@ export default function CompanyDetailScreen() {
         setChats(chatsData);
       }
     } catch (err) {
-      console.log('Company detail error:', err);
+      if (__DEV__) console.log('Company detail error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

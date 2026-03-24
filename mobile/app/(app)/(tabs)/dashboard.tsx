@@ -36,7 +36,7 @@ export default function DashboardScreen() {
         setStats(data);
       }
     } catch (err) {
-      console.log('Dashboard fetch error:', err);
+      if (__DEV__) console.log('Dashboard fetch error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -198,11 +198,6 @@ export function CompanyDetailView({
     try {
       const res = await api.post<any>(`/superadmin/impersonate/${agent.id}`, {});
       if (res.success && res.data) {
-        const currentToken = localStorage.getItem('access_token');
-        if (currentToken) {
-          localStorage.setItem('superadmin_token', currentToken);
-          localStorage.setItem('superadmin_user', JSON.stringify(currentUser));
-        }
         localStorage.setItem('access_token', res.data.access_token);
         localStorage.setItem('impersonated_by', res.data.impersonated_by);
         useAuthStore.getState().setUser(res.data.user);

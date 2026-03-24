@@ -64,41 +64,9 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
-// DEBUG routes — only available in local environment
-if (app()->environment('local')) {
-    Route::get('/debug/token', function (Request $request) {
-        $token = $request->bearerToken();
-        try {
-            $user = auth('api')->user();
-            return response()->json([
-                'success' => true,
-                'token_received' => $token ? 'YES' : 'NO',
-                'token_length' => $token ? strlen($token) : 0,
-                'user_authenticated' => $user ? 'YES' : 'NO',
-                'user_id' => $user ? $user->id : null,
-                'auth_guard' => config('auth.defaults.guard'),
-                'jwt_secret_set' => !empty(config('jwt.secret')),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-                'token_received' => $token ? 'YES' : 'NO',
-            ]);
-        }
-    });
-    Route::middleware('auth:sanctum')->get('/debug/auth-test', function (Request $request) {
-        return response()->json([
-            'success' => true,
-            'user_id' => auth('api')->id(),
-            'user_email' => auth('api')->user()->email,
-        ]);
-    });
-}
-
-// Test route
-Route::get('/test', function () {
-    return response()->json(['message' => 'API is working!']);
+// Health check
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
 });
 
 // Health check route

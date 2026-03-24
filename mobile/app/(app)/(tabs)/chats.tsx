@@ -25,7 +25,7 @@ export default function ChatsScreen() {
       const data = await getChats();
       setChats(data);
     } catch (err) {
-      console.log('Chats fetch error:', err);
+      if (__DEV__) console.log('Chats fetch error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
