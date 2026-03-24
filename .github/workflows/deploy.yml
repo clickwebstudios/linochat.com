@@ -9,6 +9,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
     steps:
       - name: Deploy via SSH
@@ -19,6 +21,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 10m
+          envs: RESEND_API_KEY
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
@@ -29,8 +32,15 @@ jobs:
             git fetch origin master
             git reset --hard origin/master
 
-            echo ">>> [2/5] Backend: Installing PHP dependencies..."
+            echo ">>> [1.5/5] Setting env vars..."
             cd $DEPLOY_PATH/backend
+            # Ensure Resend API key is set
+            grep -q '^RESEND_API_KEY=' .env 2>/dev/null || echo 'RESEND_API_KEY=' >> .env
+            sed -i "s|^RESEND_API_KEY=.*|RESEND_API_KEY=$RESEND_API_KEY|" .env
+            # Ensure mail mailer is resend
+            sed -i "s|^MAIL_MAILER=.*|MAIL_MAILER=resend|" .env
+
+            echo ">>> [2/5] Backend: Installing PHP dependencies..."
             composer install --no-dev --optimize-autoloader --no-interaction
 
             echo ">>> [3/5] Backend: Running migrations & clearing cache..."
