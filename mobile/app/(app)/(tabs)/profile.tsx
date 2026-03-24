@@ -16,6 +16,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { unregisterPushNotifications } from '@/lib/notifications';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
 
   const doLogout = async () => {
     try {
+      await unregisterPushNotifications();
       await logout();
     } catch (e) {
       if (__DEV__) console.log('Logout error:', e);

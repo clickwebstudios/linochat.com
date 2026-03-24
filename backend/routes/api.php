@@ -248,6 +248,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
+    // Device token registration (push notifications)
+    Route::post('/devices/register', [\App\Http\Controllers\Api\DeviceTokenController::class, 'register']);
+    Route::post('/devices/unregister', [\App\Http\Controllers\Api\DeviceTokenController::class, 'unregister']);
+
     // Settings: notification preferences, notification log & activity log
     Route::get('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'getNotificationSettings']);
     Route::put('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'updateNotificationSettings']);

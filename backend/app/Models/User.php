@@ -121,6 +121,11 @@ class User extends Authenticatable
         return $this->hasMany(ChatTransfer::class, 'from_agent_id');
     }
 
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     // ── Company isolation helpers ───────────────────────────────────────
 
     /**
