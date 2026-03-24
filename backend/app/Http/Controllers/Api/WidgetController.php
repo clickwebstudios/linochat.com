@@ -572,7 +572,20 @@ class WidgetController extends Controller
                 'is_ai' => false,
             ]);
 
-            $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
+            // Extract phone/email from customer message and update chat immediately
+            $chatMeta = $chat->metadata ?? [];
+            $chatUpdates = ['last_message_at' => now(), 'customer_last_seen_at' => now()];
+            $customerMsg = $input['message'];
+            if (preg_match('/\b(\+?\d[\d\s\-().]{7,15}\d)\b/', $customerMsg, $pm) && empty($chatMeta['customer_phone'])) {
+                $chatMeta['customer_phone'] = preg_replace('/[^\d+]/', '', $pm[1]);
+                $chatUpdates['metadata'] = $chatMeta;
+            }
+            if (preg_match('/[\w.+-]+@[\w-]+\.[\w.]+/', $customerMsg, $em) && empty($chat->customer_email)) {
+                $chatUpdates['customer_email'] = $em[0];
+            }
+            $chat->update($chatUpdates);
+            $chat->refresh();
+
             broadcast(new MessageSent($message))->toOthers();
 
             // Forward to Frubix if this project is Frubix-managed
@@ -588,7 +601,7 @@ class WidgetController extends Controller
                         'sender_email'             => $chat->customer_email,
                         'sender_phone'             => $chatMeta['customer_phone'] ?? null,
                         'sender_type'              => 'customer',
-                        'message'                  => $input['message'],
+                        'message'                  => $customerMsg,
                         'channel'                  => 'linochat',
                         'source'                   => 'linochat',
                         'external_conversation_id' => (string) $chat->id,
