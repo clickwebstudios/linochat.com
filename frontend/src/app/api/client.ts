@@ -86,18 +86,19 @@ async function request<T>(
 
     if (!response.ok) {
       // Handle 401 - try to refresh token (skip for login/register endpoints)
-      if (response.status === 401 && 
-          !endpoint.includes('/auth/refresh') && 
-          !endpoint.includes('/auth/login') && 
+      if (response.status === 401 &&
+          !endpoint.includes('/auth/refresh') &&
+          !endpoint.includes('/auth/login') &&
           !endpoint.includes('/auth/register')) {
-        const refreshed = await refreshAccessToken();
+        const refreshed = await deduplicatedRefresh();
         if (refreshed) {
-          // Retry original request
           return request(endpoint, options);
         }
-        // Refresh failed, clear tokens
         clearTokens();
-        window.location.href = '/login';
+        const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/', '/features', '/pricing', '/resources', '/about', '/contact', '/help'];
+        if (!publicPaths.some(p => window.location.pathname === p || window.location.pathname.startsWith('/help'))) {
+          window.location.href = '/login';
+        }
       }
       throw new Error(data.message || 'Request failed');
     }
@@ -107,6 +108,15 @@ async function request<T>(
     console.error('API Error:', error);
     throw error;
   }
+}
+
+// Deduplicate concurrent refresh attempts (race condition fix)
+let refreshPromise: Promise<boolean> | null = null;
+function deduplicatedRefresh(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
 }
 
 // Refresh token

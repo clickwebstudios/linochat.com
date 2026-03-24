@@ -399,6 +399,10 @@ class AgentController extends Controller
             ], 403);
         }
 
+        if ($chat->status === 'closed') {
+            return response()->json(['success' => false, 'message' => 'Chat is already closed'], 422);
+        }
+
         $chat->update(['status' => 'closed']);
 
         // Add system message

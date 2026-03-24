@@ -388,6 +388,14 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($pat->expires_at && $pat->expires_at->isPast()) {
+            $pat->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Refresh token has expired',
+            ], 401);
+        }
+
         $user = $pat->tokenable;
         // Revoke old tokens and issue fresh ones
         $user->tokens()->delete();

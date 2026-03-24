@@ -33,6 +33,7 @@ export default function CompanyDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
+    if (!id || isNaN(Number(id))) return;
     try {
       const companyData = await getCompanyDetail(Number(id));
       setCompany(companyData);

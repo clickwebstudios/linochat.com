@@ -98,13 +98,15 @@ class IntegrationsController extends Controller
             return response()->json(['success' => false, 'message' => 'Missing code or state'], 400);
         }
 
-        // Decode state to get project_id
+        // Decode and validate state (project_id + CSRF nonce)
         $stateData = json_decode(base64_decode($state), true);
         $projectId = $stateData['project_id'] ?? null;
+        $storedState = session('frubix_oauth_state');
 
-        if (!$projectId) {
-            return response()->json(['success' => false, 'message' => 'Invalid state'], 400);
+        if (!$projectId || !$storedState || $state !== $storedState) {
+            return response()->json(['success' => false, 'message' => 'Invalid or expired OAuth state'], 400);
         }
+        session()->forget('frubix_oauth_state');
 
         $project = Project::find($projectId);
         if (!$project) {

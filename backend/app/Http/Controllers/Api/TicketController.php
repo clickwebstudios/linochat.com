@@ -484,7 +484,7 @@ class TicketController extends Controller
     public function updateStatus(Request $request, string $ticket_id)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:open,in_progress,waiting,resolved,closed',
+            'status' => 'required|in:open,in_progress,waiting,resolved,closed,pending',
         ]);
 
         if ($validator->fails()) {
@@ -698,20 +698,20 @@ class TicketController extends Controller
         $allProjectIds = $user->getCompanyProjectIds();
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $volume = [];
+        $startDate = now()->subDays(6)->startOfDay();
 
-        // Get last 7 days
+        $counts = Ticket::whereIn('project_id', $allProjectIds)
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('count', 'date');
+
+        $volume = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $dayName = $days[$date->dayOfWeekIso - 1];
-            
-            $count = Ticket::whereIn('project_id', $allProjectIds)
-                ->whereDate('created_at', $date->toDateString())
-                ->count();
-            
             $volume[] = [
-                'day' => $dayName,
-                'count' => $count,
+                'day' => $days[$date->dayOfWeekIso - 1],
+                'count' => $counts[$date->toDateString()] ?? 0,
             ];
         }
 
