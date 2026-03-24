@@ -34,9 +34,11 @@ use App\Http\Controllers\Api\IntegrationsController;
 |
 */
 
-// Public ticket view (no auth — guest customers)
-Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
-Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+// Public ticket view (no auth — guest customers, rate limited)
+Route::middleware('throttle:15,1')->group(function () {
+    Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
+    Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+});
 
 // Inbound email webhook (no auth — called by email provider)
 Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
@@ -52,8 +54,8 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
         Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode']);
     });
-    Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
+    Route::middleware('throttle:10,1')->post('refresh', [AuthController::class, 'refresh']);
+    Route::middleware('throttle:5,1')->post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
@@ -62,41 +64,9 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
-// DEBUG routes — only available in local environment
-if (app()->environment('local')) {
-    Route::get('/debug/token', function (Request $request) {
-        $token = $request->bearerToken();
-        try {
-            $user = auth('api')->user();
-            return response()->json([
-                'success' => true,
-                'token_received' => $token ? 'YES' : 'NO',
-                'token_length' => $token ? strlen($token) : 0,
-                'user_authenticated' => $user ? 'YES' : 'NO',
-                'user_id' => $user ? $user->id : null,
-                'auth_guard' => config('auth.defaults.guard'),
-                'jwt_secret_set' => !empty(config('jwt.secret')),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-                'token_received' => $token ? 'YES' : 'NO',
-            ]);
-        }
-    });
-    Route::middleware('auth:sanctum')->get('/debug/auth-test', function (Request $request) {
-        return response()->json([
-            'success' => true,
-            'user_id' => auth('api')->id(),
-            'user_email' => auth('api')->user()->email,
-        ]);
-    });
-}
-
-// Test route
-Route::get('/test', function () {
-    return response()->json(['message' => 'API is working!']);
+// Health check
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
 });
 
 // Health check route
@@ -278,6 +248,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
+    // Device token registration (push notifications)
+    Route::post('/devices/register', [\App\Http\Controllers\Api\DeviceTokenController::class, 'register']);
+    Route::post('/devices/unregister', [\App\Http\Controllers\Api\DeviceTokenController::class, 'unregister']);
+
     // Settings: notification preferences, notification log & activity log
     Route::get('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'getNotificationSettings']);
     Route::put('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'updateNotificationSettings']);
@@ -333,6 +307,7 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::delete('/agents/{agentId}', [SuperadminController::class, 'deleteAgent']);
     Route::post('/agents/invite', [SuperadminController::class, 'inviteAgent']);
     Route::get('/live-visitors', [SuperadminController::class, 'liveVisitors']);
+    Route::get('/analytics/overview', [SuperadminController::class, 'analyticsOverview']);
     Route::get('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'show']);
     Route::put('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'update']);
     Route::get('/ai-usage-stats', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'aiUsageStats']);

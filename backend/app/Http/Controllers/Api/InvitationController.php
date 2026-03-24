@@ -176,7 +176,7 @@ class InvitationController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {
@@ -212,10 +212,20 @@ class InvitationController extends Controller
 
         // Check if user already exists
         $user = User::where('email', $invitation->email)->first();
+        $project = Project::find($invitation->project_id);
 
         if ($user) {
-            // User exists, just link to project
-            $user->projects()->attach($invitation->project_id);
+            // Prevent cross-company assignment: if agent already works for another company, reject
+            $existingCompanyOwnerId = $user->getCompanyOwnerId();
+            if ($existingCompanyOwnerId && $project && (int) $project->user_id !== $existingCompanyOwnerId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email is already associated with another company. Please use a different email.',
+                ], 409);
+            }
+
+            // User exists in same company, just link to project
+            $user->projects()->syncWithoutDetaching([$invitation->project_id]);
         } else {
             // Create new user
             $user = User::create([

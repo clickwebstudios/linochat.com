@@ -22,14 +22,13 @@ class KbArticle extends Model
         'content',
         'status',
         'is_published',
-        'views',
-        'views_count',
-        'helpful_count',
-        'not_helpful_count',
         'source_url',
         'is_ai_generated',
         'embedding',
     ];
+
+    // views, views_count, helpful_count, not_helpful_count are NOT fillable
+    // to prevent mass assignment of metrics. Use increment() instead.
 
     protected $casts = [
         'embedding' => 'array',

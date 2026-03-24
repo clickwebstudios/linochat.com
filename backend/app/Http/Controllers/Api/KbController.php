@@ -536,12 +536,17 @@ class KbController extends Controller
         $query = $validated['query'];
         $limit = $validated['limit'] ?? 3;
 
-        // Get published articles for this project
+        // Pre-filter articles with DB LIKE to avoid loading entire table into memory
         $articles = KbArticle::whereHas('category', function ($q) use ($project_id) {
                 $q->where('project_id', $project_id);
             })
             ->where('is_published', true)
+            ->where(function ($q) use ($query) {
+                $q->where('title', 'like', '%' . $query . '%')
+                  ->orWhere('content', 'like', '%' . $query . '%');
+            })
             ->with('category')
+            ->limit(100)
             ->get();
 
         if ($articles->isEmpty()) {

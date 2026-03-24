@@ -40,12 +40,12 @@
 return [
     'paths' => ['api/*', 'widget', 'widget/*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['*'],
-    'allowed_origins_patterns' => [],
+    'allowed_origins' => array_filter([env('FRONTEND_URL', 'http://localhost:5173'), env('APP_URL')]),
+    'allowed_origins_patterns' => ['/^https?:\/\/.*$/'], // Widget endpoints use their own CORS middleware
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 86400,
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
-    'widget_allowed_origins' => ['*'],
+    'widget_allowed_origins' => ['*'], // Widget has its own domain validation middleware
 ];

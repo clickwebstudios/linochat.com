@@ -29,27 +29,18 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $user = auth('api')->user();
-        $companyId = $request->input('company_id');
-        
-        // Superadmin filtering by company
-        if ($companyId && $user->role === 'superadmin') {
-            $allProjectIds = Project::where('user_id', $companyId)->pluck('id');
-        } else {
-            $projectIds = $user->projects()->pluck('projects.id');
-            $ownedProjectIds = $user->ownedProjects()->pluck('id');
-            $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
-        }
+        $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
 
-        $query = Ticket::whereIn('project_id', $allProjectIds)
+        $query = Ticket::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
             ->with(['project', 'assignedAgent']);
 
-        // Filter by status
-        if ($request->has('status')) {
+        // Filter by status (validated)
+        if ($request->has('status') && in_array($request->input('status'), ['open', 'in_progress', 'waiting', 'resolved', 'closed', 'pending'])) {
             $query->where('status', $request->input('status'));
         }
 
-        // Filter by priority
-        if ($request->has('priority')) {
+        // Filter by priority (validated)
+        if ($request->has('priority') && in_array($request->input('priority'), ['low', 'medium', 'high', 'urgent'])) {
             $query->where('priority', $request->input('priority'));
         }
 
@@ -438,9 +429,11 @@ class TicketController extends Controller
     {
         $user = auth('api')->user();
         
+        return \DB::transaction(function () use ($user, $ticket_id) {
         $ticket = Ticket::where('id', $ticket_id)
             ->whereNull('assigned_to')
             ->whereIn('status', ['open', 'waiting'])
+            ->lockForUpdate()
             ->first();
 
         if (!$ticket) {
@@ -450,12 +443,8 @@ class TicketController extends Controller
             ], 404);
         }
 
-        // Check access (project member, owner, or superadmin)
-        $hasAccess = $user->projects()->where('projects.id', $ticket->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $ticket->project_id)->exists() ||
-                     $user->role === 'superadmin';
-
-        if (!$hasAccess) {
+        $project = \App\Models\Project::find($ticket->project_id);
+        if (!$project || !$user->canAccessProject($project)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
@@ -483,6 +472,7 @@ class TicketController extends Controller
                 'status' => 'in_progress',
             ],
         ]);
+        }); // end DB::transaction
     }
 
     /**
@@ -491,7 +481,7 @@ class TicketController extends Controller
     public function updateStatus(Request $request, string $ticket_id)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:open,in_progress,waiting,resolved,closed',
+            'status' => 'required|in:open,in_progress,waiting,resolved,closed,pending',
         ]);
 
         if ($validator->fails()) {
@@ -678,10 +668,7 @@ class TicketController extends Controller
     public function stats(Request $request)
     {
         $user = auth('api')->user();
-        
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $stats = [
             'total' => Ticket::whereIn('project_id', $allProjectIds)->count(),
@@ -705,25 +692,23 @@ class TicketController extends Controller
     {
         $user = auth('api')->user();
         
-        $projectIds = $user->projects()->pluck('projects.id');
-        $ownedProjectIds = $user->ownedProjects()->pluck('id');
-        $allProjectIds = $projectIds->merge($ownedProjectIds)->unique();
+        $allProjectIds = $user->getCompanyProjectIds();
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $volume = [];
+        $startDate = now()->subDays(6)->startOfDay();
 
-        // Get last 7 days
+        $counts = Ticket::whereIn('project_id', $allProjectIds)
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('count', 'date');
+
+        $volume = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $dayName = $days[$date->dayOfWeekIso - 1];
-            
-            $count = Ticket::whereIn('project_id', $allProjectIds)
-                ->whereDate('created_at', $date->toDateString())
-                ->count();
-            
             $volume[] = [
-                'day' => $dayName,
-                'count' => $count,
+                'day' => $days[$date->dayOfWeekIso - 1],
+                'count' => $counts[$date->toDateString()] ?? 0,
             ];
         }
 
@@ -778,7 +763,7 @@ class TicketController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to create Frubix lead manually', ['ticket_id' => $ticketId, 'error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to create lead: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to create lead. Please try again.'], 500);
         }
     }
 }

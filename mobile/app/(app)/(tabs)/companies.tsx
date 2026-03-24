@@ -43,7 +43,7 @@ export default function CompaniesScreen() {
       const data = await getCompanies();
       setCompanies(data);
     } catch (err) {
-      console.log('Companies fetch error:', err);
+      if (__DEV__) console.log('Companies fetch error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

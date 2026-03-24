@@ -18,7 +18,7 @@ class TransferRequestController extends Controller
     public function index()
     {
         $user = auth('api')->user();
-        $projectIds = $user->projects()->pluck('projects.id')->merge($user->ownedProjects()->pluck('id'))->unique();
+        $projectIds = $user->getCompanyProjectIds();
 
         $transfers = ChatTransfer::whereIn('project_id', $projectIds)
             ->where('status', 'pending')

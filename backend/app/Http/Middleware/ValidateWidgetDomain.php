@@ -34,9 +34,9 @@ class ValidateWidgetDomain
         $requestDomain = $this->extractDomain($request->header('Origin'))
             ?? $this->extractDomain($request->header('Referer'));
 
-        // No origin/referer (e.g. server-side requests) — allow
+        // No origin/referer — only allow for config endpoint (GET), block mutating requests
         if (!$requestDomain) {
-            return $next($request);
+            return $request->isMethod('GET') ? $next($request) : response()->json(['error' => 'Origin header required'], 403);
         }
 
         $projectDomain = $this->extractDomain($project->website);

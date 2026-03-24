@@ -34,7 +34,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     } else if (user.role === 'agent') {
       return <Navigate to="/agent/dashboard" replace />;
     } else if (user.role === 'superadmin') {
-      return <Navigate to="/superadmin/select-view" replace />;
+      return <Navigate to="/superadmin/dashboard" replace />;
     }
     return <Navigate to="/" replace />;
   }
@@ -62,7 +62,7 @@ export function PublicRoute({ children, redirectTo = '/dashboard' }: PublicRoute
   // If authenticated, redirect to appropriate dashboard
   if (isAuthenticated) {
     if (user?.role === 'superadmin') {
-      return <Navigate to="/superadmin/select-view" replace />;
+      return <Navigate to="/superadmin/dashboard" replace />;
     } else if (user?.role === 'admin') {
       return <Navigate to="/admin/dashboard" replace />;
     } else if (user?.role === 'agent') {

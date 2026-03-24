@@ -48,7 +48,7 @@ export default function Login() {
 
   const redirectAfterLogin = () => {
     const { user } = useAuthStore.getState();
-    if (user?.role === 'superadmin') navigate('/superadmin/select-view', { replace: true });
+    if (user?.role === 'superadmin') navigate('/superadmin/dashboard', { replace: true });
     else if (user?.role === 'admin') navigate('/admin/dashboard', { replace: true });
     else if (user?.role === 'agent') navigate('/agent/dashboard', { replace: true });
     else navigate(from, { replace: true });

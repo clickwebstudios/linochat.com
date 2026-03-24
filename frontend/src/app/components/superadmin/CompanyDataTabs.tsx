@@ -114,6 +114,7 @@ interface CompanyDataTabsProps {
   company: Company;
   viewingCompanyId: string;
   isArchived: boolean;
+  onDeleteChat?: (chatId: string) => void;
   defaultMeta: {
     mrr: string;
     joined: string;
@@ -130,6 +131,7 @@ export function CompanyDataTabs({
   company,
   viewingCompanyId,
   isArchived,
+  onDeleteChat,
   defaultMeta,
 }: CompanyDataTabsProps) {
   const navigate = useNavigate();
@@ -162,6 +164,7 @@ export function CompanyDataTabs({
                     <TableHead>Project</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Time</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -194,6 +197,24 @@ export function CompanyDataTabs({
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">{chat.time}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/superadmin/chats/${chat.id}`); }}>
+                                <Eye className="h-4 w-4 mr-2" />View
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600" onClick={e => { e.stopPropagation(); onDeleteChat?.(chat.id); }}>
+                                <Trash2 className="h-4 w-4 mr-2" />Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
                     );
                   })}

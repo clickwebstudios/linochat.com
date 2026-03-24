@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use App\Events\NotificationCreated;
+use App\Services\PushNotificationService;
 use Illuminate\Database\Eloquent\Model;
 
 class AppNotification extends Model {
@@ -14,7 +15,20 @@ class AppNotification extends Model {
     protected static function booted(): void
     {
         static::created(function (AppNotification $notification) {
+            // WebSocket broadcast (real-time in browser)
             broadcast(new NotificationCreated($notification));
+
+            // Push notification (mobile devices)
+            try {
+                PushNotificationService::sendToUsers(
+                    [$notification->user_id],
+                    $notification->title,
+                    $notification->description ?? '',
+                    ['type' => $notification->type, 'notification_id' => $notification->id]
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('Push notification failed', ['error' => $e->getMessage()]);
+            }
         });
     }
 }

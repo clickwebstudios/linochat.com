@@ -33,6 +33,7 @@ export default function CompanyDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
+    if (!id || isNaN(Number(id))) return;
     try {
       const companyData = await getCompanyDetail(Number(id));
       setCompany(companyData);
@@ -41,7 +42,7 @@ export default function CompanyDetailScreen() {
         setChats(chatsData);
       }
     } catch (err) {
-      console.log('Company detail error:', err);
+      if (__DEV__) console.log('Company detail error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

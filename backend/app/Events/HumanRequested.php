@@ -24,7 +24,7 @@ class HumanRequested implements ShouldBroadcastNow
             return [];
         }
 
-        $agentIds = $project->agents->pluck('id')->merge([$project->user_id])->unique()->filter();
+        $agentIds = $project->getCompanyAgentIds();
         $channels = $agentIds->map(fn ($id) => new PrivateChannel('agent.' . $id))->all();
         // Also broadcast to project channel so all project members receive it
         $channels[] = new PrivateChannel('project.' . $project->id);
