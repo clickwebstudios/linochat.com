@@ -858,8 +858,8 @@ class AgentController extends Controller
             ], 403);
         }
 
-        // Toggle AI enabled status
-        $newAiStatus = !$chat->ai_enabled;
+        // Explicit set if provided, otherwise toggle
+        $newAiStatus = $request->has('ai_enabled') ? (bool) $request->input('ai_enabled') : !$chat->ai_enabled;
         
         // Update chat
         $chat->update([
