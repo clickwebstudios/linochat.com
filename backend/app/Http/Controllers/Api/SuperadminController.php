@@ -351,7 +351,9 @@ class SuperadminController extends Controller
         }
         $projectIds = $company->ownedProjects()->pluck('id');
         $agentIds = DB::table('project_user')->whereIn('project_id', $projectIds)->pluck('user_id')->unique();
-        $agents = User::whereIn('id', $agentIds)->get();
+        // Include the admin (company owner) + all assigned agents
+        $allUserIds = $agentIds->push($company->id)->unique();
+        $agents = User::whereIn('id', $allUserIds)->get();
         $todayStart = now()->startOfDay();
         $data = $agents->map(function ($agent) use ($todayStart) {
             $activeTickets = Ticket::where('assigned_to', $agent->id)

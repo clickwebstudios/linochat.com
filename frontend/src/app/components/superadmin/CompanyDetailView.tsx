@@ -115,6 +115,7 @@ export function CompanyDetailView({
   const [companyAgents, setCompanyAgents] = useState<Agent[]>([]);
   const [companyChats, setCompanyChats] = useState<Chat[]>([]);
   const [companyTickets, setCompanyTickets] = useState<Ticket[]>([]);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginAsOpen, setLoginAsOpen] = useState(false);
@@ -162,6 +163,13 @@ export function CompanyDetailView({
           setCompanyTickets(ticketsResponse.data || []);
         } catch {
           setCompanyTickets([]);
+        }
+
+        try {
+          const activityResponse = await api.get<any>(`/activity-log?company_id=${viewingCompanyId}`);
+          setActivityLogs(Array.isArray(activityResponse.data) ? activityResponse.data : []);
+        } catch {
+          setActivityLogs([]);
         }
 
         try {
@@ -459,6 +467,8 @@ export function CompanyDetailView({
             company={company}
             companyProjects={companyProjects}
             companyAgents={companyAgents}
+            companyChats={companyChats}
+            activityLogs={activityLogs}
             totalTickets={totalTickets}
             defaultMeta={defaultMeta}
             isArchived={isArchived}

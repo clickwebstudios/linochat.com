@@ -209,25 +209,9 @@ export default function CompanyDetails() {
   const activeTickets = Math.floor(totalTickets * 0.4);
   const resolvedTickets = totalTickets - activeTickets;
 
-  // Mock activity data for charts (can be replaced with real data later)
-  const ticketActivityData = [
-    { month: 'Jan', tickets: 45, resolved: 38 },
-    { month: 'Feb', tickets: 52, resolved: 45 },
-    { month: 'Mar', tickets: 48, resolved: 42 },
-    { month: 'Apr', tickets: 61, resolved: 54 },
-    { month: 'May', tickets: 55, resolved: 48 },
-    { month: 'Jun', tickets: 67, resolved: 59 },
-  ];
-
-  const chatVolumeData = [
-    { day: 'Mon', chats: 124 },
-    { day: 'Tue', chats: 135 },
-    { day: 'Wed', chats: 148 },
-    { day: 'Thu', chats: 142 },
-    { day: 'Fri', chats: 156 },
-    { day: 'Sat', chats: 89 },
-    { day: 'Sun', chats: 76 },
-  ];
+  // Empty — will be populated from analytics API when available
+  const ticketActivityData: { month: string; tickets: number; resolved: number }[] = [];
+  const chatVolumeData: { day: string; chats: number }[] = [];
 
   // Format date
   const formatDate = (dateString: string) => {
