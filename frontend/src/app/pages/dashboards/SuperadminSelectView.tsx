@@ -6,6 +6,14 @@ import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent } from '../../components/ui/card';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
   Building2,
   Search,
   ChevronRight,
@@ -13,6 +21,7 @@ import {
   Shield,
   User,
   Loader2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
@@ -22,8 +31,11 @@ interface Company {
   id: string;
   name: string;
   email: string;
+  plan: string;
   projects_count: number;
   agents_count: number;
+  created_at: string;
+  status: string;
 }
 
 interface CompanyUser {
@@ -44,6 +56,8 @@ export default function SuperadminSelectView() {
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<string>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     api.get<any>('/superadmin/companies?per_page=100').then(res => {
@@ -91,10 +105,18 @@ export default function SuperadminSelectView() {
     }
   };
 
-  const filteredCompanies = companies.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase())
-  );
+  function toggleSort(key: string) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+
+  const filteredCompanies = companies
+    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const av = (a as any)[sortKey]; const bv = (b as any)[sortKey];
+      const cmp = typeof av === 'string' ? av.localeCompare(bv) : (av ?? 0) - (bv ?? 0);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
 
   const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -164,7 +186,7 @@ export default function SuperadminSelectView() {
 
         {/* Company / User List */}
         {!selectedCompany ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 Companies ({filteredCompanies.length})
@@ -175,32 +197,72 @@ export default function SuperadminSelectView() {
             ) : filteredCompanies.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">No companies found</div>
             ) : (
-              <div className="grid gap-2">
-                {filteredCompanies.map(company => (
-                  <Card
-                    key={company.id}
-                    className="cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => { setSelectedCompany(company); setSearch(''); }}
-                  >
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                          {company.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{company.name}</div>
-                        <div className="text-xs text-muted-foreground">{company.email}</div>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{company.projects_count} projects</span>
-                        <span>{company.agents_count} agents</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('name')}>
+                        <span className="flex items-center gap-1">Company <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('plan')}>
+                        <span className="flex items-center gap-1">Plan <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort('projects_count')}>
+                        <span className="flex items-center justify-center gap-1">Projects <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort('agents_count')}>
+                        <span className="flex items-center justify-center gap-1">Users <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('status')}>
+                        <span className="flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
+                        <span className="flex items-center gap-1">Created <ArrowUpDown className="h-3 w-3" /></span>
+                      </TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCompanies.map(company => (
+                      <TableRow
+                        key={company.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => { setSelectedCompany(company); setSearch(''); }}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                                {company.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{company.name}</div>
+                              <div className="text-xs text-muted-foreground truncate">{company.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs capitalize">{company.plan || 'free'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-sm">{company.projects_count}</TableCell>
+                        <TableCell className="text-center text-sm">{company.agents_count}</TableCell>
+                        <TableCell>
+                          <Badge variant={company.status === 'Active' ? 'default' : 'secondary'} className="text-xs">
+                            {company.status || 'Active'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {company.created_at ? new Date(company.created_at).toLocaleDateString() : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
             )}
           </div>
         ) : (
