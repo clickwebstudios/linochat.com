@@ -532,8 +532,10 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                         if (res.success && res.data?.prompt) {
                           updateSetting('system_prompt', res.data.prompt);
                           toast.success('Prompt generated! Review and publish when ready.');
+                        } else {
+                          toast.error(res.message || 'Failed to generate prompt');
                         }
-                      } catch { toast.error('Failed to generate prompt'); }
+                      } catch (err: any) { toast.error(err?.message || 'Failed to generate prompt'); }
                       finally { btn.disabled = false; btn.textContent = 'Generate'; }
                     }}
                   >
