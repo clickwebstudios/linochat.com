@@ -582,14 +582,26 @@ class WidgetController extends Controller
             if ($isFrubixManaged) {
                 try {
                     $frubixUrl = rtrim($frubixManaged['api_url'], '/');
+                    $chatMeta = $chat->metadata ?? [];
                     Http::withToken($frubixManaged['api_token'])->post("{$frubixUrl}/api/linochat/messages", [
                         'sender_name'              => $chat->customer_name ?: 'Visitor',
                         'sender_email'             => $chat->customer_email,
+                        'sender_phone'             => $chatMeta['customer_phone'] ?? null,
                         'sender_type'              => 'customer',
                         'message'                  => $input['message'],
                         'channel'                  => 'linochat',
                         'source'                   => 'linochat',
                         'external_conversation_id' => (string) $chat->id,
+                        'metadata'                 => [
+                            'customer_name'  => $chat->customer_name,
+                            'customer_email' => $chat->customer_email,
+                            'customer_phone' => $chatMeta['customer_phone'] ?? null,
+                            'device'         => $chatMeta['device'] ?? null,
+                            'browser'        => $chatMeta['browser'] ?? null,
+                            'location'       => $chatMeta['location'] ?? $chatMeta['city'] ?? null,
+                            'referrer'       => $chatMeta['referrer'] ?? null,
+                            'current_page'   => $chatMeta['current_page'] ?? null,
+                        ],
                     ]);
                 } catch (\Throwable $e) {
                     Log::warning('Failed to forward message to Frubix', ['error' => $e->getMessage()]);

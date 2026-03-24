@@ -245,12 +245,23 @@ class AiChatService
                 }
             }
 
-            // Extract and save customer name if AI detected it
+            // Extract and save customer details if AI detected them
             $cleanedContent = $this->cleanAiResponse($aiContent);
             $customerName = $this->extractCustomerName($aiContent);
+            $chatUpdates = [];
+            $metaUpdates = $chat->metadata ?? [];
             if ($customerName && (empty($chat->customer_name) || $chat->customer_name === 'Guest')) {
-                $chat->update(['customer_name' => $customerName]);
+                $chatUpdates['customer_name'] = $customerName;
             }
+            // Extract phone/email from customer's message
+            if (preg_match('/\b(\+?\d[\d\s\-().]{7,15}\d)\b/', $customerMessage, $pm) && empty($metaUpdates['customer_phone'])) {
+                $metaUpdates['customer_phone'] = preg_replace('/[^\d+]/', '', $pm[1]);
+            }
+            if (preg_match('/[\w.+-]+@[\w-]+\.[\w.]+/', $customerMessage, $em) && empty($chat->customer_email)) {
+                $chatUpdates['customer_email'] = $em[0];
+            }
+            if (!empty($metaUpdates)) $chatUpdates['metadata'] = $metaUpdates;
+            if (!empty($chatUpdates)) $chat->update($chatUpdates);
 
             // Create and save AI message with KB references
             $metadata = [
