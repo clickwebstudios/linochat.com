@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { api } from '../../api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -65,6 +66,7 @@ interface ChatsSectionProps {
 }
 
 export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatId, selectedChat, isLoading, onChatsRefresh, statusFilter, onStatusFilterChange }: ChatsSectionProps) {
+  const navigate = useNavigate();
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -140,7 +142,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                   className={`px-4 py-3 cursor-pointer transition-colors border-l-3 ${chat.borderColor} ${
                     selectedChatId === chat.id ? 'bg-primary/10' : 'hover:bg-muted/50'
                   }`}
-                  onClick={() => setSelectedChatId(chat.id)}
+                  onClick={() => navigate(`/superadmin/chats/${chat.id}`)}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-8 w-8 shrink-0 mt-0.5">
@@ -254,13 +256,18 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                 <div className="p-4 space-y-4">
                   {selectedChat.messages?.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.from === 'agent' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-lg p-3 ${
-                        msg.from === 'agent'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}>
-                        <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                        <p className={`text-xs mt-1 ${msg.from === 'agent' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+                      <div className="max-w-[70%]">
+                        {msg.is_ai && (
+                          <p className="text-[10px] font-medium text-secondary mb-1 text-right">AI Assistant</p>
+                        )}
+                        <div className={`px-3.5 py-2.5 shadow-sm ${
+                          msg.from === 'agent'
+                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                            : 'bg-white border border-[#e5e7eb] text-[#0a0a0a] rounded-2xl rounded-bl-md'
+                        }`}>
+                          <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                          <p className={`text-xs mt-1 ${msg.from === 'agent' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+                        </div>
                       </div>
                     </div>
                   ))}

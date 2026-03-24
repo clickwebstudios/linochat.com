@@ -574,7 +574,8 @@ class SuperadminController extends Controller
         
         $data = $chats->map(function($chat) {
             $messages = $chat->messages->map(fn ($m) => [
-                'from' => in_array($m->sender_type, ['agent', 'user']) ? 'agent' : 'customer',
+                'from' => in_array($m->sender_type, ['agent', 'user', 'ai']) ? 'agent' : 'customer',
+                'is_ai' => $m->is_ai || $m->sender_type === 'ai',
                 'text' => $m->content ?? '',
                 'time' => $m->created_at?->toIso8601String() ?? '',
             ])->values()->all();

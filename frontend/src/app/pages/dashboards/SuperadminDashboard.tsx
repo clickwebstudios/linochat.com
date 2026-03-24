@@ -352,6 +352,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
       from: m.from,
       text: m.text,
       time: m.time ? new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      is_ai: m.is_ai || false,
     })),
   }));
 
