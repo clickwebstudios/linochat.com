@@ -31,7 +31,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email'    => 'required|email',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -64,10 +64,10 @@ class AuthController extends Controller
             'first_name'   => 'required|string|max:100',
             'last_name'    => 'required|string|max:100',
             'email'        => 'required|string|email|max:255|unique:users',
-            'password'     => 'required|string|min:6|confirmed',
+            'password'     => 'required|string|min:8|confirmed',
             'website'      => 'required|url|max:255',
             'company_name' => 'required|string|max:255',
-            'role'         => 'sometimes|string|in:admin,agent,superadmin',
+            // Role is always 'admin' for self-registration (agents are invited)
         ]);
 
         if ($validator->fails()) {
@@ -78,7 +78,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $role = $request->input('role', 'admin');
+
 
         $user = User::create([
             'first_name'   => $request->first_name,
@@ -86,7 +86,7 @@ class AuthController extends Controller
             'company_name' => $request->company_name,
             'email'        => $request->email,
             'password'     => Hash::make($request->password),
-            'role'         => $role,
+            'role'         => 'admin',
             'status'       => 'Active',
             'join_date'    => now(),
         ]);
@@ -441,7 +441,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'token'    => 'required|string',
             'email'    => 'required|email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {

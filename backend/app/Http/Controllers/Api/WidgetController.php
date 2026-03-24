@@ -287,7 +287,7 @@ class WidgetController extends Controller
         // Accept customer_id from query (GET/JSONP) or body (POST)
         $customerId = $request->input('customer_id') ?? $request->query('customer_id');
         if (empty(trim((string) $customerId))) {
-            $customerId = 'cust_' . Str::random(16);
+            $customerId = 'cust_' . Str::uuid()->toString();
         }
 
         $validator = Validator::make([

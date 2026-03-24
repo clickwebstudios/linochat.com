@@ -28,7 +28,12 @@ class SettingsController extends Controller
             return response()->json(['message' => 'Company not found'], 404);
         }
 
-        $company->update(['notification_settings' => $request->all()]);
+        $allowed = [
+            'ticket_created_admin', 'ticket_created_customer', 'ticket_reply',
+            'ticket_closed', 'chat_handover', 'new_chat', 'booking_created', 'agent_assigned',
+        ];
+        $settings = collect($request->only($allowed))->map(fn ($v) => is_array($v) ? array_intersect_key($v, array_flip(['email', 'sms'])) : $v)->all();
+        $company->update(['notification_settings' => $settings]);
 
         return response()->json(['message' => 'Settings saved', 'data' => $company->notification_settings]);
     }

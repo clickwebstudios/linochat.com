@@ -34,9 +34,11 @@ use App\Http\Controllers\Api\IntegrationsController;
 |
 */
 
-// Public ticket view (no auth — guest customers)
-Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
-Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+// Public ticket view (no auth — guest customers, rate limited)
+Route::middleware('throttle:15,1')->group(function () {
+    Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
+    Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+});
 
 // Inbound email webhook (no auth — called by email provider)
 Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
@@ -52,8 +54,8 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
         Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode']);
     });
-    Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
+    Route::middleware('throttle:10,1')->post('refresh', [AuthController::class, 'refresh']);
+    Route::middleware('throttle:5,1')->post('verify-email-code', [AuthController::class, 'verifyEmailCode']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
