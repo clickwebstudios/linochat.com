@@ -36,7 +36,8 @@ class AgentController extends Controller
         $query = Chat::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
             ->with(['project', 'agent', 'messages' => function($q) {
                 $q->latest()->limit(1);
-            }]);
+            }])
+            ->withCount(['messages as unread_messages_count' => fn ($q) => $q->whereIn('sender_type', ['customer', 'ai'])->whereNull('read_at')]);
 
         if ($status === 'active') {
             $query->whereIn('status', ['active', 'waiting', 'ai_handling']);
@@ -238,8 +239,10 @@ class AgentController extends Controller
     {
         $user = auth('api')->user();
         
+        return \DB::transaction(function () use ($user, $chat_id) {
         $chat = Chat::where('id', $chat_id)
             ->whereIn('status', ['waiting', 'ai_handling'])
+            ->lockForUpdate()
             ->first();
 
         if (!$chat) {
@@ -249,19 +252,14 @@ class AgentController extends Controller
             ], 404);
         }
 
-        // Check if user has access to this project (superadmin can take any chat)
-        $hasAccess = $user->role === 'superadmin' ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists();
-
-        if (!$hasAccess) {
+        $project = Project::find($chat->project_id);
+        if (!$project || !$user->canAccessProject($project)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
             ], 403);
         }
 
-        // Assign chat to agent (superadmin assigns to themselves)
         $chat->update([
             'agent_id' => $user->id,
             'status' => 'active',
@@ -287,6 +285,7 @@ class AgentController extends Controller
                 'status' => 'active',
             ],
         ]);
+        }); // end DB::transaction
     }
 
     /**

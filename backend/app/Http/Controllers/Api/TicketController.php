@@ -34,13 +34,13 @@ class TicketController extends Controller
         $query = Ticket::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
             ->with(['project', 'assignedAgent']);
 
-        // Filter by status
-        if ($request->has('status')) {
+        // Filter by status (validated)
+        if ($request->has('status') && in_array($request->input('status'), ['open', 'in_progress', 'waiting', 'resolved', 'closed', 'pending'])) {
             $query->where('status', $request->input('status'));
         }
 
-        // Filter by priority
-        if ($request->has('priority')) {
+        // Filter by priority (validated)
+        if ($request->has('priority') && in_array($request->input('priority'), ['low', 'medium', 'high', 'urgent'])) {
             $query->where('priority', $request->input('priority'));
         }
 
@@ -432,9 +432,11 @@ class TicketController extends Controller
     {
         $user = auth('api')->user();
         
+        return \DB::transaction(function () use ($user, $ticket_id) {
         $ticket = Ticket::where('id', $ticket_id)
             ->whereNull('assigned_to')
             ->whereIn('status', ['open', 'waiting'])
+            ->lockForUpdate()
             ->first();
 
         if (!$ticket) {
@@ -444,12 +446,8 @@ class TicketController extends Controller
             ], 404);
         }
 
-        // Check access (project member, owner, or superadmin)
-        $hasAccess = $user->projects()->where('projects.id', $ticket->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $ticket->project_id)->exists() ||
-                     $user->role === 'superadmin';
-
-        if (!$hasAccess) {
+        $project = \App\Models\Project::find($ticket->project_id);
+        if (!$project || !$user->canAccessProject($project)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
@@ -477,6 +475,7 @@ class TicketController extends Controller
                 'status' => 'in_progress',
             ],
         ]);
+        }); // end DB::transaction
     }
 
     /**
@@ -767,7 +766,7 @@ class TicketController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to create Frubix lead manually', ['ticket_id' => $ticketId, 'error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to create lead: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to create lead. Please try again.'], 500);
         }
     }
 }

@@ -190,7 +190,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix client search failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -209,7 +209,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix schedule fetch failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -227,7 +227,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix appointment creation failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 
@@ -245,7 +245,7 @@ class IntegrationsController extends Controller
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('Frubix appointment update failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Integration request failed. Please try again.'], 500);
         }
     }
 

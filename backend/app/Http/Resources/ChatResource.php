@@ -8,7 +8,8 @@ class ChatResource extends JsonResource
 {
     public function toArray($request)
     {
-        $unreadCount = $this->messages()
+        // Use pre-loaded withCount if available, otherwise fall back to query
+        $unreadCount = $this->unread_messages_count ?? $this->messages()
             ->whereIn('sender_type', ['customer', 'ai'])
             ->whereNull('read_at')
             ->count();

@@ -25,16 +25,16 @@ class InboundEmailController extends Controller
 {
     public function handle(Request $request)
     {
-        // Verify shared secret — required in production
+        // Verify shared secret — required in production (fail closed)
         $secret   = config('services.inbound_email.secret', env('INBOUND_EMAIL_SECRET'));
         $provided = $request->input('secret') ?? $request->query('secret');
-        if (!$secret && app()->environment('production')) {
-            Log::error('InboundEmail: INBOUND_EMAIL_SECRET not configured in production');
-            return response()->json(['ok' => true]);
+        if (!$secret) {
+            Log::error('InboundEmail: INBOUND_EMAIL_SECRET not configured — rejecting webhook');
+            return response()->json(['ok' => false, 'message' => 'Secret not configured'], 403);
         }
-        if ($secret && !hash_equals($secret, (string) $provided)) {
+        if (!hash_equals($secret, (string) $provided)) {
             Log::warning('InboundEmail: invalid secret from ' . $request->ip());
-            return response()->json(['ok' => true]);
+            return response()->json(['ok' => false, 'message' => 'Invalid secret'], 403);
         }
 
         try {
@@ -88,8 +88,8 @@ class InboundEmailController extends Controller
             TicketMessage::create([
                 'ticket_id'   => $ticket->id,
                 'sender_type' => $senderType,
-                'sender_id'   => $fromEmail,
-                'content'     => $content,
+                'sender_id'   => mb_substr(filter_var($fromEmail, FILTER_SANITIZE_EMAIL) ?: 'unknown', 0, 255),
+                'content'     => mb_substr(strip_tags($content), 0, 10000),
             ]);
 
             // Reopen pending tickets when customer replies

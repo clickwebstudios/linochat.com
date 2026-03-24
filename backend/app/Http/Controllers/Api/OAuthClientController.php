@@ -20,8 +20,7 @@ class OAuthClientController extends Controller
         // Manually query to keep it simple
         $clients = OAuthClient::where('user_id', $request->user()->id)
             ->withCount('accessTokens')
-            ->get()
-            ->makeVisible('client_secret');
+            ->get();
 
         return response()->json(['success' => true, 'data' => $clients]);
     }
@@ -58,8 +57,7 @@ class OAuthClientController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $client->makeVisible('client_secret')
-                ->loadCount('accessTokens'),
+            'data'    => $client->loadCount('accessTokens'),
         ]);
     }
 

@@ -45,6 +45,11 @@ class AuthController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user || !Hash::check($request->input('password'), $user->password)) {
+            \Log::warning('Failed login attempt', [
+                'email' => $request->input('email'),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',

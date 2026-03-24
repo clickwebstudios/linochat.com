@@ -1095,6 +1095,11 @@ class SuperadminController extends Controller
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
+        // Prevent impersonating other superadmins (escalation vector)
+        if ($targetUser->role === 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Cannot impersonate superadmin accounts'], 403);
+        }
+
         // Audit log
         \Illuminate\Support\Facades\Log::info('Superadmin impersonation', [
             'superadmin_id' => $superadmin->id,
@@ -1107,7 +1112,7 @@ class SuperadminController extends Controller
         ]);
 
         // Create a token for the target user
-        $token = $targetUser->createToken('impersonation', ['*'], now()->addHours(8));
+        $token = $targetUser->createToken('impersonation', ['impersonated'], now()->addHours(2));
         $project = $targetUser->ownedProjects()->first() ?? $targetUser->projects()->first();
 
         return response()->json([

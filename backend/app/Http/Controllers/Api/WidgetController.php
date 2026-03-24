@@ -91,7 +91,7 @@ class WidgetController extends Controller
         } catch (\Throwable $e) {
             return $this->configResponse($request, [
                 'success' => false,
-                'message' => 'Server error: ' . $e->getMessage(),
+                'message' => 'Server error. Please try again.',
             ], 500);
         }
     }
@@ -701,7 +701,7 @@ class WidgetController extends Controller
             \Illuminate\Support\Facades\Log::error('Send message failed', ['error' => $e->getMessage()]);
             return $this->sendMessageResponse($request, [
                 'success' => false,
-                'message' => 'Server error: ' . $e->getMessage(),
+                'message' => 'Server error. Please try again.',
             ], 500);
         }
     }
