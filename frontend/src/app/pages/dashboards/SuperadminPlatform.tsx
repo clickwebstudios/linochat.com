@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
@@ -23,7 +23,21 @@ import {
   Activity,
   Receipt,
   BarChart3,
+  Search,
+  MessageSquare,
+  Ticket,
+  FolderKanban,
+  UserPlus,
+  AlertCircle,
 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -124,15 +138,7 @@ export default function SuperadminPlatform() {
           <SuperadminDashboard hideHeader sectionOverride="companies" />
         )}
 
-        {activeTab === 'activity' && (
-          <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-lg font-semibold mb-4">Platform Activity</h2>
-            <div className="text-center py-20 text-muted-foreground">
-              <Activity className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Platform-wide activity feed coming soon.</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'activity' && <PlatformActivityFeed />}
 
         {activeTab === 'analytics' && (
           <div className="p-6 max-w-4xl mx-auto">
@@ -334,6 +340,199 @@ function PricingTab() {
             </Card>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+// ── Platform Activity Feed ─────────────────────────────────────────
+const ACTIVITY_TYPES = [
+  { value: '', label: 'All Types' },
+  { value: 'chat_created', label: 'Chat Created' },
+  { value: 'ticket_created', label: 'Ticket Created' },
+  { value: 'ticket_resolved', label: 'Ticket Resolved' },
+  { value: 'agent_invited', label: 'Agent Invited' },
+  { value: 'project_created', label: 'Project Created' },
+  { value: 'ai_response', label: 'AI Response' },
+  { value: 'handover', label: 'Human Handover' },
+];
+
+const TYPE_ICONS: Record<string, { icon: any; color: string; bg: string }> = {
+  chat_created: { icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100' },
+  ticket_created: { icon: Ticket, color: 'text-orange-600', bg: 'bg-orange-100' },
+  ticket_resolved: { icon: Ticket, color: 'text-green-600', bg: 'bg-green-100' },
+  agent_invited: { icon: UserPlus, color: 'text-purple-600', bg: 'bg-purple-100' },
+  project_created: { icon: FolderKanban, color: 'text-primary', bg: 'bg-primary/10' },
+  ai_response: { icon: Activity, color: 'text-secondary', bg: 'bg-secondary/10' },
+  handover: { icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-100' },
+};
+
+interface ActivityEntry {
+  id: number;
+  type: string;
+  title: string;
+  description: string | null;
+  user_name: string | null;
+  project_name: string | null;
+  company_name: string | null;
+  created_at: string;
+}
+
+function PlatformActivityFeed() {
+  const [logs, setLogs] = useState<ActivityEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ per_page: '50', page: String(page) });
+      if (typeFilter) params.set('type', typeFilter);
+      if (searchQuery) params.set('search', searchQuery);
+      if (dateFrom) params.set('date_from', dateFrom);
+      if (dateTo) params.set('date_to', dateTo);
+      const res = await api.get<any>(`/activity-log?${params}`);
+      setLogs(Array.isArray(res.data) ? res.data : []);
+      setTotalPages(res.pagination?.last_page || 1);
+      setTotal(res.pagination?.total || 0);
+    } catch {
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, typeFilter, searchQuery, dateFrom, dateTo]);
+
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [typeFilter, searchQuery, dateFrom, dateTo]);
+
+  const getTimeAgo = (d: string) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(d).toLocaleDateString();
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Platform Activity</h2>
+        <Badge variant="outline">{total} total</Badge>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <Label className="text-xs mb-1">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search activity..."
+                  className="pl-8 h-9"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="w-[180px]">
+              <Label className="text-xs mb-1">Type</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="All Types" /></SelectTrigger>
+                <SelectContent>
+                  {ACTIVITY_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value || 'all'}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[150px]">
+              <Label className="text-xs mb-1">From</Label>
+              <Input type="date" className="h-9" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            </div>
+            <div className="w-[150px]">
+              <Label className="text-xs mb-1">To</Label>
+              <Input type="date" className="h-9" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            </div>
+            {(typeFilter || searchQuery || dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" className="h-9" onClick={() => { setTypeFilter(''); setSearchQuery(''); setDateFrom(''); setDateTo(''); }}>
+                Clear
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Activity Table */}
+      <Card>
+        {loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : logs.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Activity className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p>No activity found</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40px]" />
+                <TableHead>Event</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map(log => {
+                const typeInfo = TYPE_ICONS[log.type] || { icon: Activity, color: 'text-muted-foreground', bg: 'bg-muted' };
+                const Icon = typeInfo.icon;
+                return (
+                  <TableRow key={log.id}>
+                    <TableCell>
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${typeInfo.bg}`}>
+                        <Icon className={`h-4 w-4 ${typeInfo.color}`} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-sm">{log.title}</div>
+                      {log.description && <div className="text-xs text-muted-foreground truncate max-w-[300px]">{log.description}</div>}
+                    </TableCell>
+                    <TableCell className="text-sm">{log.company_name || '—'}</TableCell>
+                    <TableCell className="text-sm">{log.project_name || '—'}</TableCell>
+                    <TableCell className="text-sm">{log.user_name || 'System'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{getTimeAgo(log.created_at)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          </div>
+        </div>
       )}
     </div>
   );

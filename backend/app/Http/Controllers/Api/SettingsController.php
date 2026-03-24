@@ -76,21 +76,51 @@ class SettingsController extends Controller
             $query->where('company_id', $user->company_id);
         }
 
-        $logs = $query->orderByDesc('created_at')
-            ->limit(200)
-            ->get()
-            ->map(function ($log) {
-                return [
-                    'id' => $log->id,
-                    'type' => $log->type,
-                    'title' => $log->title,
-                    'description' => $log->description,
-                    'user_name' => $log->user?->name,
-                    'project_name' => $log->project?->name,
-                    'created_at' => $log->created_at,
-                ];
+        // Filters
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->input('company_id'));
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             });
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
 
-        return response()->json(['data' => $logs]);
+        $perPage = min((int) $request->input('per_page', 50), 200);
+        $paginated = $query->orderByDesc('created_at')->paginate($perPage);
+
+        $data = $paginated->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'type' => $log->type,
+                'title' => $log->title,
+                'description' => $log->description,
+                'user_name' => $log->user?->name,
+                'project_name' => $log->project?->name,
+                'company_name' => $log->company?->name ?? null,
+                'created_at' => $log->created_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
     }
 }
