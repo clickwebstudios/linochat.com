@@ -106,7 +106,7 @@ class AiChatService
             // Check for handover triggers
             if ($this->shouldHandoverToHuman($customerMessage)) {
                 broadcast(new AiTyping($chat->id, false, $this->model));
-                return $this->createHandoverResponse($chat);
+                return $this->createHandoverResponse($chat, null, $customerMessage);
             }
 
             // Build system prompt
@@ -216,7 +216,7 @@ class AiChatService
                 }
                 // Default: transfer to human
                 broadcast(new AiTyping($chat->id, false, $this->model));
-                return $this->createHandoverResponse($chat, $aiContent);
+                return $this->createHandoverResponse($chat, $aiContent, $customerMessage);
             }
 
             // Check if AI is requesting contact info for ticket creation
@@ -278,7 +278,7 @@ class AiChatService
                 $metadata['kb_references'] = array_map(fn($article) => [
                     'id' => $article->id,
                     'title' => $article->title,
-                    'category' => $article->category->name ?? null,
+                    'category' => $article->category?->name ?? null,
                 ], $kbContext);
             }
             
@@ -834,7 +834,7 @@ class AiChatService
     /**
      * Create handover response
      */
-    protected function createHandoverResponse(Chat $chat, ?string $aiContent = null): array
+    protected function createHandoverResponse(Chat $chat, ?string $aiContent = null, ?string $customerMessage = null): array
     {
         // Update chat status
         $chat->update(['status' => 'waiting']);

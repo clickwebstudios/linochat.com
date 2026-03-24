@@ -344,10 +344,11 @@ class TicketController extends Controller
         ]);
 
         // Add system message
-        $messageText = $agentId 
-            ? ($oldAgent 
-                ? "Reassigned from {$oldAgent->name} to {$ticket->fresh()->assignedAgent->name}"
-                : "Assigned to {$ticket->fresh()->assignedAgent->name}")
+        $freshAgentName = $agentId ? ($ticket->fresh()->assignedAgent?->name ?? 'Unknown') : null;
+        $messageText = $agentId
+            ? ($oldAgent
+                ? "Reassigned from {$oldAgent->name} to {$freshAgentName}"
+                : "Assigned to {$freshAgentName}")
             : 'Unassigned';
 
         TicketMessage::create([

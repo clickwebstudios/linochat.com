@@ -157,7 +157,7 @@ class KbController extends Controller
         $article = KbArticle::create([
             'category_id' => $category_id,
             'project_id' => $project_id,
-            'author_id' => $user?->id ?? 1,
+            'author_id' => $user->id,
             'title' => $validated['title'],
             'slug' => \Str::slug($validated['title']),
             'content' => $validated['content'],
