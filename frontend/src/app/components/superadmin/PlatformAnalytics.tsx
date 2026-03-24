@@ -198,7 +198,7 @@ export default function PlatformAnalytics() {
         <KPICard label="Active Chats" value={dashStats?.active_chats || 0} icon={MessageSquare} color="text-purple-600" bg="bg-purple-100" />
         <KPICard label="Total Tickets" value={stats?.total_tickets || 0} icon={Ticket} color="text-orange-600" bg="bg-orange-100" />
         <KPICard label="AI API Calls" value={aiUsage?.totals?.calls?.toLocaleString() || '0'} icon={Bot} color="text-cyan-600" bg="bg-cyan-100" />
-        <KPICard label="AI Profit" value={`$${(aiUsage?.totals?.profit || 0).toFixed(2)}`} icon={TrendingUp} color="text-emerald-600" bg="bg-emerald-100" />
+        <KPICard label="AI Profit" value={`$${Number(aiUsage?.totals?.profit || 0).toFixed(2)}`} icon={TrendingUp} color="text-emerald-600" bg="bg-emerald-100" />
       </div>
 
       {/* Revenue & Growth Charts */}
@@ -374,7 +374,7 @@ export default function PlatformAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" fontSize={10} tickFormatter={d => d.slice(5)} />
                     <YAxis fontSize={10} />
-                    <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`]} />
+                    <Tooltip formatter={(v: number) => [`$${Number(v).toFixed(2)}`]} />
                     <Legend fontSize={11} />
                     <Line type="monotone" dataKey="base_cost" stroke="#EF4444" strokeWidth={1.5} name="Cost" dot={false} />
                     <Line type="monotone" dataKey="charged_cost" stroke="#22C55E" strokeWidth={1.5} name="Revenue" dot={false} />
@@ -408,9 +408,9 @@ export default function PlatformAnalytics() {
                   <TableRow key={p.project_id}>
                     <TableCell className="font-medium text-sm">{p.project_name}</TableCell>
                     <TableCell className="text-right text-sm">{p.calls.toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-sm">${p.base_cost.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-sm">${p.charged_cost.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-sm font-medium text-green-600">${(p.charged_cost - p.base_cost).toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-sm">${Number(p.base_cost).toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-sm">${Number(p.charged_cost).toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-sm font-medium text-green-600">${(Number(p.charged_cost) - Number(p.base_cost)).toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

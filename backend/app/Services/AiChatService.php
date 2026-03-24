@@ -1198,6 +1198,24 @@ class AiChatService
             }
         }
 
+        // Check for duplicate booking (same phone, same day)
+        if (!$conflictMessage && $phone && $dateStr) {
+            try {
+                $existingJobs = FrubixService::getSchedule($frubixConfig, [
+                    'phone' => $phone,
+                    'date_from' => $dateStr,
+                    'date_to' => $dateStr,
+                ], $project);
+                if (!empty($existingJobs)) {
+                    $existingDesc = $existingJobs[0]['scheduled_at_local'] ?? $existingJobs[0]['scheduled_at'] ?? $dateStr;
+                    $conflictMessage = "You already have an appointment on {$dateStr} ({$existingDesc}). Our team will confirm if this is a new service request.";
+                    Log::info('Duplicate booking detected for same customer', ['phone' => $phone, 'date' => $dateStr, 'existing' => count($existingJobs)]);
+                }
+            } catch (\Exception $e) {
+                // Proceed without duplicate check
+            }
+        }
+
         // Create appointment in Frubix (skip if conflict detected)
         if (!$conflictMessage) {
             try {
@@ -1325,19 +1343,19 @@ class AiChatService
     {
         $integrations = $project->integrations ?? [];
 
-        // Check legacy OAuth flow (integrations.frubix)
-        $frubix = $integrations['frubix'] ?? null;
-        if ($frubix && !empty($frubix['access_token'])) {
-            return $frubix;
-        }
-
-        // Check new managed flow (integrations.frubix_managed) — uses Sanctum API token
+        // Check new managed flow FIRST (preferred — uses Sanctum token)
         $managed = $integrations['frubix_managed'] ?? null;
         if ($managed && ($managed['enabled'] ?? false) && !empty($managed['api_token'])) {
             return [
                 'access_token' => $managed['api_token'],
                 'url' => $managed['api_url'] ?? 'https://frubix.com',
             ];
+        }
+
+        // Fallback to legacy OAuth flow
+        $frubix = $integrations['frubix'] ?? null;
+        if ($frubix && !empty($frubix['access_token'])) {
+            return $frubix;
         }
 
         return null;

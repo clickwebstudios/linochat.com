@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
@@ -40,7 +40,7 @@ import {
 } from '../../components/ui/table';
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
-import PlatformAnalytics from '../../components/superadmin/PlatformAnalytics';
+const PlatformAnalytics = lazy(() => import('../../components/superadmin/PlatformAnalytics'));
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -141,7 +141,11 @@ export default function SuperadminPlatform() {
 
         {activeTab === 'activity' && <PlatformActivityFeed />}
 
-        {activeTab === 'analytics' && <PlatformAnalytics />}
+        {activeTab === 'analytics' && (
+          <Suspense fallback={<div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <PlatformAnalytics />
+          </Suspense>
+        )}
 
         {activeTab === 'pricing' && (
           <div className="p-6">
