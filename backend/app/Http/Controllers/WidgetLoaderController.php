@@ -118,7 +118,7 @@ class WidgetLoaderController extends Controller
         try {
             var s = document.createElement('style');
             s.id = 'linochat-inline-styles';
-            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100%!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
+            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100dvh!important;max-height:100dvh!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}#linochat-button{bottom:20px!important;right:20px!important}}'
             + '@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
             + '@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 12px transparent}}'
             + '@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'
@@ -1132,13 +1132,27 @@ class WidgetLoaderController extends Controller
         
         function toggleWindow() {
             var isOpen = window_.style.display === 'flex';
+            var isMobile = window.innerWidth <= 480;
             window_.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
+                // Opening
+                if (isMobile) {
+                    button.style.display = 'none';
+                    // Set height to visual viewport for keyboard handling
+                    if (window.visualViewport) {
+                        window_.style.height = window.visualViewport.height + 'px';
+                    }
+                }
                 input.focus();
-                // Clear all notification bubbles and badge
                 document.querySelectorAll('.linochat-unread-bubble').forEach(function(b) { b.remove(); });
                 var badge = document.getElementById('linochat-unread-badge');
                 if (badge) badge.remove();
+            } else {
+                // Closing
+                if (isMobile) {
+                    button.style.display = 'flex';
+                    window_.style.height = '';
+                }
             }
         }
         
@@ -1150,7 +1164,28 @@ class WidgetLoaderController extends Controller
         closeBtn.addEventListener('click', toggleWindow);
         button.addEventListener('mouseenter', function() { button.style.transform = 'scale(1.1)'; });
         button.addEventListener('mouseleave', function() { button.style.transform = 'scale(1)'; });
-        
+
+        // Mobile: resize chat window when keyboard opens/closes (prevents input hiding behind keyboard)
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function() {
+                if (window_.style.display !== 'flex') return;
+                var vh = window.visualViewport.height;
+                if (window.innerWidth <= 480) {
+                    window_.style.height = vh + 'px';
+                    window_.style.maxHeight = vh + 'px';
+                }
+            });
+        }
+        // Mobile: scroll messages to bottom when input focused
+        input.addEventListener('focus', function() {
+            if (window.innerWidth <= 480) {
+                setTimeout(function() {
+                    var msgs = document.getElementById('linochat-messages');
+                    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+                }, 300);
+            }
+        });
+
         // Customer typing indicator - send to backend so agent sees "Customer is typing..."
         function sendCustomerTyping(isTyping) {
             if (!CHAT_ID || !CUSTOMER_ID) return;
@@ -1608,14 +1643,19 @@ JS;
 @media (max-width: 480px) {
     #linochat-window {
         width: 100% !important;
-        height: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
         bottom: 0 !important;
         right: 0 !important;
         left: 0 !important;
         top: 0 !important;
         border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
-    
+
     #linochat-button {
         bottom: 20px !important;
         right: 20px !important;
