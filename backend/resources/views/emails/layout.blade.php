@@ -73,7 +73,7 @@
   <div class="wrapper">
     <div class="header">
       <a href="https://linochat.com" style="text-decoration:none;">
-        <img src="{{ rtrim(config('app.url', 'https://linochat.com'), '/') }}/images/email-logo@2x.png" alt="LinoChat — Talk. Convert. Grow." width="200" style="max-width:200px;height:auto;" />
+        <img src="{{ rtrim(config('app.frontend_url', config('app.url', 'https://linochat.com')), '/') }}/images/email-logo@2x.png" alt="LinoChat — Talk. Convert. Grow." width="200" style="max-width:200px;height:auto;" />
       </a>
     </div>
     <div class="card">
