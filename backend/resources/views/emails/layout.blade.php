@@ -51,7 +51,7 @@
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
       body { background-color: #111827 !important; color: #e5e7eb !important; }
-      .header { background: #1f2937 !important; border-color: #374151 !important; }
+      .header { background: #ffffff !important; border-color: #374151 !important; }
       .card { background: #1f2937 !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important; }
       h1, h3 { color: #f9fafb !important; }
       p { color: #d1d5db !important; }
