@@ -11,10 +11,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background-color: #f0f4f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; -webkit-font-smoothing: antialiased; }
     .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 16px; }
-    .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 16px 16px 0 0; padding: 32px 40px; text-align: center; }
-    .header-logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-    .header-icon { background: rgba(255,255,255,0.2); color: #fff; font-weight: 800; font-size: 18px; width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; letter-spacing: -0.5px; }
-    .header-name { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .header { background: #ffffff; border-radius: 16px 16px 0 0; padding: 28px 40px; text-align: center; border-bottom: 1px solid #e5e7eb; }
+    .header img { max-width: 200px; height: auto; }
     .card { background: #ffffff; border-radius: 0 0 16px 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
     h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #111827; }
     h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #111827; }
@@ -53,6 +51,7 @@
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
       body { background-color: #111827 !important; color: #e5e7eb !important; }
+      .header { background: #1f2937 !important; border-color: #374151 !important; }
       .card { background: #1f2937 !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important; }
       h1, h3 { color: #f9fafb !important; }
       p { color: #d1d5db !important; }
@@ -73,9 +72,8 @@
 <body>
   <div class="wrapper">
     <div class="header">
-      <a href="https://linochat.com" class="header-logo">
-        <span class="header-icon">LC</span>
-        <span class="header-name">LinoChat</span>
+      <a href="https://linochat.com" style="text-decoration:none;">
+        <img src="{{ rtrim(config('app.url', 'https://linochat.com'), '/') }}/images/email-logo@2x.png" alt="LinoChat — Talk. Convert. Grow." width="200" style="max-width:200px;height:auto;" />
       </a>
     </div>
     <div class="card">
