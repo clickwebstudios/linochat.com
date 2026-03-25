@@ -14,37 +14,41 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 63.250.42.183
-          username: admin2
+          host: 5.78.92.126
+          username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 10m
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
-            DEPLOY_PATH="/home/admin2/web/linochat.com/public_html"
+            DEPLOY_PATH="/home/admin/web/linochat.com/public_html"
 
-            echo ">>> [1/5] Pulling latest code..."
+            echo ">>> [1/6] Pulling latest code..."
             cd $DEPLOY_PATH
             git fetch origin master
             git reset --hard origin/master
 
-            echo ">>> [2/5] Backend: Installing PHP dependencies..."
+            echo ">>> [2/6] Backend: Installing PHP dependencies..."
             cd $DEPLOY_PATH/backend
             composer install --no-dev --optimize-autoloader --no-interaction
 
-            echo ">>> [3/5] Backend: Running migrations & clearing cache..."
+            echo ">>> [3/6] Backend: Running migrations & clearing cache..."
             php artisan migrate --force || true
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
 
-            echo ">>> [4/5] Frontend: Installing JS dependencies..."
+            echo ">>> [4/6] Frontend: Installing JS dependencies..."
             cd $DEPLOY_PATH/frontend
             pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 
-            echo ">>> [5/5] Frontend: Building..."
+            echo ">>> [5/6] Frontend: Building..."
             pnpm run build
+
+            echo ">>> [6/6] Fixing permissions & restarting workers..."
+            chown -R www-data:www-data $DEPLOY_PATH/backend/storage $DEPLOY_PATH/backend/bootstrap/cache
+            supervisorctl restart linochat-worker:* linochat-reverb
 
             echo ">>> Deploy complete!"
 
