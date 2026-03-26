@@ -10,6 +10,7 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
+  ChevronRight,
   MessageCircle,
   Bot,
   Zap,
@@ -18,7 +19,9 @@ import {
   Users,
   Shield,
   Star,
+  HelpCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.5 } };
 
@@ -36,6 +39,7 @@ interface UseCaseData {
   features: string[];
   workflow: { step: string; description: string }[];
   testimonial: { quote: string; author: string; role: string; company: string };
+  faqs: { q: string; a: string }[];
   cta: string;
 }
 
@@ -93,6 +97,16 @@ const useCaseData: Record<string, UseCaseData> = {
       company: 'StyleVault',
     },
     cta: 'Start converting more shoppers today',
+    faqs: [
+      { q: 'How does LinoChat integrate with my e-commerce platform?', a: 'LinoChat works with any website — just add a single script tag. It integrates with Shopify, WooCommerce, Magento, and custom platforms. The AI can be trained on your product catalog for accurate answers.' },
+      { q: 'Can the AI handle product recommendations?', a: 'Yes. The AI analyzes conversation context and browsing behavior to suggest relevant products, sizes, and alternatives based on your catalog data.' },
+      { q: 'How does it reduce cart abandonment?', a: 'When customers hesitate, the AI proactively engages with help — answering shipping questions, offering size guidance, or clarifying return policies that often cause abandonment.' },
+      { q: 'Does it support multiple languages for international stores?', a: 'Yes. LinoChat supports 50+ languages automatically, detecting the customer\'s language and responding accordingly.' },
+      { q: 'Can customers track orders through the chat?', a: 'Yes, with integration to your order management system, customers can check order status, shipping updates, and delivery estimates directly in chat.' },
+      { q: 'How does handover to human agents work?', a: 'When the AI can\'t resolve an issue or the customer requests a human, the conversation seamlessly transfers to an available agent with full chat history.' },
+      { q: 'What happens during peak sales events like Black Friday?', a: 'LinoChat scales automatically. The AI handles unlimited concurrent conversations, so your support doesn\'t bottleneck during high-traffic events.' },
+      { q: 'Is there a free plan for small stores?', a: 'Yes. Our free plan includes AI chat with your first project — perfect for getting started. Upgrade as you grow.' },
+    ],
   },
   saas: {
     id: 'saas',
@@ -147,6 +161,15 @@ const useCaseData: Record<string, UseCaseData> = {
       company: 'CloudStack',
     },
     cta: 'Free your engineering team today',
+    faqs: [
+      { q: 'Can LinoChat be trained on our technical documentation?', a: 'Yes. LinoChat auto-imports your docs, API references, and help articles to build a knowledge base the AI uses for accurate technical answers.' },
+      { q: 'How does it handle complex technical questions?', a: 'The AI guides users through troubleshooting steps. If it can\'t resolve the issue, it creates a structured bug report and routes to your engineering team.' },
+      { q: 'Does it integrate with our existing tools like Jira or Slack?', a: 'Yes. LinoChat integrates via webhooks and API with Jira, Slack, Linear, GitHub, and other tools your team already uses.' },
+      { q: 'What\'s the typical ticket deflection rate?', a: 'SaaS companies using LinoChat typically see 60-80% ticket deflection, with the AI resolving common questions before they become support tickets.' },
+      { q: 'Can it handle code snippets in conversations?', a: 'Yes. The chat supports formatted code blocks, making it easy for customers to share error messages and for the AI to provide code solutions.' },
+      { q: 'How quickly can we get started?', a: 'Most SaaS teams are live within 30 minutes. Add the widget, import your docs, and the AI starts answering questions immediately.' },
+      { q: 'Does it support multi-tier support routing?', a: 'Yes. You can route conversations based on complexity, topic, or customer plan level to the right team or agent.' },
+    ],
   },
   healthcare: {
     id: 'healthcare',
@@ -201,6 +224,15 @@ const useCaseData: Record<string, UseCaseData> = {
       company: 'Harmony Health Clinic',
     },
     cta: 'Modernize your patient communication',
+    faqs: [
+      { q: 'Is LinoChat HIPAA compliant?', a: 'LinoChat is designed with privacy in mind. We recommend configuring AI prompts to avoid collecting PHI in chat. For HIPAA-covered entities, consult your compliance team for implementation guidance.' },
+      { q: 'Can patients book appointments through the chat?', a: 'Yes. With calendar integration, patients can view availability and book, reschedule, or cancel appointments directly in the chat.' },
+      { q: 'How does it handle after-hours inquiries?', a: 'The AI answers common questions 24/7 — office hours, directions, insurance accepted, pre-visit instructions. Urgent cases can be flagged for on-call staff.' },
+      { q: 'Can it collect patient intake forms?', a: 'Yes. The chat can collect insurance info, medical history, and consent forms before the visit, reducing check-in time.' },
+      { q: 'Does it support multiple locations?', a: 'Yes. You can set up separate projects for each location with unique scheduling, staff, and knowledge bases.' },
+      { q: 'How does it reduce no-shows?', a: 'Automated appointment confirmations and reminders via chat reduce no-show rates by up to 30%.' },
+      { q: 'Can the AI answer insurance questions?', a: 'Yes. Train the AI on your accepted insurance plans, billing procedures, and payment policies for instant patient answers.' },
+    ],
   },
   services: {
     id: 'services',
@@ -255,6 +287,16 @@ const useCaseData: Record<string, UseCaseData> = {
       company: 'RapidFix Plumbing',
     },
     cta: 'Start capturing after-hours leads',
+    faqs: [
+      { q: 'How does LinoChat capture after-hours leads?', a: 'The AI chat runs 24/7. When someone visits your site at midnight with a plumbing emergency, the AI captures their details, describes the issue, and books the first available appointment.' },
+      { q: 'Can it provide price estimates?', a: 'Yes. Configure the AI with your service pricing to give ballpark estimates based on the type of work described.' },
+      { q: 'Does it check if the customer is in our service area?', a: 'Yes. The AI can validate zip codes and addresses against your configured service area before booking.' },
+      { q: 'How does scheduling work?', a: 'LinoChat integrates with calendar systems to show real-time availability and book appointments. Customers get instant confirmation.' },
+      { q: 'Can customers send photos of the issue?', a: 'Yes. The chat supports image uploads so customers can show the problem before your technician arrives.' },
+      { q: 'Does it work for multiple service types (plumbing, HVAC, electrical)?', a: 'Absolutely. Set up your service catalog and the AI routes inquiries to the right department with appropriate pricing and availability.' },
+      { q: 'How does it compare to answering services?', a: 'LinoChat is instant (no hold times), available 24/7, handles unlimited concurrent chats, and costs a fraction of traditional answering services.' },
+      { q: 'Can it send follow-up messages after service?', a: 'Yes. Automated follow-ups for satisfaction checks, review requests, and maintenance reminders.' },
+    ],
   },
   education: {
     id: 'education',
@@ -286,6 +328,15 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'LinoChat handles 85% of our admissions inquiries. Our team focuses on the ones that need a personal touch.', author: 'Prof. Linda Chang', role: 'Director of Admissions', company: 'Pacific Technical Institute' },
     cta: 'Improve your enrollment process',
+    faqs: [
+      { q: 'Can LinoChat handle enrollment season surges?', a: 'Yes. The AI handles unlimited concurrent conversations, so peak enrollment periods don\'t overwhelm your admissions team.' },
+      { q: 'Does it support financial aid questions?', a: 'Yes. Train the AI on your scholarship, grant, loan, and tuition information for instant student answers.' },
+      { q: 'Can it help with international student inquiries?', a: 'Absolutely. Multi-language support and visa/documentation guidance help serve international prospects in their preferred language.' },
+      { q: 'How does it integrate with our student information system?', a: 'LinoChat connects via API to provide application status updates and program information from your existing systems.' },
+      { q: 'Can students schedule campus tours through chat?', a: 'Yes. Calendar integration allows prospective students to book tours, info sessions, and meetings with advisors.' },
+      { q: 'Does it work for online learning platforms too?', a: 'Yes. Whether you\'re a traditional campus, online university, or training provider, LinoChat adapts to your enrollment process.' },
+      { q: 'How quickly can we set it up before enrollment season?', a: 'Most institutions are live within a day. Import your program catalog, configure FAQs, and the AI starts helping students immediately.' },
+    ],
   },
   realestate: {
     id: 'realestate',
@@ -317,6 +368,15 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'I closed 3 deals last month from leads that came in after midnight. LinoChat never sleeps.', author: 'Jason Park', role: 'Senior Agent', company: 'Meridian Realty Group' },
     cta: 'Capture more real estate leads',
+    faqs: [
+      { q: 'How does LinoChat qualify real estate leads?', a: 'The AI asks about budget, timeline, location preferences, property type, and pre-approval status — delivering a complete buyer profile to your agents.' },
+      { q: 'Can it answer questions about specific listings?', a: 'Yes. Train the AI on your property listings so it can share details about price, features, neighborhood, schools, and more.' },
+      { q: 'Does it book property viewings?', a: 'Yes. Calendar integration lets prospects book viewing appointments directly, with automatic confirmation to both buyer and agent.' },
+      { q: 'How does it handle after-hours inquiries?', a: 'Buyers browse at night and weekends. The AI captures leads 24/7, qualifies them, and your team follows up during business hours with full context.' },
+      { q: 'Can it work for both residential and commercial?', a: 'Yes. Configure separate knowledge bases for residential, commercial, and rental properties with appropriate qualification criteria.' },
+      { q: 'Does it integrate with MLS or CRM systems?', a: 'LinoChat connects via API and webhooks to your existing CRM and can be configured to reference listing data.' },
+      { q: 'How many agents can use it?', a: 'LinoChat supports unlimited team members. Route leads to agents by specialty, territory, or availability.' },
+    ],
   },
   hospitality: {
     id: 'hospitality',
@@ -348,6 +408,15 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'Our phone barely rings for reservations anymore. Guests love the convenience of booking through chat.', author: 'Chef Isabella Rossi', role: 'Owner', company: 'Trattoria Bella' },
     cta: 'Fill more tables with less effort',
+    faqs: [
+      { q: 'Can guests make reservations through the chat?', a: 'Yes. The AI checks real-time table availability and books reservations instantly, with confirmation sent to the guest.' },
+      { q: 'How does it handle dietary restrictions?', a: 'Train the AI on your menu including allergen info, dietary labels (vegan, GF, etc.), and ingredient details so it can guide guests accurately.' },
+      { q: 'Does it support multiple languages?', a: 'Yes. Auto-detection serves international guests in their preferred language — essential for tourist areas.' },
+      { q: 'Can it handle event and catering inquiries?', a: 'Yes. The AI collects event details, guest count, dietary needs, and budget, then routes to your events team.' },
+      { q: 'Does it reduce phone calls?', a: 'Restaurants using LinoChat report 40-60% reduction in phone calls for reservations and basic questions.' },
+      { q: 'Can it send post-visit review requests?', a: 'Yes. Automated follow-ups thank guests and encourage reviews on Google, Yelp, or your preferred platform.' },
+      { q: 'How fast is setup for a restaurant?', a: 'Upload your menu, set your hours and table availability, and you\'re live in under an hour.' },
+    ],
   },
   automotive: {
     id: 'automotive',
@@ -379,6 +448,16 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'Test drive bookings are up 60%. The AI qualifies leads so my team spends time with serious buyers.', author: 'Carlos Mendez', role: 'Sales Manager', company: 'Premier Auto Group' },
     cta: 'Drive more test drives',
+    faqs: [
+      { q: 'Can LinoChat search our vehicle inventory?', a: 'Yes. Train the AI on your inventory so it can help shoppers find vehicles by make, model, year, price, and features.' },
+      { q: 'How does test drive scheduling work?', a: 'The AI collects the vehicle of interest and preferred time, then books a test drive on your calendar with automatic confirmation.' },
+      { q: 'Can it handle trade-in inquiries?', a: 'Yes. The AI collects vehicle details (year, make, model, mileage, condition) and provides preliminary trade-in value ranges.' },
+      { q: 'Does it work for both new and used vehicles?', a: 'Absolutely. Configure separate inventory feeds for new, certified pre-owned, and used vehicles.' },
+      { q: 'Can it handle financing pre-qualification?', a: 'Yes. The AI can collect income and credit information to provide preliminary financing options and payment estimates.' },
+      { q: 'How does it handle service department inquiries?', a: 'Service and parts questions are routed to the appropriate department with full details of the customer\'s vehicle and concern.' },
+      { q: 'Does it capture leads after business hours?', a: 'Yes. 45% of auto shoppers research at night. The AI captures every lead with full qualification details for morning follow-up.' },
+      { q: 'Can it compare vehicles side by side?', a: 'Yes. When a customer is deciding between models, the AI presents feature-by-feature comparisons to help them choose.' },
+    ],
   },
   travel: {
     id: 'travel',
@@ -410,6 +489,16 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'LinoChat handles travelers from 40+ countries. The multilingual support has been a game-changer.', author: 'Yuki Tanaka', role: 'Director of Operations', company: 'Pacific Voyages' },
     cta: 'Support travelers worldwide',
+    faqs: [
+      { q: 'How does LinoChat handle different time zones?', a: 'The AI operates 24/7 automatically, serving travelers in any time zone with instant responses in their local language.' },
+      { q: 'Can it assist with booking modifications?', a: 'Yes. The AI handles date changes, room upgrades, cancellations, and rebooking based on your policies and availability.' },
+      { q: 'Does it provide visa and travel document guidance?', a: 'Yes. Configure destination-specific requirements so the AI can advise on visas, vaccinations, and documentation.' },
+      { q: 'Can it recommend destinations and activities?', a: 'Absolutely. Based on traveler preferences (budget, interests, group size), the AI suggests personalized itineraries.' },
+      { q: 'How does it handle emergency support?', a: 'The AI provides immediate assistance for flight changes, lost luggage, and itinerary disruptions, escalating to staff when human intervention is needed.' },
+      { q: 'Does it support multiple currencies?', a: 'Yes. Pricing can be displayed in the traveler\'s local currency for a seamless booking experience.' },
+      { q: 'Can it handle group bookings?', a: 'Yes. The AI collects group size, date preferences, and special requirements, then routes to your group sales team.' },
+      { q: 'How does it improve customer retention?', a: 'Post-trip follow-ups, loyalty program information, and personalized recommendations for future trips keep customers coming back.' },
+    ],
   },
   professional: {
     id: 'professional',
@@ -441,8 +530,38 @@ const useCaseData: Record<string, UseCaseData> = {
     ],
     testimonial: { quote: 'We stopped wasting partner hours on unqualified consultations. LinoChat pre-screens perfectly.', author: 'Amanda Foster', role: 'Managing Partner', company: 'Foster & Associates Law' },
     cta: 'Streamline your client intake',
+    faqs: [
+      { q: 'How does LinoChat qualify potential clients?', a: 'The AI asks about the type of service needed, urgency, budget expectations, and relevant details to determine fit before scheduling a consultation.' },
+      { q: 'Can it handle client intake forms?', a: 'Yes. The chat collects contact information, case details, and relevant documents in a structured format.' },
+      { q: 'Is it appropriate for law firms with confidentiality requirements?', a: 'Yes. LinoChat encrypts all data in transit and at rest. Configure the AI to avoid collecting sensitive case details in initial conversations.' },
+      { q: 'Can it schedule consultations?', a: 'Yes. Calendar integration lets prospects book consultations with the right professional based on practice area and availability.' },
+      { q: 'Does it work for accounting and tax firms?', a: 'Absolutely. Configure for tax preparation inquiries, audit questions, bookkeeping services, and financial planning consultations.' },
+      { q: 'Can it route to different practice areas?', a: 'Yes. The AI determines the appropriate department (litigation, corporate, family law, tax, etc.) and routes accordingly.' },
+      { q: 'How does it handle existing client inquiries?', a: 'Existing clients can get status updates, appointment reminders, and document submission guidance without tying up professional time.' },
+      { q: 'Does it reduce administrative overhead?', a: 'Firms report 30-50% reduction in admin time spent on initial inquiries, intake processing, and scheduling.' },
+    ],
   },
 };
+
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
+      >
+        <span className="font-medium text-sm pr-4">{question}</span>
+        <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 -mt-1">
+          <p className="text-sm text-muted-foreground leading-relaxed">{answer}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function UseCaseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -461,6 +580,19 @@ export default function UseCaseDetailPage() {
       <SEOHead title={`${uc.title} — Use Case`} description={uc.heroDescription} />
       <MarketingHeader />
 
+      {/* Breadcrumbs */}
+      <div className="bg-muted/40 border-b">
+        <div className="container mx-auto px-4 py-3">
+          <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <Link to="/use-cases" className="hover:text-primary transition-colors">Use Cases</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="text-foreground font-medium">{uc.title}</span>
+          </nav>
+        </div>
+      </div>
+
       {/* Hero */}
       <section className={`relative py-20 lg:py-28 overflow-hidden bg-gradient-to-br ${uc.gradientFrom} ${uc.gradientTo}`}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
@@ -468,10 +600,6 @@ export default function UseCaseDetailPage() {
         <div className="absolute bottom-10 left-20 h-56 w-56 rounded-full bg-white/5 blur-sm" />
         <div className="container mx-auto px-4 relative">
           <motion.div {...fadeUp} className="max-w-3xl">
-            <Link to="/use-cases" className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-6 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> All Use Cases
-            </Link>
-            <Badge className="mb-4 bg-white/20 text-white border-white/30">Use Case</Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-white mb-4">{uc.title}</h1>
             <p className="text-xl text-white/80 mb-8">{uc.heroDescription}</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -575,6 +703,26 @@ export default function UseCaseDetailPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* FAQs */}
+      {uc.faqs?.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <motion.div {...fadeUp} className="text-center mb-10">
+              <Badge variant="secondary" className="mb-4 gap-1.5 px-3 py-1">
+                <HelpCircle className="h-3.5 w-3.5 text-primary" />
+                FAQ
+              </Badge>
+              <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
+            </motion.div>
+            <div className="space-y-3">
+              {uc.faqs.map((faq, i) => (
+                <FAQItem key={i} question={faq.q} answer={faq.a} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className={`relative py-20 overflow-hidden bg-gradient-to-br ${uc.gradientFrom} ${uc.gradientTo}`}>
