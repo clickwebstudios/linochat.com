@@ -240,6 +240,8 @@ export default function App() {
 
               {/* Customer-facing */}
               <Route path="/help" element={<HelpCenter />} />
+              <Route path="/help/category/:categorySlug" element={<HelpCenter />} />
+              <Route path="/help/:articleSlug" element={<HelpCenter />} />
               <Route path="/ticket/:token" element={<PublicTicketPage />} />
 
               {/* Default redirect */}
