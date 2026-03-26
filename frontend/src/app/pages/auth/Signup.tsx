@@ -517,7 +517,7 @@ export default function Signup() {
                         <SelectTrigger id="country" className="pl-10">
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[200px]">
                           {COUNTRIES.map((c) => (
                             <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                           ))}
