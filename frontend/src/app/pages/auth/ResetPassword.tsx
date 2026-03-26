@@ -69,12 +69,9 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
-      <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-primary p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <h1 className="text-xl text-primary">LinoChat</h1>
-      </div>
+      <Link to="/" className="fixed top-6 left-6 z-10">
+        <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-10" />
+      </Link>
 
       <Link
         to="/"
