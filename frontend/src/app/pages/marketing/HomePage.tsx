@@ -877,22 +877,22 @@ export default function HomePage() {
               Join 10,000+ teams already delivering faster, smarter support with LinoChat.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your work email"
-                className="h-12 bg-white/95 border-white/20 text-foreground placeholder:text-muted-foreground"
-              />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/signup">
-                <Button size="lg" className="h-12 px-7 whitespace-nowrap bg-card text-primary hover:bg-card/90 font-semibold gap-2">
-                  Start Free Trial
+                <Button size="lg" className="h-13 px-10 text-base whitespace-nowrap bg-white text-primary hover:bg-white/90 font-semibold gap-2 shadow-xl shadow-black/10">
+                  Get Started Free
                   <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button size="lg" variant="outline" className="h-13 px-10 text-base whitespace-nowrap border-white/30 text-white hover:bg-white/10 font-semibold">
+                  Login
                 </Button>
               </Link>
             </div>
 
             <p className="mt-5 text-sm text-primary-foreground/70">
-              No credit card required &middot; 14-day free trial &middot; Cancel anytime
+              No credit card required &middot; Free forever plan available
             </p>
           </motion.div>
         </div>
