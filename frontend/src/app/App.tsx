@@ -17,6 +17,9 @@ import PricingPage from './pages/marketing/PricingPage';
 import ResourcesPage from './pages/marketing/ResourcesPage';
 import AboutPage from './pages/marketing/AboutPage';
 import ContactPage from './pages/marketing/ContactPage';
+import PrivacyPolicyPage from './pages/marketing/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/marketing/TermsOfServicePage';
+import UseCasesPage from './pages/marketing/UseCasesPage';
 
 // Layout Components (needed for route structure)
 import AgentAdminLayout from './components/layouts/AgentAdminLayout';
@@ -99,6 +102,9 @@ export default function App() {
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/use-cases" element={<UseCasesPage />} />
 
               {/* Auth Pages */}
               <Route
