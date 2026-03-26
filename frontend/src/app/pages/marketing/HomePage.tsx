@@ -474,7 +474,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <SEOHead
         title="Modern Customer Support Platform"
-        description="Transform your customer support with LinoChat. AI-powered live chat, ticketing, and helpdesk software designed for growing teams. Start your free trial today."
+        description="Transform your customer support with LinoChat. AI-powered live chat, ticketing, and helpdesk software designed for growing teams. Free forever plan available."
         keywords="customer support software, helpdesk software, live chat, ticketing system, AI customer service, support platform"
         canonical="https://linochat.com"
       />
@@ -519,7 +519,7 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 <Link to="/signup">
                   <Button size="lg" className="h-12 px-7 text-base gap-2">
-                    Start Free Trial
+                    Get Started Free
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -531,7 +531,7 @@ export default function HomePage() {
               </div>
 
               <p className="mt-5 text-sm text-muted-foreground">
-                No credit card required &middot; 14-day free trial &middot; Cancel anytime
+                No credit card required &middot; Free forever plan available
               </p>
             </motion.div>
 
