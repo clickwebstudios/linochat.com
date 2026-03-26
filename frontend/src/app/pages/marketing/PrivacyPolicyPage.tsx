@@ -34,8 +34,33 @@ export default function PrivacyPolicyPage() {
             </ul>
 
             <h3 className="text-lg font-medium mt-4 mb-2">2.2 Google OAuth Data</h3>
-            <p>If you sign in with Google, we receive your Google account ID, name, email, and profile picture from Google's OAuth service. We use this solely for authentication and account creation. We do not access your Google contacts, calendar, drive, or any other Google services beyond basic profile information.</p>
-            <p><strong>Google API Services User Data Policy:</strong> Our use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+            <p>If you sign in with Google, we request the following OAuth scopes:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li><code>openid</code> — to verify your identity</li>
+              <li><code>profile</code> — to access your name and profile picture</li>
+              <li><code>email</code> — to access your email address</li>
+            </ul>
+            <p className="mt-3">From these scopes, we receive and store:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>Google account ID (used solely to link your account)</li>
+              <li>Full name (used to populate your profile)</li>
+              <li>Email address (used as your account email)</li>
+              <li>Profile picture URL (used as your avatar)</li>
+            </ul>
+            <p className="mt-3"><strong>How we use Google data:</strong> Google user data is used exclusively for authenticating your identity and creating or linking your LinoChat account. We do not access your Google contacts, calendar, drive, files, or any other Google services.</p>
+            <p><strong>How we store Google data:</strong> Your Google account ID and profile picture URL are stored in our encrypted database alongside your account record. This data is protected by the same security measures described in Section 5.</p>
+            <p><strong>How we delete Google data:</strong> When you delete your LinoChat account, your Google account ID, profile picture URL, and all associated account data are permanently deleted from our systems immediately. Backup copies are purged within 30 days.</p>
+            <p><strong>Google API Services User Data Policy:</strong> LinoChat's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+            <p><strong>Limited Use disclosure:</strong> LinoChat's access to Google user data is limited to the practices explicitly disclosed in this privacy policy. Specifically, Google user data received by LinoChat is:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>Used only for providing and improving user-facing features (authentication, profile display)</li>
+              <li><strong>Not</strong> transferred to third parties, except as necessary to provide the Service or as required by law</li>
+              <li><strong>Not</strong> used for serving advertisements, retargeting, or interest-based advertising</li>
+              <li><strong>Not</strong> used for creating, training, or improving machine learning or AI models outside of personalized user features</li>
+              <li><strong>Not</strong> sold to data brokers, information resellers, or any other third party</li>
+              <li><strong>Not</strong> used to determine creditworthiness or for lending purposes</li>
+            </ul>
+            <p className="mt-3">If you revoke LinoChat's access through your <a href="https://myaccount.google.com/permissions" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a>, your LinoChat account will remain functional using email/password authentication, but your Google-linked sign-in will be disabled.</p>
 
             <h3 className="text-lg font-medium mt-4 mb-2">2.3 Customer/Visitor Data (Chat Widget)</h3>
             <p>When end-users interact with the LinoChat widget embedded on our customers' websites, we collect:</p>
@@ -124,15 +149,29 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-3">6. Data Retention</h2>
-            <p>We retain your data for as long as your account is active. Upon account deletion:</p>
+            <h2 className="text-2xl font-semibold mb-3">6. Data Retention and Deletion</h2>
+            <p>We retain your data for as long as your account is active or as needed to provide the Service.</p>
+
+            <h3 className="text-lg font-medium mt-4 mb-2">6.1 Account Deletion</h3>
+            <p>You can delete your account at any time through your account settings in the LinoChat dashboard, or by contacting us at <a href="mailto:privacy@linochat.com" className="text-primary hover:underline">privacy@linochat.com</a>. Upon account deletion, the following data is permanently removed:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Account data is permanently deleted</li>
-              <li>Chat conversations and tickets associated with your projects are deleted</li>
-              <li>Activity logs are anonymized</li>
-              <li>Session tokens are revoked</li>
+              <li>Account profile data (name, email, phone, avatar, Google account ID)</li>
+              <li>All projects, chat conversations, and ticket data</li>
+              <li>Knowledge base articles and training documents</li>
+              <li>Notification preferences and device tokens</li>
+              <li>Authentication tokens and session data (revoked immediately)</li>
             </ul>
-            <p>Backup data may persist for up to 30 days after deletion for disaster recovery purposes.</p>
+
+            <h3 className="text-lg font-medium mt-4 mb-2">6.2 Google-Specific Data Deletion</h3>
+            <p>When you delete your account, all data received from Google APIs is deleted immediately, including your Google account ID and profile picture URL. No Google user data is retained after account deletion, except in encrypted backups which are purged within 30 days.</p>
+
+            <h3 className="text-lg font-medium mt-4 mb-2">6.3 Retained Data</h3>
+            <p>Certain data may be retained after account deletion for the following limited purposes:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li><strong>Encrypted backups:</strong> Purged automatically within 30 days</li>
+              <li><strong>Anonymized activity logs:</strong> Retained for security auditing (no PII)</li>
+              <li><strong>Legal compliance:</strong> If required by law, specific records may be retained for the legally required period</li>
+            </ul>
           </section>
 
           <section>
@@ -141,12 +180,13 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-1">
               <li><strong>Access:</strong> Request a copy of the personal data we hold about you</li>
               <li><strong>Rectification:</strong> Update or correct your information via your account settings</li>
-              <li><strong>Deletion:</strong> Request deletion of your account and associated data</li>
+              <li><strong>Deletion:</strong> Delete your account and all associated data through the dashboard or by email</li>
               <li><strong>Portability:</strong> Request an export of your data in a standard format</li>
               <li><strong>Objection:</strong> Object to specific processing of your data</li>
               <li><strong>Restriction:</strong> Request restriction of processing under certain conditions</li>
+              <li><strong>Revoke consent:</strong> Revoke Google OAuth access at any time via <a href="https://myaccount.google.com/permissions" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a></li>
             </ul>
-            <p>To exercise any of these rights, contact us at <a href="mailto:privacy@linochat.com" className="text-primary hover:underline">privacy@linochat.com</a>.</p>
+            <p>To exercise any of these rights, contact us at <a href="mailto:privacy@linochat.com" className="text-primary hover:underline">privacy@linochat.com</a>. We respond to all requests within 30 days.</p>
           </section>
 
           <section>
