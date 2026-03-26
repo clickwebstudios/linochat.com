@@ -284,7 +284,8 @@ export default function UseCasesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {useCases.map((uc, i) => (
               <motion.div key={uc.id} id={uc.id} {...fadeUp} transition={{ delay: i * 0.05, duration: 0.5 }}>
-                <Card className={`h-full border ${uc.borderColor} hover:shadow-xl transition-all duration-300 overflow-hidden group`}>
+                <Link to={`/use-cases/${uc.id}`} className="block h-full">
+                <Card className={`h-full border ${uc.borderColor} hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer`}>
                   <CardContent className="p-0">
                     {/* Header */}
                     <div className={`bg-gradient-to-r ${uc.color} p-6 pb-5`}>
@@ -327,6 +328,7 @@ export default function UseCasesPage() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               </motion.div>
             ))}
           </div>
