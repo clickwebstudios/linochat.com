@@ -29,6 +29,7 @@ import {
   FolderKanban,
   UserPlus,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 import {
   Table,
@@ -41,6 +42,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
 const PlatformAnalytics = lazy(() => import('../../components/superadmin/PlatformAnalytics'));
+import HelpCenterManager from '../../components/superadmin/HelpCenterManager';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -58,6 +60,7 @@ const PLATFORM_TABS: { id: PlatformTab; label: string; icon: any }[] = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'pricing', label: 'Pricing & Plans', icon: CreditCard },
   { id: 'transactions', label: 'Transactions', icon: Receipt },
+  { id: 'helpcenter', label: 'Help Center', icon: HelpCircle },
   { id: 'settings', label: 'Platform Settings', icon: Settings },
 ];
 
@@ -162,6 +165,8 @@ export default function SuperadminPlatform() {
             </div>
           </div>
         )}
+
+        {activeTab === 'helpcenter' && <HelpCenterManager />}
 
         {activeTab === 'settings' && (
           <div className="p-6 max-w-4xl mx-auto">
