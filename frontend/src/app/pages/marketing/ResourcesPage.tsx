@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import MarketingHeader from '../../components/MarketingHeader';
 import MarketingFooter from '../../components/MarketingFooter';
 import ChatWidget from '../../components/ChatWidget';
@@ -109,7 +110,13 @@ export default function ResourcesPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-24">
+      <section className="relative overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
+          <div className="absolute top-0 left-1/4 h-[400px] w-[600px] rounded-full bg-primary/[0.10] blur-3xl" />
+          <div className="absolute bottom-0 right-1/3 h-[300px] w-[500px] rounded-full bg-violet-500/[0.06] blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'radial-gradient(circle, #155dfc 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        </div>
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -317,29 +324,28 @@ export default function ResourcesPage() {
       </section>
 
       {/* Newsletter CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground">
+      <section className="relative py-20 overflow-hidden text-primary-foreground">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary via-blue-600 to-violet-700" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15)_0%,_transparent_60%)]" />
+        <div className="absolute inset-0 -z-10 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
+        <div className="absolute top-8 left-16 h-28 w-28 rounded-full bg-white/5 blur-sm" />
+        <div className="absolute bottom-8 right-16 h-40 w-40 rounded-full bg-white/5 blur-sm" />
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Send className="h-10 w-10 mx-auto mb-5 text-primary-foreground/80" />
-            <h2 className="mb-3 text-3xl font-bold text-primary-foreground">Stay Updated</h2>
+            <h2 className="mb-3 text-3xl font-bold text-primary-foreground">Ready to get started?</h2>
             <p className="text-primary-foreground/80 mb-8">
-              Get the latest guides, case studies, and product updates delivered straight to your
-              inbox. No spam, unsubscribe anytime.
+              Transform your customer support with AI-powered automation. Free forever plan available.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your work email"
-                className="bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 flex-1"
-              />
-              <Button size="default" className="bg-card text-primary hover:bg-muted/50">
-                Subscribe
+            <Link to="/signup">
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold gap-2 shadow-xl">
+                Get Started Free
+                <ArrowRight className="h-4 w-4" />
               </Button>
-            </div>
+            </Link>
           </motion.div>
         </div>
       </section>
