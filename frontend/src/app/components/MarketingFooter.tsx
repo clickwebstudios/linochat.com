@@ -34,10 +34,10 @@ export default function MarketingFooter() {
           <div>
             <h3 className="font-semibold mb-4">Use Cases</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/use-cases#ecommerce" className="hover:text-primary transition-colors">E-Commerce</Link></li>
-              <li><Link to="/use-cases#saas" className="hover:text-primary transition-colors">SaaS & Tech</Link></li>
-              <li><Link to="/use-cases#healthcare" className="hover:text-primary transition-colors">Healthcare</Link></li>
-              <li><Link to="/use-cases#services" className="hover:text-primary transition-colors">Home Services</Link></li>
+              <li><Link to="/use-cases/ecommerce" className="hover:text-primary transition-colors">E-Commerce</Link></li>
+              <li><Link to="/use-cases/saas" className="hover:text-primary transition-colors">SaaS & Tech</Link></li>
+              <li><Link to="/use-cases/healthcare" className="hover:text-primary transition-colors">Healthcare</Link></li>
+              <li><Link to="/use-cases/services" className="hover:text-primary transition-colors">Home Services</Link></li>
               <li><Link to="/use-cases" className="hover:text-primary transition-colors text-primary font-medium">View all →</Link></li>
             </ul>
           </div>
