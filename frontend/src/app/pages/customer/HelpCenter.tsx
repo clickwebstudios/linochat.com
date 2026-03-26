@@ -7,6 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Badge } from '../../components/ui/badge';
 import { Search, FileText, ThumbsUp, ThumbsDown, MessageCircle, ArrowRight, BookOpen, HelpCircle } from 'lucide-react';
 import { mockArticles } from '../../data/mockData';
+import MarketingHeader from '../../components/MarketingHeader';
+import MarketingFooter from '../../components/MarketingFooter';
 
 export default function HelpCenter() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,24 +29,7 @@ export default function HelpCenter() {
 
   return (
     <div className="min-h-screen bg-muted/50">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm text-primary-foreground font-bold">LC</span>
-              </div>
-              <span className="font-bold">LinoChat</span>
-            </Link>
-            <nav className="flex items-center gap-4">
-              <Link to="/contact">
-                <Button className="bg-primary">Contact Support</Button>
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Hero Search */}
       <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16">
@@ -218,16 +203,7 @@ export default function HelpCenter() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-card py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 LinoChat. All rights reserved.</p>
-          <div className="mt-2 flex gap-4 justify-center">
-            <Link to="/" className="hover:text-primary">Home</Link>
-            <Link to="/contact" className="hover:text-primary">Contact</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }
