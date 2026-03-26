@@ -40,6 +40,15 @@ Route::middleware('throttle:15,1')->group(function () {
     Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
 });
 
+// Public help center (no auth — serves published KB articles)
+Route::prefix('help')->group(function () {
+    Route::get('/categories', [\App\Http\Controllers\Api\HelpController::class, 'categories']);
+    Route::get('/articles', [\App\Http\Controllers\Api\HelpController::class, 'articles']);
+    Route::get('/articles/{slug}', [\App\Http\Controllers\Api\HelpController::class, 'show']);
+    Route::post('/articles/{id}/feedback', [\App\Http\Controllers\Api\HelpController::class, 'feedback']);
+    Route::post('/search', [\App\Http\Controllers\Api\HelpController::class, 'search']);
+});
+
 // Inbound email webhook (no auth — called by email provider)
 Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
 
