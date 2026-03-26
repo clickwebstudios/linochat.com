@@ -877,16 +877,11 @@ export default function HomePage() {
               Join 10,000+ teams already delivering faster, smarter support with LinoChat.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex justify-center">
               <Link to="/signup">
-                <Button size="lg" className="h-13 px-10 text-base whitespace-nowrap bg-white text-primary hover:bg-white/90 font-semibold gap-2 shadow-xl shadow-black/10">
+                <Button size="lg" className="h-13 px-12 text-base whitespace-nowrap bg-white text-primary hover:bg-white/90 font-semibold gap-2 shadow-xl shadow-black/10">
                   Get Started Free
                   <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button size="lg" variant="outline" className="h-13 px-10 text-base whitespace-nowrap border-white/30 text-white hover:bg-white/10 font-semibold">
-                  Login
                 </Button>
               </Link>
             </div>
