@@ -49,7 +49,7 @@ const plans = [
     priceAnnual: 15,
     period: 'user/mo',
     popular: false,
-    cta: 'Start Free Trial',
+    cta: 'Get Started Free',
     ctaLink: '/signup?plan=starter',
     features: [
       'Up to 5 agents',
@@ -67,7 +67,7 @@ const plans = [
     priceAnnual: 39,
     period: 'user/mo',
     popular: true,
-    cta: 'Start Free Trial',
+    cta: 'Get Started Free',
     ctaLink: '/signup?plan=pro',
     features: [
       'Unlimited agents',
@@ -139,15 +139,15 @@ const faqs = [
   },
   {
     q: 'Is there a setup fee?',
-    a: 'No! There are no setup fees, no hidden costs, and no surprises. You only pay for the plan you choose. Our Free plan is truly free forever, and paid plans include a 14-day free trial.',
+    a: 'No! There are no setup fees, no hidden costs, and no surprises. You only pay for the plan you choose. Our Free plan is truly free forever — no credit card required.',
   },
   {
     q: 'Do you offer discounts for nonprofits or startups?',
     a: 'Yes, we offer special pricing for registered nonprofits, educational institutions, and early-stage startups. Contact our sales team to learn more about our discount programs.',
   },
   {
-    q: 'What happens when my trial ends?',
-    a: 'When your 14-day trial ends, you\'ll automatically be moved to the Free plan unless you choose to subscribe. No charges will be made without your explicit consent, and your data will be preserved.',
+    q: 'Can I upgrade or downgrade my plan?',
+    a: 'Yes! You can upgrade or downgrade at any time from your account settings. Changes take effect immediately, and billing is prorated.',
   },
   {
     q: 'Can I cancel my subscription?',
@@ -172,14 +172,20 @@ export default function PricingPage() {
     <div className="min-h-screen">
       <SEOHead
         title="Pricing - Simple, Transparent Plans for Every Team"
-        description="LinoChat pricing plans starting from free. Choose the perfect plan for your team. Start with our 14-day free trial. No credit card required."
+        description="LinoChat pricing plans starting from free. Choose the perfect plan for your team. Free forever plan available. No credit card required."
         keywords="customer support pricing, helpdesk pricing, live chat pricing, support software cost, LinoChat plans"
         canonical="https://linochat.com/pricing"
       />
       <MarketingHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-20">
+      <section className="relative overflow-hidden py-20">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
+          <div className="absolute top-0 left-1/3 h-[400px] w-[600px] rounded-full bg-primary/[0.08] blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 h-[300px] w-[500px] rounded-full bg-violet-500/[0.06] blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'radial-gradient(circle, #155dfc 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        </div>
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -187,11 +193,11 @@ export default function PricingPage() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="mb-4 text-[48px] font-bold">
-              Simple, transparent pricing
+              Simple, transparent <span className="bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">pricing</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Start free, scale as you grow. No hidden fees, no surprises.
-              Every plan includes a 14-day free trial.
+              Start free, upgrade when you're ready.
             </p>
           </motion.div>
 
@@ -409,7 +415,7 @@ export default function PricingPage() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8">
-            All paid plans include a 14-day free trial. No credit card required.
+            Start with our free plan. No credit card required. Upgrade anytime.
           </p>
         </div>
       </section>
@@ -530,7 +536,12 @@ export default function PricingPage() {
       </section>
 
       {/* Bottom CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground">
+      <section className="relative py-20 overflow-hidden text-primary-foreground">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary via-blue-600 to-violet-700" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15)_0%,_transparent_60%)]" />
+        <div className="absolute inset-0 -z-10 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
+        <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-white/5 blur-sm" />
+        <div className="absolute bottom-10 right-20 h-48 w-48 rounded-full bg-white/5 blur-sm" />
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -539,7 +550,7 @@ export default function PricingPage() {
             viewport={{ once: true }}
           >
             <h2 className="mb-4 text-3xl font-bold text-primary-foreground">
-              Start your free trial today
+              Get started with LinoChat today
             </h2>
             <p className="mb-8 text-xl text-primary-foreground/80 max-w-2xl mx-auto">
               Join thousands of support teams already using LinoChat to deliver
@@ -566,7 +577,7 @@ export default function PricingPage() {
               </Link>
             </div>
             <p className="mt-6 text-sm text-primary-foreground/70">
-              No credit card required &middot; 14-day free trial &middot; Cancel anytime
+              No credit card required &middot; Free forever plan available
             </p>
           </motion.div>
         </div>

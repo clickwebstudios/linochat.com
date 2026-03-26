@@ -40,9 +40,9 @@ export default function ContactPage() {
         'Most teams are up and running within minutes. Our onboarding wizard guides you through setup, and our support team is standing by if you need help.',
     },
     {
-      question: 'Do you offer a free trial?',
+      question: 'Is there a free plan?',
       answer:
-        'Yes! Every plan comes with a 14-day free trial. No credit card required. Explore all features before you commit.',
+        'Yes! LinoChat offers a free forever plan with core features included. No credit card required. Upgrade to a paid plan anytime for advanced features.',
     },
     {
       question: 'Can I switch plans later?',
@@ -67,7 +67,13 @@ export default function ContactPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-24">
+      <section className="relative overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
+          <div className="absolute top-0 right-1/3 h-[400px] w-[600px] rounded-full bg-primary/[0.10] blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 h-[300px] w-[400px] rounded-full bg-violet-500/[0.06] blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'radial-gradient(circle, #155dfc 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        </div>
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}

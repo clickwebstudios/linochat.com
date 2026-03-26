@@ -452,13 +452,13 @@ export default function FeaturesPage() {
           >
             <h2 className="mb-4 text-3xl font-bold">See It in Action</h2>
             <p className="mb-8 text-lg text-muted-foreground">
-              Ready to transform your customer support? Start a free trial or book a
+              Ready to transform your customer support? Get started for free or book a
               personalized demo with our team.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link to="/signup">
                 <Button size="lg">
-                  Start Free Trial
+                  Get Started Free
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
@@ -469,7 +469,7 @@ export default function FeaturesPage() {
               </Link>
             </div>
             <p className="mt-6 text-sm text-muted-foreground">
-              No credit card required &middot; 14-day free trial &middot; Cancel anytime
+              No credit card required &middot; Free forever plan available
             </p>
           </motion.div>
         </div>
