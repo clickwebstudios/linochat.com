@@ -63,8 +63,13 @@ export default function FeaturesPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-card py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      <section className="relative overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
+          <div className="absolute top-0 right-1/4 h-[500px] w-[700px] rounded-full bg-primary/[0.10] blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-[400px] w-[500px] rounded-full bg-violet-500/[0.07] blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'radial-gradient(circle, #155dfc 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        </div>
         <div className="container relative mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -77,7 +82,7 @@ export default function FeaturesPage() {
             </Badge>
             <h1 className="mx-auto mb-6 max-w-4xl text-[48px] font-bold leading-tight tracking-tight">
               Powerful Features for{' '}
-              <span className="text-primary">Modern Support Teams</span>
+              <span className="bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">Modern Support Teams</span>
             </h1>
             <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               From AI-powered conversations to deep analytics, LinoChat gives you everything
@@ -122,7 +127,7 @@ export default function FeaturesPage() {
               transition={{ duration: 0.5, delay: 0.15 }}
             >
               {/* Mini chat UI mockup */}
-              <div className="rounded-2xl border bg-card p-1 shadow-xl">
+              <div className="rounded-2xl border border-border/80 bg-card p-1 shadow-xl ring-1 ring-black/5">
                 <div className="rounded-xl bg-muted/30 p-6">
                   {/* Chat header */}
                   <div className="mb-6 flex items-center gap-3 border-b pb-4">
@@ -185,7 +190,7 @@ export default function FeaturesPage() {
               className="order-2 lg:order-1"
             >
               {/* Ticketing mockup */}
-              <div className="rounded-2xl border bg-card p-1 shadow-xl">
+              <div className="rounded-2xl border border-border/80 bg-card p-1 shadow-xl ring-1 ring-black/5">
                 <div className="rounded-xl bg-muted/30 p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-sm font-semibold">Active Tickets</h3>
@@ -284,7 +289,7 @@ export default function FeaturesPage() {
               transition={{ duration: 0.5, delay: 0.15 }}
             >
               {/* Analytics dashboard mockup */}
-              <div className="rounded-2xl border bg-card p-1 shadow-xl">
+              <div className="rounded-2xl border border-border/80 bg-card p-1 shadow-xl ring-1 ring-black/5">
                 <div className="rounded-xl bg-muted/30 p-6">
                   <div className="mb-6 flex items-center justify-between">
                     <h3 className="text-sm font-semibold">Dashboard Overview</h3>
@@ -339,7 +344,7 @@ export default function FeaturesPage() {
               className="order-2 lg:order-1"
             >
               {/* Knowledge Base mockup */}
-              <div className="rounded-2xl border bg-card p-1 shadow-xl">
+              <div className="rounded-2xl border border-border/80 bg-card p-1 shadow-xl ring-1 ring-black/5">
                 <div className="rounded-xl bg-muted/30 p-6">
                   {/* Search bar */}
                   <div className="mb-6 flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
@@ -409,43 +414,6 @@ export default function FeaturesPage() {
                 ))}
               </ul>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations Grid */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <motion.div {...fadeUp} className="mb-12 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Zap className="h-6 w-6" />
-            </div>
-            <h2 className="mb-4 text-3xl font-bold">Connects With Your Favorite Tools</h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Seamlessly integrate LinoChat with the apps your team already uses.
-              No complex setup required.
-            </p>
-          </motion.div>
-
-          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {integrations.map((app, index) => (
-              <motion.div
-                key={app.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-                viewport={{ once: true }}
-              >
-                <Card className="group text-center transition-all hover:shadow-md hover:-translate-y-0.5">
-                  <CardContent className="p-6">
-                    <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl text-white ${app.color}`}>
-                      <span className="text-sm font-bold">{app.initials}</span>
-                    </div>
-                    <p className="text-sm font-medium">{app.name}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>
