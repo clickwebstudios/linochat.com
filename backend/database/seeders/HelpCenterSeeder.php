@@ -24,6 +24,8 @@ class HelpCenterSeeder extends Seeder
             ['name' => 'LinoChat Help Center'],
             [
                 'user_id' => $superadmin->id,
+                'slug' => 'linochat-help-center',
+                'widget_id' => 'help-' . \Str::random(8),
                 'website' => 'https://linochat.com/help',
                 'color' => '#2563EB',
                 'status' => 'active',
