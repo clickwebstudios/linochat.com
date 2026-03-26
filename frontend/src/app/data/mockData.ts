@@ -622,27 +622,16 @@ export const mockPricingPlans = [
 ];
 
 export const mockTestimonials = [
-  {
-    quote: 'LinoChat transformed our customer service. Response times dropped by 60%!',
-    author: 'Jennifer Martinez',
-    role: 'Head of Support',
-    company: 'TechCorp',
-    avatar: 'JM',
-  },
-  {
-    quote: 'The AI automation saves us hours every day. Best investment we made this year.',
-    author: 'David Kim',
-    role: 'CEO',
-    company: 'StartupXYZ',
-    avatar: 'DK',
-  },
-  {
-    quote: 'Incredibly intuitive interface. Our team was up and running in minutes.',
-    author: 'Sophie Laurent',
-    role: 'Customer Success Manager',
-    company: 'Global Services Inc',
-    avatar: 'SL',
-  },
+  { quote: 'LinoChat transformed our customer service. Response times dropped by 60% and our CSAT score hit an all-time high.', author: 'Jennifer Martinez', role: 'Head of Support', company: 'TechCorp', avatar: 'JM' },
+  { quote: 'The AI automation saves us hours every day. Best investment we made this year — paid for itself in the first week.', author: 'David Kim', role: 'CEO', company: 'StartupXYZ', avatar: 'DK' },
+  { quote: 'Incredibly intuitive interface. Our team was up and running in minutes, no training needed.', author: 'Sophie Laurent', role: 'Customer Success Manager', company: 'Global Services', avatar: 'SL' },
+  { quote: 'We went from 3 support agents to 1 agent + LinoChat AI. The bot handles 80% of conversations perfectly.', author: 'Marcus Chen', role: 'Operations Director', company: 'CloudNine SaaS', avatar: 'MC' },
+  { quote: 'The knowledge base auto-generation is magic. It scraped our site and built a complete FAQ in minutes.', author: 'Rachel Adams', role: 'Product Manager', company: 'DesignHub', avatar: 'RA' },
+  { quote: 'Our customers love the instant responses. We no longer lose leads to slow reply times.', author: 'Thomas Berg', role: 'Sales Director', company: 'Nordic Digital', avatar: 'TB' },
+  { quote: 'Setup was ridiculously easy — one script tag and we were live. The widget looks beautiful on our site.', author: 'Aisha Patel', role: 'CTO', company: 'FreshCart', avatar: 'AP' },
+  { quote: 'LinoChat helped us scale support across 3 time zones without hiring. The AI never sleeps.', author: 'James Wilson', role: 'VP of Customer Experience', company: 'Nexus Labs', avatar: 'JW' },
+  { quote: "The handover from AI to human is seamless. Customers don't even notice the transition.", author: 'Elena Volkov', role: 'Support Team Lead', company: 'Prism Analytics', avatar: 'EV' },
+  { quote: 'We tried 4 other chat tools before LinoChat. Nothing comes close to the AI quality and ease of use.', author: "Ryan O'Brien", role: 'Founder', company: 'Greenline Agency', avatar: 'RO' },
 ];
 
 // Customer Activity History

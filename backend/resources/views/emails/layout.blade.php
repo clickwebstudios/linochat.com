@@ -11,8 +11,13 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background-color: #f0f4f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; -webkit-font-smoothing: antialiased; }
     .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 16px; }
-    .header { background: #ffffff; border-radius: 16px 16px 0 0; padding: 28px 40px; text-align: center; border-bottom: 1px solid #e5e7eb; }
-    .header img { max-width: 200px; height: auto; }
+    .header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 40%, #3b82f6 70%, #6366f1 100%); border-radius: 16px 16px 0 0; padding: 36px 40px 32px; text-align: center; position: relative; overflow: hidden; }
+    .header::before { content: ''; position: absolute; top: -60px; right: -40px; width: 180px; height: 180px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+    .header::after { content: ''; position: absolute; bottom: -50px; left: -30px; width: 140px; height: 140px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+    .header-dots { position: absolute; top: 12px; left: 20px; display: flex; gap: 6px; }
+    .header-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+    .header img { max-width: 180px; height: auto; position: relative; z-index: 1; filter: brightness(0) invert(1); }
+    .header-tagline { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 8px; position: relative; z-index: 1; letter-spacing: 0.3px; }
     .card { background: #ffffff; border-radius: 0 0 16px 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
     h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #111827; }
     h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #111827; }
@@ -51,7 +56,7 @@
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
       body { background-color: #111827 !important; color: #e5e7eb !important; }
-      .header { background: #ffffff !important; border-color: #374151 !important; }
+      .header { background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #4338ca 100%) !important; }
       .card { background: #1f2937 !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important; }
       h1, h3 { color: #f9fafb !important; }
       p { color: #d1d5db !important; }
@@ -72,9 +77,11 @@
 <body>
   <div class="wrapper">
     <div class="header">
+      <div class="header-dots"><span></span><span></span><span></span></div>
       <a href="https://linochat.com" style="text-decoration:none;">
-        <img src="{{ rtrim(config('app.frontend_url', config('app.url', 'https://linochat.com')), '/') }}/images/email-logo@2x.png" alt="LinoChat — Talk. Convert. Grow." width="200" style="max-width:200px;height:auto;" />
+        <img src="{{ rtrim(config('app.frontend_url', config('app.url', 'https://linochat.com')), '/') }}/images/email-logo@2x.png" alt="LinoChat" width="180" />
       </a>
+      <p class="header-tagline">AI-Powered Customer Support</p>
     </div>
     <div class="card">
       @yield('content')
