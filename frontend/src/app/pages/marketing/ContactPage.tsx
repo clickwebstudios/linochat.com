@@ -7,31 +7,9 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { motion } from 'motion/react';
-import { Mail, Phone, MapPin, Clock, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 export default function ContactPage() {
-  const contactInfo = [
-    {
-      icon: <Mail className="h-5 w-5" />,
-      title: 'Email',
-      lines: ['support@linochat.com', 'sales@linochat.com'],
-    },
-    {
-      icon: <Phone className="h-5 w-5" />,
-      title: 'Phone',
-      lines: ['+1 (555) 123-4567'],
-    },
-    {
-      icon: <MapPin className="h-5 w-5" />,
-      title: 'Office',
-      lines: ['123 Support Street', 'San Francisco, CA 94105'],
-    },
-    {
-      icon: <Clock className="h-5 w-5" />,
-      title: 'Hours',
-      lines: ['Mon-Fri: 9:00 AM - 6:00 PM PST'],
-    },
-  ];
 
   const faqs = [
     {
@@ -97,14 +75,13 @@ export default function ContactPage() {
       {/* Contact Form + Info */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
-            {/* Left: Form (3 cols) */}
+          <div className="max-w-3xl mx-auto">
+            {/* Contact Form */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="lg:col-span-3"
             >
               <Card>
                 <CardContent className="p-8">
@@ -149,37 +126,6 @@ export default function ContactPage() {
               </Card>
             </motion.div>
 
-            {/* Right: Contact info (2 cols) */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="lg:col-span-2 space-y-5"
-            >
-              <h2 className="text-2xl font-bold mb-1">Contact information</h2>
-              <p className="text-muted-foreground mb-6">
-                Prefer to reach out directly? Here's how to find us.
-              </p>
-
-              {contactInfo.map((item, index) => (
-                <Card key={index}>
-                  <CardContent className="p-5 flex items-start gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">{item.title}</h4>
-                      {item.lines.map((line, i) => (
-                        <p key={i} className="text-sm text-muted-foreground">
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </motion.div>
           </div>
         </div>
       </section>
