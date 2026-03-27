@@ -192,8 +192,9 @@ export default function DemoPage() {
                 width="100%"
                 height="600"
                 frameBorder="0"
+                scrolling="no"
                 title="Book a Demo"
-                style={{ border: 'none', borderRadius: '8px' }}
+                style={{ border: 'none', borderRadius: '8px', overflow: 'hidden' }}
               />
             </motion.div>
           </div>
