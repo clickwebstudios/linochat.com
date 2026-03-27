@@ -89,7 +89,13 @@ export default function AboutPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-card py-24">
+      <section className="relative overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/[0.10] blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-[300px] w-[500px] rounded-full bg-violet-500/[0.06] blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'radial-gradient(circle, #155dfc 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        </div>
         <div className="container mx-auto px-4 text-center max-w-4xl">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -97,7 +103,7 @@ export default function AboutPage() {
             transition={{ duration: 0.5 }}
             className="mb-6 text-[48px] font-bold leading-tight"
           >
-            Built for teams who care about their customers
+            Built for teams who <span className="bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">care</span> about their customers
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -254,7 +260,12 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground">
+      <section className="relative py-20 overflow-hidden text-primary-foreground">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary via-blue-600 to-violet-700" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15)_0%,_transparent_60%)]" />
+        <div className="absolute inset-0 -z-10 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
+        <div className="absolute top-10 right-10 h-32 w-32 rounded-full bg-white/5 blur-sm" />
+        <div className="absolute bottom-10 left-20 h-48 w-48 rounded-full bg-white/5 blur-sm" />
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

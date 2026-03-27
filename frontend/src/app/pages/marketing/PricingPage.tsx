@@ -566,7 +566,7 @@ export default function PricingPage() {
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
-              <Link to="/contact">
+              <Link to="/demo">
                 <Button
                   size="lg"
                   variant="outline"

@@ -462,7 +462,7 @@ export default function FeaturesPage() {
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/contact">
+              <Link to="/demo">
                 <Button size="lg" variant="outline">
                   Book a Demo
                 </Button>

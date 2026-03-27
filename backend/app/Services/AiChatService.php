@@ -1460,7 +1460,10 @@ class AiChatService
 
         // Handle availability check
         if (preg_match('/\[CHECK_AVAILABILITY:\s*([^\]]+)\]/i', $aiContent, $m)) {
-            $date = trim($m[1]);
+            $rawDate = trim($m[1]);
+            // Parse relative/invalid dates — AI may send "YYYY-MM-DD" literally, "Tomorrow", "next Monday"
+            $parsed = strtotime($rawDate);
+            $date = ($parsed && $rawDate !== 'YYYY-MM-DD') ? date('Y-m-d', $parsed) : date('Y-m-d', strtotime('tomorrow'));
             try {
                 $availability = FrubixService::checkAvailability($frubixConfig, $date, 60, $project);
                 $slots = $availability['slots'] ?? [];

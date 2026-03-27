@@ -21,6 +21,7 @@ import PrivacyPolicyPage from './pages/marketing/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/marketing/TermsOfServicePage';
 import UseCasesPage from './pages/marketing/UseCasesPage';
 import UseCaseDetailPage from './pages/marketing/UseCaseDetailPage';
+import DemoPage from './pages/marketing/DemoPage';
 
 // Layout Components (needed for route structure)
 import AgentAdminLayout from './components/layouts/AgentAdminLayout';
@@ -107,6 +108,7 @@ export default function App() {
               <Route path="/terms" element={<TermsOfServicePage />} />
               <Route path="/use-cases" element={<UseCasesPage />} />
               <Route path="/use-cases/:id" element={<UseCaseDetailPage />} />
+              <Route path="/demo" element={<DemoPage />} />
 
               {/* Auth Pages */}
               <Route
