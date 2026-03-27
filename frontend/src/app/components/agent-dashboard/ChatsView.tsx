@@ -120,7 +120,20 @@ export function ChatsView({
   const [selectedOperatorForTransfer, setSelectedOperatorForTransfer] = useState<any>(null);
   const [transferReason, setTransferReason] = useState('');
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [frubixCompanyName, setFrubixCompanyName] = useState<string | null>(null);
   const activeChatProject = getProjectById(activeChat?.project_id || activeChat?.projectId);
+
+  // Check Frubix integration when project changes
+  useEffect(() => {
+    const projectId = activeChat?.project_id || activeChat?.projectId;
+    if (!projectId) { setFrubixCompanyName(null); return; }
+    api.get(`/projects/${projectId}/integrations`)
+      .then((res: any) => {
+        const frubix = res?.data?.frubix;
+        setFrubixCompanyName(frubix?.enabled ? (frubix.company_name || 'Frubix') : null);
+      })
+      .catch(() => setFrubixCompanyName(null));
+  }, [activeChat?.project_id, activeChat?.projectId]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -653,6 +666,7 @@ export function ChatsView({
           setChatMessage={setChatMessage}
           isSending={isSending}
           hasTakenOver={hasTakenOver}
+          frubixCompanyName={frubixCompanyName}
           agentTyping={agentTyping}
           customerTyping={customerTyping}
           attachmentFiles={attachmentFiles}

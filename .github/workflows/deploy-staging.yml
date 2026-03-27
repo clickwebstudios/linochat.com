@@ -1,0 +1,84 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 63.250.42.183
+          username: admin2
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          command_timeout: 10m
+          script: |
+            set -e
+            export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
+            DEPLOY_PATH="/home/admin2/web/staging.linochat.com/public_html"
+
+            # Safety check: ensure we're not deploying to production DB
+            DB_NAME=$(grep '^DB_DATABASE=' $DEPLOY_PATH/backend/.env | cut -d= -f2 | tr -d "'")
+            if [ "$DB_NAME" = "admin2_linochat" ]; then
+              echo "ERROR: Staging deploy is pointing at PRODUCTION database! Aborting."
+              exit 1
+            fi
+
+            echo ">>> [1/5] Pulling latest code from dev..."
+            cd $DEPLOY_PATH
+            git fetch origin dev
+            git reset --hard origin/dev
+
+            echo ">>> [2/5] Backend: Installing PHP dependencies..."
+            cd $DEPLOY_PATH/backend
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo ">>> [3/5] Backend: Running migrations & clearing cache..."
+            php artisan migrate --force || true
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+
+            echo ">>> [4/5] Frontend: Installing JS dependencies..."
+            cd $DEPLOY_PATH/frontend
+            pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+
+            echo ">>> [5/5] Frontend: Building..."
+            pnpm run build
+
+            echo ">>> Staging deploy complete!"
+
+      - name: Notify Slack - Deploy Success
+        if: success()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "attachments": [{
+                "color": "#2eb886",
+                "text": ":white_check_mark: <https://staging.linochat.com|staging.linochat.com> deployment success\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              }]
+            }
+
+      - name: Notify Slack - Deploy Failed
+        if: failure()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "attachments": [{
+                "color": "#dc3545",
+                "text": ":x: <https://staging.linochat.com|staging.linochat.com> deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+              }]
+            }

@@ -397,6 +397,8 @@ class WidgetLoaderController extends Controller
     }
 
     function showUnreadBubble(text) {
+        var existing = document.getElementById('linochat-unread-bubble');
+        if (existing) existing.remove();
         // Hide greeting bubble
         // Hide greeting and popover
         var greeting = document.getElementById('linochat-greeting');
