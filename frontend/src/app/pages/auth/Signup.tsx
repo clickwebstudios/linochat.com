@@ -110,7 +110,7 @@ export default function Signup() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const [currentStep, setCurrentStep] = useState<SignupStep>('account');
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '', '', '']);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -197,7 +197,7 @@ export default function Signup() {
 
   const handleVerifyCode = async () => {
     const code = verificationCode.join('');
-    if (code.length !== 8) {
+    if (code.length !== 4) {
       toast.error('Please enter the full 6-digit code');
       return;
     }
@@ -649,7 +649,7 @@ export default function Signup() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={handleVerifyCode} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isVerifying || verificationCode.join('').length !== 8}>
+                  <Button onClick={handleVerifyCode} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isVerifying || verificationCode.join('').length !== 4}>
                     {isVerifying ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
