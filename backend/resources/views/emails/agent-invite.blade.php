@@ -1,27 +1,21 @@
-@extends('emails.layout')
+@extends('emails.layout', ['subject' => "You've been invited to join " . $companyName])
 
 @section('content')
-  <h1>You've been invited to LinoChat</h1>
-  <p>
-    <strong>{{ $inviterName }}</strong> has invited you to join <strong>{{ $companyName }}</strong>'s support team on LinoChat as a <strong>{{ $role }}</strong>.
-  </p>
+<h1>You're Invited! 🤝</h1>
+<p class="greeting">Hello,</p>
 
-  <table class="meta-table">
-    <tr><td>Company</td><td>{{ $companyName }}</td></tr>
-    <tr><td>Role</td><td>{{ $role }}</td></tr>
-    <tr><td>Invited by</td><td>{{ $inviterName }}</td></tr>
-    <tr><td>Expires</td><td>{{ now()->addDays(7)->format('M d, Y') }}</td></tr>
-  </table>
+<p><strong>{{ $inviterName }}</strong> has invited you to join <strong>{{ $companyName }}</strong>'s support team on LinoChat as a <strong>{{ $role }}</strong>.</p>
 
-  <p>Click the button below to accept the invitation and set up your account. This link expires in <strong>7 days</strong>.</p>
+<table class="meta-table">
+  <tr><td>Company</td><td>{{ $companyName }}</td></tr>
+  <tr><td>Role</td><td>{{ $role }}</td></tr>
+  <tr><td>Invited by</td><td>{{ $inviterName }}</td></tr>
+  <tr><td>Expires</td><td>{{ now()->addDays(7)->format('M d, Y') }}</td></tr>
+</table>
 
-  <p style="text-align:center;">
-    <a href="{{ config('app.url') }}/signup?invite={{ $inviteToken }}" class="btn">Accept Invitation →</a>
-  </p>
+<div style="text-align: center;">
+  <a href="{{ config('app.frontend_url', 'https://linochat.com') }}/signup?invite={{ $inviteToken }}" class="btn">Accept Invitation</a>
+</div>
 
-  <hr class="divider" />
-  <p style="font-size:13px;color:#6b7280;">
-    If you weren't expecting this invitation, you can safely ignore this email.<br>
-    This invite was sent by {{ $inviterName }} from {{ $companyName }}.
-  </p>
+<p style="font-size: 13px; color: #9ca3af;">This link expires in <strong>7 days</strong>. If you didn't expect this invitation, you can safely ignore this email.</p>
 @endsection

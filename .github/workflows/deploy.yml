@@ -9,42 +9,56 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 63.250.42.183
-          username: admin2
+          host: 5.78.92.126
+          username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 10m
+          envs: RESEND_API_KEY
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
-            DEPLOY_PATH="/home/admin2/web/linochat.com/public_html"
+            DEPLOY_PATH="/home/admin/web/linochat.com/public_html"
 
-            echo ">>> [1/5] Pulling latest code..."
+            echo ">>> [1/6] Pulling latest code..."
             cd $DEPLOY_PATH
             git fetch origin master
             git reset --hard origin/master
 
-            echo ">>> [2/5] Backend: Installing PHP dependencies..."
+            echo ">>> [2/7] Setting env vars..."
             cd $DEPLOY_PATH/backend
+            # Ensure Resend API key is set
+            grep -q '^RESEND_API_KEY=' .env 2>/dev/null || echo 'RESEND_API_KEY=' >> .env
+            sed -i "s|^RESEND_API_KEY=.*|RESEND_API_KEY=$RESEND_API_KEY|" .env
+            # Ensure mail mailer is resend
+            sed -i "s|^MAIL_MAILER=.*|MAIL_MAILER=resend|" .env
+
+            echo ">>> [3/7] Backend: Installing PHP dependencies..."
             composer install --no-dev --optimize-autoloader --no-interaction
 
-            echo ">>> [3/5] Backend: Running migrations & clearing cache..."
+            echo ">>> [4/7] Backend: Running migrations & clearing cache..."
             php artisan migrate --force || true
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
 
-            echo ">>> [4/5] Frontend: Installing JS dependencies..."
+            echo ">>> [5/7] Frontend: Installing JS dependencies..."
             cd $DEPLOY_PATH/frontend
             pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 
-            echo ">>> [5/5] Frontend: Building..."
+            echo ">>> [6/7] Frontend: Building..."
             pnpm run build
+
+            echo ">>> [7/7] Fixing permissions & restarting workers..."
+            chown -R www-data:www-data $DEPLOY_PATH/backend/storage $DEPLOY_PATH/backend/bootstrap/cache
+            supervisorctl restart linochat-worker:* linochat-reverb
 
             echo ">>> Deploy complete!"
 

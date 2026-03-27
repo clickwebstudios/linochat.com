@@ -90,10 +90,9 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       {/* Logo in top left */}
-      <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <img src="/logo-icon.svg" alt="LinoChat" className="h-10 w-10" />
-        <h1 className="text-xl text-primary font-semibold">LinoChat</h1>
-      </div>
+      <Link to="/" className="fixed top-6 left-6 z-10">
+        <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-10" />
+      </Link>
 
       {/* Close button in top right */}
       <Link

@@ -255,7 +255,7 @@ class AuthController extends Controller
 
         EmailVerificationCode::where('email', $email)->delete();
 
-        $code = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
 
         EmailVerificationCode::create([
             'email'      => $email,
@@ -286,7 +286,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
-            'code'  => 'required|string|size:6',
+            'code'  => 'required|string|size:4',
         ]);
 
         if ($validator->fails()) {
@@ -444,7 +444,7 @@ class AuthController extends Controller
         $resetUrl = rtrim(config('app.frontend_url', 'https://linochat.com'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
         try {
-            Mail::to($user->email)->send(new PasswordResetMail($user->first_name . ' ' . $user->last_name, $user->email, $resetUrl));
+            Mail::to($user->email)->send(new PasswordResetMail($user, $resetUrl));
         } catch (\Exception $e) {
             Log::error('Failed to send password reset email', ['error' => $e->getMessage()]);
             return response()->json([

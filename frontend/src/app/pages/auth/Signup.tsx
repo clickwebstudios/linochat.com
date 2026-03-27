@@ -110,7 +110,7 @@ export default function Signup() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const [currentStep, setCurrentStep] = useState<SignupStep>('account');
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -197,7 +197,7 @@ export default function Signup() {
 
   const handleVerifyCode = async () => {
     const code = verificationCode.join('');
-    if (code.length !== 6) {
+    if (code.length !== 4) {
       toast.error('Please enter the full 6-digit code');
       return;
     }
@@ -299,7 +299,7 @@ export default function Signup() {
     if (!formData.email.trim()) return toast.error('Email address is required');
     if (!formData.companyName.trim()) return toast.error('Company name is required');
     if (!formData.password) return toast.error('Password is required');
-    if (formData.password.length < 6) return toast.error('Password must be at least 6 characters');
+    if (formData.password.length < 8) return toast.error('Password must be at least 8 characters');
     if (formData.password !== formData.confirmPassword) return toast.error('Passwords do not match');
     clearError();
     try {
@@ -318,12 +318,9 @@ export default function Signup() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
-        <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-          <div className="bg-primary p-2 rounded-lg">
-            <MessageSquare className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-xl text-primary">LinoChat</h1>
-        </div>
+        <Link to="/" className="fixed top-6 left-6 z-10">
+          <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-10" />
+        </Link>
 
         <div className="w-full max-w-md">
           <Card className="shadow-xl border-0">
@@ -395,12 +392,9 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
       {/* Logo */}
-      <div className="fixed top-6 left-6 flex items-center gap-2 z-10">
-        <div className="bg-primary p-2 rounded-lg">
-          <MessageSquare className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <h1 className="text-xl text-primary">LinoChat</h1>
-      </div>
+      <Link to="/" className="fixed top-6 left-6 z-10">
+        <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-10" />
+      </Link>
 
       <div className="w-full max-w-4xl">
         {/* ── Progress Steps ── */}
@@ -523,7 +517,7 @@ export default function Signup() {
                         <SelectTrigger id="country" className="pl-10">
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[200px]">
                           {COUNTRIES.map((c) => (
                             <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                           ))}
@@ -655,7 +649,7 @@ export default function Signup() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={handleVerifyCode} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isVerifying || verificationCode.join('').length !== 6}>
+                  <Button onClick={handleVerifyCode} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isVerifying || verificationCode.join('').length !== 4}>
                     {isVerifying ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

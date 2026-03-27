@@ -45,7 +45,7 @@ export default function MarketingHeader() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-6 md:flex text-base">
+          <nav className="hidden items-center gap-6 md:flex text-sm font-medium">
             <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>
@@ -101,7 +101,7 @@ export default function MarketingHeader() {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="hidden items-center gap-3 md:flex text-base">
+          <div className="hidden items-center gap-3 md:flex text-sm">
             <Button variant="ghost" size="icon">
               <Search className="h-5 w-5" />
             </Button>

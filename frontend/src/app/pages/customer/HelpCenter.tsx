@@ -1,233 +1,127 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 import { Badge } from '../../components/ui/badge';
-import { Search, FileText, ThumbsUp, ThumbsDown, MessageCircle, ArrowRight, BookOpen, HelpCircle } from 'lucide-react';
-import { mockArticles } from '../../data/mockData';
+import { Search, BookOpen, FileText, HelpCircle, MessageCircle, ArrowLeft, ArrowRight, ThumbsUp, ThumbsDown, Loader2, ChevronRight } from 'lucide-react';
+import MarketingHeader from '../../components/MarketingHeader';
+import MarketingFooter from '../../components/MarketingFooter';
+import SEOHead from '../../components/SEOHead';
+
+const API_BASE = (import.meta.env.VITE_API_URL || '/api');
+
+interface Category { id: number; name: string; slug: string; description: string; articles_count: number; }
+interface Article { id: number; title: string; slug: string; excerpt: string; category: string; category_slug: string; views: number; helpful: number; }
+interface ArticleDetail { id: number; title: string; slug: string; content: string; category: string; category_slug: string; views: number; helpful_count: number; not_helpful_count: number; created_at: string; updated_at: string; related: { id: number; title: string; slug: string }[]; }
+
+const CATEGORY_ICONS: Record<string, any> = {
+  'getting-started': BookOpen, 'account-billing': FileText, 'chat-messaging': MessageCircle,
+  'tickets-support': HelpCircle, 'knowledge-base': BookOpen, 'integrations': FileText, 'security-privacy': HelpCircle,
+};
 
 export default function HelpCenter() {
+  const { articleSlug, categorySlug } = useParams<{ articleSlug?: string; categorySlug?: string }>();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [articleDetail, setArticleDetail] = useState<ArticleDetail | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Article[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
 
-  const categories = [
-    { name: 'Getting Started', icon: <BookOpen />, count: 12 },
-    { name: 'Account & Billing', icon: <FileText />, count: 8 },
-    { name: 'Features & Usage', icon: <HelpCircle />, count: 15 },
-    { name: 'Troubleshooting', icon: <MessageCircle />, count: 10 },
-  ];
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [catRes, artRes] = await Promise.all([
+        fetch(`${API_BASE}/help/categories`).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${API_BASE}/help/articles${categorySlug ? `?category=${categorySlug}` : ''}`).then(r => r.json()).catch(() => ({ data: [] })),
+      ]);
+      setCategories(catRes.data || []);
+      setArticles(artRes.data || []);
+    } catch {}
+    setLoading(false);
+  }, [categorySlug]);
 
-  const faqs = [
-    { q: 'How do I reset my password?', a: 'Click on "Forgot Password" on the login page and follow the email instructions.' },
-    { q: 'Can I change my plan anytime?', a: 'Yes! You can upgrade or downgrade your plan from your account settings.' },
-    { q: 'How do I contact support?', a: 'Use the chat widget in the bottom right or email support@linochat.com.' },
-    { q: 'Is my data secure?', a: 'Absolutely. We use bank-level encryption and are SOC 2 Type II certified.' },
-  ];
+  useEffect(() => { if (!articleSlug) fetchData(); }, [fetchData, articleSlug]);
+
+  useEffect(() => {
+    if (!articleSlug) { setArticleDetail(null); return; }
+    setLoading(true);
+    fetch(`${API_BASE}/help/articles/${articleSlug}`)
+      .then(r => r.json())
+      .then(res => { if (res.success) setArticleDetail(res.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    setFeedbackGiven(false);
+  }, [articleSlug]);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) { setSearchResults(null); return; }
+    const timeout = setTimeout(() => {
+      fetch(`${API_BASE}/help/search`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery }),
+      }).then(r => r.json()).then(res => setSearchResults(res.data || [])).catch(() => setSearchResults([]));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const submitFeedback = async (helpful: boolean) => {
+    if (!articleDetail || feedbackGiven) return;
+    await fetch(`${API_BASE}/help/articles/${articleDetail.id}/feedback`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ helpful }),
+    }).catch(() => {});
+    setFeedbackGiven(true);
+  };
+
+  // ── Article Detail ───────────────────────────────────────────────
+  if (articleSlug && articleDetail) {
+    const jsonLd = { '@context': 'https://schema.org', '@type': 'Article', headline: articleDetail.title, description: articleDetail.content.replace(/[#*`\[\]]/g, '').slice(0, 160), datePublished: articleDetail.created_at, dateModified: articleDetail.updated_at, author: { '@type': 'Organization', name: 'LinoChat' }, publisher: { '@type': 'Organization', name: 'LinoChat', url: 'https://linochat.com' }, mainEntityOfPage: { '@type': 'WebPage', '@id': `https://linochat.com/help/${articleDetail.slug}` } };
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <SEOHead title={`${articleDetail.title} — LinoChat Help`} description={articleDetail.content.replace(/[#*`\[\]]/g, '').slice(0, 160)} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <MarketingHeader />
+        <div className="border-b bg-card"><div className="container mx-auto px-4 py-3"><nav className="flex items-center gap-1.5 text-sm text-muted-foreground" aria-label="Breadcrumb"><Link to="/" className="hover:text-primary">Home</Link><ChevronRight className="h-3.5 w-3.5" /><Link to="/help" className="hover:text-primary">Help Center</Link><ChevronRight className="h-3.5 w-3.5" /><Link to={`/help/category/${articleDetail.category_slug}`} className="hover:text-primary">{articleDetail.category}</Link><ChevronRight className="h-3.5 w-3.5" /><span className="text-foreground font-medium truncate max-w-[300px]">{articleDetail.title}</span></nav></div></div>
+        <div className="container mx-auto px-4 py-10 max-w-4xl">
+          <Link to="/help" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6"><ArrowLeft className="h-4 w-4" /> Back to Help Center</Link>
+          <article className="bg-card rounded-2xl border p-8 md:p-12">
+            <Badge variant="secondary" className="mb-4">{articleDetail.category}</Badge>
+            <h1 className="text-3xl font-bold mb-6">{articleDetail.title}</h1>
+            <div className="prose prose-gray max-w-none text-[15px] leading-relaxed" dangerouslySetInnerHTML={{ __html: articleDetail.content.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-6 mb-2">$1</h3>').replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mt-8 mb-3">$1</h2>').replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>').replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4">$2</li>').replace(/`([^`]+)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>').replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="bg-muted p-4 rounded-lg overflow-x-auto text-sm my-4"><code>$2</code></pre>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline">$1</a>').replace(/\n\n/g, '</p><p class="mb-4">').replace(/\n/g, '<br/>') }} />
+            <div className="mt-10 pt-6 border-t text-center">
+              {feedbackGiven ? <p className="text-sm text-muted-foreground">Thank you for your feedback!</p> : (<><p className="text-sm text-muted-foreground mb-3">Was this article helpful?</p><div className="flex gap-3 justify-center"><Button variant="outline" size="sm" onClick={() => submitFeedback(true)} className="gap-1.5"><ThumbsUp className="h-4 w-4" /> Yes</Button><Button variant="outline" size="sm" onClick={() => submitFeedback(false)} className="gap-1.5"><ThumbsDown className="h-4 w-4" /> No</Button></div></>)}
+            </div>
+          </article>
+          {articleDetail.related?.length > 0 && (<div className="mt-8"><h3 className="font-semibold mb-4">Related Articles</h3><div className="grid gap-3">{articleDetail.related.map(r => (<Link key={r.id} to={`/help/${r.slug}`} className="block p-4 bg-card border rounded-xl hover:border-primary/30 transition-colors"><span className="text-sm font-medium hover:text-primary">{r.title}</span></Link>))}</div></div>)}
+        </div>
+        <MarketingFooter />
+      </div>
+    );
+  }
+
+  // ── Main View ────────────────────────────────────────────────────
+  const displayArticles = searchResults !== null ? searchResults : articles;
+  const jsonLdFaq = articles.length > 0 ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: articles.slice(0, 10).map(a => ({ '@type': 'Question', name: a.title, acceptedAnswer: { '@type': 'Answer', text: a.excerpt } })) } : null;
 
   return (
-    <div className="min-h-screen bg-muted/50">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm text-primary-foreground font-bold">LC</span>
-              </div>
-              <span className="font-bold">LinoChat</span>
-            </Link>
-            <nav className="flex items-center gap-4">
-              <Link to="/contact">
-                <Button className="bg-primary">Contact Support</Button>
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Search */}
-      <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="mb-4 text-primary-foreground text-[48px] font-bold">How can we help you?</h1>
-          <p className="text-xl text-primary-foreground/80 mb-8">
-            Search our knowledge base for answers
-          </p>
-          <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search for articles, guides, FAQs..."
-              className="pl-12 h-14 text-lg bg-card"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <p className="mt-4 text-sm text-primary-foreground/80">
-            Popular searches: password reset, billing, integrations
-          </p>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center">Browse by Category</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, i) => (
-              <Card key={i} className="cursor-pointer hover:shadow-lg transition-all hover:scale-105">
-                <CardContent className="p-6 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    {category.icon}
-                  </div>
-                  <h3 className="mb-2">{category.name}</h3>
-                  <p className="text-sm text-muted-foreground">{category.count} articles</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Popular Articles */}
-      <section className="py-12 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2>Popular Articles</h2>
-            <Button variant="link">View All <ArrowRight className="ml-2 h-4 w-4" /></Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {mockArticles.map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <Badge className="mb-3">{article.category}</Badge>
-                  <h3 className="mb-3">{article.title}</h3>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{article.views} views</span>
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp className="h-4 w-4" />
-                      {article.helpful}% helpful
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQs */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center">Frequently Asked Questions</h2>
-          <div className="max-w-3xl mx-auto">
-            <Accordion type="single" collapsible className="space-y-4">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="bg-card border rounded-lg px-6">
-                  <AccordionTrigger className="text-left">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </div>
-      </section>
-
-      {/* Article Detail View (when clicked) */}
-      {searchQuery && (
-        <section className="py-12 bg-card">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Badge className="mb-3">Getting Started</Badge>
-                    <CardTitle>How to Get Started with LinoChat</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Updated on Dec 15, 2024 • 5 min read
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="prose max-w-none">
-                  <h3>Introduction</h3>
-                  <p>Welcome to LinoChat! This guide will help you get started with our platform in just a few minutes.</p>
-                  
-                  <h3>Step 1: Create Your Account</h3>
-                  <p>Sign up at our website using your work email. You'll receive a confirmation email to verify your account.</p>
-                  
-                  <h3>Step 2: Set Up Your Team</h3>
-                  <p>Invite team members from your dashboard. You can assign different roles and permissions.</p>
-                  
-                  <h3>Step 3: Install the Chat Widget</h3>
-                  <p>Copy the widget code from your settings and paste it into your website's HTML.</p>
-                </div>
-
-                {/* Feedback */}
-                <div className="border-t pt-6 mt-6">
-                  <p className="mb-4">Was this article helpful?</p>
-                  <div className="flex gap-3">
-                    <Button variant="outline" size="sm">
-                      <ThumbsUp className="mr-2 h-4 w-4" />
-                      Yes
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <ThumbsDown className="mr-2 h-4 w-4" />
-                      No
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Related Articles */}
-                <div className="border-t pt-6 mt-6">
-                  <h4 className="mb-4">Related Articles</h4>
-                  <div className="space-y-2">
-                    <a href="#" className="block text-primary hover:underline">→ Installing the Chat Widget</a>
-                    <a href="#" className="block text-primary hover:underline">→ Managing Team Members</a>
-                    <a href="#" className="block text-primary hover:underline">→ Customizing Your Dashboard</a>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-      )}
-
-      {/* CTA */}
-      <section className="py-12 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-primary-foreground">Can't find what you need?</h2>
-          <p className="text-xl text-primary-foreground/80 mb-6">
-            Our support team is here to help!
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Button size="lg" className="bg-card text-primary hover:bg-muted/50">
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Start Live Chat
-            </Button>
-            <Link to="/contact">
-              <Button size="lg" variant="outline" className="text-primary-foreground border-primary-foreground hover:bg-primary/90">
-                Contact Support
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t bg-card py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 LinoChat. All rights reserved.</p>
-          <div className="mt-2 flex gap-4 justify-center">
-            <Link to="/" className="hover:text-primary">Home</Link>
-            <Link to="/contact" className="hover:text-primary">Contact</Link>
-          </div>
-        </div>
-      </footer>
+    <div className="min-h-screen bg-muted/30">
+      <SEOHead title={categorySlug ? `${categories.find(c => c.slug === categorySlug)?.name || 'Category'} — Help Center` : 'Help Center — LinoChat'} description="Find answers about LinoChat. Browse guides, tutorials, and FAQs about AI chat, ticketing, knowledge base, and more." />
+      {jsonLdFaq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />}
+      <MarketingHeader />
+      {categorySlug && (<div className="border-b bg-card"><div className="container mx-auto px-4 py-3"><nav className="flex items-center gap-1.5 text-sm text-muted-foreground" aria-label="Breadcrumb"><Link to="/" className="hover:text-primary">Home</Link><ChevronRight className="h-3.5 w-3.5" /><Link to="/help" className="hover:text-primary">Help Center</Link><ChevronRight className="h-3.5 w-3.5" /><span className="text-foreground font-medium">{categories.find(c => c.slug === categorySlug)?.name || categorySlug}</span></nav></div></div>)}
+      <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16"><div className="container mx-auto px-4 text-center"><h1 className="mb-4 text-4xl font-bold">How can we help you?</h1><p className="text-xl text-primary-foreground/80 mb-8">Search our knowledge base or browse by category</p><div className="relative max-w-xl mx-auto"><Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" /><Input type="text" placeholder="Search for articles..." className="h-12 pl-12 bg-white text-foreground placeholder:text-muted-foreground rounded-xl border-0 shadow-lg" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div></div></section>
+      <div className="container mx-auto px-4 py-12">
+        {loading ? <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : (<>
+          {!searchResults && (<div className="flex flex-wrap gap-2 mb-8"><Link to="/help"><Badge variant={!categorySlug ? 'default' : 'outline'} className="cursor-pointer px-3 py-1.5">All</Badge></Link>{categories.map(cat => (<Link key={cat.id} to={`/help/category/${cat.slug}`}><Badge variant={categorySlug === cat.slug ? 'default' : 'outline'} className="cursor-pointer px-3 py-1.5">{cat.name} ({cat.articles_count})</Badge></Link>))}</div>)}
+          {searchResults !== null && (<div className="mb-6 flex items-center justify-between"><p className="text-sm text-muted-foreground">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"</p><Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setSearchResults(null); }}>Clear</Button></div>)}
+          {!searchResults && !categorySlug && categories.length > 0 && (<div className="mb-12"><h2 className="text-xl font-semibold mb-5">Browse by Category</h2><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{categories.map(cat => { const Icon = CATEGORY_ICONS[cat.slug] || BookOpen; return (<Link key={cat.id} to={`/help/category/${cat.slug}`}><Card className="h-full hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"><CardContent className="p-6 text-center"><div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors"><Icon className="h-6 w-6" /></div><h3 className="font-semibold mb-1">{cat.name}</h3><p className="text-xs text-muted-foreground">{cat.articles_count} article{cat.articles_count !== 1 ? 's' : ''}</p></CardContent></Card></Link>); })}</div></div>)}
+          <div><h2 className="text-xl font-semibold mb-5">{categorySlug ? categories.find(c => c.slug === categorySlug)?.name || 'Articles' : searchResults ? 'Search Results' : 'Popular Articles'}</h2>{displayArticles.length === 0 ? (<div className="text-center py-16 text-muted-foreground"><HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>{searchResults !== null ? 'No articles found.' : 'No articles available yet.'}</p></div>) : (<div className="grid gap-3">{displayArticles.map(article => (<Link key={article.id} to={`/help/${article.slug}`}><Card className="hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"><CardContent className="p-5 flex items-start gap-4"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5"><FileText className="h-5 w-5" /></div><div className="flex-1 min-w-0"><h3 className="font-semibold text-sm mb-1">{article.title}</h3><p className="text-xs text-muted-foreground line-clamp-2">{article.excerpt}</p><div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground"><Badge variant="outline" className="text-[10px] px-1.5 py-0">{article.category}</Badge>{article.views > 0 && <span>{article.views} views</span>}</div></div><ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" /></CardContent></Card></Link>))}</div>)}</div>
+          <div className="mt-16 text-center"><Card className="max-w-2xl mx-auto"><CardContent className="p-8"><h3 className="text-xl font-semibold mb-2">Can't find what you need?</h3><p className="text-muted-foreground mb-5">Our team is here to help.</p><Link to="/contact"><Button>Contact Support</Button></Link></CardContent></Card></div>
+        </>)}
+      </div>
+      <MarketingFooter />
     </div>
   );
 }
