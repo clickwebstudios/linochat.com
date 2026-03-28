@@ -125,6 +125,21 @@ class ProjectController extends Controller
             ], 422);
         }
 
+        $defaultAiSettings = [
+            'ai_enabled' => true,
+            'ai_name' => 'AI Assistant',
+            'response_tone' => 'professional',
+            'fallback_behavior' => 'transfer',
+            'confidence_threshold' => 75,
+            'response_language' => 'auto',
+            'auto_learn' => true,
+            'model' => 'gpt-4o-mini',
+        ];
+
+        $aiSettings = $request->input('ai_settings')
+            ? array_merge($defaultAiSettings, $request->input('ai_settings'))
+            : $defaultAiSettings;
+
         $project = Project::create([
             'user_id' => $user->id,
             'name' => $request->input('name'),
@@ -134,6 +149,7 @@ class ProjectController extends Controller
             'color' => $request->input('color', '#4F46E5'),
             'description' => $request->input('description'),
             'status' => 'active',
+            'ai_settings' => $aiSettings,
         ]);
 
         // Автоматически запускаем генерацию KB при создании проекта (если указан website)

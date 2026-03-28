@@ -25,6 +25,7 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
+  Bot,
 } from 'lucide-react';
 import { api } from '../api/client';
 
@@ -83,7 +84,7 @@ export function AddProjectDialog({
   onOpenChange,
   onProjectCreated,
 }: AddProjectDialogProps) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>('idle');
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -95,6 +96,12 @@ export function AddProjectDialog({
   const [projectColor, setProjectColor] = useState('#3B82F6');
   const [urlError, setUrlError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // AI Agent settings for step 3
+  const [aiName, setAiName] = useState('AI Assistant');
+  const [aiTone, setAiTone] = useState('professional');
+  const [aiFallback, setAiFallback] = useState('transfer');
+  const [aiEnabled, setAiEnabled] = useState(true);
 
   // KB Generation overlay state
   const [isCreatingKB, setIsCreatingKB] = useState(false);
@@ -111,6 +118,10 @@ export function AddProjectDialog({
     setProjectDescription('');
     setProjectColor('#3B82F6');
     setUrlError('');
+    setAiName('AI Assistant');
+    setAiTone('professional');
+    setAiFallback('transfer');
+    setAiEnabled(true);
     setIsCreatingKB(false);
     setCreationStep(0);
     setCreationDone(false);
@@ -186,8 +197,16 @@ export function AddProjectDialog({
     setStep(2);
   };
 
+  const handleGoToStep3 = () => {
+    setStep(3);
+  };
+
   const handleBackToStep1 = () => {
     setStep(1);
+  };
+
+  const handleBackToStep2 = () => {
+    setStep(2);
   };
 
   const handleSubmit = async () => {
@@ -217,6 +236,12 @@ export function AddProjectDialog({
         description: projectDescription,
         color: projectColor,
         website: normalizedUrl,
+        ai_settings: {
+          ai_enabled: aiEnabled,
+          ai_name: aiName,
+          response_tone: aiTone,
+          fallback_behavior: aiFallback,
+        },
       });
 
       clearInterval(stepTimer);
@@ -337,26 +362,28 @@ export function AddProjectDialog({
         <div className="border-b bg-muted/50 px-6 pt-6 pb-4">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl">
-              {step === 1 ? 'Add New Project' : 'Review Project Details'}
+              {step === 1 ? 'Add New Project' : step === 2 ? 'Review Project Details' : 'Setup AI Agent'}
             </DialogTitle>
             <DialogDescription>
               {step === 1
                 ? "Enter your website URL and we'll automatically extract project details"
-                : 'Review and customize the details before creating your project'}
+                : step === 2
+                ? 'Review and customize the details before creating your project'
+                : 'Configure the basic AI agent settings for your project'}
             </DialogDescription>
           </DialogHeader>
 
           {/* Step Indicators */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                   step === 1
                     ? 'bg-primary text-primary-foreground ring-4 ring-primary/10'
                     : 'bg-green-600 text-white'
                 }`}
               >
-                {step > 1 ? <Check className="h-4 w-4" /> : '1'}
+                {step > 1 ? <Check className="h-3.5 w-3.5" /> : '1'}
               </div>
               <span
                 className={`text-sm font-medium ${step === 1 ? 'text-primary' : 'text-green-600'}`}
@@ -365,22 +392,43 @@ export function AddProjectDialog({
               </span>
             </div>
 
-            <div className="h-px flex-1 bg-border max-w-12" />
+            <div className="h-px flex-1 bg-border max-w-8" />
 
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                   step === 2
+                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/10'
+                    : step > 2
+                    ? 'bg-green-600 text-white'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {step > 2 ? <Check className="h-3.5 w-3.5" /> : '2'}
+              </div>
+              <span
+                className={`text-sm font-medium ${step === 2 ? 'text-primary' : step > 2 ? 'text-green-600' : 'text-muted-foreground'}`}
+              >
+                Details
+              </span>
+            </div>
+
+            <div className="h-px flex-1 bg-border max-w-8" />
+
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+                  step === 3
                     ? 'bg-primary text-primary-foreground ring-4 ring-primary/10'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
-                2
+                3
               </div>
               <span
-                className={`text-sm font-medium ${step === 2 ? 'text-primary' : 'text-muted-foreground'}`}
+                className={`text-sm font-medium ${step === 3 ? 'text-primary' : 'text-muted-foreground'}`}
               >
-                Submit Details
+                AI Agent
               </span>
             </div>
           </div>
@@ -624,7 +672,7 @@ export function AddProjectDialog({
                 </div>
               )}
             </div>
-          ) : (
+          ) : step === 2 ? (
             /* Step 2: Review & Edit Details */
             <div className="space-y-5">
               <div className="space-y-2">
@@ -748,6 +796,95 @@ export function AddProjectDialog({
                 </p>
               )}
             </div>
+          ) : (
+            /* Step 3: Setup AI Agent */
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 p-4 rounded-xl border bg-primary/5 border-primary/20">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">AI-Powered Support Agent</p>
+                  <p className="text-xs text-muted-foreground">Configure how your AI agent interacts with customers</p>
+                </div>
+                <div className="ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => setAiEnabled(!aiEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      aiEnabled ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        aiEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {aiEnabled && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-name">Agent Name</Label>
+                    <Input
+                      id="ai-name"
+                      placeholder="e.g. Support Bot"
+                      value={aiName}
+                      onChange={(e) => setAiName(e.target.value)}
+                      maxLength={50}
+                    />
+                    <p className="text-xs text-muted-foreground">This name appears in chat conversations</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-tone">Response Tone</Label>
+                    <select
+                      id="ai-tone"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={aiTone}
+                      onChange={(e) => setAiTone(e.target.value)}
+                    >
+                      <option value="professional">Professional</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="casual">Casual</option>
+                      <option value="formal">Formal</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-fallback">When AI Can't Answer</Label>
+                    <select
+                      id="ai-fallback"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={aiFallback}
+                      onChange={(e) => setAiFallback(e.target.value)}
+                    >
+                      <option value="transfer">Transfer to human agent</option>
+                      <option value="collect">Collect contact info</option>
+                      <option value="suggest">Suggest help articles</option>
+                      <option value="none">Do nothing</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">What happens when the AI isn't confident enough to respond</p>
+                  </div>
+                </div>
+              )}
+
+              {!aiEnabled && (
+                <div className="text-center py-6 text-muted-foreground">
+                  <Bot className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">AI agent is disabled. You can enable it later in project settings.</p>
+                </div>
+              )}
+
+              {urlError && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {urlError}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
@@ -758,6 +895,16 @@ export function AddProjectDialog({
               <Button
                 variant="ghost"
                 onClick={handleBackToStep1}
+                className="gap-2 text-muted-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+            )}
+            {step === 3 && (
+              <Button
+                variant="ghost"
+                onClick={handleBackToStep2}
                 className="gap-2 text-muted-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -797,6 +944,15 @@ export function AddProjectDialog({
                   )}
                 </Button>
               )
+            ) : step === 2 ? (
+              <Button
+                className="bg-primary hover:bg-primary/90 gap-2"
+                onClick={handleGoToStep3}
+                disabled={!projectName.trim()}
+              >
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             ) : (
               <Button
                 className="bg-green-600 hover:bg-green-700 gap-2"
