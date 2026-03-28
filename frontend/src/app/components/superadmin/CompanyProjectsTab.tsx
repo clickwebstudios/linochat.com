@@ -78,13 +78,13 @@ export function CompanyProjectsTab({
     <div className="space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">All Projects</CardTitle>
+          <CardTitle className="text-base">All Workspaces</CardTitle>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search projects..." className="pl-8 h-9 w-[200px]" />
+              <Input placeholder="Search workspaces..." className="pl-8 h-9 w-[200px]" />
             </div>
-            <Button size="sm" className="bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Add Project</Button>
+            <Button size="sm" className="bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Add Workspace</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -92,7 +92,7 @@ export function CompanyProjectsTab({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Project</TableHead>
+                  <TableHead>Workspace</TableHead>
                   <TableHead>Website</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Total Tickets</TableHead>
@@ -158,14 +158,14 @@ export function CompanyProjectsTab({
           ) : (
             <div className="text-center py-10">
               <FolderKanban className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No projects yet</p>
-              <Button size="sm" className="mt-3 bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Create First Project</Button>
+              <p className="text-sm text-muted-foreground">No workspaces yet</p>
+              <Button size="sm" className="mt-3 bg-primary" onClick={() => setAddProjectDialogOpen(true)} disabled={isArchived}><Plus className="h-4 w-4 mr-1" />Create First Workspace</Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Add Project Dialog */}
+      {/* Add Workspace Dialog */}
       <Dialog open={addProjectDialogOpen} onOpenChange={setAddProjectDialogOpen}>
         <DialogContent className="sm:max-w-[640px]">
           <AddProjectForm

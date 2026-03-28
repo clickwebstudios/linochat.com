@@ -289,7 +289,7 @@ export function AddProjectDialog({
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-1">
-                  Creating Your Project
+                  Creating Your Workspace
                 </h3>
                 <p className="text-sm text-muted-foreground mb-8">
                   AI is building your knowledge base from your website...
@@ -348,7 +348,7 @@ export function AddProjectDialog({
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Project Created!
+                  Workspace Created!
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Your knowledge base has been generated successfully.
@@ -362,14 +362,14 @@ export function AddProjectDialog({
         <div className="border-b bg-muted/50 px-6 pt-6 pb-4">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl">
-              {step === 1 ? 'Add New Project' : step === 2 ? 'Review Project Details' : 'Setup AI Agent'}
+              {step === 1 ? 'Add New Workspace' : step === 2 ? 'Review Workspace Details' : 'Setup AI Agent'}
             </DialogTitle>
             <DialogDescription>
               {step === 1
-                ? "Enter your website URL and we'll automatically extract project details"
+                ? "Enter your website URL and we'll automatically extract workspace details"
                 : step === 2
-                ? 'Review and customize the details before creating your project'
-                : 'Configure the basic AI agent settings for your project'}
+                ? 'Review and customize the details before creating your workspace'
+                : 'Configure the basic AI agent settings for your workspace'}
             </DialogDescription>
           </DialogHeader>
 
@@ -677,7 +677,7 @@ export function AddProjectDialog({
             <div className="space-y-5">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-project-name">Project Name</Label>
+                  <Label htmlFor="edit-project-name">Workspace Name</Label>
                   {analyzedData && (
                     <Badge
                       variant="outline"
@@ -690,7 +690,7 @@ export function AddProjectDialog({
                 </div>
                 <Input
                   id="edit-project-name"
-                  placeholder="Enter project name"
+                  placeholder="Enter workspace name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                 />
@@ -700,7 +700,7 @@ export function AddProjectDialog({
                 <Label htmlFor="edit-project-desc">Description</Label>
                 <Textarea
                   id="edit-project-desc"
-                  placeholder="Describe your project..."
+                  placeholder="Describe your workspace..."
                   rows={3}
                   value={projectDescription}
                   onChange={(e) => setProjectDescription(e.target.value)}
@@ -727,7 +727,7 @@ export function AddProjectDialog({
               </div>
 
               <div className="space-y-2">
-                <Label>Project Color</Label>
+                <Label>Workspace Color</Label>
                 <div className="flex items-center gap-3">
                   <Input
                     type="color"
@@ -755,7 +755,7 @@ export function AddProjectDialog({
               {/* Live Preview Card */}
               <div className="space-y-2 pt-2 border-t">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Project Preview
+                  Workspace Preview
                 </Label>
                 <div
                   className="flex items-center gap-3 p-4 rounded-xl border-2 transition-colors"
@@ -772,10 +772,10 @@ export function AddProjectDialog({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground">
-                      {projectName || 'Project Name'}
+                      {projectName || 'Workspace Name'}
                     </p>
                     <p className="text-sm text-muted-foreground truncate mt-0.5">
-                      {projectDescription || 'Project description will appear here'}
+                      {projectDescription || 'Workspace description will appear here'}
                     </p>
                     {websiteUrl && (
                       <p className="text-xs text-primary mt-1 truncate">
@@ -967,7 +967,7 @@ export function AddProjectDialog({
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    Create Project
+                    Create Workspace
                   </>
                 )}
               </Button>

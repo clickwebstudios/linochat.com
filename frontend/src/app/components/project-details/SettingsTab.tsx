@@ -103,17 +103,17 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Project Settings</CardTitle>
+        <CardTitle>Workspace Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="project-name">Project Name</Label>
+            <Label htmlFor="project-name">Workspace Name</Label>
             <Input
               id="project-name"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Enter project name"
+              placeholder="Enter workspace name"
             />
           </div>
 
@@ -123,7 +123,7 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
               id="project-description"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Enter project description"
+              placeholder="Enter workspace description"
               rows={4}
             />
           </div>
@@ -143,7 +143,7 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="project-url">Project URL</Label>
+            <Label htmlFor="project-url">Workspace URL</Label>
             <Input
               id="project-url"
               type="url"
@@ -170,10 +170,10 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
         </div>
 
         <div className="border-t pt-6">
-          <h3 className="text-sm font-medium mb-4">Project Information</h3>
+          <h3 className="text-sm font-medium mb-4">Workspace Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <Label className="text-sm font-medium text-foreground mb-2 block">Project Color</Label>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Workspace Color</Label>
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-lg border-2 border-border" style={{ backgroundColor: project.color ?? '#4F46E5' }} />
                 <span className="text-sm text-muted-foreground">{project.color ?? '#4F46E5'}</span>
@@ -188,7 +188,7 @@ export function SettingsTab({ project, onSaved }: SettingsTabProps) {
               <p className="text-sm text-muted-foreground">{formatRelativeTime(project.updated_at)}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-foreground mb-2 block">Project ID</Label>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Workspace ID</Label>
               <p className="text-sm text-muted-foreground">{project.id}</p>
             </div>
           </div>

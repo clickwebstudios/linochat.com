@@ -452,7 +452,7 @@ export function CompanyDetailView({
       <Tabs value={companyDetailTab} onValueChange={setCompanyDetailTab} className="w-full">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="projects">Workspaces</TabsTrigger>
           <TabsTrigger value="plan">Plan</TabsTrigger>
           <TabsTrigger value="chats">Chats</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>

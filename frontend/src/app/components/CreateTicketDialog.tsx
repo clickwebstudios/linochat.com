@@ -308,7 +308,7 @@ export function CreateTicketDialog({
 
             {/* Project */}
             <div className="space-y-2">
-              <Label htmlFor="ticket-project">Project *</Label>
+              <Label htmlFor="ticket-project">Workspace *</Label>
               <Select
                 value={newTicket.projectId}
                 onValueChange={(value) =>
@@ -316,7 +316,7 @@ export function CreateTicketDialog({
                 }
               >
                 <SelectTrigger id="ticket-project" className={errors.projectId ? 'border-red-500 focus:ring-red-500' : ''}>
-                  <SelectValue placeholder="Select project" />
+                  <SelectValue placeholder="Select workspace" />
                 </SelectTrigger>
                 <SelectContent>
                   {projectsLoading ? (
