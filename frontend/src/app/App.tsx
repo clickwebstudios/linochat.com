@@ -55,6 +55,7 @@ const FrubixCallbackPage = lazy(() => import('./pages/oauth/FrubixCallbackPage')
 const ExampleChatDashboard = lazy(() => import('./components/layouts').then(m => ({ default: m.ExampleChatDashboard })));
 const HelpCenter = lazy(() => import('./pages/customer/HelpCenter'));
 const PublicTicketPage = lazy(() => import('./pages/PublicTicketPage').then(m => ({ default: m.PublicTicketPage })));
+const PublicContactForm = lazy(() => import('./pages/PublicContactForm'));
 
 // Legacy Auth Pages
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
@@ -245,6 +246,7 @@ export default function App() {
               <Route path="/help/category/:categorySlug" element={<HelpCenter />} />
               <Route path="/help/:articleSlug" element={<HelpCenter />} />
               <Route path="/ticket/:token" element={<PublicTicketPage />} />
+              <Route path="/contact/:slug" element={<PublicContactForm />} />
 
               {/* Default redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />

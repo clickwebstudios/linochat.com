@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\OAuthClientController;
 use App\Http\Controllers\Api\PublicTicketController;
 use App\Http\Controllers\Api\InboundEmailController;
 use App\Http\Controllers\Api\IntegrationsController;
+use App\Http\Controllers\Api\ContactFormController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,12 @@ use App\Http\Controllers\Api\IntegrationsController;
 Route::middleware('throttle:15,1')->group(function () {
     Route::get('/public/tickets/{token}', [PublicTicketController::class, 'show']);
     Route::post('/public/tickets/{token}/reply', [PublicTicketController::class, 'reply']);
+});
+
+// Public contact forms (no auth — embedded on external sites)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::get('/public/contact-forms/{slug}', [ContactFormController::class, 'showPublic']);
+    Route::post('/public/contact-forms/{slug}/submit', [ContactFormController::class, 'submit']);
 });
 
 // Public help center (no auth — serves published KB articles)
@@ -261,6 +268,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/settings/notifications', [App\Http\Controllers\Api\SettingsController::class, 'updateNotificationSettings']);
     Route::get('/notifications/log', [App\Http\Controllers\Api\SettingsController::class, 'notificationLog']);
     Route::get('/activity-log', [App\Http\Controllers\Api\SettingsController::class, 'activityLog']);
+
+    // Contact Forms
+    Route::get('/contact-forms', [ContactFormController::class, 'index']);
+    Route::post('/contact-forms', [ContactFormController::class, 'store']);
+    Route::get('/contact-forms/{id}', [ContactFormController::class, 'show']);
+    Route::put('/contact-forms/{id}', [ContactFormController::class, 'update']);
+    Route::delete('/contact-forms/{id}', [ContactFormController::class, 'destroy']);
 
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);

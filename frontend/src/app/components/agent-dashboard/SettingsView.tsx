@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Settings, Plug, Bell, Activity } from 'lucide-react';
+import { Settings, Plug, Bell, Activity, FileText } from 'lucide-react';
 import { IntegrationsView } from './IntegrationsView';
 import { NotificationsSettingsView } from './NotificationsSettingsView';
 import { ActivityView } from './ActivityView';
+import { ContactFormSettingsView } from './ContactFormSettingsView';
 
-type SettingsTab = 'integrations' | 'notifications' | 'activity';
+type SettingsTab = 'integrations' | 'notifications' | 'contact-forms' | 'activity';
 
 export function SettingsView() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('integrations');
@@ -12,6 +13,7 @@ export function SettingsView() {
   const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { key: 'integrations', label: 'Integrations', icon: <Plug className="h-4 w-4" /> },
     { key: 'notifications', label: 'Notifications', icon: <Bell className="h-4 w-4" /> },
+    { key: 'contact-forms', label: 'Contact Forms', icon: <FileText className="h-4 w-4" /> },
     { key: 'activity', label: 'Activity', icon: <Activity className="h-4 w-4" /> },
   ];
 
@@ -42,6 +44,7 @@ export function SettingsView() {
 
       {activeTab === 'integrations' && <IntegrationsView />}
       {activeTab === 'notifications' && <NotificationsSettingsView />}
+      {activeTab === 'contact-forms' && <ContactFormSettingsView />}
       {activeTab === 'activity' && <ActivityView />}
     </div>
   );
