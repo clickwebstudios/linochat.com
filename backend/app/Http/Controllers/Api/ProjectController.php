@@ -116,7 +116,7 @@ class ProjectController extends Controller
             $website = 'https://' . $website;
         }
         $website = rtrim(strtolower($website), '/');
-        $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])->first();
+        $duplicate = Project::whereRaw("LOWER(TRIM(TRAILING '/' FROM website)) = ?", [$website])->first();
         if ($duplicate) {
             return response()->json([
                 'success' => false,
