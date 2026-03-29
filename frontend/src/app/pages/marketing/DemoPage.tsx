@@ -138,7 +138,7 @@ export default function DemoPage() {
       </section>
 
       {/* Booking Form + Checklist */}
-      <section className="pb-20">
+      <section className="pt-12 pb-20">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
             {/* Left — What to expect */}
