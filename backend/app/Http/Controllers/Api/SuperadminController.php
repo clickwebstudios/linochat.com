@@ -170,17 +170,30 @@ class SuperadminController extends Controller
         }
         
         $projectIds = $company->ownedProjects->pluck('id');
-        
+
         $stats = [
             'total_projects' => $company->ownedProjects->count(),
             'total_agents' => $company->ownedProjects->sum('agents_count'),
             'total_chats' => Chat::whereIn('project_id', $projectIds)->count(),
             'total_tickets' => Ticket::whereIn('project_id', $projectIds)->count(),
         ];
-        
+
+        // Build agents list: company owner + all assigned agents
+        $agentIds = DB::table('project_user')->whereIn('project_id', $projectIds)->pluck('user_id')->unique();
+        $allUserIds = $agentIds->push($company->id)->unique();
+        $agents = User::whereIn('id', $allUserIds)->get()->map(function ($agent) use ($company) {
+            return [
+                'id' => (string) $agent->id,
+                'name' => trim($agent->first_name . ' ' . $agent->last_name) ?: $agent->email,
+                'email' => $agent->email,
+                'role' => $agent->id === $company->id ? 'admin' : ($agent->role ?? 'agent'),
+                'status' => $agent->status ?? 'Active',
+            ];
+        })->values();
+
         // Use company_name if available, fallback to user's full name
         $companyName = $company->company_name ?: $company->name;
-        
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -196,6 +209,7 @@ class SuperadminController extends Controller
                 'mrr' => '$0',
                 'stats' => $stats,
                 'projects' => $company->ownedProjects,
+                'agents' => $agents,
             ]
         ]);
     }
