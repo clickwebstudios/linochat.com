@@ -6,7 +6,7 @@ Issues found during codebase exploration. Update status when resolved.
 
 ## HIGH Priority
 
-### H1 — Duplicate Migrations (Open)
+### H1 — Duplicate Migrations (Resolved)
 
 **What**: Two sets of migrations exist for the same tables:
 - Early set: `2026_02_17_*` (created during initial prototyping)
@@ -18,21 +18,18 @@ The early migrations have different column names (e.g. `sender` instead of `send
 
 **Impact**: Fresh database setup / staging environments / CI will fail.
 
-**Fix**: Delete or squash the early `2026_02_17_*` migrations that create tables which are recreated in `2026_03_02_*`. The canonical set should be the only ones that create these tables.
+**Fix applied**: After inspection, the Feb `2026_02_17_*` migrations are correct (they have `agent_id`, `sender_type`, `content` etc. matching the running code). The March `2026_03_02_*` versions had a simplified/different schema that never ran on production. Deleted the 5 conflicting March migrations:
+- `2026_03_02_075136_create_projects_table.php` (used wrong `company_id` FK instead of `user_id`)
+- `2026_03_02_075137_create_project_user_table.php`
+- `2026_03_02_075138_create_tickets_table.php`
+- `2026_03_02_075139_create_chats_table.php` (used `assigned_to` instead of `agent_id`)
+- `2026_03_02_075140_create_chat_messages_table.php` (used `sender`/`text`/`is_read` instead of `sender_type`/`content`/`read_at`)
 
-Files to review and likely remove:
-- `2026_02_17_065758_create_chats_table.php`
-- `2026_02_17_065759_create_chat_messages_table.php`
-- `2026_02_17_064740_create_projects_table.php`
-- `2026_02_17_064741_create_kb_categories_table.php`
-- `2026_02_17_064742_create_kb_articles_table.php`
-- `2026_02_17_074224_create_project_user_table.php`
-- `2026_02_17_075523_create_tickets_table.php`
-- `2026_02_17_075524_create_ticket_messages_table.php`
+Note: `config/auth.php` still has the `api` guard configured as `sanctum`. The `tymon/jwt-auth` package remains in `composer.json` but is now unused — run `composer remove tymon/jwt-auth` and delete `config/jwt.php` to clean it up fully.
 
 ---
 
-### H2 — Mixed Authentication Mechanisms (Open)
+### H2 — Mixed Authentication Mechanisms (Resolved)
 
 **What**: `InvitationController::accept` uses `tymon/jwt-auth` to issue tokens (`auth('api')->login($user)`), while all other controllers use Laravel Sanctum. The frontend receives the same token shape but they are fundamentally different token systems.
 
@@ -48,7 +45,9 @@ $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
 **Impact**: After accepting an invitation, the user holds a JWT token. If they try to refresh it via `/auth/refresh` (Sanctum-based), it will fail. The user would need to log in again.
 
-**Fix**: Replace the JWT token generation in `InvitationController::accept` with Sanctum token generation to match the rest of the auth system. Verify `tymon/jwt-auth` can be removed from `composer.json`.
+**Fix applied**: Replaced JWT token generation in `InvitationController::accept` with `$user->createToken('access-token')->plainTextToken` (Sanctum), matching the exact pattern used by `AuthController`. Response shape is unchanged — `access_token`, `refresh_token`, `token_type`, `expires_in: 3600`.
+
+Confirmed `config/auth.php` has `'api' => ['driver' => 'sanctum']` — the JWT package was never actually used for authentication; only for this broken token issuance. Cleanup: run `composer remove tymon/jwt-auth` and delete `config/jwt.php`.
 
 ---
 

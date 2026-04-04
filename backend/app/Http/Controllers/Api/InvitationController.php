@@ -144,9 +144,8 @@ class InvitationController extends Controller
 
         $invitation->update(['status' => 'accepted', 'accepted_at' => now()]);
 
-        // Token generation uses JWT (tymon/jwt-auth) — preserved as-is
-        $accessToken  = auth('api')->login($user);
-        $refreshToken = auth('api')->claims(['refresh' => true])->fromUser($user);
+        $accessToken  = $user->createToken('access-token')->plainTextToken;
+        $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -155,7 +154,7 @@ class InvitationController extends Controller
                 'access_token'  => $accessToken,
                 'refresh_token' => $refreshToken,
                 'token_type'    => 'bearer',
-                'expires_in'    => auth('api')->factory()->getTTL() * 60,
+                'expires_in'    => 3600,
                 'user'          => $user,
             ],
         ]);
