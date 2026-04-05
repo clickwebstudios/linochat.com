@@ -19,6 +19,7 @@ class Chat extends Model
         'customer_email',
         'customer_name',
         'customer_id',
+        'channel',
         'status',
         'ai_enabled',
         'subject',
@@ -44,6 +45,16 @@ class Chat extends Model
     public function agent()
     {
         return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    public function assignedTo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'agent_id');
+    }
+
+    public function lastMessage(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\ChatMessage::class)->latestOfMany();
     }
 
     public function messages()

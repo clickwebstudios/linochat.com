@@ -233,6 +233,33 @@ export interface Invoice {
   updated_at?: string;
 }
 
+// ============ Token Top-Up ============
+
+export interface TopUpPack {
+  tokens: number;
+  price_cents: number;
+  label: string;
+}
+
+export interface TopUpPacksResponse {
+  [packType: string]: TopUpPack;
+}
+
+export interface TopUpIntent {
+  client_secret: string;
+  purchase_id: number;
+  tokens: number;
+  amount: number;
+  label: string;
+}
+
+export interface TokenBalance {
+  tokens_used: number;
+  tokens_allowance: number;
+  tokens_rollover: number;
+  token_cycle_reset_at: string;
+}
+
 // ============ Notifications ============
 
 export interface Notification {

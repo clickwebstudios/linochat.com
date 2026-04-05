@@ -6,6 +6,46 @@ This document captures all strategic and technical decisions made during plannin
 
 ---
 
+## Implementation Status
+
+**Phase 1 — Core Infrastructure** ✓ Implemented (2026-04-04)
+
+The following was built and merged as Task 15 of the Twilio + Token + Stripe implementation:
+
+**Backend:**
+- `TokenActionType` enum — 10 action types with token costs
+- `TokenTransaction` and `TokenPurchase` models + migrations
+- `TokenService` — deduct, credit, completeTopUp, runMonthlyCycleReset, topUpPacks, canAfford
+- `TwilioService` — createSubaccount, suspendSubaccount, closeSubaccount, getSubaccountClient, validateWebhookSignature
+- `StripeService` — createCustomer, createCheckoutSession, createPortalSession, cancelSubscription, constructWebhookEvent
+- `TwilioMessageService` — send() for outbound non-web messages with token deduction
+- `CreateTwilioSubaccountJob` — queued, 3 retries
+- `TokenMonthlyCycleCommand` (`tokens:monthly-cycle`) — Artisan scheduler command
+- `BillingController` — Stripe checkout / portal / cancel / topup
+- `TwilioWebhookController` — handles Twilio Conversations events
+- `StripeWebhookController` — handles 6 Stripe events
+- `MessengerController` — status / connect / disconnect
+- `WhatsAppController` — sandboxStatus / sandboxConnect
+
+**Migrations:**
+- `add_twilio_token_fields_to_companies_table`
+- `create_token_transactions_table`
+- `create_token_purchases_table`
+- `add_channel_to_chats_table`
+- `add_stripe_subscription_id_to_subscriptions_table`
+
+**Frontend:**
+- `channelService.ts` — new service for channel integrations
+- `billing.ts` — updated with Stripe checkout / portal / topup
+- `BillingPage.tsx` — updated UI
+- `IntegrationsView.tsx` — Messenger + WhatsApp sections
+
+**Routes added:** `/billing/*`, `/integrations/messenger/*`, `/integrations/whatsapp/sandbox/*`, `/webhooks/twilio/{subaccount_sid}`, `/webhooks/stripe`
+
+Phases 2–4 (channel activation, AI monetization, optimization) remain to be implemented.
+
+---
+
 ## What is LinoChat?
 
 LinoChat is a live chat SaaS platform — the "anti-Intercom." Core value proposition: transparent, flat pricing with AI included. No per-resolution fees, no surprise invoices.

@@ -52,4 +52,23 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token'  => env('TWILIO_AUTH_TOKEN'),
+    ],
+
+    'stripe' => [
+        'key'            => env('STRIPE_KEY'),
+        'secret'         => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'price_ids'      => [
+            'starter_monthly' => env('STRIPE_PRICE_STARTER_MONTHLY'),
+            'starter_annual'  => env('STRIPE_PRICE_STARTER_ANNUAL'),
+            'growth_monthly'  => env('STRIPE_PRICE_GROWTH_MONTHLY'),
+            'growth_annual'   => env('STRIPE_PRICE_GROWTH_ANNUAL'),
+            'scale_monthly'   => env('STRIPE_PRICE_SCALE_MONTHLY'),
+            'scale_annual'    => env('STRIPE_PRICE_SCALE_ANNUAL'),
+        ],
+    ],
+
 ];

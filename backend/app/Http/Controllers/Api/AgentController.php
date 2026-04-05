@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Events\AgentTyping;
 use App\Events\ChatStatusUpdated;
 use App\Events\MessageSent;
-use App\Events\NewChatForAgent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Agent\InviteAgentRequest;
 use App\Http\Requests\Agent\SendMessageRequest;
@@ -251,6 +250,12 @@ class AgentController extends Controller
         $chat->update(['last_message_at' => now()]);
         broadcast(new MessageSent($message));
         $this->forwardToFrubix($chat, $message, $user);
+
+        // Send via Twilio for non-web channels
+        if ($chat->channel !== 'web') {
+            $twilioMessageService = app(\App\Services\TwilioMessageService::class);
+            $twilioMessageService->send($chat, $message->content, $request->user());
+        }
 
         return response()->json(['success' => true, 'data' => ['message' => $message->load([])]]);
     }

@@ -22,7 +22,12 @@ use App\Http\Controllers\Api\OAuthClientController;
 use App\Http\Controllers\Api\PublicTicketController;
 use App\Http\Controllers\Api\InboundEmailController;
 use App\Http\Controllers\Api\IntegrationsController;
+use App\Http\Controllers\Api\MessengerController;
 use App\Http\Controllers\Api\ContactFormController;
+use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\TwilioWebhookController;
+use App\Http\Controllers\Api\StripeWebhookController;
+use App\Http\Controllers\Api\WhatsAppController;
 
 /*
 |--------------------------------------------------------------------------
@@ -276,6 +281,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/contact-forms/{id}', [ContactFormController::class, 'update']);
     Route::delete('/contact-forms/{id}', [ContactFormController::class, 'destroy']);
 
+    // Billing API
+    Route::get('/billing/plans', [BillingController::class, 'plans']);
+    Route::get('/billing/subscription', [BillingController::class, 'subscription']);
+    Route::put('/billing/subscription', [BillingController::class, 'updateSubscription']);
+    Route::get('/billing/invoices', [BillingController::class, 'invoices']);
+    Route::post('/billing/checkout', [BillingController::class, 'createCheckoutSession']);
+    Route::post('/billing/portal', [BillingController::class, 'createPortalSession']);
+    Route::delete('/billing/subscription', [BillingController::class, 'cancelSubscription']);
+    Route::get('/billing/topup-packs', [BillingController::class, 'topUpPacks']);
+    Route::post('/billing/topup', [BillingController::class, 'createTopUpIntent']);
+
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
     Route::get('/projects/{projectId}/integrations/frubix/authorize', [IntegrationsController::class, 'frubixAuthorizeUrl']);
@@ -286,10 +302,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/projects/{projectId}/integrations/frubix', [IntegrationsController::class, 'disconnectFrubix']);
     Route::post('/integrations/frubix/callback', [IntegrationsController::class, 'frubixCallback']);
     Route::post('/agent/tickets/{ticketId}/frubix-lead', [TicketController::class, 'createFrubixLead']);
+
+    // Messenger integration
+    Route::get('/integrations/messenger/status', [MessengerController::class, 'status']);
+    Route::post('/integrations/messenger/connect', [MessengerController::class, 'connect']);
+    Route::delete('/integrations/messenger/disconnect', [MessengerController::class, 'disconnect']);
+
+    // WhatsApp sandbox
+    Route::get('/integrations/whatsapp/sandbox/status', [WhatsAppController::class, 'sandboxStatus']);
+    Route::post('/integrations/whatsapp/sandbox/connect', [WhatsAppController::class, 'sandboxConnect']);
 });
 
 // Frubix webhooks (public, verified by signature)
 Route::post('/webhooks/frubix', [\App\Http\Controllers\Api\FrubixWebhookController::class, 'handle']);
+
+// Twilio webhooks — public, no auth
+Route::post('/webhooks/twilio/{subaccount_sid}', [TwilioWebhookController::class, 'handle'])
+    ->name('webhooks.twilio');
+
+// Stripe webhooks — public
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('webhooks.stripe');
 
 // Alternative route for messages (with 's')
 Route::middleware('auth:sanctum')->post('/agent/chats/{chat_id}/messages', [AgentController::class, 'sendMessage']);

@@ -59,6 +59,17 @@ All tables use `id` (BIGINT unsigned auto-increment), `created_at`, `updated_at`
 | name | string | |
 | plan | string | default `Starter` |
 | notification_settings | json nullable | Added via migration |
+| twilio_subaccount_sid | string nullable | Twilio subaccount SID for this tenant |
+| twilio_auth_token | text nullable | Encrypted auth token for the subaccount |
+| messenger_page_id | string nullable | Connected Facebook Page ID (if activated) |
+| whatsapp_waba_id | string nullable | WhatsApp Business Account ID (if activated) |
+| stripe_customer_id | string nullable | Stripe customer ID |
+| stripe_subscription_id | string nullable | Active Stripe subscription ID |
+| token_balance | unsignedBigInteger | default 0 — current spendable token balance |
+| monthly_token_allowance | unsignedInteger | default 100 — tokens granted per billing cycle |
+| tokens_used_this_cycle | unsignedBigInteger | default 0 — for soft-cap enforcement |
+| token_rollover | unsignedBigInteger | default 0 — tokens carried over from previous cycle |
+| token_cycle_reset_at | timestamp nullable | When the current token cycle was last reset |
 
 **Note**: Lightly used. Company isolation is primarily enforced through `projects.user_id`, not a FK on users. The `company_id` referenced in activity logs and notification logs refers to this table.
 
@@ -111,6 +122,7 @@ All tables use `id` (BIGINT unsigned auto-increment), `created_at`, `updated_at`
 |--------|------|-------|
 | id | bigint PK | |
 | project_id | bigint FK → projects | |
+| channel | string | default `web` — `web`, `messenger`, `whatsapp`, `sms` |
 | agent_id | bigint FK → users nullable | Currently assigned agent |
 | customer_email | string nullable | |
 | customer_name | string nullable | |
@@ -308,6 +320,8 @@ All tables use `id` (BIGINT unsigned auto-increment), `created_at`, `updated_at`
 | status | string | `active`, `trialing`, `cancelled`, `past_due` |
 | trial_ends_at | timestamp nullable | |
 | ends_at | timestamp nullable | |
+| stripe_subscription_id | string nullable | Stripe subscription ID for this record |
+| billing_cycle | string nullable | `monthly` or `annual` |
 
 ---
 
@@ -471,12 +485,50 @@ All tables use `id` (BIGINT unsigned auto-increment), `created_at`, `updated_at`
 
 ---
 
+## token_transactions
+
+Records every token debit, credit, and adjustment for a company. Signed `tokens_amount` (positive = credit, negative = debit).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| company_id | bigint FK → companies | |
+| action_type | string | See `TokenActionType` enum values |
+| tokens_amount | bigint | Positive for grants/top-ups, negative for usage |
+| balance_after | bigint | Token balance immediately after this transaction |
+| reference_id | string nullable | e.g. Twilio message SID for reconciliation |
+| metadata | json nullable | Extra context (pack_type, model, etc.) |
+
+**action_type values**: `monthly_grant`, `rollover`, `expiry`, `topup`, `messenger`, `whatsapp_service`, `whatsapp_utility`, `whatsapp_marketing`, `ai_reply`, `ai_resolution`
+
+---
+
+## token_purchases
+
+Records each token top-up purchase made via Stripe.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| company_id | bigint FK → companies | |
+| pack_type | string | `starter_500`, `growth_2000`, `power_5000`, `scale_15000` |
+| tokens_purchased | unsignedBigInteger | Token quantity purchased |
+| amount_paid | decimal(8,2) | Amount charged in USD |
+| stripe_payment_intent_id | string nullable | Stripe PaymentIntent ID |
+| stripe_charge_id | string nullable | Stripe Charge ID |
+| status | string | `pending`, `completed`, `failed` |
+| completed_at | timestamp nullable | When Stripe confirmed payment |
+
+---
+
 ## Entity Relationships Summary
 
 ```
 Company
   └─< Subscription >─ Plan
   └─< Invoice
+  └─< TokenTransaction
+  └─< TokenPurchase
 
 User (admin)
   └─< Project

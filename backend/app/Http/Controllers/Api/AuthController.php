@@ -11,15 +11,19 @@ use App\Http\Requests\Auth\SendVerificationCodeRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Requests\Auth\VerifyEmailCodeRequest;
 use App\Http\Resources\UserResource;
+use App\Jobs\CreateTwilioSubaccountJob;
 use App\Mail\PasswordResetMail;
 use App\Mail\VerificationCodeMail;
 use App\Mail\WelcomeMail;
+use App\Models\Company;
 use App\Models\EmailVerificationCode;
 use App\Models\KbArticle;
 use App\Models\KbCategory;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\TokenService;
 use App\Services\WebsiteAnalyzerService;
+use App\Enums\TokenActionType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -70,7 +74,24 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request, WebsiteAnalyzerService $analyzer)
     {
+        $planAllowances = [
+            'Free'    => 100,
+            'Starter' => 1000,
+            'Growth'  => 5000,
+            'Scale'   => 20000,
+        ];
+
+        $plan = 'Free';
+        $monthlyAllowance = $planAllowances[$plan] ?? 100;
+
+        $company = Company::create([
+            'name'                   => $request->company_name,
+            'plan'                   => $plan,
+            'monthly_token_allowance' => $monthlyAllowance,
+        ]);
+
         $user = User::create([
+            'company_id'   => $company->id,
             'first_name'   => $request->first_name,
             'last_name'    => $request->last_name,
             'company_name' => $request->company_name,
@@ -80,6 +101,11 @@ class AuthController extends Controller
             'status'       => 'Active',
             'join_date'    => now(),
         ]);
+
+        CreateTwilioSubaccountJob::dispatch($company);
+
+        $tokenService = new TokenService();
+        $tokenService->credit($company, $monthlyAllowance, TokenActionType::MonthlyGrant);
 
         $user->notificationPreferences()->create([
             'email_notifications'   => true,

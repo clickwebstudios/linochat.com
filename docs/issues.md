@@ -53,7 +53,7 @@ Confirmed `config/auth.php` has `'api' => ['driver' => 'sanctum']` — the JWT p
 
 ## MEDIUM Priority
 
-### M1 — Duplicate Mail Classes (Open)
+### M1 — Duplicate Mail Classes (Resolved)
 
 **What**: Two nearly identical invitation mail classes exist:
 - `app/Mail/AgentInvitationMail.php`
@@ -63,11 +63,11 @@ Confirmed `config/auth.php` has `'api' => ['driver' => 'sanctum']` — the JWT p
 
 **Impact**: Confusion about which is canonical; dead code.
 
-**Fix**: Determine which class is used (grep for `AgentInviteMail`), delete the unused one.
+**Fix applied**: Grepped entire backend — `AgentInviteMail` was only referenced in its own class file. Deleted `app/Mail/AgentInviteMail.php`.
 
 ---
 
-### M2 — Chat Model Missing `assignedTo` and `lastMessage` Relationships (Open)
+### M2 — Chat Model Missing `assignedTo` and `lastMessage` Relationships (Resolved)
 
 **What**: `ChatController::show` calls:
 ```php
@@ -78,17 +78,7 @@ But the `Chat` model only defines `agent()` (not `assignedTo`) and has no `lastM
 
 **Impact**: `ChatController::show` will fail at runtime with a relationship not found error. However, `AgentController::show` (the more commonly used path) loads `agent` correctly.
 
-**Fix**: Either add `assignedTo` and `lastMessage` relationships to the `Chat` model, or fix `ChatController::show` to use `agent`.
-
-Suggested additions to `Chat` model:
-```php
-public function assignedTo() {
-    return $this->belongsTo(User::class, 'agent_id');
-}
-public function lastMessage() {
-    return $this->hasOne(ChatMessage::class)->latestOfMany();
-}
-```
+**Fix applied**: Added `assignedTo()` (BelongsTo User via `agent_id`) and `lastMessage()` (HasOne ChatMessage via `latestOfMany()`) to `app/Models/Chat.php` after the existing `agent()` method.
 
 ---
 
@@ -102,7 +92,7 @@ public function lastMessage() {
 
 ---
 
-### M4 — `Ticket::store` Returns Raw `$ticket` (Open)
+### M4 — `Ticket::store` Returns Raw `$ticket` (Resolved)
 
 **What**: `TicketController::store` returns the raw `$ticket` model in `data`, not wrapped in `TicketResource`:
 ```php
@@ -113,17 +103,17 @@ Other responses in the same controller use `TicketResource`. This means the tick
 
 **Impact**: Frontend may receive inconsistent ticket object shapes.
 
-**Fix**: Change to `'data' => new TicketResource($ticket->load('project', 'assignedAgent'))`.
+**Fix applied**: Changed `'data' => $ticket` to `'data' => new TicketResource($ticket->load('project', 'assignedAgent'))` in `TicketController::store`. `TicketResource` was already imported at the top of the file.
 
 ---
 
-### M5 — `AgentController` Imports Unused Event (Open)
+### M5 — `AgentController` Imports Unused Event (Resolved)
 
 **What**: `AgentController` imports `NewChatForAgent` but never uses it.
 
 **Impact**: Minor — dead import, no functional issue.
 
-**Fix**: Remove the unused import.
+**Fix applied**: Removed `use App\Events\NewChatForAgent;` from `app/Http/Controllers/Api/AgentController.php` after confirming it is not referenced anywhere else in the file.
 
 ---
 
@@ -149,7 +139,7 @@ Other responses in the same controller use `TicketResource`. This means the tick
 
 ---
 
-### L3 — Wrong Log Level in `TicketController` (Open)
+### L3 — Wrong Log Level in `TicketController` (Resolved)
 
 **What**: In `TicketController::store` (now in `TicketService::create`):
 ```php
@@ -160,7 +150,7 @@ This uses `Log::error` for a success message — it should be `Log::info`.
 
 **Impact**: False errors in logs.
 
-**Fix**: Change to `Log::info`.
+**Fix applied**: Changed `Log::error` to `Log::info` on the Frubix lead failure log line in `app/Services/TicketService.php`.
 
 ---
 

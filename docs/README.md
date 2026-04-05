@@ -36,7 +36,9 @@ Or use `/session` to load context automatically.
 | Notifications | `NotificationController` | `NotificationsPage` | `PushNotificationService` |
 | OAuth 2.0 Provider | `OAuthController`, `OAuthClientController` | `pages/oauth/` | — |
 | Superadmin | `SuperadminController`, `PlatformSettingsController` | `SuperadminDashboard` | — |
-| Billing | `BillingController` | `BillingPage` | — |
+| Billing / Stripe | `BillingController`, `StripeWebhookController` | `BillingPage` | `StripeService` |
+| Twilio Channels | `MessengerController`, `WhatsAppController`, `TwilioWebhookController` | `IntegrationsView` | `TwilioService`, `TwilioMessageService` |
+| Token System | `BillingController` (topup) | `BillingPage` | `TokenService` |
 | Contact Forms | `ContactFormController` | `PublicContactForm` | — |
 
 ---
@@ -52,7 +54,7 @@ Or use `/session` to load context automatically.
 
 ### Authentication
 - **Primary**: Laravel Sanctum (`auth:sanctum` middleware) — issues access + refresh tokens
-- **Exception**: `InvitationController::accept` uses JWT via tymon/jwt-auth — `auth('api')` guard
+- ~~**Exception**: `InvitationController::accept` uses JWT via tymon/jwt-auth~~ — fixed (H2 resolved), now uses Sanctum throughout. Run `composer remove tymon/jwt-auth && rm config/jwt.php` to finish cleanup.
 - **OAuth 2.0 Provider**: Custom implementation for 3rd-party apps (Frubix) — `oauth:scope` middleware
 - Token shape: `{ access_token, refresh_token, token_type: "bearer", expires_in: 3600 }`
 
@@ -110,6 +112,8 @@ CI/CD: GitHub Actions on push to `master`.
 | [modules/kb.md](modules/kb.md) | Knowledge base — articles, categories, AI generation |
 | [modules/auth.md](modules/auth.md) | Authentication, roles, agent invitation flow |
 | [modules/frubix.md](modules/frubix.md) | Frubix CRM integration — OAuth, webhooks, appointments |
+| [modules/twilio.md](modules/twilio.md) | Twilio subaccounts, channel activation (Messenger/WhatsApp), webhook routing |
+| [modules/tokens.md](modules/tokens.md) | Token system, action types, costs, top-up packs, monthly cycle reset |
 | [flows/widget-chat.md](flows/widget-chat.md) | End-to-end: visitor sends message → AI responds → agent takes over |
 | [flows/ticket-creation.md](flows/ticket-creation.md) | End-to-end: ticket creation with emails, chat link, Frubix lead |
 | [flows/agent-invite.md](flows/agent-invite.md) | End-to-end: admin invites agent → agent accepts → joins project |

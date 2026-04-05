@@ -1,14 +1,64 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Company extends Model {
+class Company extends Model
+{
     use HasFactory;
-    protected $fillable = ['name', 'plan', 'notification_settings'];
-    protected $casts = ['notification_settings' => 'array'];
-    public function users() { return $this->hasMany(User::class); }
-    public function projects() { return $this->hasMany(Project::class); }
-    public function subscription() { return $this->hasOne(Subscription::class); }
-    public function invoices() { return $this->hasMany(Invoice::class); }
+
+    protected $fillable = [
+        'name',
+        'plan',
+        'notification_settings',
+        'token_balance',
+        'monthly_token_allowance',
+        'tokens_used_this_cycle',
+        'token_rollover',
+        'token_cycle_reset_at',
+        'stripe_customer_id',
+        'stripe_subscription_id',
+        'twilio_subaccount_sid',
+        'twilio_auth_token',
+        'messenger_page_id',
+        'whatsapp_waba_id',
+    ];
+
+    protected $casts = [
+        'notification_settings' => 'array',
+    ];
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function tokenTransactions(): HasMany
+    {
+        return $this->hasMany(TokenTransaction::class);
+    }
+
+    public function tokenPurchases(): HasMany
+    {
+        return $this->hasMany(TokenPurchase::class);
+    }
 }

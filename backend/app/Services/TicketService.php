@@ -124,7 +124,7 @@ class TicketService
                         'notes'  => "[LinoChat Ticket {$ticket->ticket_number}] {$ticket->subject}\n\n{$ticket->description}",
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Failed to create Frubix lead', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
+                    Log::info('Failed to create Frubix lead', ['ticket_id' => $ticket->id, 'error' => $e->getMessage()]);
                 }
             }
         }

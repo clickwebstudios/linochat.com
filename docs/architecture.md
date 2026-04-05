@@ -84,7 +84,7 @@ linochat.com/
 |-------|-----------|-------|
 | Framework | Laravel 11 | PHP 8.4 |
 | Auth | Sanctum | Access + refresh token pair |
-| Auth (legacy path) | tymon/jwt-auth | Only used in `InvitationController::accept` |
+| Auth (legacy path) | tymon/jwt-auth | Removed — `InvitationController::accept` now uses Sanctum (H2 resolved) |
 | Database | MySQL | In dev: SQLite supported |
 | Queue | Laravel Queue (database driver) | Redis optional |
 | WebSocket | Pusher OR Laravel Reverb | Configured via `BROADCAST_CONNECTION` |

@@ -294,6 +294,8 @@ Widget identified by `widget_id` in URL path.
 
 ## Integrations (Sanctum auth)
 
+### Frubix CRM
+
 | Method | Path | Notes |
 |--------|------|-------|
 | GET | `/projects/{projectId}/integrations` | Integration configs |
@@ -304,6 +306,21 @@ Widget identified by `widget_id` in URL path.
 | PATCH | `/projects/{projectId}/integrations/frubix/schedule/{appointmentId}` | Update appointment |
 | DELETE | `/projects/{projectId}/integrations/frubix` | Disconnect Frubix |
 | POST | `/integrations/frubix/callback` | OAuth callback (redirected from Frubix) |
+
+### Messenger
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/integrations/messenger/status` | Messenger connection status for current company |
+| POST | `/integrations/messenger/connect` | Connect a Facebook Page (Body: `page_id`) |
+| DELETE | `/integrations/messenger/disconnect` | Disconnect the currently linked Facebook Page |
+
+### WhatsApp
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/integrations/whatsapp/sandbox/status` | WhatsApp Sandbox activation status |
+| POST | `/integrations/whatsapp/sandbox/connect` | Enable WhatsApp Sandbox for the company |
 
 ---
 
@@ -317,11 +334,25 @@ Widget identified by `widget_id` in URL path.
 
 ---
 
+## Billing (Sanctum auth)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/billing/checkout` | Create Stripe Checkout session for plan subscription. Body: `plan_id, billing_cycle` |
+| POST | `/billing/portal` | Create Stripe Customer Portal session for subscription management |
+| DELETE | `/billing/subscription` | Cancel the current Stripe subscription |
+| GET | `/billing/topup-packs` | List available token top-up packs with prices |
+| POST | `/billing/topup` | Purchase a token top-up pack. Body: `pack_type` |
+
+---
+
 ## Webhooks (Public, signature-verified)
 
 | Method | Path | Notes |
 |--------|------|-------|
 | POST | `/webhooks/frubix` | Frubix event webhooks (verified by signature) |
+| POST | `/webhooks/twilio/{subaccount_sid}` | Twilio Conversations events for a specific company subaccount (signature-verified) |
+| POST | `/webhooks/stripe` | Stripe webhook events — handles `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`, `payment_intent.succeeded` |
 
 ---
 

@@ -88,7 +88,7 @@ class TicketController extends Controller
         return response()->json([
             'success'       => true,
             'message'       => 'Ticket created',
-            'data'          => $ticket,
+            'data'          => new TicketResource($ticket->load('project', 'assignedAgent')),
             'ticket_number' => $ticket->ticket_number,
         ], 201);
     }
