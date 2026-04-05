@@ -70,6 +70,7 @@ import {
 import { Input } from '../../components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
 import { useLayout } from '../../components/layouts/LayoutContext';
+import { useAuthStore } from '../../stores/authStore';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { toast } from 'sonner';
 
@@ -122,15 +123,13 @@ const plans = [
   },
 ];
 
-// ─── Mock invoice data ─────────────────────────────────
-const mockInvoices = [
-  { id: 'INV-2026-0002', date: 'Feb 1, 2026', amount: '$245.00', status: 'Paid', plan: 'Pro', agents: 5 },
-  { id: 'INV-2026-0001', date: 'Jan 1, 2026', amount: '$245.00', status: 'Paid', plan: 'Pro', agents: 5 },
-  { id: 'INV-2025-0012', date: 'Dec 1, 2025', amount: '$245.00', status: 'Paid', plan: 'Pro', agents: 5 },
-  { id: 'INV-2025-0011', date: 'Nov 1, 2025', amount: '$196.00', status: 'Paid', plan: 'Pro', agents: 4 },
-  { id: 'INV-2025-0010', date: 'Oct 1, 2025', amount: '$196.00', status: 'Paid', plan: 'Pro', agents: 4 },
-  { id: 'INV-2025-0009', date: 'Sep 1, 2025', amount: '$147.00', status: 'Paid', plan: 'Pro', agents: 3 },
-];
+// Invoice display shape (mapped from API)
+interface DisplayInvoice {
+  id: string;
+  date: string;
+  amount: string;
+  status: string;
+}
 
 // ─── Card brand detection helpers ──────────────────────
 type CardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'unknown';
@@ -222,10 +221,16 @@ export default function BillingPage() {
       : '/agent';
 
   const isReadOnly = role === 'Agent';
+  const authUser = useAuthStore((s) => s.user);
+  const authUserName = authUser ? `${authUser.first_name} ${authUser.last_name}` : '';
 
   // ─── State ─────────────────────────────────────────
-  const [currentPlanId, setCurrentPlanId] = useState('pro');
+  const [currentPlanId, setCurrentPlanId] = useState('free');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<string | null>(null);
+  const [agentCount, setAgentCount] = useState(1);
+  const [invoices, setInvoices] = useState<DisplayInvoice[]>([]);
+  const [billingLoading, setBillingLoading] = useState(true);
   const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
   const [selectedUpgradePlan, setSelectedUpgradePlan] = useState<string | null>(null);
   const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
@@ -253,23 +258,56 @@ export default function BillingPage() {
   const [topUpPacksLoading, setTopUpPacksLoading] = useState(false);
   const [buyingPack, setBuyingPack] = useState<string | null>(null);
 
-  // Mock token balance (would come from subscription endpoint in production)
-  const tokenBalance = useMemo(() => ({
-    tokens_used: 380,
-    tokens_allowance: 500,
-    tokens_rollover: 120,
-    token_cycle_reset_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  }), []);
+  const [tokenBalance, setTokenBalance] = useState({
+    tokens_used: 0,
+    tokens_allowance: 0,
+    tokens_rollover: 0,
+    token_cycle_reset_at: null as string | null,
+  });
 
   const tokenUsedPct = Math.min(100, Math.round((tokenBalance.tokens_used / tokenBalance.tokens_allowance) * 100));
   const tokenRemainingPct = 100 - tokenUsedPct;
   const isLowTokens = tokenRemainingPct < 20;
 
   const daysUntilReset = useMemo(() => {
+    if (!tokenBalance.token_cycle_reset_at) return null;
     const reset = new Date(tokenBalance.token_cycle_reset_at);
     const now = new Date();
     return Math.max(0, Math.ceil((reset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   }, [tokenBalance.token_cycle_reset_at]);
+
+  // Load subscription, token balance, and invoices on mount
+  useEffect(() => {
+    setBillingLoading(true);
+    Promise.all([
+      billingService.getSubscription().catch(() => null),
+      billingService.getTokenBalance().catch(() => null),
+      billingService.getInvoices().catch(() => []),
+    ]).then(([sub, tb, invs]) => {
+      if (sub?.plan?.name) {
+        setCurrentPlanId(sub.plan.name.toLowerCase());
+        setBillingCycle(sub.billing_cycle ?? 'monthly');
+        setSubscriptionEndsAt(sub.ends_at ?? null);
+      }
+      if (tb) {
+        setAgentCount(tb.agent_count || 1);
+        setTokenBalance({
+          tokens_used: tb.tokens_used_this_cycle,
+          tokens_allowance: tb.monthly_token_allowance,
+          tokens_rollover: tb.token_rollover,
+          token_cycle_reset_at: tb.token_cycle_reset_at,
+        });
+      }
+      if (Array.isArray(invs)) {
+        setInvoices(invs.map(inv => ({
+          id: `INV-${inv.id}`,
+          date: inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+          amount: `$${(inv.amount).toFixed(2)}`,
+          status: inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
+        })));
+      }
+    }).finally(() => setBillingLoading(false));
+  }, []);
 
   // Load top-up packs on mount
   useEffect(() => {
@@ -314,12 +352,11 @@ export default function BillingPage() {
     brand: 'visa' as CardBrand,
     last4: '4532',
     expiry: '08/2027',
-    name: 'Sarah Chen',
+    name: authUserName,
   });
 
   // ─── Derived values ────────────────────────────────
-  const currentPlan = plans.find(p => p.id === currentPlanId)!;
-  const agentCount = 5;
+  const currentPlan = plans.find(p => p.id === currentPlanId) ?? plans[0];
 
   const pricing = useMemo(() => {
     const monthlyPerUser = currentPlan.priceMonthly;
@@ -348,7 +385,7 @@ export default function BillingPage() {
         perUser: annualPerUser,
         totalPeriod: totalAnnual,
         periodLabel: '/year',
-        nextBillingDate: 'February 1, 2027',
+        nextBillingDate: subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—',
         savingsAnnual: savings,
         monthlyEquivalent: annualPerUser * agentCount,
         isCustom: false,
@@ -360,13 +397,13 @@ export default function BillingPage() {
       perUser: monthlyPerUser,
       totalPeriod: monthlyPerUser * agentCount,
       periodLabel: '/month',
-      nextBillingDate: 'March 1, 2026',
+      nextBillingDate: subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—',
       savingsAnnual: null,
       monthlyEquivalent: null,
       isCustom: false,
       isFree,
     };
-  }, [currentPlan, billingCycle, agentCount]);
+  }, [currentPlan, billingCycle, agentCount, subscriptionEndsAt]);
 
   // Usage mock data (derived from current plan)
   const usage = useMemo(() => ({
@@ -470,8 +507,8 @@ export default function BillingPage() {
   };
 
   const filteredInvoices = invoiceFilter === 'all'
-    ? mockInvoices
-    : mockInvoices.filter(inv => inv.status.toLowerCase() === invoiceFilter);
+    ? invoices
+    : invoices.filter(inv => inv.status.toLowerCase() === invoiceFilter);
 
   // ─── Render ────────────────────────────────────────
   return (
@@ -508,7 +545,7 @@ export default function BillingPage() {
               }`}></span>
             </div>
             <div className="hidden md:block">
-              <div className="text-sm font-semibold">Sarah Chen</div>
+              <div className="text-sm font-semibold">{authUserName || 'Account'}</div>
               <div className="text-xs text-muted-foreground capitalize">{role}</div>
             </div>
             <DropdownMenu>
@@ -696,7 +733,7 @@ export default function BillingPage() {
                   <Shield className="h-5 w-5 text-primary" />
                   Usage This Period
                 </CardTitle>
-                <CardDescription>Feb 1 – Feb 28, 2026</CardDescription>
+                <CardDescription>{billingLoading ? 'Loading…' : subscriptionEndsAt ? `Resets ${new Date(subscriptionEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : 'Current period'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -810,7 +847,7 @@ export default function BillingPage() {
                     <span>{tokenUsedPct}% used</span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}
+                      {daysUntilReset !== null ? `Resets in ${daysUntilReset} day${daysUntilReset !== 1 ? 's' : ''}` : 'Next cycle pending'}
                     </span>
                   </div>
                 </div>
@@ -995,7 +1032,11 @@ export default function BillingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredInvoices.map((invoice) => (
+                      {billingLoading ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Loading invoices…</TableCell></TableRow>
+                      ) : filteredInvoices.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No invoices found</TableCell></TableRow>
+                      ) : (filteredInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
                           <TableCell className="text-foreground">{invoice.id}</TableCell>
                           <TableCell className="text-muted-foreground">{invoice.date}</TableCell>
@@ -1023,7 +1064,7 @@ export default function BillingPage() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )))}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -1213,7 +1254,7 @@ export default function BillingPage() {
                 <Label htmlFor="card-name">Name on Card</Label>
                 <Input
                   id="card-name"
-                  placeholder="Sarah Chen"
+                  placeholder="Card holder name"
                   value={cardName}
                   onChange={(e) => setCardName(e.target.value)}
                   onBlur={() => setPaymentFormTouched(t => ({ ...t, name: true }))}

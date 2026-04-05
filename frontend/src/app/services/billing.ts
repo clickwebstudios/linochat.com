@@ -8,8 +8,8 @@ export const billingService = {
   updateSubscription: (data: { plan_id: number; billing_cycle: string }): Promise<Subscription> =>
     api.put('/billing/subscription', data).then((r: AxiosResponse<ApiResponse<Subscription>>) => r.data.data),
   getInvoices: (): Promise<Invoice[]> => api.get('/billing/invoices').then((r: AxiosResponse<ApiResponse<Invoice[]>>) => r.data.data),
-  getTokenBalance: (): Promise<{ token_balance: number; tokens_used_this_cycle: number }> =>
-    api.get('/billing/token-balance').then((r: AxiosResponse<ApiResponse<{ token_balance: number; tokens_used_this_cycle: number }>>) => r.data.data),
+  getTokenBalance: (): Promise<{ token_balance: number; tokens_used_this_cycle: number; monthly_token_allowance: number; token_rollover: number; token_cycle_reset_at: string | null; agent_count: number }> =>
+    api.get('/billing/token-balance').then((r: AxiosResponse<ApiResponse<{ token_balance: number; tokens_used_this_cycle: number; monthly_token_allowance: number; token_rollover: number; token_cycle_reset_at: string | null; agent_count: number }>>) => r.data.data),
   getTopUpPacks: (): Promise<TopUpPacksResponse> =>
     api.get('/billing/topup-packs').then((r: AxiosResponse<ApiResponse<TopUpPacksResponse>>) => r.data.data),
   createTopUpIntent: (packType: string): Promise<TopUpIntent> =>
