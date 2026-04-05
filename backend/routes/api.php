@@ -292,6 +292,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/billing/subscription', [BillingController::class, 'cancelSubscription']);
     Route::get('/billing/token-balance', [BillingController::class, 'tokenBalance']);
     Route::get('/billing/usage', [BillingController::class, 'usage']);
+    Route::get('/billing/payment-method', [BillingController::class, 'paymentMethod']);
     Route::get('/billing/topup-packs', [BillingController::class, 'topUpPacks']);
     Route::post('/billing/topup', [BillingController::class, 'createTopUpIntent']);
     Route::post('/billing/topup-checkout', [BillingController::class, 'createTopUpCheckout']);

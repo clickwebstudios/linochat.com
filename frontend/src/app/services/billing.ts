@@ -24,4 +24,6 @@ export const billingService = {
     api.post('/billing/topup-checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
   getUsage: (): Promise<{ tickets: number; chats: number; storage_gb: number; period_start: string }> =>
     api.get('/billing/usage').then((r: AxiosResponse<ApiResponse<{ tickets: number; chats: number; storage_gb: number; period_start: string }>>) => r.data.data),
+  getPaymentMethod: (): Promise<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null> =>
+    api.get('/billing/payment-method').then((r: AxiosResponse<ApiResponse<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null>>) => r.data.data),
 };

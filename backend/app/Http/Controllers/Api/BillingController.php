@@ -158,6 +158,38 @@ class BillingController extends Controller {
         ]]);
     }
 
+    public function paymentMethod(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company || !$company->stripe_customer_id) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+        try {
+            $stripe   = new \Stripe\StripeClient(config('services.stripe.secret'));
+            $customer = $stripe->customers->retrieve($company->stripe_customer_id, [
+                'expand' => ['invoice_settings.default_payment_method'],
+            ]);
+            $pm = $customer->invoice_settings->default_payment_method ?? null;
+            if (!$pm) {
+                $list = $stripe->customers->allPaymentMethods($company->stripe_customer_id, ['type' => 'card', 'limit' => 1]);
+                $pm = $list->data[0] ?? null;
+            }
+            if (!$pm || !isset($pm->card)) {
+                return response()->json(['success' => true, 'data' => null]);
+            }
+            return response()->json(['success' => true, 'data' => [
+                'brand'     => $pm->card->brand,
+                'last4'     => $pm->card->last4,
+                'exp_month' => $pm->card->exp_month,
+                'exp_year'  => $pm->card->exp_year,
+                'name'      => $pm->billing_details->name ?? $customer->name,
+                'email'     => $customer->email,
+            ]]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+    }
+
     public function topUpPacks()
     {
         return response()->json([
