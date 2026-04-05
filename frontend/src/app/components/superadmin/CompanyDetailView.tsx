@@ -116,6 +116,10 @@ export function CompanyDetailView({
   const [companyChats, setCompanyChats] = useState<Chat[]>([]);
   const [companyTickets, setCompanyTickets] = useState<Ticket[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [companyKbArticles, setCompanyKbArticles] = useState<any[]>([]);
+  const [companyInvoices, setCompanyInvoices] = useState<any[]>([]);
+  const [kbLoading, setKbLoading] = useState(false);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginAsOpen, setLoginAsOpen] = useState(false);
@@ -198,6 +202,18 @@ export function CompanyDetailView({
 
     if (viewingCompanyId) {
       fetchCompanyData();
+      // Fetch KB articles
+      setKbLoading(true);
+      api.get(`/superadmin/companies/${viewingCompanyId}/kb-articles`)
+        .then((r: any) => setCompanyKbArticles(r.data || []))
+        .catch(() => setCompanyKbArticles([]))
+        .finally(() => setKbLoading(false));
+      // Fetch invoices
+      setInvoicesLoading(true);
+      api.get(`/superadmin/companies/${viewingCompanyId}/invoices`)
+        .then((r: any) => setCompanyInvoices(r.data || []))
+        .catch(() => setCompanyInvoices([]))
+        .finally(() => setInvoicesLoading(false));
     }
   }, [viewingCompanyId]);
 
@@ -567,6 +583,8 @@ export function CompanyDetailView({
             viewingCompanyId={viewingCompanyId}
             isArchived={isArchived}
             defaultMeta={defaultMeta}
+            companyKbArticles={companyKbArticles}
+            kbLoading={kbLoading}
           />
         </TabsContent>
 
@@ -593,6 +611,8 @@ export function CompanyDetailView({
             viewingCompanyId={viewingCompanyId}
             isArchived={isArchived}
             defaultMeta={defaultMeta}
+            companyInvoices={companyInvoices}
+            invoicesLoading={invoicesLoading}
           />
         </TabsContent>
 

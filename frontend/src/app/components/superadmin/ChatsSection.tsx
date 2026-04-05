@@ -98,7 +98,7 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
           <CardHeader className="py-3 px-4 border-b shrink-0">
             <div className="flex items-center justify-between mb-2">
               <CardTitle className="text-base">All Chats</CardTitle>
-              <Badge variant="outline" className="text-xs">156</Badge>
+              <Badge variant="outline" className="text-xs">{superadminChats.length}</Badge>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -115,12 +115,6 @@ export function ChatsSection({ superadminChats, selectedChatId, setSelectedChatI
                 <option value="waiting">Waiting</option>
                 <option value="ai_handling">AI Handling</option>
                 <option value="closed">Closed</option>
-              </select>
-              <select className="px-2 py-1 border rounded text-xs flex-1">
-                <option>All Companies</option>
-                <option>TechCorp</option>
-                <option>RetailCo</option>
-                <option>FinanceHub</option>
               </select>
             </div>
           </CardHeader>
