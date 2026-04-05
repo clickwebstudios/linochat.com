@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown, MessageSquare, Copy, Phone } from 'lucide-react';
+import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown, MessageSquare, Copy, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -26,16 +26,6 @@ interface Project {
   name: string;
 }
 
-const comingSoonIntegrations = [
-  { name: 'Slack', icon: '\u{1F4AC}' },
-  { name: 'Salesforce', icon: '\u{2601}\u{FE0F}' },
-  { name: 'Zapier', icon: '\u{26A1}' },
-  { name: 'Jira', icon: '\u{1F4CB}' },
-  { name: 'HubSpot', icon: '\u{1F536}' },
-  { name: 'GitHub', icon: '\u{1F431}' },
-  { name: 'Stripe', icon: '\u{1F4B3}' },
-  { name: 'Zendesk', icon: '\u{1F3AB}' },
-];
 
 export function IntegrationsView() {
   const storeProject = useAuthStore((s) => s.project);
@@ -62,6 +52,36 @@ export function IntegrationsView() {
   const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [whatsappEnabling, setWhatsappEnabling] = useState(false);
 
+  // Email channel state
+  interface DnsRecord {
+    type: string;
+    host: string;
+    value: string;
+    valid: boolean;
+  }
+  interface DomainAuth {
+    domain: string;
+    status: 'pending' | 'verified';
+    dns_records: { mx: DnsRecord; cname1: DnsRecord; cname2: DnsRecord; cname3: DnsRecord };
+  }
+  interface EmailChannelStatus {
+    connected: boolean;
+    support_email: string | null;
+    from_name: string | null;
+    connected_at: string | null;
+    domain_auth: DomainAuth | null;
+  }
+  const [emailStatus, setEmailStatus] = useState<EmailChannelStatus | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [emailFromName, setEmailFromName] = useState('');
+  const [emailConnecting, setEmailConnecting] = useState(false);
+  const [emailDisconnecting, setEmailDisconnecting] = useState(false);
+  const [emailConfirm, setEmailConfirm] = useState(false);
+  const [emailTesting, setEmailTesting] = useState(false);
+  const [emailDomainLoading, setEmailDomainLoading] = useState(false);
+  const [emailDomainVerifying, setEmailDomainVerifying] = useState(false);
+
   // Fetch all projects for the selector
   useEffect(() => {
     api.get<any[]>('/projects')
@@ -83,7 +103,8 @@ export function IntegrationsView() {
         setFrubix((res.data as any)?.frubix ?? null);
       })
       .catch(() => {});
-  }, [projectId]);
+    loadEmailStatus(projectId);
+  }, [projectId, loadEmailStatus]);
 
   // Listen for OAuth callback message from popup
   const handleMessage = useCallback((event: MessageEvent) => {
@@ -230,6 +251,104 @@ export function IntegrationsView() {
       toast.error(err.message || 'Failed to enable WhatsApp sandbox');
     } finally {
       setWhatsappEnabling(false);
+    }
+  };
+
+  const loadEmailStatus = useCallback(async (pid: string) => {
+    setEmailLoading(true);
+    try {
+      const res = await api.get(`/projects/${pid}/integrations/email`);
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d ?? null);
+      if (d?.support_email) setEmailAddress(d.support_email);
+      if (d?.from_name) setEmailFromName(d.from_name);
+    } catch { setEmailStatus(null); }
+    finally { setEmailLoading(false); }
+  }, []);
+
+  const handleEmailConnect = async () => {
+    if (!emailAddress.trim()) { toast.error('Please enter a support email address'); return; }
+    if (!projectId) return;
+    setEmailConnecting(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email`, {
+        support_email: emailAddress.trim(),
+        from_name: emailFromName.trim() || undefined,
+      });
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      toast.success('Email channel connected');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to connect email channel');
+    } finally { setEmailConnecting(false); }
+  };
+
+  const handleEmailDisconnect = async () => {
+    if (!projectId) return;
+    setEmailDisconnecting(true);
+    try {
+      await api.delete(`/projects/${projectId}/integrations/email`);
+      setEmailStatus(null);
+      setEmailAddress('');
+      setEmailFromName('');
+      setEmailConfirm(false);
+      toast.success('Email channel disconnected');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to disconnect email channel');
+    } finally { setEmailDisconnecting(false); }
+  };
+
+  const handleEmailTest = async () => {
+    if (!projectId) return;
+    setEmailTesting(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/test`, {});
+      const msg = (res as any)?.data?.message || 'Test email sent';
+      toast.success(msg);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to send test email');
+    } finally { setEmailTesting(false); }
+  };
+
+  const handleEmailSetupDomain = async () => {
+    if (!projectId) return;
+    setEmailDomainLoading(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/domain-auth`, {});
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      toast.success('DNS records ready. Add them to your registrar then click Check DNS.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to set up domain');
+    } finally { setEmailDomainLoading(false); }
+  };
+
+  const handleEmailVerifyDns = async () => {
+    if (!projectId) return;
+    setEmailDomainVerifying(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/domain-auth/verify`, {});
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      if (d?.domain_auth?.status === 'verified') {
+        toast.success('Domain verified! Emails are now sent from your domain.');
+      } else {
+        toast.info('Some DNS records are not yet propagated. Check and try again.');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'DNS verification failed');
+    } finally { setEmailDomainVerifying(false); }
+  };
+
+  const handleEmailRemoveDomainAuth = async () => {
+    if (!projectId) return;
+    try {
+      const res = await api.delete(`/projects/${projectId}/integrations/email/domain-auth`);
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      toast.success('Domain auth removed');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove domain auth');
     }
   };
 
@@ -467,6 +586,200 @@ export function IntegrationsView() {
             </CardContent>
           </Card>
 
+          {/* Email Channel Card */}
+          <Card className={`border shadow-sm ${emailStatus?.connected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
+            <CardContent className="p-6">
+              {emailLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />Loading...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <Mail className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">Email</h3>
+                          {emailStatus?.connected ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />Connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Not connected</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Receive and reply to customer emails directly from LinoChat via SendGrid.
+                        </p>
+                        {emailStatus?.connected && emailStatus.support_email && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Support address: <span className="font-medium">{emailStatus.support_email}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {emailStatus?.connected && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleEmailTest}
+                          disabled={emailTesting}
+                        >
+                          {emailTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Test Email'}
+                        </Button>
+                        {emailConfirm ? (
+                          <>
+                            <span className="text-sm text-muted-foreground">Are you sure?</span>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleEmailDisconnect} disabled={emailDisconnecting}>
+                              {emailDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}Confirm
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEmailConfirm(false)}>Cancel</Button>
+                          </>
+                        ) : (
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEmailConfirm(true)}>
+                            <Unplug className="h-4 w-4 mr-2" />Disconnect
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connect form */}
+                  {!emailStatus?.connected && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Use a subdomain address like <code className="bg-muted px-1 rounded">support@help.yourdomain.com</code>. You'll add 4 DNS records to enable sending and receiving.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
+                          <Input id="email-address" type="email" placeholder="support@help.yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="email-from-name" className="text-xs">Display Name</Label>
+                          <Input id="email-from-name" placeholder="Acme Support" value={emailFromName} onChange={(e) => setEmailFromName(e.target.value)} />
+                        </div>
+                      </div>
+                      <Button onClick={handleEmailConnect} disabled={emailConnecting} className="bg-indigo-600 hover:bg-indigo-700" size="sm">
+                        {emailConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Plug className="h-4 w-4 mr-2" />Connect</>}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Domain setup — shown when connected */}
+                  {emailStatus?.connected && (
+                    <div className="space-y-3 border-t border-border pt-4">
+                      {!emailStatus.domain_auth ? (
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium">Set up your domain</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Add 4 DNS records to send and receive emails from <span className="font-medium">{emailStatus.support_email}</span>
+                            </p>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={handleEmailSetupDomain} disabled={emailDomainLoading} className="shrink-0">
+                            {emailDomainLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set up domain'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-medium flex items-center gap-2">
+                                DNS Records
+                                {emailStatus.domain_auth.status === 'verified' ? (
+                                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />Domain Verified
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">Pending DNS</Badge>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Add these to your DNS registrar for <span className="font-medium">{emailStatus.domain_auth.domain}</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleEmailVerifyDns}
+                                disabled={emailDomainVerifying || emailStatus.domain_auth.status === 'verified'}
+                              >
+                                {emailDomainVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Check DNS'}
+                              </Button>
+                              {emailStatus.domain_auth.status !== 'verified' && (
+                                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleEmailRemoveDomainAuth}>
+                                  Reset
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg border border-border overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-muted/50 border-b border-border">
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground w-16">Type</th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Host</th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Value</th>
+                                  <th className="px-3 py-2 w-6"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border">
+                                {Object.entries(emailStatus.domain_auth.dns_records).map(([key, rec]) => (
+                                  <tr key={key} className={rec.valid ? 'bg-green-50/40' : ''}>
+                                    <td className="px-3 py-2 font-mono font-semibold">{rec.type}</td>
+                                    <td className="px-3 py-2 font-mono text-muted-foreground break-all max-w-[160px]">{rec.host}</td>
+                                    <td className="px-3 py-2">
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono break-all">{rec.value}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 shrink-0"
+                                          onClick={() => { navigator.clipboard.writeText(rec.value); toast.success('Copied'); }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      {rec.valid
+                                        ? <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                                        : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 mx-auto" />
+                                      }
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {emailStatus.domain_auth.status === 'verified' && (
+                            <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                              <p className="text-sm text-green-800">
+                                Emails are now sent from <span className="font-medium">{emailStatus.support_email}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">Token cost: 1 token per email sent or received</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* WhatsApp Sandbox Card */}
           <Card className="border shadow-sm border-amber-200 bg-amber-50/20">
             <CardContent className="p-6">
@@ -576,21 +889,6 @@ export function IntegrationsView() {
         </div>
       </div>
 
-      {/* Coming Soon */}
-      <div>
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Coming Soon</h3>
-        <div className="grid grid-cols-4 gap-4">
-          {comingSoonIntegrations.map((integration) => (
-            <div
-              key={integration.name}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/50 opacity-60"
-            >
-              <span className="text-2xl">{integration.icon}</span>
-              <span className="text-xs text-muted-foreground">{integration.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

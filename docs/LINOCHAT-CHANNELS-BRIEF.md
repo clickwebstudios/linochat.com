@@ -2,7 +2,7 @@
 
 ## Context
 
-This document extends the main `LINOCHAT-IMPLEMENTATION-BRIEF.md` with integration specs for four additional channels: **Instagram DMs**, **Telegram**, **Email**, and notes on **Google Business Messages** (deprecated). Read the main brief first for context on LinoChat's architecture, Twilio subaccounts, and the token system.
+This document extends the main `LINOCHAT-IMPLEMENTATION-BRIEF.md` with integration specs for five additional channels: **Instagram DMs**, **Telegram**, **Email**, **Yelp Messages**, and notes on **Google Business Messages** (deprecated). Read the main brief first for context on LinoChat's architecture, Twilio subaccounts, and the token system.
 
 ---
 
@@ -13,11 +13,12 @@ This document extends the main `LINOCHAT-IMPLEMENTATION-BRIEF.md` with integrati
 | Instagram DMs | Meta Graph API (direct) | $0 (Meta free) | 0 tokens | Per-customer Facebook App or Page-scoped tokens |
 | Telegram | Telegram Bot API (direct) | $0 (Telegram free) | 0 tokens | Per-customer bot via BotFather |
 | Email | IMAP/SMTP or SendGrid API | ~$0.001 or less | 0 tokens | Per-customer forwarding rules |
+| Yelp Messages | Email forwarding (Phase 1) / Leads API (Phase 2) | $0 | 0 tokens | Per-customer email parsing / Yelp partner API |
 | Google Business Messages | ❌ DEPRECATED | N/A | N/A | N/A |
 
-**Key decision:** Instagram, Telegram, and Email are integrated **directly** (not via Twilio) because Twilio doesn't natively support these channels in the Conversations API, and all three are free from the platform side — making direct integration more cost-effective.
+**Key decision:** Instagram, Telegram, Email, and Yelp are integrated **directly** (not via Twilio) because Twilio doesn't natively support these channels in the Conversations API, and all four are free from the platform side — making direct integration more cost-effective.
 
-**Token impact:** All three channels cost 0 tokens for basic messaging. AI auto-replies triggered on these channels still cost tokens (1 token per AI reply, 5 tokens per AI resolution) — same as any other channel.
+**Token impact:** All four channels cost 0 tokens for basic messaging. AI auto-replies triggered on these channels still cost tokens (1 token per AI reply, 5 tokens per AI resolution) — same as any other channel.
 
 ---
 
@@ -286,6 +287,116 @@ Email is expected by every customer segment. Ship in Phase 2 alongside Instagram
 
 ---
 
+## 4. Yelp Messages Integration
+
+### Overview
+Yelp is a critical channel for **service businesses** (contractors, home services, salons, restaurants, etc.) — one of LinoChat's primary target segments. When consumers find a business on Yelp, they can send messages via "Request a Quote" or direct messaging. Currently, businesses manage these conversations through the Yelp for Business app, website, or email notifications. LinoChat will pull Yelp messages into the unified inbox so agents don't need to context-switch.
+
+### Integration Strategy: Two Phases
+
+**Phase 1 — Email-Based (ship with Email integration, no Yelp partnership needed)**
+
+Yelp sends email notifications to business owners when they receive new messages. Since LinoChat already captures inbound emails, this works automatically:
+
+1. Customer configures their Yelp account to send message notifications to their LinoChat-connected support email (e.g., support@theirdomain.com → tenant123@inbound.linochat.com)
+2. LinoChat's email integration receives the Yelp notification email
+3. LinoChat parses the email to extract: sender name, message body, business context
+4. Message appears in the unified inbox tagged as **Yelp** channel
+5. Agent replies from the inbox → reply is sent as email back through Yelp's masked email system
+
+**Limitations of Phase 1:**
+- Only the initial message from a Yelp user can be replied to via email — continued conversation requires the Yelp app/website
+- Slight latency (depends on Yelp's email notification speed)
+- No rich data (no Yelp user profile, no quote details beyond what's in the email body)
+- Replies route through Yelp's masked email — the customer's real email is never exposed
+
+**Phase 2 — Yelp Leads API (requires Yelp reseller partnership)**
+
+Yelp offers a **Leads API** that provides full programmatic access to messages, quotes, and lead interactions. This is the proper integration path for a native inbox experience.
+
+**Requirements to access:**
+- LinoChat must become a **Yelp advertising or listing management reseller partner**
+- Partnership requires a **minimum spend commitment** with Yelp
+- Once approved, LinoChat gets API access including webhooks for real-time lead notifications
+
+**API Architecture (Phase 2):**
+
+```
+Yelp consumer sends message / Request a Quote
+  ↓
+Yelp sends webhook POST to:
+  https://api.linochat.com/webhooks/yelp/{tenant_id}
+  Payload: lead_id, business_id, message, consumer info (masked)
+  ↓
+LinoChat backend:
+  1. Identifies tenant from webhook subscription
+  2. Creates or updates conversation in unified inbox
+  3. Displays consumer name + message + quote details
+  4. If AI auto-reply enabled → generate response → send via Leads API
+  5. If human agent → agent replies → POST to Yelp Leads API Events endpoint
+  ↓
+Response sent via:
+  Yelp Leads API — POST to lead events endpoint
+  OR via masked email/phone provided in the Get Lead response
+```
+
+**Key Leads API Details:**
+- Webhooks notify on new leads and new interactions within existing leads
+- Consumer contact info is always masked (temporary email + optional masked phone number)
+- Masked email addresses expire after 30 days
+- Masked phone numbers are only available for ~40% of leads (requires consumer opt-in)
+- Outbound SMS to masked phone is supported, but two-way SMS is not — replies come back through Yelp Inbox / API
+- All communication channels (API, masked email, masked phone, Yelp UI) feed into the same unified thread on Yelp's side
+- Rate limit: 5 requests per second per client per endpoint (configurable)
+- LinoChat must register outbound phone numbers with Yelp for allowlisting before using masked phone leads
+
+### Multi-Tenant Handling
+
+**Phase 1 (email-based):**
+- No special multi-tenant logic — rides on existing email integration
+- Yelp messages are identified by parsing sender address and email subject line patterns
+- LinoChat tags conversations with `channel: yelp` based on email parsing rules
+
+**Phase 2 (Leads API):**
+- LinoChat subscribes to Yelp webhooks per business using the Business Subscriptions API (type: WEBHOOK)
+- Each LinoChat tenant's Yelp business ID is mapped to their tenant_id
+- Webhook routing uses tenant_id in the URL path, same pattern as other channels
+
+### Database Schema Additions
+
+Add to the **Tenants table:**
+```
+yelp_business_id         — their Yelp Business ID (for Leads API, Phase 2)
+yelp_integration_type    — enum: 'email' or 'api' (which phase they're using)
+yelp_connected_at        — timestamp of connection
+```
+
+Add to the **Messages table:**
+```
+channel enum: add 'yelp' to existing values (web_chat, whatsapp, messenger, instagram, telegram, email, yelp)
+yelp_lead_id             — nullable, the Yelp lead ID for API-based conversations
+```
+
+### Onboarding Flow
+
+**Phase 1 (email-based):**
+1. Customer clicks "Connect Yelp" in LinoChat dashboard
+2. LinoChat shows instructions: "Go to Yelp for Business → Settings → Notifications → Set message notifications to your support email"
+3. Customer confirms their Yelp notification email matches their LinoChat-connected email
+4. LinoChat enables Yelp email parsing rules for this tenant
+5. Next Yelp message arrives as email → appears in inbox with Yelp badge
+
+**Phase 2 (Leads API):**
+1. Customer clicks "Upgrade Yelp Integration" in dashboard
+2. OAuth flow or API key entry to connect their Yelp Business account
+3. LinoChat subscribes to webhooks for the customer's business via Yelp Business Subscriptions API
+4. Full two-way messaging goes live in the inbox
+
+### Implementation Priority: **MEDIUM**
+Phase 1 (email-based) ships automatically with the Email integration — minimal extra work. Phase 2 (Leads API) is a longer-term play contingent on the Yelp partnership. Position Yelp as a differentiator for service businesses on the Growth and Scale tiers.
+
+---
+
 ## Implementation Phases (Updated)
 
 ### Phase 2 — Channel Activation (Updated)
@@ -293,8 +404,9 @@ Email is expected by every customer segment. Ship in Phase 2 alongside Instagram
 2. WhatsApp integration with Embedded Signup flow
 3. **Instagram DMs** integration via Meta Graph API ← NEW
 4. **Email** integration via SendGrid Inbound Parse ← NEW
-5. Token deduction on message send/receive (WhatsApp/Messenger only — Instagram, Telegram, Email are 0 tokens)
-6. Usage dashboard showing token balance + history
+5. **Yelp Messages (Phase 1)** — email-based parsing, ships with Email ← NEW
+6. Token deduction on message send/receive (WhatsApp/Messenger only — Instagram, Telegram, Email, Yelp are 0 tokens)
+7. Usage dashboard showing token balance + history
 
 ### Phase 3 — AI + Monetization + Telegram
 1. AI auto-reply engine (LLM integration)
@@ -304,12 +416,19 @@ Email is expected by every customer segment. Ship in Phase 2 alongside Instagram
 5. Auto top-up feature
 6. Upgrade nudge logic
 
+### Phase 4 — Optimization + Yelp API (Updated)
+1. Twilio Usage API reconciliation
+2. Multi-tenancy throughput management
+3. Compliance monitoring per subaccount
+4. Analytics: cost-per-resolution, token burn rate, margin per customer
+5. **Yelp Messages (Phase 2)** — native Leads API integration (contingent on Yelp partnership) ← NEW
+
 ---
 
 ## Unified Inbox Requirements
 
 All channels must flow into a single inbox interface. Each conversation must display:
-- **Channel badge** — icon/label showing which channel (web chat, WhatsApp, Messenger, Instagram, Telegram, email)
+- **Channel badge** — icon/label showing which channel (web chat, WhatsApp, Messenger, Instagram, Telegram, email, Yelp)
 - **Customer identity** — name, avatar (when available), email address, phone number — merged across channels when possible
 - **Conversation history** — full thread regardless of channel, with channel-switching noted
 - **Agent assignment** — same assignment and routing rules apply across all channels
@@ -320,6 +439,7 @@ All channels must flow into a single inbox interface. Each conversation must dis
 - **Telegram:** Support inline keyboard button rendering in the inbox
 - **Email:** Show subject line, render HTML safely, display attachments as downloadable links
 - **WhatsApp:** Show template message type labels (service/utility/marketing)
+- **Yelp:** Show "Request a Quote" details when available, display Yelp badge prominently, note reply limitations for email-based integration (Phase 1)
 
 ---
 
@@ -331,6 +451,7 @@ All webhook endpoints must implement:
    - Telegram: Validate `X-Telegram-Bot-Api-Secret-Token` header
    - Twilio: Validate request signature using auth token
    - SendGrid: Validate using signed event webhook (or IP allowlisting)
+   - Yelp (Phase 2): Validate webhook signature per Yelp Leads API docs
 2. **Idempotency** — handle duplicate webhook deliveries (store and check message IDs)
 3. **Quick response** — return 200 OK immediately, process asynchronously (queue the message for processing)
 4. **Rate limiting** — protect against webhook floods
@@ -356,6 +477,11 @@ META_WEBHOOK_VERIFY_TOKEN=
 # SendGrid (Email)
 SENDGRID_API_KEY=
 SENDGRID_INBOUND_DOMAIN=inbound.linochat.com
+
+# Yelp (Phase 2 — Leads API, only needed after partnership is established)
+YELP_CLIENT_ID=
+YELP_CLIENT_SECRET=
+YELP_WEBHOOK_SECRET=
 
 # General
 WEBHOOK_BASE_URL=https://api.linochat.com

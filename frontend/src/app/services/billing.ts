@@ -22,4 +22,6 @@ export const billingService = {
     api.delete('/billing/subscription').then(() => undefined),
   createTopUpCheckout: (data: { pack_type: string; success_url: string; cancel_url: string }): Promise<string> =>
     api.post('/billing/topup-checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
+  getUsage: (): Promise<{ tickets: number; chats: number; storage_gb: number; period_start: string }> =>
+    api.get('/billing/usage').then((r: AxiosResponse<ApiResponse<{ tickets: number; chats: number; storage_gb: number; period_start: string }>>) => r.data.data),
 };

@@ -909,10 +909,16 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                         <div className="flex items-center gap-1.5">
                           <Zap className="h-4 w-4 text-yellow-500" />
                           <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                          {tokenBalance < 100 && (
+                            <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                          )}
                         </div>
-                        {tokenBalance < 100 && (
-                          <span className="text-xs text-red-500 font-medium">Low</span>
-                        )}
+                        <Link
+                          to={`${basePath}/billing?tab=tokens`}
+                          className="text-xs text-primary font-medium hover:underline"
+                        >
+                          Top Up
+                        </Link>
                       </div>
                       <DropdownMenuSeparator />
                     </>
@@ -929,14 +935,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                       Billing
                     </Link>
                   </DropdownMenuItem>
-                  {!isSuperadmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to={`${basePath}/billing?tab=tokens`} className="flex items-center">
-                        <Zap className="mr-2 h-4 w-4 text-yellow-500" />
-                        Top Up Tokens
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
                     <User className="mr-2 h-4 w-4" />
                     Update Status

@@ -28,7 +28,7 @@ interface OverviewTabProps {
 const ticketTrendData: { day: string; created: number; resolved: number }[] = [];
 const chatVolumeData: { hour: string; chats: number }[] = [];
 
-export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList: _projectChatsList, onAddMemberClick }: OverviewTabProps) {
+export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList, onAddMemberClick }: OverviewTabProps) {
   const navigate = useNavigate();
 
   return (
@@ -181,11 +181,14 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
           const hasWidget = !!project?.widget_id;
           const hasTicket = (project?.totalTickets ?? 0) > 0;
           const hasDescription = !!(project?.description?.trim());
+          const hasChat = (projectChatsList?.length ?? 0) > 0;
           const steps = [
             { label: 'Create your workspace', done: true },
             { label: 'Add workspace description', done: hasDescription },
             { label: 'Invite a team member', done: hasMembers },
             { label: 'Set up chat widget', done: hasWidget },
+            { label: 'Install chat widget on your site', done: hasWidget },
+            { label: 'Receive first chat', done: hasChat },
             { label: 'Create first ticket', done: hasTicket },
             { label: 'Configure AI settings', done: false },
           ];

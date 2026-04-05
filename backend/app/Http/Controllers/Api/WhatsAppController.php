@@ -22,6 +22,20 @@ class WhatsAppController extends Controller
     public function sandboxStatus(Request $request)
     {
         $company = $request->user()->company;
+
+        if (!$company) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'sandbox_number' => self::SANDBOX_NUMBER,
+                    'join_keyword'   => null,
+                    'has_twilio'     => false,
+                    'waba_connected' => false,
+                    'instructions'   => null,
+                ],
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -41,6 +55,10 @@ class WhatsAppController extends Controller
     public function sandboxConnect(Request $request)
     {
         $company = $request->user()->company;
+
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company associated with this account'], 404);
+        }
 
         if (!$company->twilio_subaccount_sid) {
             return response()->json(['success' => false, 'message' => 'Twilio account not yet provisioned. Please try again in a moment.'], 503);
