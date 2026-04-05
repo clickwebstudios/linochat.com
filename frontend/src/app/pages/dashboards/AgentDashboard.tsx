@@ -27,7 +27,9 @@ import {
   CreditCard,
   Inbox,
   Loader2,
+  Zap,
 } from 'lucide-react';
+import { billingService } from '../../services/billing';
 // Mock data removed — projects from API/store
 import { useAuthStore } from '../../stores/authStore';
 import { useProjectsStore, selectProjects } from '../../stores/projectsStore';
@@ -376,6 +378,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const refreshFn = useTransferRequestsStore((s) => s.refreshFn);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
 
   // Load notifications from API
   useEffect(() => {
@@ -396,6 +399,14 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     };
     loadNotifications();
   }, [user]);
+
+  useEffect(() => {
+    if (!isSuperadmin) {
+      billingService.getTokenBalance()
+        .then((data) => setTokenBalance(data.token_balance))
+        .catch(() => {});
+    }
+  }, [isSuperadmin]);
 
   const transferRequestsCount = transferRequests.length + pendingHumanRequests.length;
   // transferStep, selectedOperatorForTransfer, transferReason are local to ChatsView's own transfer dialog
@@ -883,6 +894,12 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                   {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                 </div>
                 <div className="text-xs text-muted-foreground capitalize">{user?.role || role}</div>
+                {!isSuperadmin && tokenBalance !== null && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Zap className="h-3 w-3 text-yellow-500" />
+                    <span className="text-xs font-medium text-yellow-600">{tokenBalance.toLocaleString()} tokens</span>
+                  </div>
+                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -903,6 +920,17 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                       Billing
                     </Link>
                   </DropdownMenuItem>
+                  {!isSuperadmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to={`${basePath}/billing?tab=tokens`} className="flex items-center">
+                        <Zap className="mr-2 h-4 w-4 text-yellow-500" />
+                        Top Up Tokens
+                        {tokenBalance !== null && tokenBalance < 100 && (
+                          <span className="ml-auto text-xs text-red-500 font-medium">Low</span>
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
                     <User className="mr-2 h-4 w-4" />
                     Update Status
