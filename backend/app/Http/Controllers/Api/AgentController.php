@@ -5,60 +5,52 @@ namespace App\Http\Controllers\Api;
 use App\Events\AgentTyping;
 use App\Events\ChatStatusUpdated;
 use App\Events\MessageSent;
-use App\Events\NewChatForAgent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Agent\InviteAgentRequest;
+use App\Http\Requests\Agent\SendMessageRequest;
 use App\Http\Resources\ChatResource;
-use App\Mail\AgentInvitationMail;
 use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\Invitation;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\FrubixService;
+use App\Services\InvitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Services\FrubixService;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AgentController extends Controller
 {
+    public function __construct(private readonly InvitationService $invitationService) {}
+
     /**
      * Get all active chats for agent's projects
      */
     public function chats(Request $request)
     {
-        $user = auth('api')->user();
+        $user          = auth('api')->user();
         $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
-
-        $status = $request->input('status', 'active');
+        $status        = $request->input('status', 'active');
 
         $query = Chat::when($allProjectIds, fn ($q) => $q->whereIn('project_id', $allProjectIds))
-            ->with(['project', 'agent', 'messages' => function($q) {
-                $q->latest()->limit(1);
-            }])
+            ->with(['project', 'agent', 'messages' => fn ($q) => $q->latest()->limit(1)])
             ->withCount(['messages as unread_messages_count' => fn ($q) => $q->whereIn('sender_type', ['customer', 'ai'])->whereNull('read_at')]);
 
         if ($status === 'active') {
             $query->whereIn('status', ['active', 'waiting', 'ai_handling']);
         } elseif ($status === 'mine') {
-            $query->where('agent_id', $user->id)
-                  ->whereIn('status', ['active', 'waiting']);
+            $query->where('agent_id', $user->id)->whereIn('status', ['active', 'waiting']);
         } elseif ($status === 'unassigned') {
-            $query->whereNull('agent_id')
-                  ->whereIn('status', ['waiting', 'ai_handling']);
+            $query->whereNull('agent_id')->whereIn('status', ['waiting', 'ai_handling']);
         } elseif ($status === 'closed') {
             $query->where('status', 'closed');
         }
 
-        $chats = $query->orderBy('last_message_at', 'desc')
-            ->paginate(20);
+        $chats = $query->orderBy('last_message_at', 'desc')->paginate(20);
 
-        return response()->json([
-            'success' => true,
-            'data' => ChatResource::collection($chats),
-        ]);
+        return response()->json(['success' => true, 'data' => ChatResource::collection($chats)]);
     }
 
     /**
@@ -67,37 +59,18 @@ class AgentController extends Controller
     public function show(Request $request, string $chat_id)
     {
         $user = auth('api')->user();
-        
         $chat = Chat::where('id', $chat_id)
-            ->with(['project', 'agent', 'messages' => function($q) {
-                $q->orderBy('created_at', 'asc');
-            }])
+            ->with(['project', 'agent', 'messages' => fn ($q) => $q->orderBy('created_at', 'asc')])
             ->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+        if (!$user->can('view', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        // Check if user has access to this chat (superadmin has access to all)
-        $hasAccess = $user->role === 'superadmin' ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists() ||
-                     $chat->agent_id === $user->id;
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => new ChatResource($chat),
-        ]);
+        return response()->json(['success' => true, 'data' => new ChatResource($chat)]);
     }
 
     /**
@@ -106,35 +79,19 @@ class AgentController extends Controller
     public function activity(Request $request, string $chat_id)
     {
         $user = auth('api')->user();
-
-        $chat = Chat::where('id', $chat_id)
-            ->with(['project', 'agent'])
-            ->first();
+        $chat = Chat::where('id', $chat_id)->with(['project', 'agent'])->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+        if (!$user->can('view', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        $hasAccess = $user->role === 'superadmin' ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists() ||
-                     $chat->agent_id === $user->id;
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
-
-        $metadata = $chat->metadata ?? [];
-        $createdAt = $chat->created_at;
+        $metadata     = $chat->metadata ?? [];
+        $createdAt    = $chat->created_at;
         $sessionStart = $createdAt ? $createdAt->format('M j, Y g:i A') : null;
 
-        // Previous chats: same customer (email or id), same project, exclude current, closed only
         $previousChatsQuery = Chat::where('project_id', $chat->project_id)
             ->where('id', '!=', $chat->id)
             ->where('status', 'closed');
@@ -144,7 +101,7 @@ class AgentController extends Controller
         } elseif (!empty($chat->customer_id)) {
             $previousChatsQuery->where('customer_id', $chat->customer_id);
         } else {
-            $previousChatsQuery->whereRaw('1 = 0'); // No identifier = no previous chats
+            $previousChatsQuery->whereRaw('1 = 0');
         }
 
         $previousChats = $previousChatsQuery
@@ -153,22 +110,20 @@ class AgentController extends Controller
             ->limit(10)
             ->get()
             ->map(function (Chat $c) {
-                $start = $c->created_at;
-                $end = $c->last_message_at ?? $c->updated_at;
+                $start    = $c->created_at;
+                $end      = $c->last_message_at ?? $c->updated_at;
                 $duration = $start && $end ? $start->diffInMinutes($end) : 0;
-
                 return [
-                    'id' => $c->id,
-                    'date' => $c->created_at?->format('Y-m-d'),
-                    'topic' => $c->subject ?: 'Support chat',
+                    'id'       => $c->id,
+                    'date'     => $c->created_at?->format('Y-m-d'),
+                    'topic'    => $c->subject ?: 'Support chat',
                     'duration' => $duration . ' min',
-                    'agent' => $c->agent?->name ?? '—',
+                    'agent'    => $c->agent?->name ?? '—',
                 ];
             })
             ->values()
             ->all();
 
-        // Total tickets by customer email (same project)
         $totalTickets = 0;
         if (!empty($chat->customer_email)) {
             $totalTickets = Ticket::where('project_id', $chat->project_id)
@@ -177,58 +132,39 @@ class AgentController extends Controller
         }
 
         $activity = [
-            'customer' => $chat->customer_name ?: $chat->customer_email ?: 'Guest',
-            'customer_email' => $chat->customer_email ?? '',
-            'sessionStart' => $sessionStart ?? '—',
+            'customer'          => $chat->customer_name ?: $chat->customer_email ?: 'Guest',
+            'customer_email'    => $chat->customer_email ?? '',
+            'sessionStart'      => $sessionStart ?? '—',
             'chatInitiatedFrom' => $metadata['current_page'] ?? $metadata['referrer'] ?? '/',
-            'location' => $metadata['location'] ?? '—',
-            'device' => $metadata['device'] ?? '—',
-            'browser' => $metadata['browser'] ?? '—',
-            'referralSource' => $metadata['referral_source'] ?? $metadata['referrer'] ?? '—',
-            'pagesVisited' => $this->normalizePagesVisited(
+            'location'          => $metadata['location'] ?? '—',
+            'device'            => $metadata['device'] ?? '—',
+            'browser'           => $metadata['browser'] ?? '—',
+            'referralSource'    => $metadata['referral_source'] ?? $metadata['referrer'] ?? '—',
+            'pagesVisited'      => $this->normalizePagesVisited(
                 $metadata['pages_visited'] ?? null,
                 $metadata['current_page'] ?? '/',
                 $sessionStart ?? ''
             ),
-            'previousChats' => $previousChats,
-            'totalTickets' => $totalTickets,
-            'customerTier' => $metadata['customer_tier'] ?? null,
+            'previousChats'  => $previousChats,
+            'totalTickets'   => $totalTickets,
+            'customerTier'   => $metadata['customer_tier'] ?? null,
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $activity,
-        ]);
+        return response()->json(['success' => true, 'data' => $activity]);
     }
 
-    /**
-     * Normalize pages visited to expected format.
-     *
-     * @param  mixed  $pages
-     * @param  string  $fallbackUrl
-     * @param  string  $fallbackTimestamp
-     * @return array<int, array{page: string, url: string, timestamp: string, duration: string}>
-     */
     private function normalizePagesVisited($pages, string $fallbackUrl, string $fallbackTimestamp): array
     {
-        if (! is_array($pages) || empty($pages)) {
-            return [
-                [
-                    'page' => 'Chat',
-                    'url' => $fallbackUrl,
-                    'timestamp' => $fallbackTimestamp,
-                    'duration' => 'Active',
-                ],
-            ];
+        if (!is_array($pages) || empty($pages)) {
+            return [['page' => 'Chat', 'url' => $fallbackUrl, 'timestamp' => $fallbackTimestamp, 'duration' => 'Active']];
         }
-
         return array_values(array_map(function ($p) use ($fallbackTimestamp) {
             $item = is_array($p) ? $p : [];
             return [
-                'page' => $item['page'] ?? $item['name'] ?? 'Page',
-                'url' => $item['url'] ?? $item['path'] ?? '/',
+                'page'      => $item['page'] ?? $item['name'] ?? 'Page',
+                'url'       => $item['url'] ?? $item['path'] ?? '/',
                 'timestamp' => $item['timestamp'] ?? $item['time'] ?? $fallbackTimestamp,
-                'duration' => $item['duration'] ?? '—',
+                'duration'  => $item['duration'] ?? '—',
             ];
         }, $pages));
     }
@@ -239,139 +175,89 @@ class AgentController extends Controller
     public function take(Request $request, string $chat_id)
     {
         $user = auth('api')->user();
-        
+
         return \DB::transaction(function () use ($user, $chat_id) {
-        $chat = Chat::where('id', $chat_id)
-            ->whereIn('status', ['waiting', 'ai_handling'])
-            ->lockForUpdate()
-            ->first();
+            $chat = Chat::where('id', $chat_id)
+                ->whereIn('status', ['waiting', 'ai_handling'])
+                ->lockForUpdate()
+                ->first();
 
-        if (!$chat) {
+            if (!$chat) {
+                return response()->json(['success' => false, 'message' => 'Chat not found or already assigned'], 404);
+            }
+
+            $project = Project::find($chat->project_id);
+            if (!$project || !$user->canAccessProject($project)) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $chat->update(['agent_id' => $user->id, 'status' => 'active']);
+
+            $systemMessage = ChatMessage::create([
+                'chat_id'     => $chat->id,
+                'sender_type' => 'system',
+                'content'     => $user->name . ' has joined the chat.',
+            ]);
+
+            broadcast(new ChatStatusUpdated($chat->id, 'active', $user->id, $user->name));
+            broadcast(new MessageSent($systemMessage))->toOthers();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Chat not found or already assigned',
-            ], 404);
-        }
-
-        $project = Project::find($chat->project_id);
-        if (!$project || !$user->canAccessProject($project)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
-
-        $chat->update([
-            'agent_id' => $user->id,
-            'status' => 'active',
-        ]);
-
-        // Add system message
-        $systemMessage = ChatMessage::create([
-            'chat_id' => $chat->id,
-            'sender_type' => 'system',
-            'content' => $user->name . ' has joined the chat.',
-        ]);
-
-        // Broadcast status update
-        broadcast(new ChatStatusUpdated($chat->id, 'active', $user->id, $user->name));
-        broadcast(new MessageSent($systemMessage))->toOthers();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Chat assigned to you',
-            'data' => [
-                'chat_id' => $chat->id,
-                'agent_id' => $user->id,
-                'status' => 'active',
-            ],
-        ]);
-        }); // end DB::transaction
+                'success' => true,
+                'message' => 'Chat assigned to you',
+                'data'    => ['chat_id' => $chat->id, 'agent_id' => $user->id, 'status' => 'active'],
+            ]);
+        });
     }
 
     /**
      * Send message as agent (supports file attachments via multipart/form-data)
      */
-    public function sendMessage(Request $request, string $chat_id)
+    public function sendMessage(SendMessageRequest $request, string $chat_id)
     {
-        $validator = Validator::make($request->all(), [
-            'message' => 'required|string|max:5000',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         $user = auth('api')->user();
-
         $chat = Chat::where('id', $chat_id)->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
         }
-
-        // Check if user is assigned agent or has access (superadmin can send to any chat)
-        $hasAccess = $user->role === 'superadmin' ||
-                     $chat->agent_id === $user->id ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists();
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
+        if (!$user->can('sendMessage', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         $attachments = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                if ($file->isValid() && $file->getSize() <= 10 * 1024 * 1024) { // 10MB max
-                    $path = $file->store(
-                        'chat-attachments/' . $chat_id,
-                        'public'
-                    );
+                if ($file->isValid() && $file->getSize() <= 10 * 1024 * 1024) {
+                    $path          = $file->store('chat-attachments/' . $chat_id, 'public');
                     $attachments[] = [
-                        'url' => rtrim(config('app.url'), '/') . '/storage/' . $path,
+                        'url'  => rtrim(config('app.url'), '/') . '/storage/' . $path,
                         'name' => $file->getClientOriginalName(),
                     ];
                 }
             }
         }
 
-        $metadata = $attachments ? ['attachments' => $attachments] : null;
-
-        // Create agent message
         $message = ChatMessage::create([
-            'chat_id' => $chat->id,
+            'chat_id'     => $chat->id,
             'sender_type' => 'agent',
-            'sender_id' => $user->id,
-            'content' => $request->input('message'),
-            'is_ai' => false,
-            'metadata' => $metadata,
+            'sender_id'   => $user->id,
+            'content'     => $request->input('message'),
+            'is_ai'       => false,
+            'metadata'    => $attachments ? ['attachments' => $attachments] : null,
         ]);
 
         $chat->update(['last_message_at' => now()]);
-
-        // Broadcast to widget and agent dashboard (immediate, no queue)
         broadcast(new MessageSent($message));
-
-        // Forward message to Frubix if integrated
         $this->forwardToFrubix($chat, $message, $user);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'message' => $message->load([]),
-            ],
-        ]);
+        // Send via Twilio for non-web channels
+        if ($chat->channel !== 'web') {
+            $twilioMessageService = app(\App\Services\TwilioMessageService::class);
+            $twilioMessageService->send($chat, $message->content, $request->user());
+        }
+
+        return response()->json(['success' => true, 'data' => ['message' => $message->load([])]]);
     }
 
     /**
@@ -380,50 +266,30 @@ class AgentController extends Controller
     public function close(Request $request, string $chat_id)
     {
         $user = auth('api')->user();
-        
         $chat = Chat::where('id', $chat_id)->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
         }
-
-        // Check if user is assigned agent or has access (superadmin can close any chat)
-        $hasAccess = $user->role === 'superadmin' ||
-                     $chat->agent_id === $user->id ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists();
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
+        if (!$user->can('close', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
-
         if ($chat->status === 'closed') {
             return response()->json(['success' => false, 'message' => 'Chat is already closed'], 422);
         }
 
         $chat->update(['status' => 'closed']);
 
-        // Add system message
         $systemMessage = ChatMessage::create([
-            'chat_id' => $chat->id,
+            'chat_id'     => $chat->id,
             'sender_type' => 'system',
-            'content' => 'This chat has been closed.',
+            'content'     => 'This chat has been closed.',
         ]);
 
-        // Broadcast
         broadcast(new ChatStatusUpdated($chat->id, 'closed'));
         broadcast(new MessageSent($systemMessage))->toOthers();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Chat closed',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Chat closed']);
     }
 
     /**
@@ -431,75 +297,44 @@ class AgentController extends Controller
      */
     public function typing(Request $request, string $chat_id)
     {
-        $validator = Validator::make($request->all(), [
-            'is_typing' => 'required|boolean',
-        ]);
+        $validator = Validator::make($request->all(), ['is_typing' => 'required|boolean']);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Validation error'], 422);
         }
 
-        $user = auth('api')->user();
-        
-        // Superadmin and OAuth clients can type in any chat, agents only in assigned chats
+        $user      = auth('api')->user();
+        $isOAuth   = $request->attributes->has('oauth_token');
         $chatQuery = Chat::where('id', $chat_id);
-        $isOAuth = $request->attributes->has('oauth_token');
 
         if ($user->role !== 'superadmin' && !$isOAuth) {
             $chatQuery->where('agent_id', $user->id);
         }
-        
+
         $chat = $chatQuery->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found or not assigned to you',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found or not assigned to you'], 404);
         }
 
-        // Broadcast typing indicator
-        broadcast(new AgentTyping(
-            $chat->id,
-            $user->id,
-            $user->name,
-            $request->input('is_typing')
-        ));
+        broadcast(new AgentTyping($chat->id, $user->id, $user->name, $request->input('is_typing')));
 
-        return response()->json([
-            'success' => true,
-        ]);
+        return response()->json(['success' => true]);
     }
 
     /**
-     * Mark messages in chat as read (when agent views the chat)
+     * Mark messages in chat as read
      */
     public function markRead(Request $request, string $chat_id)
     {
         $user = auth('api')->user();
-
         $chat = Chat::where('id', $chat_id)->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
         }
-
-        $hasAccess = $user->role === 'superadmin' ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists() ||
-                     $chat->agent_id === $user->id;
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
+        if (!$user->can('view', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         $updated = ChatMessage::where('chat_id', $chat_id)
@@ -507,10 +342,7 @@ class AgentController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
-        return response()->json([
-            'success' => true,
-            'data' => ['marked_count' => $updated],
-        ]);
+        return response()->json(['success' => true, 'data' => ['marked_count' => $updated]]);
     }
 
     /**
@@ -518,79 +350,55 @@ class AgentController extends Controller
      */
     public function stats(Request $request)
     {
-        $user = auth('api')->user();
+        $user          = auth('api')->user();
         $allProjectIds = $user->getCompanyProjectIds();
 
         $stats = [
-            'total_active_chats' => Chat::whereIn('project_id', $allProjectIds)
-                ->whereIn('status', ['active', 'waiting', 'ai_handling'])
-                ->count(),
-            'my_active_chats' => Chat::where('agent_id', $user->id)
-                ->whereIn('status', ['active', 'waiting'])
-                ->count(),
-            'unassigned_chats' => Chat::whereIn('project_id', $allProjectIds)
-                ->whereNull('agent_id')
-                ->whereIn('status', ['waiting', 'ai_handling'])
-                ->count(),
-            'closed_today' => Chat::where('agent_id', $user->id)
-                ->where('status', 'closed')
-                ->whereDate('updated_at', today())
-                ->count(),
+            'total_active_chats' => Chat::whereIn('project_id', $allProjectIds)->whereIn('status', ['active', 'waiting', 'ai_handling'])->count(),
+            'my_active_chats'    => Chat::where('agent_id', $user->id)->whereIn('status', ['active', 'waiting'])->count(),
+            'unassigned_chats'   => Chat::whereIn('project_id', $allProjectIds)->whereNull('agent_id')->whereIn('status', ['waiting', 'ai_handling'])->count(),
+            'closed_today'       => Chat::where('agent_id', $user->id)->where('status', 'closed')->whereDate('updated_at', today())->count(),
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        return response()->json(['success' => true, 'data' => $stats]);
     }
-    
+
     /**
      * Get users/agents list with active chats count, projects, tickets resolved, last active
      */
     public function users(Request $request)
     {
-        $user = auth('api')->user();
+        $user          = auth('api')->user();
         $allProjectIds = $user->resolveProjectIds($request->input('company_id'));
 
-        // Get all agents from user's company projects with enriched data
         $agents = User::where(function ($q) use ($allProjectIds) {
             $q->whereHas('projects', fn ($q2) => $allProjectIds ? $q2->whereIn('projects.id', $allProjectIds) : $q2)
               ->orWhereHas('ownedProjects', fn ($q2) => $allProjectIds ? $q2->whereIn('projects.id', $allProjectIds) : $q2);
         })
             ->select('id', 'first_name', 'last_name', 'email', 'role', 'status', 'avatar_url', 'created_at', 'last_active_at')
             ->with(['projects:id,name', 'ownedProjects:id,name'])
-            ->withCount(['chats as active_chats_count' => function ($q) {
-                $q->whereIn('status', ['active', 'waiting']);
-            }])
-            ->withCount(['tickets as tickets_resolved' => function ($q) {
-                $q->whereIn('status', ['resolved', 'closed']);
-            }])
+            ->withCount(['chats as active_chats_count' => fn ($q) => $q->whereIn('status', ['active', 'waiting'])])
+            ->withCount(['tickets as tickets_resolved' => fn ($q) => $q->whereIn('status', ['resolved', 'closed'])])
             ->get()
             ->map(function ($agent) {
                 return [
-                    'id' => (string) $agent->id,
-                    'invitation_id' => null,
-                    'first_name' => $agent->first_name,
-                    'last_name' => $agent->last_name,
-                    'email' => $agent->email,
-                    'role' => $agent->role,
-                    'status' => $agent->status ?? 'Active',
-                    'avatar_url' => $agent->avatar_url,
-                    'created_at' => $agent->created_at?->toIso8601String(),
-                    'last_active_at' => $agent->last_active_at?->toIso8601String(),
-                    'last_active' => $agent->last_active_at ? $agent->last_active_at->diffForHumans() : null,
-                    'active_chats_count' => $agent->active_chats_count ?? 0,
-                    'tickets_resolved' => $agent->tickets_resolved ?? 0,
-                    'projects' => $agent->projects->pluck('name')
-                        ->merge($agent->ownedProjects->pluck('name'))
-                        ->unique()
-                        ->values()
-                        ->all(),
+                    'id'                => (string) $agent->id,
+                    'invitation_id'     => null,
+                    'first_name'        => $agent->first_name,
+                    'last_name'         => $agent->last_name,
+                    'email'             => $agent->email,
+                    'role'              => $agent->role,
+                    'status'            => $agent->status ?? 'Active',
+                    'avatar_url'        => $agent->avatar_url,
+                    'created_at'        => $agent->created_at?->toIso8601String(),
+                    'last_active_at'    => $agent->last_active_at?->toIso8601String(),
+                    'last_active'       => $agent->last_active_at ? $agent->last_active_at->diffForHumans() : null,
+                    'active_chats_count'=> $agent->active_chats_count ?? 0,
+                    'tickets_resolved'  => $agent->tickets_resolved ?? 0,
+                    'projects'          => $agent->projects->pluck('name')->merge($agent->ownedProjects->pluck('name'))->unique()->values()->all(),
                 ];
             });
 
-        // Get pending invitations for user's projects
-        // For superadmin with company filter, use company's projects
         $invitations = Invitation::whereIn('project_id', $allProjectIds)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
@@ -602,154 +410,82 @@ class AgentController extends Controller
                     $name = explode('@', $inv->email)[0] ?? $inv->email;
                 }
                 return [
-                    'id' => 'invitation-' . $inv->id,
-                    'invitation_id' => (string) $inv->id,
-                    'first_name' => $inv->first_name ?? '',
-                    'last_name' => $inv->last_name ?? '',
-                    'email' => $inv->email,
-                    'role' => $inv->role ?? 'agent',
-                    'status' => 'Invited',
-                    'avatar_url' => null,
-                    'created_at' => $inv->created_at?->toIso8601String(),
-                    'last_active_at' => null,
-                    'last_active' => null,
-                    'active_chats_count' => 0,
-                    'tickets_resolved' => 0,
-                    'projects' => $inv->project ? [$inv->project->name] : [],
+                    'id'                => 'invitation-' . $inv->id,
+                    'invitation_id'     => (string) $inv->id,
+                    'first_name'        => $inv->first_name ?? '',
+                    'last_name'         => $inv->last_name ?? '',
+                    'email'             => $inv->email,
+                    'role'              => $inv->role ?? 'agent',
+                    'status'            => 'Invited',
+                    'avatar_url'        => null,
+                    'created_at'        => $inv->created_at?->toIso8601String(),
+                    'last_active_at'    => null,
+                    'last_active'       => null,
+                    'active_chats_count'=> 0,
+                    'tickets_resolved'  => 0,
+                    'projects'          => $inv->project ? [$inv->project->name] : [],
                 ];
             });
 
-        // Merge: exclude invitations for emails that are already agents
         $agentEmails = $agents->pluck('email')->all();
         $invitedOnly = $invitations->filter(fn ($i) => !in_array($i['email'], $agentEmails));
-        $merged = $agents->concat($invitedOnly->values())->values()->all();
+        $merged      = $agents->concat($invitedOnly->values())->values()->all();
 
-        return response()->json([
-            'success' => true,
-            'data' => $merged,
-        ]);
+        return response()->json(['success' => true, 'data' => $merged]);
     }
 
     /**
      * Invite a new agent (sends invitation email)
-     * POST /api/agent/invitations
      */
-    public function inviteAgent(Request $request)
+    public function inviteAgent(InviteAgentRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|max:255',
-            'first_name' => 'nullable|string|max:100',
-            'last_name' => 'nullable|string|max:100',
-            'role' => 'nullable|string|in:agent,admin',
-            'project_ids' => 'required|array',
-            'project_ids.*' => 'required|string|exists:projects,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $user = auth('api')->user();
-        $projectIds = $request->input('project_ids');
-        $projectId = $projectIds[0];
-
-        $project = Project::where('id', $projectId)->first();
+        $user      = auth('api')->user();
+        $projectId = $request->input('project_ids')[0];
+        $project   = Project::where('id', $projectId)->first();
 
         if (!$project) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Project not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
         }
-
-        // Only project owner can invite
         if ($project->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only invite agents to projects you own',
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'You can only invite agents to projects you own'], 403);
         }
 
-        $email = $request->input('email');
-
-        // Check if user already exists and is assigned to this project
+        $email        = $request->input('email');
         $existingUser = User::where('email', $email)->first();
-        if ($existingUser) {
-            $isAlreadyAssigned = $existingUser->projects()->where('projects.id', $projectId)->exists();
-            if ($isAlreadyAssigned) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This user is already an agent on this project',
-                ], 422);
-            }
+
+        if ($existingUser && $existingUser->projects()->where('projects.id', $projectId)->exists()) {
+            return response()->json(['success' => false, 'message' => 'This user is already an agent on this project'], 422);
         }
 
-        // Check for pending invitation
-        $existingInvitation = Invitation::where('project_id', $projectId)
+        $existing = Invitation::where('project_id', $projectId)
             ->where('email', $email)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
             ->first();
 
-        if ($existingInvitation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An invitation has already been sent to this email',
-            ], 422);
+        if ($existing) {
+            return response()->json(['success' => false, 'message' => 'An invitation has already been sent to this email'], 422);
         }
 
-        // Create invitation
-        $invitation = Invitation::create([
-            'project_id' => $projectId,
-            'email' => $email,
-            'first_name' => $request->input('first_name'),
-            'last_name' => $request->input('last_name'),
-            'role' => $request->input('role', 'agent'),
-            'token' => Str::random(32),
-            'status' => 'pending',
-            'expires_at' => now()->addDays(7),
-        ]);
-
-        // Send email
-        $emailSent = false;
-        $mailDriver = config('mail.default');
-        try {
-            Mail::to($email)->send(new AgentInvitationMail($invitation, $project));
-            $emailSent = true;
-        } catch (\Exception $e) {
-            Log::error('Failed to send invitation email', [
-                'error' => $e->getMessage(),
-                'invitation_id' => $invitation->id,
-            ]);
-        }
-
-        $message = 'Invitation sent successfully';
-        if (!$emailSent) {
-            $message = 'Invitation created but email could not be sent. Check mail configuration.';
-        } elseif ($mailDriver === 'log') {
-            $message = 'Invitation created. Configure MAIL_MAILER=smtp in .env to send emails to recipients.';
-        }
+        $result     = $this->invitationService->create($email, $project, $request->only(['first_name', 'last_name', 'role']));
+        $invitation = $result['invitation'];
+        $message    = $this->invitationService->buildMessage($result['email_sent']);
 
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => [
+            'data'    => [
                 'invitation_id' => $invitation->id,
-                'email' => $invitation->email,
-                'status' => $invitation->status,
-                'expires_at' => $invitation->expires_at->toIso8601String(),
-                'email_sent' => $emailSent && $mailDriver !== 'log',
+                'email'         => $invitation->email,
+                'status'        => $invitation->status,
+                'expires_at'    => $invitation->expires_at->toIso8601String(),
+                'email_sent'    => $result['email_sent'] && $result['mail_driver'] !== 'log',
             ],
         ]);
     }
 
     /**
      * Resend invitation email
-     * POST /api/agent/invitations/{id}/resend
      */
     public function resendInvitation(Request $request, string $id)
     {
@@ -762,119 +498,73 @@ class AgentController extends Controller
             ->first();
 
         if (!$invitation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invitation not found or expired',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Invitation not found or expired'], 404);
         }
 
         $project = $invitation->project;
         if (!$project || $project->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only resend invitations for projects you own',
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'You can only resend invitations for projects you own'], 403);
         }
 
-        $invitation->update([
-            'token' => Str::random(32),
-            'expires_at' => now()->addDays(7),
-        ]);
+        $sent    = $this->invitationService->resend($invitation, $project);
+        $message = $this->invitationService->buildMessage($sent, 'resent');
 
-        try {
-            Mail::to($invitation->email)->send(new AgentInvitationMail($invitation, $project));
-        } catch (\Exception $e) {
-            Log::error('Failed to resend invitation email', [
-                'error' => $e->getMessage(),
-                'invitation_id' => $invitation->id,
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send invitation email',
-            ], 500);
+        if (!$sent) {
+            return response()->json(['success' => false, 'message' => 'Failed to send invitation email'], 500);
         }
-
-        $message = config('mail.default') === 'log'
-            ? 'Invitation resent. Configure MAIL_MAILER=smtp in .env to send emails to recipients.'
-            : 'Invitation resent successfully';
 
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => [
+            'data'    => [
                 'invitation_id' => $invitation->id,
-                'email' => $invitation->email,
-                'expires_at' => $invitation->expires_at->toIso8601String(),
+                'email'         => $invitation->email,
+                'expires_at'    => $invitation->expires_at->toIso8601String(),
             ],
         ]);
     }
 
     /**
      * Toggle AI enabled status for chat
-     * POST /api/agent/chats/{id}/toggle-ai
      */
     public function toggleAi(Request $request, string $id)
     {
         $user = auth('api')->user();
-        
         $chat = Chat::where('id', $id)->first();
 
         if (!$chat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+        if (!$user->can('toggleAi', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        // Check if user has access to this chat (superadmin can toggle AI for any chat)
-        $hasAccess = $user->role === 'superadmin' ||
-                     $chat->agent_id === $user->id ||
-                     $user->projects()->where('projects.id', $chat->project_id)->exists() ||
-                     $user->ownedProjects()->where('id', $chat->project_id)->exists();
-
-        if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
-
-        // Explicit set if provided, otherwise toggle
         $newAiStatus = $request->has('ai_enabled') ? (bool) $request->input('ai_enabled') : !$chat->ai_enabled;
-        
-        // Update chat
+
         $chat->update([
             'ai_enabled' => $newAiStatus,
-            // When enabling AI: clear agent_id and set to ai_handling so AI can respond
-            // When disabling AI: keep agent_id, set to active/waiting
-            'agent_id' => $newAiStatus ? null : $chat->agent_id,
-            'status' => $newAiStatus ? 'ai_handling' : ($chat->agent_id ? 'active' : 'waiting'),
+            'agent_id'   => $newAiStatus ? null : $chat->agent_id,
+            'status'     => $newAiStatus ? 'ai_handling' : ($chat->agent_id ? 'active' : 'waiting'),
         ]);
 
-        // Add system message about AI status change (skip for Frubix-managed projects)
         $isFrubixManaged = (bool) ($chat->project?->integrations['frubix_managed']['enabled'] ?? false);
         if (!$isFrubixManaged) {
             $systemMessage = ChatMessage::create([
-                'chat_id' => $chat->id,
+                'chat_id'     => $chat->id,
                 'sender_type' => 'system',
-                'content' => $newAiStatus
+                'content'     => $newAiStatus
                     ? 'AI assistant has been enabled for this chat.'
                     : 'AI assistant has been disabled. A human agent will assist you.',
             ]);
             broadcast(new MessageSent($systemMessage))->toOthers();
         }
 
-        // Broadcast status update
         broadcast(new ChatStatusUpdated($chat->id, $chat->status, $chat->agent_id, $user->name));
 
         return response()->json([
             'success' => true,
             'message' => 'AI status updated',
-            'data' => [
-                'chat_id' => $chat->id,
-                'ai_enabled' => $chat->ai_enabled,
-                'status' => $chat->status,
-            ],
+            'data'    => ['chat_id' => $chat->id, 'ai_enabled' => $chat->ai_enabled, 'status' => $chat->status],
         ]);
     }
 
@@ -885,32 +575,26 @@ class AgentController extends Controller
             if (!$project) return;
 
             $frubixConfig = $project->integrations['frubix'] ?? null;
-            if (!$frubixConfig || empty($frubixConfig['access_token'])) {
-                return;
-            }
+            if (!$frubixConfig || empty($frubixConfig['access_token'])) return;
 
             FrubixService::sendMessage($frubixConfig, [
-                'message' => $message->content,
-                'sender_name' => $user->name ?? 'Agent',
-                'sender_phone' => null,
-                'sender_email' => $user->email ?? null,
-                'sender_type' => 'agent',
-                'channel' => 'linochat',
-                'source' => 'linochat',
-                'external_id' => (string) $message->id,
-                'external_conversation_id' => (string) $chat->id,
+                'message'                    => $message->content,
+                'sender_name'                => $user->name ?? 'Agent',
+                'sender_phone'               => null,
+                'sender_email'               => $user->email ?? null,
+                'sender_type'                => 'agent',
+                'channel'                    => 'linochat',
+                'source'                     => 'linochat',
+                'external_id'                => (string) $message->id,
+                'external_conversation_id'   => (string) $chat->id,
             ]);
         } catch (\Throwable $e) {
-            Log::error('Frubix message forward failed', [
-                'chat_id' => $chat->id,
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Frubix message forward failed', ['chat_id' => $chat->id, 'error' => $e->getMessage()]);
         }
     }
 
     /**
      * Generate AI-powered reply suggestions for an agent.
-     * POST /v1/chats/{chatId}/suggest-replies
      */
     public function suggestReplies(Request $request, string $chatId)
     {
@@ -920,12 +604,9 @@ class AgentController extends Controller
             return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
         }
 
-        $aiService = app(\App\Services\AiChatService::class);
+        $aiService   = app(\App\Services\AiChatService::class);
         $suggestions = $aiService->suggestReplies($chat, $chat->project);
 
-        return response()->json([
-            'success' => true,
-            'data' => ['suggestions' => $suggestions],
-        ]);
+        return response()->json(['success' => true, 'data' => ['suggestions' => $suggestions]]);
     }
 }

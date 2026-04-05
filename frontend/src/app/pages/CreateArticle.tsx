@@ -310,13 +310,13 @@ export default function CreateArticle() {
                     <FolderOpen className="h-3 w-3 text-white" />
                   </div>
                   <span className="text-sm max-w-[140px] truncate">
-                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select Project'}
+                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select Workspace'}
                   </span>
                   <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
+                <DropdownMenuLabel>Switch Workspace</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {projects.map((project) => (
                   <DropdownMenuItem

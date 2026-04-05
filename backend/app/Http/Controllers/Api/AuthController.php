@@ -3,45 +3,41 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\SendVerificationCodeRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
+use App\Http\Requests\Auth\VerifyEmailCodeRequest;
 use App\Http\Resources\UserResource;
+use App\Jobs\CreateTwilioSubaccountJob;
 use App\Mail\PasswordResetMail;
 use App\Mail\VerificationCodeMail;
 use App\Mail\WelcomeMail;
+use App\Models\Company;
 use App\Models\EmailVerificationCode;
-use App\Models\User;
-use App\Models\Project;
-use App\Models\KbCategory;
 use App\Models\KbArticle;
+use App\Models\KbCategory;
+use App\Models\Project;
+use App\Models\User;
+use App\Services\TokenService;
 use App\Services\WebsiteAnalyzerService;
+use App\Enums\TokenActionType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Google\Client as GoogleClient;
 
 class AuthController extends Controller
 {
     /**
      * Login and return a Sanctum token with the same shape the frontend expects.
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email'    => 'required|email',
-            'password' => 'required|string|min:8',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
         // Per-email lockout: 5 failed attempts within 15 minutes
         $lockoutKey = 'login_attempts:' . strtolower($request->input('email'));
         if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($lockoutKey, 5)) {
@@ -55,10 +51,10 @@ class AuthController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user || !Hash::check($request->input('password'), $user->password)) {
-            \Illuminate\Support\Facades\RateLimiter::hit($lockoutKey, 900); // 15 min decay
+            \Illuminate\Support\Facades\RateLimiter::hit($lockoutKey, 900);
             \Log::warning('Failed login attempt', [
-                'email' => $request->input('email'),
-                'ip' => $request->ip(),
+                'email'      => $request->input('email'),
+                'ip'         => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
             return response()->json([
@@ -76,29 +72,26 @@ class AuthController extends Controller
     /**
      * Register a new user.
      */
-    public function register(Request $request, WebsiteAnalyzerService $analyzer)
+    public function register(RegisterRequest $request, WebsiteAnalyzerService $analyzer)
     {
-        $validator = Validator::make($request->all(), [
-            'first_name'   => 'required|string|max:100',
-            'last_name'    => 'required|string|max:100',
-            'email'        => 'required|string|email|max:255|unique:users',
-            'password'     => 'required|string|min:8|confirmed',
-            'website'      => 'required|url|max:255',
-            'company_name' => 'required|string|max:255',
-            // Role is always 'admin' for self-registration (agents are invited)
+        $planAllowances = [
+            'Free'    => 100,
+            'Starter' => 1000,
+            'Growth'  => 5000,
+            'Scale'   => 20000,
+        ];
+
+        $plan = 'Free';
+        $monthlyAllowance = $planAllowances[$plan] ?? 100;
+
+        $company = Company::create([
+            'name'                   => $request->company_name,
+            'plan'                   => $plan,
+            'monthly_token_allowance' => $monthlyAllowance,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
-
-
         $user = User::create([
+            'company_id'   => $company->id,
             'first_name'   => $request->first_name,
             'last_name'    => $request->last_name,
             'company_name' => $request->company_name,
@@ -109,11 +102,16 @@ class AuthController extends Controller
             'join_date'    => now(),
         ]);
 
+        CreateTwilioSubaccountJob::dispatch($company);
+
+        $tokenService = new TokenService();
+        $tokenService->credit($company, $monthlyAllowance, TokenActionType::MonthlyGrant);
+
         $user->notificationPreferences()->create([
-            'email_notifications'  => true,
-            'desktop_notifications'=> true,
-            'sound_alerts'         => false,
-            'weekly_summary'       => true,
+            'email_notifications'   => true,
+            'desktop_notifications' => true,
+            'sound_alerts'          => false,
+            'weekly_summary'        => true,
         ]);
 
         $user->availabilitySettings()->create([
@@ -219,27 +217,12 @@ class AuthController extends Controller
     /**
      * Send a 6-digit verification code to the given email.
      */
-    public function sendVerificationCode(Request $request)
+    public function sendVerificationCode(SendVerificationCodeRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
         $email = $request->input('email');
 
         if (User::where('email', $email)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This email is already registered.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'This email is already registered.'], 422);
         }
 
         $recent = EmailVerificationCode::where('email', $email)
@@ -247,10 +230,7 @@ class AuthController extends Controller
             ->first();
 
         if ($recent) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please wait before requesting a new code.',
-            ], 429);
+            return response()->json(['success' => false, 'message' => 'Please wait before requesting a new code.'], 429);
         }
 
         EmailVerificationCode::where('email', $email)->delete();
@@ -267,61 +247,33 @@ class AuthController extends Controller
             Mail::to($email)->send(new VerificationCodeMail($code, $email));
         } catch (\Exception $e) {
             Log::error('Failed to send verification code email', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send verification email. Please try again.',
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to send verification email. Please try again.'], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Verification code sent to your email.',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Verification code sent to your email.']);
     }
 
     /**
      * Verify the 6-digit email code.
      */
-    public function verifyEmailCode(Request $request)
+    public function verifyEmailCode(VerifyEmailCodeRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|max:255',
-            'code'  => 'required|string|size:4',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
         $record = EmailVerificationCode::where('email', $request->input('email'))
             ->where('code', $request->input('code'))
             ->first();
 
         if (!$record) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid verification code.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Invalid verification code.'], 422);
         }
 
         if ($record->isExpired()) {
             $record->delete();
-            return response()->json([
-                'success' => false,
-                'message' => 'Verification code has expired. Please request a new one.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Verification code has expired. Please request a new one.'], 422);
         }
 
         $record->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email verified successfully.',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Email verified successfully.']);
     }
 
     /**
@@ -329,31 +281,16 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        $user = $request->user();
-        return response()->json([
-            'success' => true,
-            'data'    => new UserResource($user),
-        ]);
+        return response()->json(['success' => true, 'data' => new UserResource($request->user())]);
     }
 
     /**
      * Update user profile.
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
-
-        $validated = $request->validate([
-            'first_name' => 'nullable|string|max:255',
-            'last_name'  => 'nullable|string|max:255',
-            'phone'      => 'nullable|string|max:50',
-            'company'    => 'nullable|string|max:255',
-            'country'    => 'nullable|string|max:10',
-            'bio'        => 'nullable|string|max:2000',
-            'location'   => 'nullable|string|max:255',
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
 
         return response()->json([
             'success' => true,
@@ -369,10 +306,7 @@ class AuthController extends Controller
     {
         $request->user()->tokens()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Successfully logged out',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Successfully logged out']);
     }
 
     /**
@@ -383,34 +317,22 @@ class AuthController extends Controller
         $refreshToken = $request->input('refresh_token');
 
         if (!$refreshToken) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Refresh token is required',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Refresh token is required'], 422);
         }
 
-        // Find the token hash in personal_access_tokens
         [$id, $token] = array_pad(explode('|', $refreshToken, 2), 2, null);
-
         $pat = \Laravel\Sanctum\PersonalAccessToken::find($id);
 
         if (!$pat || !hash_equals($pat->token, hash('sha256', $token))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid refresh token',
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Invalid refresh token'], 401);
         }
 
         if ($pat->expires_at && $pat->expires_at->isPast()) {
             $pat->delete();
-            return response()->json([
-                'success' => false,
-                'message' => 'Refresh token has expired',
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Refresh token has expired'], 401);
         }
 
         $user = $pat->tokenable;
-        // Revoke old tokens and issue fresh ones
         $user->tokens()->delete();
 
         return $this->respondWithToken($user);
@@ -419,20 +341,8 @@ class AuthController extends Controller
     /**
      * Forgot password.
      */
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
         $user  = User::where('email', $request->input('email'))->first();
         $token = Str::random(64);
 
@@ -447,71 +357,39 @@ class AuthController extends Controller
             Mail::to($user->email)->send(new PasswordResetMail($user, $resetUrl));
         } catch (\Exception $e) {
             Log::error('Failed to send password reset email', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send reset email. Please try again later.',
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to send reset email. Please try again later.'], 500);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password reset link sent to your email',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Password reset link sent to your email']);
     }
 
     /**
      * Reset password.
      */
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'token'    => 'required|string',
-            'email'    => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
         $resetRecord = \DB::table('password_resets')
             ->where('email', $request->input('email'))
             ->first();
 
         if (!$resetRecord) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired reset token',
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Invalid or expired reset token'], 400);
         }
 
         if (now()->diffInMinutes($resetRecord->created_at) > 60) {
             \DB::table('password_resets')->where('email', $request->input('email'))->delete();
-            return response()->json([
-                'success' => false,
-                'message' => 'Reset token has expired. Please request a new one.',
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Reset token has expired. Please request a new one.'], 400);
         }
 
         if (!Hash::check($request->input('token'), $resetRecord->token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid reset token',
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Invalid reset token'], 400);
         }
 
         $user = User::where('email', $request->input('email'))->first();
         $user->update(['password' => Hash::make($request->input('password'))]);
         \DB::table('password_resets')->where('email', $request->input('email'))->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password reset successfully',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Password reset successfully']);
     }
 
     /**
@@ -519,27 +397,13 @@ class AuthController extends Controller
      */
     public function googleCallback(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'credential' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Google credential is required',
-            ], 422);
-        }
+        $validated = $request->validate(['credential' => 'required|string']);
 
         try {
-            $googleUser = Socialite::driver('google')
-                ->stateless()
-                ->userFromToken($request->input('credential'));
+            $googleUser = Socialite::driver('google')->stateless()->userFromToken($validated['credential']);
         } catch (\Exception $e) {
             Log::error('Google auth failed', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid Google credentials',
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Invalid Google credentials'], 401);
         }
 
         $user = User::where('google_id', $googleUser->getId())
@@ -547,7 +411,6 @@ class AuthController extends Controller
             ->first();
 
         if ($user) {
-            // Existing user — link Google ID if not set
             if (!$user->google_id) {
                 $user->update(['google_id' => $googleUser->getId()]);
             }
@@ -555,27 +418,24 @@ class AuthController extends Controller
                 $user->update(['avatar_url' => $googleUser->getAvatar()]);
             }
         } else {
-            // New user — register
             $nameParts = explode(' ', $googleUser->getName(), 2);
-            $user = User::create([
-                'first_name'   => $nameParts[0] ?? '',
-                'last_name'    => $nameParts[1] ?? '',
-                'email'        => $googleUser->getEmail(),
-                'google_id'    => $googleUser->getId(),
-                'avatar_url'   => $googleUser->getAvatar(),
-                'password'     => Hash::make(Str::random(32)),
-                'role'         => 'admin',
-                'status'       => 'Active',
-                'join_date'    => now(),
+            $user      = User::create([
+                'first_name' => $nameParts[0] ?? '',
+                'last_name'  => $nameParts[1] ?? '',
+                'email'      => $googleUser->getEmail(),
+                'google_id'  => $googleUser->getId(),
+                'avatar_url' => $googleUser->getAvatar(),
+                'password'   => Hash::make(Str::random(32)),
+                'role'       => 'admin',
+                'status'     => 'Active',
+                'join_date'  => now(),
             ]);
-
             $user->notificationPreferences()->create([
-                'email_notifications'  => true,
-                'desktop_notifications'=> true,
-                'sound_alerts'         => false,
-                'weekly_summary'       => true,
+                'email_notifications'   => true,
+                'desktop_notifications' => true,
+                'sound_alerts'          => false,
+                'weekly_summary'        => true,
             ]);
-
             $user->availabilitySettings()->create([
                 'auto_accept_chats'    => true,
                 'max_concurrent_chats' => 5,

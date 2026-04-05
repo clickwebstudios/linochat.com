@@ -396,13 +396,13 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-project-name">Project Name</Label>
-            <Input id="edit-project-name" placeholder="Enter project name" value={editedProject.name} onChange={(e) => setEditedProject({ ...editedProject, name: e.target.value })} />
+            <Label htmlFor="edit-project-name">Workspace Name</Label>
+            <Input id="edit-project-name" placeholder="Enter workspace name" value={editedProject.name} onChange={(e) => setEditedProject({ ...editedProject, name: e.target.value })} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="edit-project-description">Description</Label>
-            <Textarea id="edit-project-description" placeholder="Describe your project..." rows={3} value={editedProject.description} onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })} />
+            <Textarea id="edit-project-description" placeholder="Describe your workspace..." rows={3} value={editedProject.description} onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })} />
           </div>
 
           <div className="space-y-2">
@@ -412,7 +412,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-project-color">Project Color</Label>
+            <Label htmlFor="edit-project-color">Workspace Color</Label>
             <div className="flex items-center gap-3">
               <Input id="edit-project-color" type="color" value={editedProject.color} onChange={(e) => setEditedProject({ ...editedProject, color: e.target.value })} className="w-20 h-10" />
               <div className="flex gap-2">
@@ -429,8 +429,8 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
                 {editedProject.name ? editedProject.name.substring(0, 2).toUpperCase() : 'NP'}
               </div>
               <div className="flex-1">
-                <p className="font-semibold">{editedProject.name || 'Project Name'}</p>
-                <p className="text-sm text-muted-foreground">{editedProject.description || 'Project description will appear here'}</p>
+                <p className="font-semibold">{editedProject.name || 'Workspace Name'}</p>
+                <p className="text-sm text-muted-foreground">{editedProject.description || 'Workspace description will appear here'}</p>
                 {editedProject.website && <p className="text-xs text-primary mt-1">{editedProject.website}</p>}
               </div>
             </div>

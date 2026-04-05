@@ -47,7 +47,7 @@ export function AdminSidebar({ role = 'Admin', chatsCount = 0, ticketsCount = 0 
 
   const navItems = [
     { section: 'dashboard', icon: <Home className="h-6 w-6" />, label: 'Home', badge: undefined, showFor: ['Agent', 'Admin'] },
-    { section: 'projects', icon: <FolderOpen className="h-6 w-6" />, label: 'Projects', badge: undefined, showFor: ['Admin'] },
+    { section: 'projects', icon: <FolderOpen className="h-6 w-6" />, label: 'Workspaces', badge: undefined, showFor: ['Admin'] },
     { section: 'chats', icon: <MessageCircle className="h-6 w-6" />, label: 'Chats', badge: chatsCount > 0 ? chatsCount : undefined, showFor: ['Agent', 'Admin'] },
     { section: 'tickets', icon: <Ticket className="h-6 w-6" />, label: 'Tickets', badge: ticketsCount > 0 ? ticketsCount : undefined, showFor: ['Agent', 'Admin'] },
     { section: 'knowledge', icon: <FileText className="h-6 w-6" />, label: 'Knowledge', badge: undefined, showFor: ['Agent', 'Admin'] },

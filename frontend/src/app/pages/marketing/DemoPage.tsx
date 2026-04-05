@@ -87,7 +87,7 @@ export default function DemoPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-24 pb-16">
+      <section className="relative overflow-hidden pt-36 pb-8">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-blue-50/50 to-violet-50/30" />
           <div className="absolute top-0 right-1/3 h-[400px] w-[600px] rounded-full bg-primary/[0.10] blur-3xl" />
@@ -138,7 +138,7 @@ export default function DemoPage() {
       </section>
 
       {/* Booking Form + Checklist */}
-      <section className="pb-20">
+      <section className="pt-12 pb-20">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
             {/* Left — What to expect */}
@@ -192,8 +192,9 @@ export default function DemoPage() {
                 width="100%"
                 height="600"
                 frameBorder="0"
+                scrolling="no"
                 title="Book a Demo"
-                style={{ border: 'none', borderRadius: '8px' }}
+                style={{ border: 'none', borderRadius: '8px', overflow: 'hidden' }}
               />
             </motion.div>
           </div>

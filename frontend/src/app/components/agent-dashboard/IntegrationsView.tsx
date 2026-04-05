@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown } from 'lucide-react';
+import { Plug, ExternalLink, CheckCircle2, Loader2, Unplug, ChevronDown, MessageSquare, Copy, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
 import type { FrubixIntegration } from '../../types/frubix';
+import { channelService } from '../../services/channelService';
+import type { MessengerStatus, WhatsAppSandboxStatus } from '../../services/channelService';
 
 function FrubixLogo({ className }: { className?: string }) {
   return (
@@ -42,6 +46,21 @@ export function IntegrationsView() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const isConnected = frubix?.enabled === true;
+
+  // Messenger state
+  const [messengerStatus, setMessengerStatus] = useState<MessengerStatus | null>(null);
+  const [messengerLoading, setMessengerLoading] = useState(false);
+  const [messengerConnecting, setMessengerConnecting] = useState(false);
+  const [messengerDisconnecting, setMessengerDisconnecting] = useState(false);
+  const [messengerPageId, setMessengerPageId] = useState('');
+  const [messengerPageName, setMessengerPageName] = useState('');
+  const [messengerToken, setMessengerToken] = useState('');
+  const [messengerConfirm, setMessengerConfirm] = useState(false);
+
+  // WhatsApp sandbox state
+  const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppSandboxStatus | null>(null);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [whatsappEnabling, setWhatsappEnabling] = useState(false);
 
   // Fetch all projects for the selector
   useEffect(() => {
@@ -130,6 +149,87 @@ export function IntegrationsView() {
       toast.error(err.message || 'Failed to disconnect');
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  // Load Messenger status
+  useEffect(() => {
+    setMessengerLoading(true);
+    channelService.getMessengerStatus()
+      .then((res) => { if (res.success) setMessengerStatus(res.data); })
+      .catch(() => {})
+      .finally(() => setMessengerLoading(false));
+  }, []);
+
+  const handleMessengerConnect = async () => {
+    if (!messengerPageId.trim() || !messengerPageName.trim() || !messengerToken.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setMessengerConnecting(true);
+    try {
+      const res = await channelService.connectMessenger({
+        page_id: messengerPageId.trim(),
+        page_name: messengerPageName.trim(),
+        page_access_token: messengerToken.trim(),
+      });
+      if (res.success) {
+        setMessengerStatus({ connected: true, page_id: messengerPageId.trim(), has_twilio: messengerStatus?.has_twilio ?? false });
+        setMessengerPageId('');
+        setMessengerPageName('');
+        setMessengerToken('');
+        toast.success('Messenger connected successfully');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to connect Messenger');
+    } finally {
+      setMessengerConnecting(false);
+    }
+  };
+
+  const handleMessengerDisconnect = async () => {
+    setMessengerDisconnecting(true);
+    try {
+      const res = await channelService.disconnectMessenger();
+      if (res.success) {
+        setMessengerStatus({ connected: false, page_id: null, has_twilio: messengerStatus?.has_twilio ?? false });
+        setMessengerConfirm(false);
+        toast.success('Messenger disconnected');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to disconnect Messenger');
+    } finally {
+      setMessengerDisconnecting(false);
+    }
+  };
+
+  // Load WhatsApp sandbox status
+  useEffect(() => {
+    setWhatsappLoading(true);
+    channelService.getWhatsAppSandboxStatus()
+      .then((res) => { if (res.success) setWhatsappStatus(res.data); })
+      .catch(() => {})
+      .finally(() => setWhatsappLoading(false));
+  }, []);
+
+  const handleWhatsAppEnable = async () => {
+    setWhatsappEnabling(true);
+    try {
+      const res = await channelService.connectWhatsAppSandbox();
+      if (res.success) {
+        setWhatsappStatus({
+          sandbox_number: res.data.sandbox_number,
+          join_keyword: res.data.join_keyword,
+          instructions: res.data.instructions,
+          has_twilio: whatsappStatus?.has_twilio ?? false,
+          waba_connected: whatsappStatus?.waba_connected ?? false,
+        });
+        toast.success('WhatsApp sandbox enabled');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to enable WhatsApp sandbox');
+    } finally {
+      setWhatsappEnabling(false);
     }
   };
 
@@ -232,6 +332,248 @@ export function IntegrationsView() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Messenger Integration */}
+      <div>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Messaging Channels</h3>
+        <div className="space-y-4">
+          <Card className={`border shadow-sm ${messengerStatus?.connected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
+            <CardContent className="p-6">
+              {messengerLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <MessageSquare className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">Messenger</h3>
+                          {messengerStatus?.connected ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Not connected</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Receive and reply to Facebook Messenger messages from your Page.
+                        </p>
+                        {messengerStatus?.connected && messengerStatus.page_id && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Page ID: <span className="font-medium">{messengerStatus.page_id}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {messengerStatus?.connected && (
+                      <div className="flex items-center gap-2">
+                        {messengerConfirm ? (
+                          <>
+                            <span className="text-sm text-muted-foreground">Are you sure?</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={handleMessengerDisconnect}
+                              disabled={messengerDisconnecting}
+                            >
+                              {messengerDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}
+                              Confirm
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setMessengerConfirm(false)}>
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => setMessengerConfirm(true)}
+                          >
+                            <Unplug className="h-4 w-4 mr-2" />
+                            Disconnect
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {!messengerStatus?.connected && (
+                    <div className="space-y-3 pt-2 border-t border-border">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="messenger-page-id" className="text-xs">Page ID</Label>
+                          <Input
+                            id="messenger-page-id"
+                            placeholder="123456789"
+                            value={messengerPageId}
+                            onChange={(e) => setMessengerPageId(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="messenger-page-name" className="text-xs">Page Name</Label>
+                          <Input
+                            id="messenger-page-name"
+                            placeholder="My Business Page"
+                            value={messengerPageName}
+                            onChange={(e) => setMessengerPageName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="messenger-token" className="text-xs">Page Access Token</Label>
+                        <Input
+                          id="messenger-token"
+                          type="password"
+                          placeholder="EAAxxxxx..."
+                          value={messengerToken}
+                          onChange={(e) => setMessengerToken(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleMessengerConnect}
+                        disabled={messengerConnecting}
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                        size="sm"
+                      >
+                        {messengerConnecting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Plug className="h-4 w-4 mr-2" />
+                            Connect
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">Token cost: 1 token per message sent or received</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* WhatsApp Sandbox Card */}
+          <Card className="border shadow-sm border-amber-200 bg-amber-50/20">
+            <CardContent className="p-6">
+              {whatsappLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-green-100 flex items-center justify-center">
+                        <Phone className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">WhatsApp (Sandbox / Testing)</h3>
+                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">
+                            Sandbox Mode
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Test WhatsApp messaging using the Twilio sandbox number.
+                        </p>
+                      </div>
+                    </div>
+                    {(!whatsappStatus?.sandbox_number) && (
+                      <Button
+                        onClick={handleWhatsAppEnable}
+                        disabled={whatsappEnabling}
+                        className="bg-green-600 hover:bg-green-700"
+                        size="sm"
+                      >
+                        {whatsappEnabling ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enabling...
+                          </>
+                        ) : (
+                          'Enable Sandbox'
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {whatsappStatus?.sandbox_number && (
+                    <div className="space-y-3 pt-2 border-t border-amber-200">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Send a message to</p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">
+                              {whatsappStatus.sandbox_number}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText(whatsappStatus.sandbox_number!);
+                                toast.success('Copied to clipboard');
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        {whatsappStatus.join_keyword && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">With keyword</p>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">
+                                join {whatsappStatus.join_keyword}
+                              </code>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`join ${whatsappStatus.join_keyword}`);
+                                  toast.success('Copied to clipboard');
+                                }}
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {whatsappStatus.instructions && (
+                        <p className="text-xs text-muted-foreground">{whatsappStatus.instructions}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Production WhatsApp with your own number requires Business Account verification — contact us to get started.
+                    </p>
+                    <p className="text-xs text-muted-foreground">Token cost: 1 token per service message</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Coming Soon */}

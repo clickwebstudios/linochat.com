@@ -88,7 +88,7 @@ const plans = [
     period: '',
     popular: false,
     cta: 'Contact Sales',
-    ctaLink: '/contact',
+    ctaLink: '/demo',
     features: [
       'Everything in Pro',
       'Dedicated account manager',
@@ -395,7 +395,7 @@ export default function PricingPage() {
                         ) : isEnterprise ? (
                           <Button
                             variant="outline"
-                            className="w-full border-background/30 text-background hover:bg-background/10 hover:text-background"
+                            className="w-full border-background text-background hover:bg-background/10 hover:text-background"
                             size="lg"
                           >
                             <Phone className="h-4 w-4 mr-1" />

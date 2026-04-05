@@ -212,9 +212,9 @@ function CreateTicketFromChatDialog({
           </div>
           {/* Project */}
           <div className="space-y-2">
-            <Label htmlFor="ticket-project">Project <span className="text-red-500">*</span></Label>
+            <Label htmlFor="ticket-project">Workspace <span className="text-red-500">*</span></Label>
             <select id="ticket-project" className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary ${errors.projectId ? 'border-red-500' : 'border-border'}`} value={newTicket.projectId} onChange={(e) => { setNewTicket({ ...newTicket, projectId: e.target.value }); setErrors(p => ({ ...p, projectId: '' })); }}>
-              <option value="">Select a project</option>
+              <option value="">Select a workspace</option>
               {projects.map((project) => (<option key={project.id} value={project.id}>{project.name}</option>))}
             </select>
             {errors.projectId && <p className="text-xs text-red-500">{errors.projectId}</p>}

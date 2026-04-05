@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -22,7 +22,14 @@ import {
   LogOut,
   User,
   ChevronDown,
+  Coins,
+  TrendingUp,
+  Clock,
+  RotateCcw,
 } from 'lucide-react';
+import { billingService } from '../../services/billing';
+import type { TopUpPack, TopUpPacksResponse, TopUpIntent } from '../../types';
+// TODO: run pnpm add @stripe/stripe-js
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -240,6 +247,67 @@ export default function BillingPage() {
     expiry: false,
     cvc: false,
   });
+
+  // ─── Token Top-Up state ────────────────────────────
+  const [topUpPacks, setTopUpPacks] = useState<TopUpPacksResponse>({});
+  const [topUpPacksLoading, setTopUpPacksLoading] = useState(false);
+  const [buyingPack, setBuyingPack] = useState<string | null>(null);
+
+  // Mock token balance (would come from subscription endpoint in production)
+  const tokenBalance = useMemo(() => ({
+    tokens_used: 380,
+    tokens_allowance: 500,
+    tokens_rollover: 120,
+    token_cycle_reset_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  }), []);
+
+  const tokenUsedPct = Math.min(100, Math.round((tokenBalance.tokens_used / tokenBalance.tokens_allowance) * 100));
+  const tokenRemainingPct = 100 - tokenUsedPct;
+  const isLowTokens = tokenRemainingPct < 20;
+
+  const daysUntilReset = useMemo(() => {
+    const reset = new Date(tokenBalance.token_cycle_reset_at);
+    const now = new Date();
+    return Math.max(0, Math.ceil((reset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  }, [tokenBalance.token_cycle_reset_at]);
+
+  // Load top-up packs on mount
+  useEffect(() => {
+    setTopUpPacksLoading(true);
+    billingService.getTopUpPacks()
+      .then(setTopUpPacks)
+      .catch(() => {
+        // Fallback packs if API is unavailable
+        setTopUpPacks({
+          starter_pack: { tokens: 500, price_cents: 700, label: 'Starter Pack' },
+          growth_pack: { tokens: 2000, price_cents: 2400, label: 'Growth Pack' },
+          power_pack: { tokens: 5000, price_cents: 5000, label: 'Power Pack' },
+          scale_pack: { tokens: 15000, price_cents: 12000, label: 'Scale Pack' },
+        });
+      })
+      .finally(() => setTopUpPacksLoading(false));
+  }, []);
+
+  const handleBuyPack = async (packType: string) => {
+    setBuyingPack(packType);
+    try {
+      const intent: TopUpIntent = await billingService.createTopUpIntent(packType);
+      // @stripe/stripe-js is not installed yet.
+      // TODO: run pnpm add @stripe/stripe-js, then replace this block with:
+      //   const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      //   const { error } = await stripe!.confirmCardPayment(intent.client_secret);
+      //   if (!error) { toast.success(`${intent.tokens} tokens added to your account`); }
+      toast.success(`${intent.label} payment initiated`, {
+        description: `${intent.tokens.toLocaleString()} tokens — $${(intent.amount / 100).toFixed(2)}. Client secret received (Stripe.js pending install).`,
+        duration: 6000,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Purchase failed';
+      toast.error('Top-up failed', { description: msg });
+    } finally {
+      setBuyingPack(null);
+    }
+  };
 
   // Saved payment method state (simulates persisted card)
   const [savedCard, setSavedCard] = useState({
@@ -702,6 +770,128 @@ export default function BillingPage() {
                       className="h-2"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ─── Token Balance Card ───────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-primary" />
+                  Token Balance
+                </CardTitle>
+                <CardDescription>AI reply and messaging tokens for this billing cycle</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLowTokens && (
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      Running low on tokens — top up to keep AI replies and messaging active
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {tokenBalance.tokens_used.toLocaleString()} used of {tokenBalance.tokens_allowance.toLocaleString()} included
+                    </span>
+                    <span className="text-foreground">
+                      {(tokenBalance.tokens_allowance - tokenBalance.tokens_used).toLocaleString()} remaining
+                    </span>
+                  </div>
+                  <Progress
+                    value={tokenUsedPct}
+                    className={`h-3 ${isLowTokens ? '[&>div]:bg-amber-400' : '[&>div]:bg-primary'}`}
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{tokenUsedPct}% used</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+
+                {tokenBalance.tokens_rollover > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted/50 rounded-md">
+                    <RotateCcw className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      <span className="text-foreground">{tokenBalance.tokens_rollover.toLocaleString()} rollover tokens</span> carried from last cycle
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ─── Top-Up Packs ─────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Token Top-Up Packs
+                </CardTitle>
+                <CardDescription>One-time purchases — tokens are added immediately and never expire</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topUpPacksLoading ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    Loading packs…
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(topUpPacks).map(([packType, pack]: [string, TopUpPack]) => {
+                      const priceUsd = pack.price_cents / 100;
+                      const perToken = (pack.price_cents / pack.tokens / 100).toFixed(4);
+                      const isBuying = buyingPack === packType;
+                      return (
+                        <div
+                          key={packType}
+                          className="flex flex-col gap-3 p-4 border rounded-lg hover:border-primary/50 hover:shadow-sm transition-all"
+                        >
+                          <div>
+                            <p className="text-sm text-foreground">{pack.label}</p>
+                            <p className="text-2xl text-foreground mt-1">
+                              {pack.tokens.toLocaleString()}
+                              <span className="text-sm text-muted-foreground ml-1">tokens</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">${perToken} per token</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="mt-auto w-full"
+                            disabled={isBuying || isReadOnly}
+                            onClick={() => handleBuyPack(packType)}
+                          >
+                            {isBuying ? (
+                              <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Processing…</>
+                            ) : (
+                              <>Buy — ${priceUsd.toFixed(0)}</>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ─── Transaction History ──────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-primary" />
+                  Token Transaction History
+                </CardTitle>
+                <CardDescription>Recent token additions and usage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+                  Transaction history coming soon
                 </div>
               </CardContent>
             </Card>

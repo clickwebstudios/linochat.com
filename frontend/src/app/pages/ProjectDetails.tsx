@@ -320,7 +320,7 @@ export default function ProjectDetails() {
                 }}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {isSuperadmin ? 'Back to Company Projects' : 'Back to Projects'}
+                {isSuperadmin ? 'Back to Company Workspaces' : 'Back to Workspaces'}
               </Button>
               <div className="flex items-center gap-3">
                 <div

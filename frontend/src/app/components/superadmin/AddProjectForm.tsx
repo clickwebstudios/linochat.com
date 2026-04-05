@@ -223,7 +223,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     return (
       <>
         <DialogHeader>
-          <DialogTitle>{creationDone ? 'Project Created!' : 'Creating Project'}</DialogTitle>
+          <DialogTitle>{creationDone ? 'Workspace Created!' : 'Creating Workspace'}</DialogTitle>
           <DialogDescription>
             {creationDone
               ? 'Your knowledge base has been generated successfully.'
@@ -303,9 +303,9 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
     return (
       <>
         <DialogHeader>
-          <DialogTitle>Add New Project</DialogTitle>
+          <DialogTitle>Add New Workspace</DialogTitle>
           <DialogDescription>
-            Enter the website URL and we'll use AI to pre-fill project details
+            Enter the website URL and we'll use AI to pre-fill workspace details
           </DialogDescription>
         </DialogHeader>
 
@@ -502,9 +502,9 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add New Project</DialogTitle>
+        <DialogTitle>Add New Workspace</DialogTitle>
         <DialogDescription>
-          Review and edit the details, then create the project
+          Review and edit the details, then create the workspace
         </DialogDescription>
       </DialogHeader>
 
@@ -523,7 +523,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="edit-name">Project Name</Label>
+            <Label htmlFor="edit-name">Workspace Name</Label>
             {analyzedData && (
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <Sparkles className="h-3 w-3 mr-1" />AI Suggested
@@ -542,7 +542,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
           <Label htmlFor="edit-desc">Description</Label>
           <Textarea
             id="edit-desc"
-            placeholder="Describe your project..."
+            placeholder="Describe your workspace..."
             rows={3}
             value={projectDescription}
             onChange={(e) => setProjectDescription(e.target.value)}
@@ -569,7 +569,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
         </div>
 
         <div className="space-y-2">
-          <Label>Project Color</Label>
+          <Label>Workspace Color</Label>
           <div className="flex items-center gap-3">
             <Input
               type="color"
@@ -606,9 +606,9 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
               {projectName ? projectName.substring(0, 2).toUpperCase() : 'NP'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground">{projectName || 'Project Name'}</p>
+              <p className="font-semibold text-foreground">{projectName || 'Workspace Name'}</p>
               <p className="text-sm text-muted-foreground truncate">
-                {projectDescription || 'Project description will appear here'}
+                {projectDescription || 'Workspace description will appear here'}
               </p>
             </div>
           </div>
@@ -626,7 +626,7 @@ export function AddProjectForm({ userId, onClose, onSuccess }: AddProjectFormPro
             {isSubmitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</>
             ) : (
-              'Create Project'
+              'Create Workspace'
             )}
           </Button>
         </div>

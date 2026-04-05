@@ -97,13 +97,13 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
         <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <Plus className="h-10 w-10 text-primary" />
         </div>
-        <h2 className="text-2xl font-semibold mb-2">No projects yet</h2>
+        <h2 className="text-2xl font-semibold mb-2">No workspaces yet</h2>
         <p className="text-muted-foreground mb-8 text-center max-w-md">
-          Create your first project to get started
+          Create your first workspace to get started
         </p>
         <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
-          Add Project
+          Add Workspace
         </Button>
       </div>
     );
@@ -113,10 +113,10 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
     <div className="flex-1 bg-muted/50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold">Projects</h1>
+          <h1 className="text-2xl font-semibold">Workspaces</h1>
           <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
-            Add Project
+            Add Workspace
           </Button>
         </div>
 

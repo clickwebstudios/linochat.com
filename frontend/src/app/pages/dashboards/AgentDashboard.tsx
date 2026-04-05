@@ -635,10 +635,10 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                     <FolderOpen className="h-4 w-4" />
                     <span className="text-sm">
                       {selectedProjects.length === displayProjects.length 
-                        ? 'All Projects' 
+                        ? 'All Workspaces'
                         : selectedProjects.length === 1
                         ? displayProjects.find(p => p.id === selectedProjects[0])?.name
-                        : `${selectedProjects.length} Projects`}
+                        : `${selectedProjects.length} Workspaces`}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
@@ -646,7 +646,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
               <PopoverContent className="w-72 p-3" align="start">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-sm">Select Projects</h4>
+                    <h4 className="font-semibold text-sm">Select Workspaces</h4>
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -724,7 +724,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      New Project
+                      New Workspace
                     </Button>
                   </div>
                 </div>
