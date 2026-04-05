@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import {
   Ticket,
   CheckCircle,
+  Circle,
   UserPlus,
   Users,
   TrendingUp,
@@ -173,13 +174,56 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Onboarding Process */}
+        {(() => {
+          const hasMembers = (projectAgents.length > 0) || ((project?.members ?? 0) > 0);
+          const hasWidget = !!project?.widget_id;
+          const hasTicket = (project?.totalTickets ?? 0) > 0;
+          const hasDescription = !!(project?.description?.trim());
+          const steps = [
+            { label: 'Create your workspace', done: true },
+            { label: 'Add workspace description', done: hasDescription },
+            { label: 'Invite a team member', done: hasMembers },
+            { label: 'Set up chat widget', done: hasWidget },
+            { label: 'Create first ticket', done: hasTicket },
+            { label: 'Configure AI settings', done: false },
+          ];
+          const completed = steps.filter(s => s.done).length;
+          const pct = Math.round((completed / steps.length) * 100);
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Onboarding</CardTitle>
+                <p className="text-xs text-muted-foreground">{completed}/{steps.length} steps completed</p>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-1.5 bg-muted rounded-full mb-4">
+                  <div className="h-1.5 bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="space-y-2.5">
+                  {steps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      {step.done
+                        ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                        : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                      <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Team Members */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Team Members</CardTitle>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-primary hover:bg-primary/90"
               onClick={onAddMemberClick}
             >
@@ -188,47 +232,57 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {isSuperadmin ? (
-                projectAgents.slice(0, 5).map(agent => (
-                  <div
-                    key={agent.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
-                        <p className="text-xs text-muted-foreground">{agent.email}</p>
+            {(isSuperadmin ? projectAgents : [...Array(Math.min(5, project?.members || 0))]).length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">No team members yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Invite agents to collaborate on this workspace</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[320px] overflow-y-auto">
+                {isSuperadmin ? (
+                  projectAgents.slice(0, 5).map(agent => (
+                    <div
+                      key={agent.id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
+                          <p className="text-xs text-muted-foreground">{agent.email}</p>
+                        </div>
                       </div>
+                      <Badge variant="outline">Agent</Badge>
                     </div>
-                    <Badge variant="outline">Agent</Badge>
-                  </div>
-                ))
-              ) : (
-                [...Array(Math.min(5, project?.members || 0))].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {String.fromCharCode(65 + i)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">Team Member {i + 1}</p>
-                        <p className="text-xs text-muted-foreground">member{i + 1}@example.com</p>
+                  ))
+                ) : (
+                  [...Array(Math.min(5, project?.members || 0))].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {String.fromCharCode(65 + i)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">Team Member {i + 1}</p>
+                          <p className="text-xs text-muted-foreground">member{i + 1}@example.com</p>
+                        </div>
                       </div>
+                      <Badge variant="outline">Agent</Badge>
                     </div>
-                    <Badge variant="outline">Agent</Badge>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
