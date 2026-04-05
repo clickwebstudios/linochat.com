@@ -369,7 +369,7 @@ class SuperadminController extends Controller
         $allUserIds = $agentIds->push($company->id)->unique();
         $agents = User::whereIn('id', $allUserIds)->get();
         $todayStart = now()->startOfDay();
-        $data = $agents->map(function ($agent) use ($todayStart) {
+        $data = $agents->map(function ($agent) use ($todayStart, $company) {
             $activeTickets = Ticket::where('assigned_to', $agent->id)
                 ->whereIn('status', ['open', 'in_progress', 'waiting'])
                 ->count();
