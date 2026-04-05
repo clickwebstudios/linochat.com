@@ -640,7 +640,7 @@ export function ChatsView({
     if (diffSec < 120) return '1 min ago';
     if (diffMin < 60) return `${diffMin} min ago`;
     if (diffHr < 24) return `${diffHr} hr ago`;
-    return formatTime(dateString);
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -654,6 +654,7 @@ export function ChatsView({
           setChatFilter={setChatFilter}
           getProjectById={getProjectById}
           formatRelativeTime={formatRelativeTime}
+          totalProjects={projects.length}
         />
 
         <ChatMessageArea

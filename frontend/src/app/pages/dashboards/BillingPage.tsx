@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 import { billingService } from '../../services/billing';
 import type { TopUpPack, TopUpPacksResponse, TopUpIntent } from '../../types';
-// TODO: run pnpm add @stripe/stripe-js
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -226,6 +225,8 @@ export default function BillingPage() {
 
   // ─── State ─────────────────────────────────────────
   const [currentPlanId, setCurrentPlanId] = useState('free');
+  const [currentPlanDbId, setCurrentPlanDbId] = useState<number | null>(null);
+  const [apiPlans, setApiPlans] = useState<{ id: number; name: string }[]>([]);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<string | null>(null);
   const [agentCount, setAgentCount] = useState(1);
@@ -276,16 +277,21 @@ export default function BillingPage() {
     return Math.max(0, Math.ceil((reset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   }, [tokenBalance.token_cycle_reset_at]);
 
-  // Load subscription, token balance, and invoices on mount
+  // Load subscription, token balance, invoices, and plans on mount
   useEffect(() => {
     setBillingLoading(true);
     Promise.all([
       billingService.getSubscription().catch(() => null),
       billingService.getTokenBalance().catch(() => null),
       billingService.getInvoices().catch(() => []),
-    ]).then(([sub, tb, invs]) => {
+      billingService.getPlans().catch(() => []),
+    ]).then(([sub, tb, invs, apiPlanList]) => {
+      if (Array.isArray(apiPlanList) && apiPlanList.length > 0) {
+        setApiPlans(apiPlanList.map(p => ({ id: p.id, name: p.name })));
+      }
       if (sub?.plan?.name) {
         setCurrentPlanId(sub.plan.name.toLowerCase());
+        setCurrentPlanDbId(sub.plan_id);
         setBillingCycle(sub.billing_cycle ?? 'monthly');
         setSubscriptionEndsAt(sub.ends_at ?? null);
       }
@@ -329,20 +335,16 @@ export default function BillingPage() {
   const handleBuyPack = async (packType: string) => {
     setBuyingPack(packType);
     try {
-      const intent: TopUpIntent = await billingService.createTopUpIntent(packType);
-      // @stripe/stripe-js is not installed yet.
-      // TODO: run pnpm add @stripe/stripe-js, then replace this block with:
-      //   const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      //   const { error } = await stripe!.confirmCardPayment(intent.client_secret);
-      //   if (!error) { toast.success(`${intent.tokens} tokens added to your account`); }
-      toast.success(`${intent.label} payment initiated`, {
-        description: `${intent.tokens.toLocaleString()} tokens — $${(intent.amount / 100).toFixed(2)}. Client secret received (Stripe.js pending install).`,
-        duration: 6000,
+      const origin = window.location.origin;
+      const url = await billingService.createTopUpCheckout({
+        pack_type: packType,
+        success_url: `${origin}${window.location.pathname}?topup=success`,
+        cancel_url: `${origin}${window.location.pathname}?topup=cancelled`,
       });
+      window.location.href = url;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Purchase failed';
       toast.error('Top-up failed', { description: msg });
-    } finally {
       setBuyingPack(null);
     }
   };
@@ -425,19 +427,54 @@ export default function BillingPage() {
 
   // ─── Handlers ──────────────────────────────────────
 
-  const confirmPlanChange = () => {
-    if (selectedUpgradePlan) {
-      const oldPlan = currentPlan;
-      setCurrentPlanId(selectedUpgradePlan);
-      setChangePlanDialogOpen(false);
-      setSelectedUpgradePlan(null);
-      const newPlan = plans.find(p => p.id === selectedUpgradePlan)!;
-      const isUpgrade = plans.indexOf(newPlan) > plans.indexOf(oldPlan);
-      toast.success(`${isUpgrade ? 'Upgraded' : 'Downgraded'} to ${newPlan.name}`, {
-        description: isUpgrade
-          ? 'Your new plan is now active. Enjoy the additional features!'
-          : `Your plan will be downgraded at the end of the current billing period.`,
+  const [isConfirmingPlan, setIsConfirmingPlan] = useState(false);
+
+  const confirmPlanChange = async () => {
+    if (!selectedUpgradePlan) return;
+    const newLocalPlan = plans.find(p => p.id === selectedUpgradePlan);
+    if (!newLocalPlan) return;
+
+    // Free plan: update directly in DB (no Stripe)
+    if (selectedUpgradePlan === 'free') {
+      const freePlan = apiPlans.find(p => p.name.toLowerCase() === 'free');
+      if (freePlan) {
+        setIsConfirmingPlan(true);
+        try {
+          await billingService.updateSubscription({ plan_id: freePlan.id, billing_cycle: billingCycle });
+          setCurrentPlanId('free');
+          setChangePlanDialogOpen(false);
+          setSelectedUpgradePlan(null);
+          toast.success('Downgraded to Free plan');
+        } catch {
+          toast.error('Failed to update plan');
+        } finally {
+          setIsConfirmingPlan(false);
+        }
+      }
+      return;
+    }
+
+    // Paid plan: redirect to Stripe Checkout
+    const apiPlan = apiPlans.find(p => p.name.toLowerCase() === selectedUpgradePlan);
+    if (!apiPlan) {
+      toast.error('Plan not found. Please try again.');
+      return;
+    }
+
+    setIsConfirmingPlan(true);
+    try {
+      const origin = window.location.origin;
+      const url = await billingService.createCheckoutSession({
+        plan_id: apiPlan.id,
+        billing_cycle: billingCycle,
+        success_url: `${origin}${window.location.pathname}?billing=success`,
+        cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
       });
+      window.location.href = url;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start checkout';
+      toast.error('Checkout failed', { description: msg });
+      setIsConfirmingPlan(false);
     }
   };
 
@@ -457,38 +494,34 @@ export default function BillingPage() {
   }, []);
 
   const handleUpdatePayment = async () => {
-    if (!isPaymentFormValid) return;
-
     setIsProcessing(true);
-
-    // Simulate Stripe-style processing with delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const last4 = cardNumberClean.slice(-4);
-    const expiryClean = cardExpiry.replace(/\s/g, '');
-    const [expMonth, expYear] = expiryClean.split('/');
-
-    setSavedCard({
-      brand: detectedBrand,
-      last4,
-      expiry: `${expMonth}/20${expYear}`,
-      name: cardName,
-    });
-
-    setIsProcessing(false);
-    setPaymentMethodDialogOpen(false);
-    resetPaymentForm();
-
-    toast.success('Payment method updated', {
-      description: `${brandLabels[detectedBrand]} ending in ${last4} has been saved securely.`,
-    });
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}`;
+      const url = await billingService.createPortalSession(returnUrl);
+      window.location.href = url;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to open billing portal';
+      toast.error('Could not open billing portal', { description: msg });
+      setIsProcessing(false);
+    }
   };
 
-  const handleCancelSubscription = () => {
-    setCancelDialogOpen(false);
-    toast.success('Subscription cancelled', {
-      description: `Your plan will remain active until ${pricing.nextBillingDate}.`,
-    });
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      await billingService.cancelSubscription();
+      setCancelDialogOpen(false);
+      toast.success('Subscription cancelled', {
+        description: `Your plan will remain active until ${pricing.nextBillingDate}.`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      toast.error('Cancellation failed', { description: msg });
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1190,10 +1223,11 @@ export default function BillingPage() {
                 Cancel
               </Button>
               <Button
-                disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId}
+                disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId || isConfirmingPlan}
                 onClick={confirmPlanChange}
               >
-                {selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
+                {isConfirmingPlan ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</> :
+                  selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
                   ? 'Upgrade Plan'
                   : selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) < plans.findIndex(p => p.id === currentPlanId)
                     ? 'Downgrade Plan'
@@ -1417,8 +1451,8 @@ export default function BillingPage() {
               <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
                 Keep Subscription
               </Button>
-              <Button variant="destructive" onClick={handleCancelSubscription}>
-                Yes, Cancel
+              <Button variant="destructive" onClick={handleCancelSubscription} disabled={isCancelling}>
+                {isCancelling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : 'Yes, Cancel'}
               </Button>
             </DialogFooter>
           </DialogContent>
