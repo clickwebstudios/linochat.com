@@ -46,6 +46,9 @@ export function ProfileDropdown({ basePath, isSuperadmin = false, onStatusClick 
               <div className="flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-yellow-500" />
                 <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                {isLow && (
+                  <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                )}
               </div>
               <Link
                 to={`${basePath}/billing?tab=tokens`}

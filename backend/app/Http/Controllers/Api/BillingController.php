@@ -2,12 +2,16 @@
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Chat;
+use App\Models\Ticket;
+use App\Models\TrainingDocument;
 use App\Http\Resources\PlanResource;
 use App\Http\Resources\SubscriptionResource;
 use App\Http\Resources\InvoiceResource;
 use App\Services\StripeService;
 use App\Services\TokenService;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class BillingController extends Controller {
     public function __construct(private StripeService $stripeService) {}
@@ -128,6 +132,30 @@ class BillingController extends Controller {
                 'agent_count'             => $agentCount,
             ],
         ]);
+    }
+
+    public function usage(Request $request)
+    {
+        $user = $request->user();
+        $projectIds = $user->getCompanyProjectIds();
+
+        $company = $user->company;
+        $subscription = $company ? $company->subscription()->first() : null;
+        $periodStart = $subscription && $subscription->started_at
+            ? Carbon::parse($subscription->started_at)
+            : Carbon::now()->startOfMonth();
+
+        $tickets  = Ticket::whereIn('project_id', $projectIds)->where('created_at', '>=', $periodStart)->count();
+        $chats    = Chat::whereIn('project_id', $projectIds)->where('created_at', '>=', $periodStart)->count();
+        $storageBytes = TrainingDocument::whereIn('project_id', $projectIds)->sum('file_size');
+        $storageGB = round($storageBytes / (1024 * 1024 * 1024), 2);
+
+        return response()->json(['success' => true, 'data' => [
+            'tickets'    => $tickets,
+            'chats'      => $chats,
+            'storage_gb' => $storageGB,
+            'period_start' => $periodStart->toISOString(),
+        ]]);
     }
 
     public function topUpPacks()

@@ -266,6 +266,8 @@ export default function BillingPage() {
     token_cycle_reset_at: null as string | null,
   });
 
+  const [usageData, setUsageData] = useState({ tickets: 0, chats: 0, storage_gb: 0 });
+
   const tokenUsedPct = tokenBalance.tokens_allowance > 0
     ? Math.min(100, Math.round((tokenBalance.tokens_used / tokenBalance.tokens_allowance) * 100))
     : 0;
@@ -287,7 +289,8 @@ export default function BillingPage() {
       billingService.getTokenBalance().catch(() => null),
       billingService.getInvoices().catch(() => []),
       billingService.getPlans().catch(() => []),
-    ]).then(([sub, tb, invs, apiPlanList]) => {
+      billingService.getUsage().catch(() => null),
+    ]).then(([sub, tb, invs, apiPlanList, usageResp]) => {
       if (Array.isArray(apiPlanList) && apiPlanList.length > 0) {
         setApiPlans(apiPlanList.map(p => ({ id: p.id, name: p.name })));
       }
@@ -305,6 +308,9 @@ export default function BillingPage() {
           tokens_rollover: tb.token_rollover,
           token_cycle_reset_at: tb.token_cycle_reset_at,
         });
+      }
+      if (usageResp) {
+        setUsageData({ tickets: usageResp.tickets, chats: usageResp.chats, storage_gb: usageResp.storage_gb });
       }
       if (Array.isArray(invs)) {
         setInvoices(invs.map(inv => ({
@@ -412,10 +418,10 @@ export default function BillingPage() {
   // Usage mock data (derived from current plan)
   const usage = useMemo(() => ({
     agents: { current: agentCount, limit: currentPlan.agentLimit },
-    tickets: { current: 847, limit: currentPlan.ticketLimit },
-    chats: { current: 2340, limit: currentPlan.chatLimit },
-    storage: { current: 2.4, limit: currentPlan.id === 'free' ? 1 : currentPlan.id === 'starter' ? 5 : 10 },
-  }), [currentPlan, agentCount]);
+    tickets: { current: usageData.tickets, limit: currentPlan.ticketLimit },
+    chats: { current: usageData.chats, limit: currentPlan.chatLimit },
+    storage: { current: usageData.storage_gb, limit: currentPlan.id === 'free' ? 1 : currentPlan.id === 'starter' ? 5 : 10 },
+  }), [currentPlan, agentCount, usageData]);
 
   // Card form validation
   const detectedBrand = detectCardBrand(cardNumber);
@@ -694,35 +700,12 @@ export default function BillingPage() {
                       </div>
                     )}
 
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Next billing date: <span className="text-foreground">{pricing.nextBillingDate}</span>
-                    </p>
+                    {!pricing.isFree && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Next billing date: <span className="text-foreground">{pricing.nextBillingDate}</span>
+                      </p>
+                    )}
                   </div>
-
-                  {!isReadOnly && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="billing-toggle" className="text-sm text-muted-foreground">Monthly</Label>
-                        <Switch
-                          id="billing-toggle"
-                          checked={billingCycle === 'annual'}
-                          onCheckedChange={(checked) => {
-                            setBillingCycle(checked ? 'annual' : 'monthly');
-                            toast.info(
-                              checked ? 'Switched to annual billing' : 'Switched to monthly billing',
-                              { description: checked ? 'Save 20% with annual billing.' : 'You will be billed monthly.' }
-                            );
-                          }}
-                        />
-                        <Label htmlFor="billing-toggle" className="text-sm text-muted-foreground">
-                          Annual
-                          <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700 hover:bg-green-100">
-                            Save 20%
-                          </Badge>
-                        </Label>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <Separator />
@@ -742,13 +725,6 @@ export default function BillingPage() {
                     <Button onClick={() => setChangePlanDialogOpen(true)}>
                       <Zap className="mr-2 h-4 w-4" />
                       Change Plan
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => setCancelDialogOpen(true)}
-                    >
-                      Cancel Subscription
                     </Button>
                   </div>
                 )}
@@ -840,7 +816,7 @@ export default function BillingPage() {
               </CardContent>
             </Card>
 
-            {/* ─── Token Balance Card ───────────────────────── */}
+            {/* ─── Token Balance + Top-Up ───────────────────── */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -849,100 +825,99 @@ export default function BillingPage() {
                 </CardTitle>
                 <CardDescription>AI reply and messaging tokens for this billing cycle</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {isLowTokens && (
-                  <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-amber-800">
-                      Running low on tokens — top up to keep AI replies and messaging active
-                    </p>
+              <CardContent className="space-y-6">
+                {/* Balance & usage */}
+                <div className="space-y-4">
+                  {isLowTokens && (
+                    <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-amber-800">
+                        Running low on tokens — top up to keep AI replies and messaging active
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {tokenBalance.tokens_used.toLocaleString()} used of {tokenBalance.tokens_allowance.toLocaleString()} included
+                      </span>
+                      <span className="text-foreground">
+                        {(tokenBalance.tokens_allowance - tokenBalance.tokens_used).toLocaleString()} remaining
+                      </span>
+                    </div>
+                    <Progress
+                      value={tokenUsedPct}
+                      className={`h-3 ${isLowTokens ? '[&>div]:bg-amber-400' : '[&>div]:bg-primary'}`}
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{tokenUsedPct}% used</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {daysUntilReset !== null ? `Resets in ${daysUntilReset} day${daysUntilReset !== 1 ? 's' : ''}` : 'Next cycle pending'}
+                      </span>
+                    </div>
                   </div>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {tokenBalance.tokens_used.toLocaleString()} used of {tokenBalance.tokens_allowance.toLocaleString()} included
-                    </span>
-                    <span className="text-foreground">
-                      {(tokenBalance.tokens_allowance - tokenBalance.tokens_used).toLocaleString()} remaining
-                    </span>
-                  </div>
-                  <Progress
-                    value={tokenUsedPct}
-                    className={`h-3 ${isLowTokens ? '[&>div]:bg-amber-400' : '[&>div]:bg-primary'}`}
-                  />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{tokenUsedPct}% used</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {daysUntilReset !== null ? `Resets in ${daysUntilReset} day${daysUntilReset !== 1 ? 's' : ''}` : 'Next cycle pending'}
-                    </span>
-                  </div>
+                  {tokenBalance.tokens_rollover > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted/50 rounded-md">
+                      <RotateCcw className="h-4 w-4 text-primary shrink-0" />
+                      <span>
+                        <span className="text-foreground">{tokenBalance.tokens_rollover.toLocaleString()} rollover tokens</span> carried from last cycle
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {tokenBalance.tokens_rollover > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted/50 rounded-md">
-                    <RotateCcw className="h-4 w-4 text-primary shrink-0" />
-                    <span>
-                      <span className="text-foreground">{tokenBalance.tokens_rollover.toLocaleString()} rollover tokens</span> carried from last cycle
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <Separator />
 
-            {/* ─── Top-Up Packs ─────────────────────────────── */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Token Top-Up Packs
-                </CardTitle>
-                <CardDescription>One-time purchases — tokens are added immediately and never expire</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topUpPacksLoading ? (
-                  <div className="flex items-center justify-center py-8 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    Loading packs…
+                {/* Top-Up Packs */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Top-Up Packs</span>
+                    <span className="text-xs text-muted-foreground">— one-time purchases, never expire</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {Object.entries(topUpPacks).map(([packType, pack]: [string, TopUpPack]) => {
-                      const priceUsd = pack.price_cents / 100;
-                      const perToken = (pack.price_cents / pack.tokens / 100).toFixed(4);
-                      const isBuying = buyingPack === packType;
-                      return (
-                        <div
-                          key={packType}
-                          className="flex flex-col gap-3 p-4 border rounded-lg hover:border-primary/50 hover:shadow-sm transition-all"
-                        >
-                          <div>
-                            <p className="text-sm text-foreground">{pack.label}</p>
-                            <p className="text-2xl text-foreground mt-1">
-                              {pack.tokens.toLocaleString()}
-                              <span className="text-sm text-muted-foreground ml-1">tokens</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">${perToken} per token</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="mt-auto w-full"
-                            disabled={isBuying || isReadOnly}
-                            onClick={() => handleBuyPack(packType)}
+                  {topUpPacksLoading ? (
+                    <div className="flex items-center justify-center py-6 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Loading packs…
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {Object.entries(topUpPacks).map(([packType, pack]: [string, TopUpPack]) => {
+                        const priceUsd = pack.price_cents / 100;
+                        const perToken = (pack.price_cents / pack.tokens / 100).toFixed(4);
+                        const isBuying = buyingPack === packType;
+                        return (
+                          <div
+                            key={packType}
+                            className="flex flex-col gap-3 p-4 border rounded-lg hover:border-primary/50 hover:shadow-sm transition-all"
                           >
-                            {isBuying ? (
-                              <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Processing…</>
-                            ) : (
-                              <>Buy — ${priceUsd.toFixed(0)}</>
-                            )}
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                            <div>
+                              <p className="text-sm text-foreground">{pack.label}</p>
+                              <p className="text-2xl text-foreground mt-1">
+                                {pack.tokens.toLocaleString()}
+                                <span className="text-sm text-muted-foreground ml-1">tokens</span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">${perToken} per token</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="mt-auto w-full"
+                              disabled={isBuying || isReadOnly}
+                              onClick={() => handleBuyPack(packType)}
+                            >
+                              {isBuying ? (
+                                <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Processing…</>
+                              ) : (
+                                <>Buy — ${priceUsd.toFixed(0)}</>
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -1214,21 +1189,34 @@ export default function BillingPage() {
               );
             })()}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setChangePlanDialogOpen(false); setSelectedUpgradePlan(null); }}>
-                Cancel
-              </Button>
-              <Button
-                disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId || isConfirmingPlan}
-                onClick={confirmPlanChange}
-              >
-                {isConfirmingPlan ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</> :
-                  selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
-                  ? 'Upgrade Plan'
-                  : selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) < plans.findIndex(p => p.id === currentPlanId)
-                    ? 'Downgrade Plan'
-                    : 'Confirm Change'}
-              </Button>
+            <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2">
+              <div>
+                {!pricing.isFree && (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => { setChangePlanDialogOpen(false); setCancelDialogOpen(true); }}
+                  >
+                    Cancel Subscription
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setChangePlanDialogOpen(false); setSelectedUpgradePlan(null); }}>
+                  Close
+                </Button>
+                <Button
+                  disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId || isConfirmingPlan}
+                  onClick={confirmPlanChange}
+                >
+                  {isConfirmingPlan ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</> :
+                    selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
+                    ? 'Upgrade Plan'
+                    : selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) < plans.findIndex(p => p.id === currentPlanId)
+                      ? 'Downgrade Plan'
+                      : 'Confirm Change'}
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
