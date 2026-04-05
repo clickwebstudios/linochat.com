@@ -30,6 +30,7 @@ class StripeWebhookController extends Controller
         }
 
         match ($event->type) {
+            'checkout.session.completed'    => $this->handleCheckoutSessionCompleted($event->data->object),
             'payment_intent.succeeded'      => $this->handlePaymentIntentSucceeded($event->data->object),
             'payment_intent.payment_failed' => $this->handlePaymentIntentFailed($event->data->object),
             'customer.subscription.updated' => $this->handleSubscriptionUpdated($event->data->object),
@@ -40,6 +41,53 @@ class StripeWebhookController extends Controller
         };
 
         return response()->json(['success' => true]);
+    }
+
+    private function handleCheckoutSessionCompleted(object $session): void
+    {
+        try {
+            if ($session->mode === 'payment') {
+                // Token top-up: find pending purchase keyed by checkout session ID
+                $purchase = TokenPurchase::where('stripe_payment_intent_id', $session->id)->first();
+
+                if (!$purchase) {
+                    Log::warning('Stripe webhook: TokenPurchase not found for checkout.session.completed (payment)', [
+                        'session_id' => $session->id,
+                    ]);
+                    return;
+                }
+
+                $this->tokenService->completeTopUp($purchase);
+            } elseif ($session->mode === 'subscription') {
+                // Subscription checkout: activate plan
+                $company = Company::where('stripe_customer_id', $session->customer)->first();
+
+                if (!$company) {
+                    Log::warning('Stripe webhook: Company not found for checkout.session.completed (subscription)', [
+                        'customer_id' => $session->customer,
+                        'session_id'  => $session->id,
+                    ]);
+                    return;
+                }
+
+                $stripeSubscriptionId = $session->subscription ?? null;
+                if ($stripeSubscriptionId) {
+                    $localSubscription = $company->subscription;
+                    if ($localSubscription) {
+                        $localSubscription->update([
+                            'stripe_subscription_id' => $stripeSubscriptionId,
+                            'status'                 => 'active',
+                        ]);
+                    }
+                    $company->update(['stripe_subscription_id' => $stripeSubscriptionId]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Stripe webhook: error handling checkout.session.completed', [
+                'session_id' => $session->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
     }
 
     private function handlePaymentIntentSucceeded(object $paymentIntent): void

@@ -42,7 +42,7 @@ class BillingController extends Controller {
     public function createCheckoutSession(Request $request)
     {
         $data = $request->validate([
-            'plan_id'       => 'required|exists:plans,id',
+            'plan_name'     => 'required|string',
             'billing_cycle' => 'required|in:monthly,annual',
             'success_url'   => 'required|url',
             'cancel_url'    => 'required|url',
@@ -55,7 +55,10 @@ class BillingController extends Controller {
             $company->refresh();
         }
 
-        $plan = Plan::findOrFail($data['plan_id']);
+        $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
+        if (!$plan) {
+            return response()->json(['success' => false, 'message' => 'Plan not found'], 422);
+        }
         $priceIdKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
         $stripePriceId = config('services.stripe.price_ids.' . $priceIdKey);
 

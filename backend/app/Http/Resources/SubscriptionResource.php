@@ -7,6 +7,7 @@ class SubscriptionResource extends JsonResource {
     public function toArray(Request $request): array {
         return [
             'id' => $this->id,
+            'plan_id' => $this->plan_id,
             'billing_cycle' => $this->billing_cycle,
             'status' => $this->status,
             'started_at' => $this->started_at,

@@ -266,7 +266,9 @@ export default function BillingPage() {
     token_cycle_reset_at: null as string | null,
   });
 
-  const tokenUsedPct = Math.min(100, Math.round((tokenBalance.tokens_used / tokenBalance.tokens_allowance) * 100));
+  const tokenUsedPct = tokenBalance.tokens_allowance > 0
+    ? Math.min(100, Math.round((tokenBalance.tokens_used / tokenBalance.tokens_allowance) * 100))
+    : 0;
   const tokenRemainingPct = 100 - tokenUsedPct;
   const isLowTokens = tokenRemainingPct < 20;
 
@@ -455,17 +457,11 @@ export default function BillingPage() {
     }
 
     // Paid plan: redirect to Stripe Checkout
-    const apiPlan = apiPlans.find(p => p.name.toLowerCase() === selectedUpgradePlan);
-    if (!apiPlan) {
-      toast.error('Plan not found. Please try again.');
-      return;
-    }
-
     setIsConfirmingPlan(true);
     try {
       const origin = window.location.origin;
       const url = await billingService.createCheckoutSession({
-        plan_id: apiPlan.id,
+        plan_name: newLocalPlan.name,
         billing_cycle: billingCycle,
         success_url: `${origin}${window.location.pathname}?billing=success`,
         cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
