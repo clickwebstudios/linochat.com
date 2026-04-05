@@ -36,6 +36,16 @@ interface TicketsViewProps {
   onCreateTicketClick: () => void;
 }
 
+function formatTicketDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHr = Math.floor(diffMs / 3600000);
+  if (diffHr < 24) return diffHr < 1 ? 'Just now' : `${diffHr} hr ago`;
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
 export function TicketsView({
   filteredTickets,
   allTickets,
@@ -168,9 +178,9 @@ export function TicketsView({
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="font-mono">{selectedTicket.id}</span>
                         <span>•</span>
-                        <span>Customer: {selectedTicket.customer}</span>
+                        <span>Customer: {selectedTicket.customer_name || selectedTicket.customer_email || '—'}</span>
                         <span>•</span>
-                        <span>Created: {selectedTicket.created}</span>
+                        <span>Created: {formatTicketDate(selectedTicket.created_at)}</span>
                       </div>
                     </div>
                   </div>
@@ -216,21 +226,22 @@ export function TicketsView({
               <TableBody>
                 {filteredTickets.length > 0 ? (
                   filteredTickets.map((ticket) => {
-                    const project = getProjectById(ticket.projectId);
+                    const project = getProjectById(String(ticket.project_id)) || ticket.project;
+                    const customerDisplay = ticket.customer_name || (ticket.customer_email ? ticket.customer_email.split('@')[0] : '—');
                     return (
-                    <TableRow 
-                      key={ticket.id} 
+                    <TableRow
+                      key={ticket.id}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`${basePath}/tickets/${ticket.id}`)}
                     >
                       <TableCell className="font-mono">{ticket.id}</TableCell>
                       <TableCell>{ticket.subject}</TableCell>
-                      <TableCell>{ticket.customer}</TableCell>
+                      <TableCell>{customerDisplay}</TableCell>
                       <TableCell>
-                        {project && (
-                          <div 
+                        {(project?.name) && (
+                          <div
                             className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-white w-fit"
-                            style={{ backgroundColor: project.color }}
+                            style={{ backgroundColor: project.color || '#3b82f6' }}
                           >
                             <div className="w-2 h-2 rounded-full bg-white/80"></div>
                             {project.name}
@@ -252,7 +263,7 @@ export function TicketsView({
                           {ticket.priority}
                         </Badge>
                       </TableCell>
-                      <TableCell>{ticket.lastUpdate}</TableCell>
+                      <TableCell>{formatTicketDate(ticket.updated_at)}</TableCell>
                     </TableRow>
                     );
                   })
