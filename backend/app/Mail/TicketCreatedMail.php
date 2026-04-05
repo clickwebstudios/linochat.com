@@ -24,14 +24,16 @@ class TicketCreatedMail extends Mailable implements ShouldQueue
      */
     public string $replyToAddress;
     public string $fromName;
+    public ?string $fromAddress;
 
-    public function __construct(Ticket $ticket, string $projectName, string $ticketUrl, ?string $replyToAddress = null, ?string $fromName = null)
+    public function __construct(Ticket $ticket, string $projectName, string $ticketUrl, ?string $replyToAddress = null, ?string $fromName = null, ?string $fromAddress = null)
     {
         $this->ticket = $ticket;
         $this->projectName = $projectName;
         $this->ticketUrl = $ticketUrl;
         $this->replyToAddress = $replyToAddress ?? env('INBOUND_EMAIL_ADDRESS', config('mail.from.address'));
         $this->fromName = $fromName ?? ($projectName . ' Support');
+        $this->fromAddress = $fromAddress;
     }
 
     /**
@@ -39,8 +41,10 @@ class TicketCreatedMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
-        $ref = $this->ticket->ticket_number ?? ('TKT-' . $this->ticket->id);
+        $ref  = $this->ticket->ticket_number ?? ('TKT-' . $this->ticket->id);
+        $from = $this->fromAddress ? new Address($this->fromAddress, $this->fromName) : null;
         return new Envelope(
+            from: $from,
             subject: "[{$ref}] Support Ticket Created - {$this->ticket->subject}",
             replyTo: [new Address($this->replyToAddress, $this->fromName)],
         );

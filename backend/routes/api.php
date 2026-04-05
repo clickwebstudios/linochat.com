@@ -320,6 +320,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/projects/{projectId}/integrations/email', [\App\Http\Controllers\Api\EmailChannelController::class, 'connect']);
     Route::delete('/projects/{projectId}/integrations/email', [\App\Http\Controllers\Api\EmailChannelController::class, 'disconnect']);
     Route::post('/projects/{projectId}/integrations/email/test', [\App\Http\Controllers\Api\EmailChannelController::class, 'test']);
+    Route::post('/projects/{projectId}/integrations/email/domain-auth', [\App\Http\Controllers\Api\EmailChannelController::class, 'domainAuth']);
+    Route::post('/projects/{projectId}/integrations/email/domain-auth/verify', [\App\Http\Controllers\Api\EmailChannelController::class, 'verifyDomainAuth']);
+    Route::delete('/projects/{projectId}/integrations/email/domain-auth', [\App\Http\Controllers\Api\EmailChannelController::class, 'removeDomainAuth']);
 });
 
 // Frubix webhooks (public, verified by signature)

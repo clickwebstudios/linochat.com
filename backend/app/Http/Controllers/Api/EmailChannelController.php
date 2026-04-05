@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class EmailChannelController extends Controller
 {
-    // LinoChat-owned inbound domain — MX must point to mx.sendgrid.net
-    private const INBOUND_DOMAIN = 'inbound.linochat.com';
-
     /**
      * GET /projects/{projectId}/integrations/email
      */
@@ -32,8 +29,8 @@ class EmailChannelController extends Controller
      * POST /projects/{projectId}/integrations/email
      * Body: { support_email: string, from_name?: string }
      *
-     * Uses LinoChat's SendGrid API key to register the inbound parse webhook.
-     * No API key required from the user.
+     * Saves email channel config. Does NOT call SendGrid yet.
+     * Call POST .../email/domain-auth next to register DNS records.
      */
     public function connect(Request $request, int $projectId)
     {
@@ -45,49 +42,58 @@ class EmailChannelController extends Controller
             'from_name'     => 'nullable|string|max:100',
         ]);
 
-        $apiKey = config('services.sendgrid.api_key');
-        if (!$apiKey) {
-            return response()->json(['success' => false, 'message' => 'SendGrid is not configured on this server'], 503);
-        }
-
-        $inboundAddress = $this->inboundAddress($project);
-        $webhookUrl     = $this->webhookUrl($project);
-
-        // Register (or update) inbound parse on SendGrid using our API key
-        $sgResult = $this->registerSendGridInboundParse($apiKey, $inboundAddress, $webhookUrl);
-        if ($sgResult !== true) {
-            Log::error('EmailChannel: SendGrid inbound parse registration failed', [
-                'project_id' => $project->id,
-                'error'      => $sgResult,
-            ]);
+        // Validate it's a subdomain address (not root domain)
+        $domain = $this->domainFromEmail($data['support_email']);
+        if (!$domain || substr_count($domain, '.') < 1) {
             return response()->json([
                 'success' => false,
-                'message' => 'Could not configure SendGrid: ' . $sgResult,
-            ], 500);
+                'message' => 'Please use a subdomain address like support@help.yourdomain.com.',
+            ], 422);
         }
 
-        $channel = [
-            'enabled'         => true,
-            'support_email'   => $data['support_email'],
-            'from_name'       => $data['from_name'] ?? ($project->name . ' Support'),
-            'inbound_address' => $inboundAddress,
-            'connected_at'    => now()->toISOString(),
-        ];
+        // Uniqueness: no other project should share this support_email
+        $conflict = Project::where('id', '!=', $project->id)
+            ->whereNotNull('integrations')
+            ->get()
+            ->first(fn ($p) =>
+                ($p->integrations['email']['support_email'] ?? null) === $data['support_email']
+                && !empty($p->integrations['email']['enabled'])
+            );
 
-        $integrations          = $project->integrations ?? [];
-        $integrations['email'] = $channel;
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This email address is already used by another project.',
+            ], 422);
+        }
+
+        $integrations = $project->integrations ?? [];
+        $existing     = $integrations['email'] ?? [];
+
+        // Preserve domain_auth if the support_email hasn't changed
+        $domainAuth = null;
+        if (!empty($existing['support_email']) && $existing['support_email'] === $data['support_email']) {
+            $domainAuth = $existing['domain_auth'] ?? null;
+        }
+
+        $integrations['email'] = [
+            'enabled'       => true,
+            'support_email' => $data['support_email'],
+            'from_name'     => $data['from_name'] ?? ($project->name . ' Support'),
+            'connected_at'  => $existing['connected_at'] ?? now()->toISOString(),
+            'domain_auth'   => $domainAuth,
+        ];
         $project->integrations = $integrations;
         $project->save();
 
         Log::info('Email channel connected', [
-            'project_id'      => $project->id,
-            'support_email'   => $data['support_email'],
-            'inbound_address' => $inboundAddress,
+            'project_id'    => $project->id,
+            'support_email' => $data['support_email'],
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Email channel connected',
+            'message' => 'Email channel connected. Set up your domain to start receiving emails.',
             'data'    => $this->channelResponse($project),
         ]);
     }
@@ -100,10 +106,20 @@ class EmailChannelController extends Controller
         $project = $this->resolveProject($request, $projectId);
         if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
 
-        // Remove inbound parse from SendGrid
+        // Clean up SendGrid domain auth + inbound parse
         $apiKey = config('services.sendgrid.api_key');
         if ($apiKey) {
-            $this->deleteSendGridInboundParse($apiKey, $this->inboundAddress($project));
+            $domainAuth = $project->integrations['email']['domain_auth'] ?? null;
+            if ($domainAuth) {
+                if (!empty($domainAuth['sendgrid_domain_id'])) {
+                    Http::withToken($apiKey)
+                        ->delete("https://api.sendgrid.com/v3/whitelabel/domains/{$domainAuth['sendgrid_domain_id']}");
+                }
+                if (!empty($domainAuth['sendgrid_parse_hostname'])) {
+                    Http::withToken($apiKey)
+                        ->delete("https://api.sendgrid.com/v3/user/webhooks/parse/settings/{$domainAuth['sendgrid_parse_hostname']}");
+                }
+            }
         }
 
         $integrations = $project->integrations ?? [];
@@ -137,8 +153,7 @@ class EmailChannelController extends Controller
                 "This is a test email from LinoChat.\n\n" .
                 "Your email channel is configured correctly.\n\n" .
                 "Project: {$project->name}\n" .
-                "Support email: {$replyTo}\n" .
-                "Inbound address: {$channel['inbound_address']}\n\n" .
+                "Support email: {$replyTo}\n\n" .
                 "Customers can email {$replyTo} and tickets will be created automatically.",
                 function ($mail) use ($recipient, $fromAddress, $fromName, $replyTo, $project) {
                     $mail->to($recipient)
@@ -155,64 +170,256 @@ class EmailChannelController extends Controller
         }
     }
 
-    // ── SendGrid API ───────────────────────────────────────────────────────────
-
     /**
-     * Register or update a SendGrid Inbound Parse hostname.
-     * Returns true on success, error string on failure.
+     * POST /projects/{projectId}/integrations/email/domain-auth
+     * Registers customer's subdomain with SendGrid for DKIM/SPF (outbound) + inbound parse.
      */
-    private function registerSendGridInboundParse(string $apiKey, string $hostname, string $webhookUrl): bool|string
+    public function domainAuth(Request $request, int $projectId)
     {
-        $payload = [
-            'hostname'   => $hostname,
+        $project = $this->resolveProject($request, $projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $channel = $project->integrations['email'] ?? [];
+        if (empty($channel['enabled']) || empty($channel['support_email'])) {
+            return response()->json(['success' => false, 'message' => 'Email channel not connected'], 422);
+        }
+
+        $apiKey = config('services.sendgrid.api_key');
+        if (!$apiKey) {
+            return response()->json(['success' => false, 'message' => 'SendGrid is not configured on this server'], 503);
+        }
+
+        $domain = $this->domainFromEmail($channel['support_email']);
+        if (!$domain) {
+            return response()->json(['success' => false, 'message' => 'Invalid support email domain'], 422);
+        }
+
+        // If already registered, return existing records
+        $existing = $channel['domain_auth'] ?? null;
+        if ($existing && !empty($existing['sendgrid_domain_id'])) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Domain auth already configured',
+                'data'    => $this->channelResponse($project),
+            ]);
+        }
+
+        // Register domain auth with SendGrid (DKIM + SPF for outbound)
+        $sgRes = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/whitelabel/domains', [
+            'domain'             => $domain,
+            'automatic_security' => true,
+        ]);
+
+        if (!$sgRes->successful()) {
+            $errors = $sgRes->json('errors') ?? [];
+            $msg    = $errors[0]['message'] ?? ('SendGrid error: ' . $sgRes->status());
+            Log::error('EmailChannel: domain auth registration failed', [
+                'project_id' => $project->id,
+                'error'      => $msg,
+                'body'       => $sgRes->body(),
+            ]);
+            return response()->json(['success' => false, 'message' => 'Could not register domain: ' . $msg], 500);
+        }
+
+        $sgData = $sgRes->json();
+        $sgId   = $sgData['id'];
+
+        // Register inbound parse for this domain (single platform-level webhook)
+        $webhookUrl = rtrim(config('app.url'), '/') . '/api/email/inbound';
+        $parseRes = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/user/webhooks/parse/settings', [
+            'hostname'   => $domain,
             'url'        => $webhookUrl,
             'spam_check' => false,
             'send_raw'   => false,
+        ]);
+
+        // 409 = already exists, that's fine
+        if (!$parseRes->successful() && $parseRes->status() !== 409) {
+            Log::warning('EmailChannel: inbound parse registration failed (non-fatal)', [
+                'project_id' => $project->id,
+                'status'     => $parseRes->status(),
+            ]);
+        }
+
+        $dnsRecords = $this->buildDnsRecords($domain, $sgData);
+
+        $domainAuth = [
+            'sendgrid_domain_id'      => $sgId,
+            'sendgrid_parse_hostname' => $domain,
+            'domain'                  => $domain,
+            'status'                  => 'pending',
+            'dns_records'             => $dnsRecords,
         ];
 
-        // Check if entry already exists
-        $existing = Http::withToken($apiKey)
-            ->get('https://api.sendgrid.com/v3/user/webhooks/parse/settings');
+        $integrations                         = $project->integrations;
+        $integrations['email']['domain_auth'] = $domainAuth;
+        $project->integrations                = $integrations;
+        $project->save();
 
-        if ($existing->successful()) {
-            $entries = $existing->json('result') ?? [];
-            foreach ($entries as $entry) {
-                if (($entry['hostname'] ?? '') === $hostname) {
-                    // Update existing
-                    $res = Http::withToken($apiKey)
-                        ->patch("https://api.sendgrid.com/v3/user/webhooks/parse/settings/{$hostname}", $payload);
-                    return $res->successful() ? true : ($res->json('errors.0.message') ?? 'SendGrid PATCH failed');
-                }
+        Log::info('EmailChannel: domain auth initiated', [
+            'project_id'        => $project->id,
+            'domain'            => $domain,
+            'sendgrid_domain_id' => $sgId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Domain auth initiated. Add the DNS records below to your registrar, then click Check DNS.',
+            'data'    => $this->channelResponse($project),
+        ]);
+    }
+
+    /**
+     * POST /projects/{projectId}/integrations/email/domain-auth/verify
+     * Calls SendGrid to validate DNS records and checks MX record.
+     */
+    public function verifyDomainAuth(Request $request, int $projectId)
+    {
+        $project = $this->resolveProject($request, $projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $domainAuth = $project->integrations['email']['domain_auth'] ?? null;
+        if (!$domainAuth || empty($domainAuth['sendgrid_domain_id'])) {
+            return response()->json(['success' => false, 'message' => 'Domain auth not configured'], 422);
+        }
+
+        $apiKey = config('services.sendgrid.api_key');
+        if (!$apiKey) {
+            return response()->json(['success' => false, 'message' => 'SendGrid is not configured on this server'], 503);
+        }
+
+        $sgId  = $domainAuth['sendgrid_domain_id'];
+        $sgRes = Http::withToken($apiKey)->post("https://api.sendgrid.com/v3/whitelabel/domains/{$sgId}/validate");
+
+        if (!$sgRes->successful()) {
+            return response()->json(['success' => false, 'message' => 'SendGrid validation request failed'], 500);
+        }
+
+        $result     = $sgRes->json();
+        $validation = $result['validation_results'] ?? [];
+        $records    = $domainAuth['dns_records'];
+
+        // Update per-record validity from SendGrid response
+        if (isset($validation['mail_cname']['valid'])) {
+            $records['cname1']['valid'] = (bool) $validation['mail_cname']['valid'];
+        }
+        if (isset($validation['dkim1']['valid'])) {
+            $records['cname2']['valid'] = (bool) $validation['dkim1']['valid'];
+        }
+        if (isset($validation['dkim2']['valid'])) {
+            $records['cname3']['valid'] = (bool) $validation['dkim2']['valid'];
+        }
+
+        // Check MX record via DNS lookup
+        $records['mx']['valid'] = $this->checkMxRecord($domainAuth['domain']);
+
+        $sgValid  = (bool) ($result['valid'] ?? false);
+        $allValid = $sgValid && $records['mx']['valid'];
+
+        $domainAuth['dns_records'] = $records;
+        $domainAuth['status']      = $allValid ? 'verified' : 'pending';
+
+        $integrations                         = $project->integrations;
+        $integrations['email']['domain_auth'] = $domainAuth;
+        $project->integrations                = $integrations;
+        $project->save();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->channelResponse($project),
+        ]);
+    }
+
+    /**
+     * DELETE /projects/{projectId}/integrations/email/domain-auth
+     * Removes domain auth from SendGrid and clears stored records.
+     */
+    public function removeDomainAuth(Request $request, int $projectId)
+    {
+        $project = $this->resolveProject($request, $projectId);
+        if (!$project) return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+
+        $domainAuth = $project->integrations['email']['domain_auth'] ?? null;
+        $apiKey     = config('services.sendgrid.api_key');
+
+        if ($apiKey && $domainAuth) {
+            if (!empty($domainAuth['sendgrid_domain_id'])) {
+                Http::withToken($apiKey)
+                    ->delete("https://api.sendgrid.com/v3/whitelabel/domains/{$domainAuth['sendgrid_domain_id']}");
+            }
+            if (!empty($domainAuth['sendgrid_parse_hostname'])) {
+                Http::withToken($apiKey)
+                    ->delete("https://api.sendgrid.com/v3/user/webhooks/parse/settings/{$domainAuth['sendgrid_parse_hostname']}");
             }
         }
 
-        // Create new
-        $res = Http::withToken($apiKey)
-            ->post('https://api.sendgrid.com/v3/user/webhooks/parse/settings', $payload);
+        $integrations = $project->integrations ?? [];
+        unset($integrations['email']['domain_auth']);
+        $project->integrations = $integrations;
+        $project->save();
 
-        if ($res->successful()) return true;
-
-        $errors = $res->json('errors') ?? [];
-        return $errors[0]['message'] ?? ('SendGrid error: ' . $res->status());
-    }
-
-    private function deleteSendGridInboundParse(string $apiKey, string $hostname): void
-    {
-        Http::withToken($apiKey)
-            ->delete("https://api.sendgrid.com/v3/user/webhooks/parse/settings/{$hostname}");
+        return response()->json([
+            'success' => true,
+            'message' => 'Domain auth removed',
+            'data'    => $this->channelResponse($project),
+        ]);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    /** Inbound email address unique to this project: p{id}@inbound.linochat.com */
-    private function inboundAddress(Project $project): string
+    private function domainFromEmail(string $email): ?string
     {
-        return 'p' . $project->id . '@' . self::INBOUND_DOMAIN;
+        $parts = explode('@', $email, 2);
+        return count($parts) === 2 ? strtolower(trim($parts[1])) : null;
     }
 
-    private function webhookUrl(Project $project): string
+    private function buildDnsRecords(string $domain, array $sgData): array
     {
-        return rtrim(config('app.url'), '/') . '/api/email/inbound/p' . $project->id;
+        $dns    = $sgData['dns'] ?? [];
+        $sgId   = $sgData['id'];
+        $subdom = $sgData['subdomain'] ?? 'em';
+
+        return [
+            'mx' => [
+                'type'  => 'MX',
+                'host'  => $domain,
+                'value' => 'mx.sendgrid.net',
+                'valid' => false,
+            ],
+            'cname1' => [
+                'type'  => 'CNAME',
+                'host'  => $dns['mail_cname']['host'] ?? "{$subdom}.{$domain}",
+                'value' => $dns['mail_cname']['data'] ?? "u{$sgId}.wl.sendgrid.net",
+                'valid' => false,
+            ],
+            'cname2' => [
+                'type'  => 'CNAME',
+                'host'  => $dns['dkim1']['host'] ?? "s1._domainkey.{$domain}",
+                'value' => $dns['dkim1']['data'] ?? "s1.domainkey.u{$sgId}.wl.sendgrid.net",
+                'valid' => false,
+            ],
+            'cname3' => [
+                'type'  => 'CNAME',
+                'host'  => $dns['dkim2']['host'] ?? "s2._domainkey.{$domain}",
+                'value' => $dns['dkim2']['data'] ?? "s2.domainkey.u{$sgId}.wl.sendgrid.net",
+                'valid' => false,
+            ],
+        ];
+    }
+
+    private function checkMxRecord(string $domain): bool
+    {
+        try {
+            $records = dns_get_record($domain, DNS_MX);
+            if (!is_array($records)) return false;
+            foreach ($records as $record) {
+                if (str_contains(strtolower($record['target'] ?? ''), 'sendgrid.net')) {
+                    return true;
+                }
+            }
+        } catch (\Throwable) {
+        }
+        return false;
     }
 
     private function resolveProject(Request $request, int $projectId): ?Project
@@ -221,20 +428,26 @@ class EmailChannelController extends Controller
         return Project::where('id', $projectId)
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhereHas('agents', fn($q2) => $q2->where('users.id', $user->id));
+                  ->orWhereHas('agents', fn ($q2) => $q2->where('users.id', $user->id));
             })
             ->first();
     }
 
     private function channelResponse(Project $project): array
     {
-        $channel = $project->integrations['email'] ?? [];
+        $channel    = $project->integrations['email'] ?? [];
+        $domainAuth = $channel['domain_auth'] ?? null;
+
         return [
-            'connected'       => !empty($channel['enabled']),
-            'support_email'   => $channel['support_email'] ?? null,
-            'from_name'       => $channel['from_name'] ?? null,
-            'inbound_address' => $channel['inbound_address'] ?? $this->inboundAddress($project),
-            'connected_at'    => $channel['connected_at'] ?? null,
+            'connected'     => !empty($channel['enabled']),
+            'support_email' => $channel['support_email'] ?? null,
+            'from_name'     => $channel['from_name'] ?? null,
+            'connected_at'  => $channel['connected_at'] ?? null,
+            'domain_auth'   => $domainAuth ? [
+                'domain'      => $domainAuth['domain'] ?? null,
+                'status'      => $domainAuth['status'] ?? 'pending',
+                'dns_records' => $domainAuth['dns_records'] ?? [],
+            ] : null,
         ];
     }
 }

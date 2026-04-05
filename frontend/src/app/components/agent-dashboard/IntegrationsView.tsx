@@ -53,12 +53,23 @@ export function IntegrationsView() {
   const [whatsappEnabling, setWhatsappEnabling] = useState(false);
 
   // Email channel state
+  interface DnsRecord {
+    type: string;
+    host: string;
+    value: string;
+    valid: boolean;
+  }
+  interface DomainAuth {
+    domain: string;
+    status: 'pending' | 'verified';
+    dns_records: { mx: DnsRecord; cname1: DnsRecord; cname2: DnsRecord; cname3: DnsRecord };
+  }
   interface EmailChannelStatus {
     connected: boolean;
     support_email: string | null;
     from_name: string | null;
-    inbound_address: string | null;
     connected_at: string | null;
+    domain_auth: DomainAuth | null;
   }
   const [emailStatus, setEmailStatus] = useState<EmailChannelStatus | null>(null);
   const [emailLoading, setEmailLoading] = useState(false);
@@ -68,6 +79,8 @@ export function IntegrationsView() {
   const [emailDisconnecting, setEmailDisconnecting] = useState(false);
   const [emailConfirm, setEmailConfirm] = useState(false);
   const [emailTesting, setEmailTesting] = useState(false);
+  const [emailDomainLoading, setEmailDomainLoading] = useState(false);
+  const [emailDomainVerifying, setEmailDomainVerifying] = useState(false);
 
   // Fetch all projects for the selector
   useEffect(() => {
@@ -295,6 +308,48 @@ export function IntegrationsView() {
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to send test email');
     } finally { setEmailTesting(false); }
+  };
+
+  const handleEmailSetupDomain = async () => {
+    if (!projectId) return;
+    setEmailDomainLoading(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/domain-auth`, {});
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      toast.success('DNS records ready. Add them to your registrar then click Check DNS.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to set up domain');
+    } finally { setEmailDomainLoading(false); }
+  };
+
+  const handleEmailVerifyDns = async () => {
+    if (!projectId) return;
+    setEmailDomainVerifying(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/domain-auth/verify`, {});
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      if (d?.domain_auth?.status === 'verified') {
+        toast.success('Domain verified! Emails are now sent from your domain.');
+      } else {
+        toast.info('Some DNS records are not yet propagated. Check and try again.');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'DNS verification failed');
+    } finally { setEmailDomainVerifying(false); }
+  };
+
+  const handleEmailRemoveDomainAuth = async () => {
+    if (!projectId) return;
+    try {
+      const res = await api.delete(`/projects/${projectId}/integrations/email/domain-auth`);
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
+      toast.success('Domain auth removed');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove domain auth');
+    }
   };
 
   return (
@@ -597,10 +652,13 @@ export function IntegrationsView() {
                   {/* Connect form */}
                   {!emailStatus?.connected && (
                     <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Use a subdomain address like <code className="bg-muted px-1 rounded">support@help.yourdomain.com</code>. You'll add 4 DNS records to enable sending and receiving.
+                      </p>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
-                          <Input id="email-address" type="email" placeholder="support@yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
+                          <Input id="email-address" type="email" placeholder="support@help.yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
                         </div>
                         <div className="space-y-1">
                           <Label htmlFor="email-from-name" className="text-xs">Display Name</Label>
@@ -613,23 +671,106 @@ export function IntegrationsView() {
                     </div>
                   )}
 
-                  {/* Inbound address — shown when connected */}
-                  {emailStatus?.connected && emailStatus.inbound_address && (
-                    <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 space-y-3">
-                      <p className="text-sm font-medium text-blue-900">Your dedicated inbound email address</p>
-                      <p className="text-xs text-blue-700">
-                        Forward emails from <span className="font-medium">{emailStatus.support_email}</span> to this address, or give it directly to customers. Inbound emails will automatically create tickets in this project.
-                      </p>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 text-sm bg-white border border-blue-200 px-3 py-2 rounded-md font-mono">
-                            {emailStatus.inbound_address}
-                          </code>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { navigator.clipboard.writeText(emailStatus.inbound_address!); toast.success('Copied'); }}>
-                            <Copy className="h-3.5 w-3.5" />
+                  {/* Domain setup — shown when connected */}
+                  {emailStatus?.connected && (
+                    <div className="space-y-3 border-t border-border pt-4">
+                      {!emailStatus.domain_auth ? (
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium">Set up your domain</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Add 4 DNS records to send and receive emails from <span className="font-medium">{emailStatus.support_email}</span>
+                            </p>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={handleEmailSetupDomain} disabled={emailDomainLoading} className="shrink-0">
+                            {emailDomainLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set up domain'}
                           </Button>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-medium flex items-center gap-2">
+                                DNS Records
+                                {emailStatus.domain_auth.status === 'verified' ? (
+                                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />Domain Verified
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">Pending DNS</Badge>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Add these to your DNS registrar for <span className="font-medium">{emailStatus.domain_auth.domain}</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleEmailVerifyDns}
+                                disabled={emailDomainVerifying || emailStatus.domain_auth.status === 'verified'}
+                              >
+                                {emailDomainVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Check DNS'}
+                              </Button>
+                              {emailStatus.domain_auth.status !== 'verified' && (
+                                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleEmailRemoveDomainAuth}>
+                                  Reset
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg border border-border overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-muted/50 border-b border-border">
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground w-16">Type</th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Host</th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Value</th>
+                                  <th className="px-3 py-2 w-6"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border">
+                                {Object.entries(emailStatus.domain_auth.dns_records).map(([key, rec]) => (
+                                  <tr key={key} className={rec.valid ? 'bg-green-50/40' : ''}>
+                                    <td className="px-3 py-2 font-mono font-semibold">{rec.type}</td>
+                                    <td className="px-3 py-2 font-mono text-muted-foreground break-all max-w-[160px]">{rec.host}</td>
+                                    <td className="px-3 py-2">
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono break-all">{rec.value}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 shrink-0"
+                                          onClick={() => { navigator.clipboard.writeText(rec.value); toast.success('Copied'); }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      {rec.valid
+                                        ? <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                                        : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 mx-auto" />
+                                      }
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {emailStatus.domain_auth.status === 'verified' && (
+                            <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                              <p className="text-sm text-green-800">
+                                Emails are now sent from <span className="font-medium">{emailStatus.support_email}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 

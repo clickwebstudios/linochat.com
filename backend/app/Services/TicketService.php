@@ -82,7 +82,9 @@ class TicketService
             $emailChannel = $project?->integrations['email'] ?? [];
             $replyTo      = $emailChannel['support_email'] ?? null;
             $fromName     = $emailChannel['from_name'] ?? null;
-            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl, $replyTo, $fromName));
+            $isVerified   = ($emailChannel['domain_auth']['status'] ?? '') === 'verified';
+            $fromAddress  = ($isVerified && $replyTo) ? $replyTo : null;
+            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl, $replyTo, $fromName, $fromAddress));
             NotificationLog::record('email', 'Ticket Created — Customer', "Ticket #{$ticket->ticket_number} created. Subject: {$ticket->subject}\n\n{$ticket->description}", $ticket->customer_email, 'sent', $companyId);
         } catch (\Exception $e) {
             Log::error('Failed to send ticket created email', ['error' => $e->getMessage()]);
@@ -239,23 +241,58 @@ class TicketService
 
     /**
      * Send the agent reply by email to the customer.
+     * When domain is verified, sends FROM the customer's own address via SendGrid API.
      */
     public function sendEmailReply(Ticket $ticket, TicketMessage $message): void
     {
         try {
             $project      = $ticket->project;
             $emailChannel = $project?->integrations['email'] ?? [];
-            $replyTo      = $emailChannel['support_email'] ?? env('INBOUND_EMAIL_ADDRESS', config('mail.from.address'));
+            $fromEmail    = $emailChannel['support_email'] ?? null;
             $fromName     = $emailChannel['from_name'] ?? ($project?->name . ' Support') ?: config('mail.from.name');
+            $replyTo      = $fromEmail ?? config('mail.from.address');
+            $isVerified   = ($emailChannel['domain_auth']['status'] ?? '') === 'verified';
 
-            Mail::to($ticket->customer_email)->send(
-                new \App\Mail\TicketReplyMail($ticket, $message->content, $fromName, $replyTo, $fromName)
-            );
+            if ($isVerified && $fromEmail) {
+                $this->sendReplyViaSendGridApi($ticket, $message->content, $fromEmail, $fromName);
+            } else {
+                Mail::to($ticket->customer_email)->send(
+                    new \App\Mail\TicketReplyMail($ticket, $message->content, $fromName, $replyTo, $fromName)
+                );
+            }
         } catch (\Exception $e) {
             Log::error('Failed to send ticket email reply', [
                 'ticket_id' => $ticket->id,
                 'error'     => $e->getMessage(),
             ]);
+        }
+    }
+
+    private function sendReplyViaSendGridApi(Ticket $ticket, string $content, string $fromEmail, string $fromName): void
+    {
+        $apiKey = config('services.sendgrid.api_key');
+        if (!$apiKey) {
+            throw new \RuntimeException('SendGrid API key not configured');
+        }
+
+        $ref     = $ticket->ticket_number ?? ('TKT-' . $ticket->id);
+        $subject = 'Re: [' . $ref . '] ' . $ticket->subject;
+
+        $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+            ->post('https://api.sendgrid.com/v3/mail/send', [
+                'personalizations' => [[
+                    'to' => [['email' => $ticket->customer_email]],
+                ]],
+                'from'     => ['email' => $fromEmail, 'name' => $fromName],
+                'reply_to' => ['email' => $fromEmail, 'name' => $fromName],
+                'subject'  => $subject,
+                'content'  => [
+                    ['type' => 'text/plain', 'value' => $content],
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('SendGrid API error: ' . $response->status() . ' ' . $response->body());
         }
     }
 }

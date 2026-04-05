@@ -26,27 +26,24 @@ class InboundEmailController extends Controller
 {
     public function handle(Request $request, ?string $token = null)
     {
-        // Resolve project by per-project token (new style) or global secret (legacy)
+        // Resolve project by token (legacy per-project) or by `to` field (custom domain)
         $project = null;
 
         if ($token) {
+            // Legacy token route: /api/email/inbound/{token}
             $project = $this->findProjectByToken($token);
             if (!$project) {
                 Log::warning('InboundEmail: unknown inbound token', ['token' => $token]);
                 return response()->json(['ok' => true]); // 200 so SendGrid doesn't retry
             }
         } else {
-            // Legacy: global secret validation
-            $secret   = config('services.inbound_email.secret', env('INBOUND_EMAIL_SECRET'));
-            $provided = $request->input('secret') ?? $request->query('secret');
-            if (!$secret) {
-                Log::error('InboundEmail: INBOUND_EMAIL_SECRET not configured');
-                return response()->json(['ok' => false, 'message' => 'Secret not configured'], 403);
+            // Custom domain route: /api/email/inbound (no token)
+            // Route by the `to` field — match against project.integrations.email.support_email
+            $toEmail = $this->extractToEmail($request);
+            if ($toEmail) {
+                $project = $this->findProjectBySupportEmail($toEmail);
             }
-            if (!hash_equals($secret, (string) $provided)) {
-                Log::warning('InboundEmail: invalid secret from ' . $request->ip());
-                return response()->json(['ok' => false, 'message' => 'Invalid secret'], 403);
-            }
+            // If no project matched, continue anyway — ticket reply by TKT number still works
         }
 
         try {
@@ -212,6 +209,39 @@ class InboundEmailController extends Controller
                 return ($p->integrations['email']['inbound_token'] ?? null) === $token
                     && !empty($p->integrations['email']['enabled']);
             });
+    }
+
+    private function findProjectBySupportEmail(string $email): ?Project
+    {
+        $email = strtolower(trim($email));
+
+        // Try JSON path query first for performance
+        $project = Project::whereNotNull('integrations')
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(integrations, '$.email.support_email')) = ?", [$email])
+            ->whereRaw("JSON_EXTRACT(integrations, '$.email.enabled') = true")
+            ->first();
+
+        if ($project) return $project;
+
+        // Fallback: in-PHP scan (handles non-MySQL drivers)
+        return Project::whereNotNull('integrations')
+            ->get()
+            ->first(fn (Project $p) =>
+                strtolower($p->integrations['email']['support_email'] ?? '') === $email
+                && !empty($p->integrations['email']['enabled'])
+            );
+    }
+
+    private function extractToEmail(Request $request): ?string
+    {
+        // SendGrid sends `to` as "Name <email@domain.com>" or bare "email@domain.com"
+        // May be comma-separated list; we take the first matching address
+        $raw = $request->input('to') ?? $request->input('To') ?? '';
+        if (empty($raw)) return null;
+
+        // Extract all email addresses from the field
+        preg_match_all('/[\w.+\-]+@[\w\-]+(?:\.[\w\-]+)+/', $raw, $matches);
+        return !empty($matches[0]) ? strtolower($matches[0][0]) : null;
     }
 
     private function extractField(Request $request, array $keys): ?string
