@@ -103,6 +103,21 @@ class BillingController extends Controller {
         return response()->json(['success' => true, 'message' => 'Subscription will be cancelled at end of billing period']);
     }
 
+    public function tokenBalance(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company) {
+            return response()->json(['success' => true, 'data' => ['token_balance' => 0, 'tokens_used_this_cycle' => 0]]);
+        }
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token_balance' => (int) $company->token_balance,
+                'tokens_used_this_cycle' => (int) $company->tokens_used_this_cycle,
+            ],
+        ]);
+    }
+
     public function topUpPacks()
     {
         return response()->json([
