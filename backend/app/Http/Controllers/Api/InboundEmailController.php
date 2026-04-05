@@ -197,7 +197,15 @@ class InboundEmailController extends Controller
 
     private function findProjectByToken(string $token): ?Project
     {
-        // Search projects where integrations->email->inbound_token matches
+        // Token format: p{project_id}  e.g. "p42"
+        if (preg_match('/^p(\d+)$/', $token, $m)) {
+            $project = Project::find((int) $m[1]);
+            if ($project && !empty($project->integrations['email']['enabled'])) {
+                return $project;
+            }
+        }
+
+        // Legacy: random token stored in integrations->email->inbound_token
         return Project::whereNotNull('integrations')
             ->get()
             ->first(function (Project $p) use ($token) {

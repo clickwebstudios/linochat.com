@@ -57,6 +57,15 @@ return [
         'auth_token'  => env('TWILIO_AUTH_TOKEN'),
     ],
 
+    'sendgrid' => [
+        'api_key' => env('SENDGRID_API_KEY'),
+    ],
+
+    'inbound_email' => [
+        'secret' => env('INBOUND_EMAIL_SECRET'),
+        'domain' => env('INBOUND_EMAIL_DOMAIN', 'inbound.linochat.com'),
+    ],
+
     'stripe' => [
         'key'            => env('STRIPE_KEY'),
         'secret'         => env('STRIPE_SECRET'),

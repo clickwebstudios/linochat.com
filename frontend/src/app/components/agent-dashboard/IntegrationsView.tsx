@@ -57,8 +57,7 @@ export function IntegrationsView() {
     connected: boolean;
     support_email: string | null;
     from_name: string | null;
-    inbound_token: string | null;
-    webhook_url: string | null;
+    inbound_address: string | null;
     connected_at: string | null;
   }
   const [emailStatus, setEmailStatus] = useState<EmailChannelStatus | null>(null);
@@ -614,23 +613,19 @@ export function IntegrationsView() {
                     </div>
                   )}
 
-                  {/* SendGrid setup instructions (shown when connected) */}
-                  {emailStatus?.connected && emailStatus.webhook_url && (
+                  {/* Inbound address — shown when connected */}
+                  {emailStatus?.connected && emailStatus.inbound_address && (
                     <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 space-y-3">
-                      <p className="text-sm font-medium text-blue-900">SendGrid Inbound Parse Setup</p>
-                      <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                        <li>In SendGrid → Settings → Inbound Parse → Add Host &amp; URL</li>
-                        <li>Set the receiving domain to your support email domain</li>
-                        <li>Paste the webhook URL below as the destination URL</li>
-                        <li>Enable "POST the raw, full MIME message" if needed</li>
-                      </ol>
+                      <p className="text-sm font-medium text-blue-900">Your dedicated inbound email address</p>
+                      <p className="text-xs text-blue-700">
+                        Forward emails from <span className="font-medium">{emailStatus.support_email}</span> to this address, or give it directly to customers. Inbound emails will automatically create tickets in this project.
+                      </p>
                       <div className="space-y-1">
-                        <Label className="text-xs text-blue-800">Webhook URL</Label>
                         <div className="flex items-center gap-2">
-                          <code className="flex-1 text-xs bg-white border border-blue-200 px-3 py-2 rounded-md font-mono break-all">
-                            {emailStatus.webhook_url}
+                          <code className="flex-1 text-sm bg-white border border-blue-200 px-3 py-2 rounded-md font-mono">
+                            {emailStatus.inbound_address}
                           </code>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { navigator.clipboard.writeText(emailStatus.webhook_url!); toast.success('Copied'); }}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { navigator.clipboard.writeText(emailStatus.inbound_address!); toast.success('Copied'); }}>
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
                         </div>
