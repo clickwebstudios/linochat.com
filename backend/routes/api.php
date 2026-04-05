@@ -61,8 +61,9 @@ Route::prefix('help')->group(function () {
     Route::post('/search', [\App\Http\Controllers\Api\HelpController::class, 'search']);
 });
 
-// Inbound email webhook (no auth — called by email provider)
+// Inbound email webhook — called by SendGrid Inbound Parse (no auth)
 Route::post('/email/inbound', [InboundEmailController::class, 'handle']);
+Route::post('/email/inbound/{token}', [InboundEmailController::class, 'handle']);
 
 Route::group(['prefix' => 'auth'], function () {
     Route::middleware('throttle:10,1')->group(function () {
@@ -313,6 +314,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // WhatsApp sandbox
     Route::get('/integrations/whatsapp/sandbox/status', [WhatsAppController::class, 'sandboxStatus']);
     Route::post('/integrations/whatsapp/sandbox/connect', [WhatsAppController::class, 'sandboxConnect']);
+
+    // Email channel (per-project)
+    Route::get('/projects/{projectId}/integrations/email', [\App\Http\Controllers\Api\EmailChannelController::class, 'status']);
+    Route::post('/projects/{projectId}/integrations/email', [\App\Http\Controllers\Api\EmailChannelController::class, 'connect']);
+    Route::delete('/projects/{projectId}/integrations/email', [\App\Http\Controllers\Api\EmailChannelController::class, 'disconnect']);
+    Route::post('/projects/{projectId}/integrations/email/test', [\App\Http\Controllers\Api\EmailChannelController::class, 'test']);
 });
 
 // Frubix webhooks (public, verified by signature)

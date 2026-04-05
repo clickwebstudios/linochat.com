@@ -53,11 +53,22 @@ export function IntegrationsView() {
   const [whatsappEnabling, setWhatsappEnabling] = useState(false);
 
   // Email channel state
-  const [emailConnected, setEmailConnected] = useState(false);
+  interface EmailChannelStatus {
+    connected: boolean;
+    support_email: string | null;
+    from_name: string | null;
+    inbound_token: string | null;
+    webhook_url: string | null;
+    connected_at: string | null;
+  }
+  const [emailStatus, setEmailStatus] = useState<EmailChannelStatus | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
+  const [emailFromName, setEmailFromName] = useState('');
   const [emailConnecting, setEmailConnecting] = useState(false);
   const [emailDisconnecting, setEmailDisconnecting] = useState(false);
   const [emailConfirm, setEmailConfirm] = useState(false);
+  const [emailTesting, setEmailTesting] = useState(false);
 
   // Fetch all projects for the selector
   useEffect(() => {
@@ -80,7 +91,8 @@ export function IntegrationsView() {
         setFrubix((res.data as any)?.frubix ?? null);
       })
       .catch(() => {});
-  }, [projectId]);
+    loadEmailStatus(projectId);
+  }, [projectId, loadEmailStatus]);
 
   // Listen for OAuth callback message from popup
   const handleMessage = useCallback((event: MessageEvent) => {
@@ -230,36 +242,60 @@ export function IntegrationsView() {
     }
   };
 
+  const loadEmailStatus = useCallback(async (pid: string) => {
+    setEmailLoading(true);
+    try {
+      const res = await api.get(`/projects/${pid}/integrations/email`);
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d ?? null);
+      if (d?.support_email) setEmailAddress(d.support_email);
+      if (d?.from_name) setEmailFromName(d.from_name);
+    } catch { setEmailStatus(null); }
+    finally { setEmailLoading(false); }
+  }, []);
+
   const handleEmailConnect = async () => {
-    if (!emailAddress.trim()) {
-      toast.error('Please enter a support email address');
-      return;
-    }
+    if (!emailAddress.trim()) { toast.error('Please enter a support email address'); return; }
+    if (!projectId) return;
     setEmailConnecting(true);
     try {
-      await api.post(`/projects/${projectId}/integrations/email`, { email: emailAddress.trim() });
-      setEmailConnected(true);
+      const res = await api.post(`/projects/${projectId}/integrations/email`, {
+        support_email: emailAddress.trim(),
+        from_name: emailFromName.trim() || undefined,
+      });
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d);
       toast.success('Email channel connected');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to connect email channel');
-    } finally {
-      setEmailConnecting(false);
-    }
+      toast.error(err.response?.data?.message || err.message || 'Failed to connect email channel');
+    } finally { setEmailConnecting(false); }
   };
 
   const handleEmailDisconnect = async () => {
+    if (!projectId) return;
     setEmailDisconnecting(true);
     try {
       await api.delete(`/projects/${projectId}/integrations/email`);
-      setEmailConnected(false);
+      setEmailStatus(null);
       setEmailAddress('');
+      setEmailFromName('');
       setEmailConfirm(false);
       toast.success('Email channel disconnected');
     } catch (err: any) {
       toast.error(err.message || 'Failed to disconnect email channel');
-    } finally {
-      setEmailDisconnecting(false);
-    }
+    } finally { setEmailDisconnecting(false); }
+  };
+
+  const handleEmailTest = async () => {
+    if (!projectId) return;
+    setEmailTesting(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/integrations/email/test`, {});
+      const msg = (res as any)?.data?.message || 'Test email sent';
+      toast.success(msg);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to send test email');
+    } finally { setEmailTesting(false); }
   };
 
   return (
@@ -497,97 +533,114 @@ export function IntegrationsView() {
           </Card>
 
           {/* Email Channel Card */}
-          <Card className={`border shadow-sm ${emailConnected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
+          <Card className={`border shadow-sm ${emailStatus?.connected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <Mail className="h-6 w-6 text-blue-500" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-foreground">Email</h3>
-                        {emailConnected ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Connected
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Not connected</Badge>
+              {emailLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />Loading...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <Mail className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">Email</h3>
+                          {emailStatus?.connected ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />Connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Not connected</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Receive and reply to customer emails directly from LinoChat via SendGrid.
+                        </p>
+                        {emailStatus?.connected && emailStatus.support_email && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Support address: <span className="font-medium">{emailStatus.support_email}</span>
+                          </p>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        Receive and reply to customer emails directly from LinoChat.
-                      </p>
-                      {emailConnected && emailAddress && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Address: <span className="font-medium">{emailAddress}</span>
-                        </p>
-                      )}
                     </div>
-                  </div>
-                  {emailConnected && (
-                    <div className="flex items-center gap-2">
-                      {emailConfirm ? (
-                        <>
-                          <span className="text-sm text-muted-foreground">Are you sure?</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={handleEmailDisconnect}
-                            disabled={emailDisconnecting}
-                          >
-                            {emailDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}
-                            Confirm
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setEmailConfirm(false)}>Cancel</Button>
-                        </>
-                      ) : (
+                    {emailStatus?.connected && (
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setEmailConfirm(true)}
+                          onClick={handleEmailTest}
+                          disabled={emailTesting}
                         >
-                          <Unplug className="h-4 w-4 mr-2" />
-                          Disconnect
+                          {emailTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Test Email'}
                         </Button>
-                      )}
+                        {emailConfirm ? (
+                          <>
+                            <span className="text-sm text-muted-foreground">Are you sure?</span>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleEmailDisconnect} disabled={emailDisconnecting}>
+                              {emailDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}Confirm
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEmailConfirm(false)}>Cancel</Button>
+                          </>
+                        ) : (
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEmailConfirm(true)}>
+                            <Unplug className="h-4 w-4 mr-2" />Disconnect
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connect form */}
+                  {!emailStatus?.connected && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
+                          <Input id="email-address" type="email" placeholder="support@yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="email-from-name" className="text-xs">Display Name</Label>
+                          <Input id="email-from-name" placeholder="Acme Support" value={emailFromName} onChange={(e) => setEmailFromName(e.target.value)} />
+                        </div>
+                      </div>
+                      <Button onClick={handleEmailConnect} disabled={emailConnecting} className="bg-indigo-600 hover:bg-indigo-700" size="sm">
+                        {emailConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Plug className="h-4 w-4 mr-2" />Connect</>}
+                      </Button>
                     </div>
                   )}
-                </div>
 
-                {!emailConnected && (
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
-                      <Input
-                        id="email-address"
-                        type="email"
-                        placeholder="support@yourdomain.com"
-                        value={emailAddress}
-                        onChange={(e) => setEmailAddress(e.target.value)}
-                      />
+                  {/* SendGrid setup instructions (shown when connected) */}
+                  {emailStatus?.connected && emailStatus.webhook_url && (
+                    <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 space-y-3">
+                      <p className="text-sm font-medium text-blue-900">SendGrid Inbound Parse Setup</p>
+                      <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                        <li>In SendGrid → Settings → Inbound Parse → Add Host &amp; URL</li>
+                        <li>Set the receiving domain to your support email domain</li>
+                        <li>Paste the webhook URL below as the destination URL</li>
+                        <li>Enable "POST the raw, full MIME message" if needed</li>
+                      </ol>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-blue-800">Webhook URL</Label>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-xs bg-white border border-blue-200 px-3 py-2 rounded-md font-mono break-all">
+                            {emailStatus.webhook_url}
+                          </code>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { navigator.clipboard.writeText(emailStatus.webhook_url!); toast.success('Copied'); }}>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <Button
-                      onClick={handleEmailConnect}
-                      disabled={emailConnecting}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                      size="sm"
-                    >
-                      {emailConnecting ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</>
-                      ) : (
-                        <><Plug className="h-4 w-4 mr-2" />Connect</>
-                      )}
-                    </Button>
-                  </div>
-                )}
+                  )}
 
-                <p className="text-xs text-muted-foreground">Token cost: 1 token per email sent or received</p>
-              </div>
+                  <p className="text-xs text-muted-foreground">Token cost: 1 token per email sent or received</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

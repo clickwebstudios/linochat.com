@@ -78,8 +78,11 @@ class TicketService
 
         // Customer confirmation email
         try {
-            $ticketUrl = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
-            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl));
+            $ticketUrl    = config('app.frontend_url', 'http://localhost:5174') . '/ticket/' . $ticket->access_token;
+            $emailChannel = $project?->integrations['email'] ?? [];
+            $replyTo      = $emailChannel['support_email'] ?? null;
+            $fromName     = $emailChannel['from_name'] ?? null;
+            Mail::to($ticket->customer_email)->send(new TicketCreatedMail($ticket, $project->name ?? 'Support', $ticketUrl, $replyTo, $fromName));
             NotificationLog::record('email', 'Ticket Created — Customer', "Ticket #{$ticket->ticket_number} created. Subject: {$ticket->subject}\n\n{$ticket->description}", $ticket->customer_email, 'sent', $companyId);
         } catch (\Exception $e) {
             Log::error('Failed to send ticket created email', ['error' => $e->getMessage()]);
@@ -240,11 +243,14 @@ class TicketService
     public function sendEmailReply(Ticket $ticket, TicketMessage $message): void
     {
         try {
-            Mail::raw($message->content, function ($mail) use ($ticket) {
-                $mail->to($ticket->customer_email)
-                    ->subject("Re: {$ticket->subject}")
-                    ->from(config('mail.from.address'), config('mail.from.name'));
-            });
+            $project      = $ticket->project;
+            $emailChannel = $project?->integrations['email'] ?? [];
+            $replyTo      = $emailChannel['support_email'] ?? env('INBOUND_EMAIL_ADDRESS', config('mail.from.address'));
+            $fromName     = $emailChannel['from_name'] ?? ($project?->name . ' Support') ?: config('mail.from.name');
+
+            Mail::to($ticket->customer_email)->send(
+                new \App\Mail\TicketReplyMail($ticket, $message->content, $fromName, $replyTo, $fromName)
+            );
         } catch (\Exception $e) {
             Log::error('Failed to send ticket email reply', [
                 'ticket_id' => $ticket->id,
