@@ -24,7 +24,6 @@ import {
   Bookmark,
   Plus,
   ChevronDown,
-  Info,
   UserPlus,
   ArrowRightLeft,
   Sparkles,
@@ -59,8 +58,6 @@ export interface ChatMessageAreaProps {
   customerTyping: boolean;
   attachmentFiles: File[];
   setAttachmentFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  showActivityHistory: boolean;
-  setShowActivityHistory: (value: boolean) => void;
   isTakingOverFromAgent: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onSendMessage: () => void;
@@ -87,8 +84,6 @@ export function ChatMessageArea({
   customerTyping,
   attachmentFiles,
   setAttachmentFiles,
-  showActivityHistory,
-  setShowActivityHistory,
   isTakingOverFromAgent,
   messagesEndRef,
   onSendMessage,
@@ -232,15 +227,6 @@ export function ChatMessageArea({
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Take Over
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={`h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50 ${showActivityHistory ? 'bg-primary/10 border-primary' : ''}`}
-            onClick={() => setShowActivityHistory(!showActivityHistory)}
-          >
-            <Info className="h-4 w-4 mr-2" />
-            Info
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
