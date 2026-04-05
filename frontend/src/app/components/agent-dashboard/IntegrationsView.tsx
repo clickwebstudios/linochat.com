@@ -26,16 +26,6 @@ interface Project {
   name: string;
 }
 
-const comingSoonIntegrations = [
-  { name: 'Slack', icon: '\u{1F4AC}' },
-  { name: 'Salesforce', icon: '\u{2601}\u{FE0F}' },
-  { name: 'Zapier', icon: '\u{26A1}' },
-  { name: 'Jira', icon: '\u{1F4CB}' },
-  { name: 'HubSpot', icon: '\u{1F536}' },
-  { name: 'GitHub', icon: '\u{1F431}' },
-  { name: 'Stripe', icon: '\u{1F4B3}' },
-  { name: 'Zendesk', icon: '\u{1F3AB}' },
-];
 
 export function IntegrationsView() {
   const storeProject = useAuthStore((s) => s.project);
@@ -710,21 +700,6 @@ export function IntegrationsView() {
         </div>
       </div>
 
-      {/* Coming Soon */}
-      <div>
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Coming Soon</h3>
-        <div className="grid grid-cols-4 gap-4">
-          {comingSoonIntegrations.map((integration) => (
-            <div
-              key={integration.name}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/50 opacity-60"
-            >
-              <span className="text-2xl">{integration.icon}</span>
-              <span className="text-xs text-muted-foreground">{integration.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
