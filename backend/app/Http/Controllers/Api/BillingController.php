@@ -107,13 +107,22 @@ class BillingController extends Controller {
     {
         $company = $request->user()->company;
         if (!$company) {
-            return response()->json(['success' => true, 'data' => ['token_balance' => 0, 'tokens_used_this_cycle' => 0]]);
+            return response()->json(['success' => true, 'data' => [
+                'token_balance' => 0, 'tokens_used_this_cycle' => 0,
+                'monthly_token_allowance' => 0, 'token_rollover' => 0,
+                'token_cycle_reset_at' => null, 'agent_count' => 0,
+            ]]);
         }
+        $agentCount = $company->users()->count();
         return response()->json([
             'success' => true,
             'data' => [
-                'token_balance' => (int) $company->token_balance,
-                'tokens_used_this_cycle' => (int) $company->tokens_used_this_cycle,
+                'token_balance'           => (int) $company->token_balance,
+                'tokens_used_this_cycle'  => (int) $company->tokens_used_this_cycle,
+                'monthly_token_allowance' => (int) $company->monthly_token_allowance,
+                'token_rollover'          => (int) $company->token_rollover,
+                'token_cycle_reset_at'    => $company->token_cycle_reset_at,
+                'agent_count'             => $agentCount,
             ],
         ]);
     }
