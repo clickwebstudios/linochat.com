@@ -32,16 +32,10 @@ import {
   Download,
   UserPlus,
   Headphones,
-  Settings,
-  Shield,
   CreditCard,
-  Globe,
   Building2,
-  FolderKanban,
-  ArrowUpRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -105,6 +99,23 @@ interface Company {
   color?: string;
 }
 
+interface KbArticle {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  views: number;
+  updated: string;
+}
+
+interface InvoiceRow {
+  id: string;
+  date: string;
+  desc: string;
+  amount: string;
+  status: string;
+}
+
 interface CompanyDataTabsProps {
   tab: 'chats' | 'tickets' | 'kb' | 'agents' | 'transactions' | 'history';
   companyChats: Chat[];
@@ -120,6 +131,10 @@ interface CompanyDataTabsProps {
     joined: string;
     usage: number;
   };
+  companyKbArticles?: KbArticle[];
+  companyInvoices?: InvoiceRow[];
+  kbLoading?: boolean;
+  invoicesLoading?: boolean;
 }
 
 export function CompanyDataTabs({
@@ -133,6 +148,10 @@ export function CompanyDataTabs({
   isArchived,
   onDeleteChat,
   defaultMeta,
+  companyKbArticles = [],
+  companyInvoices = [],
+  kbLoading = false,
+  invoicesLoading = false,
 }: CompanyDataTabsProps) {
   const navigate = useNavigate();
 
@@ -319,13 +338,11 @@ export function CompanyDataTabs({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[
-                  { id: 1, title: 'Getting Started Guide', category: 'Onboarding', status: 'Published', views: 1250, helpful: 89, updated: 'Feb 5, 2026' },
-                  { id: 2, title: 'How to Reset Your Password', category: 'Account', status: 'Published', views: 890, helpful: 95, updated: 'Jan 28, 2026' },
-                  { id: 3, title: 'Billing & Invoices FAQ', category: 'Billing', status: 'Published', views: 560, helpful: 72, updated: 'Jan 15, 2026' },
-                  { id: 4, title: 'API Integration Guide', category: 'Developer', status: 'Draft', views: 120, helpful: 60, updated: 'Feb 8, 2026' },
-                  { id: 5, title: 'Troubleshooting Common Issues', category: 'Support', status: 'Published', views: 734, helpful: 81, updated: 'Feb 1, 2026' },
-                ].map(article => (
+                {kbLoading ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading articles…</TableCell></TableRow>
+                ) : companyKbArticles.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No articles found</TableCell></TableRow>
+                ) : companyKbArticles.map(article => (
                   <TableRow key={article.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -335,8 +352,8 @@ export function CompanyDataTabs({
                     </TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{article.category}</Badge></TableCell>
                     <TableCell>
-                      <Badge className={`text-xs ${article.status === 'Published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                        {article.status}
+                      <Badge className={`text-xs ${article.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {article.status.charAt(0).toUpperCase() + article.status.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{article.updated}</TableCell>
@@ -472,21 +489,18 @@ export function CompanyDataTabs({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[
-                  { id: 'INV-2026-012', date: 'Feb 1, 2026', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
-                  { id: 'INV-2026-008', date: 'Jan 1, 2026', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
-                  { id: 'INV-2025-052', date: 'Dec 1, 2025', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
-                  { id: 'INV-2025-047', date: 'Nov 1, 2025', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
-                  { id: 'INV-2025-039', date: 'Oct 1, 2025', desc: `${company.plan} Plan - Monthly`, amount: defaultMeta.mrr, status: 'Paid' },
-                  { id: 'INV-2025-031', date: 'Sep 1, 2025', desc: 'Plan Upgrade Fee', amount: '$49.00', status: 'Paid' },
-                ].map(tx => (
+                {invoicesLoading ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading transactions…</TableCell></TableRow>
+                ) : companyInvoices.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No transactions found</TableCell></TableRow>
+                ) : companyInvoices.map(tx => (
                   <TableRow key={tx.id} className="hover:bg-muted/50">
                     <TableCell className="font-mono text-sm text-primary">{tx.id}</TableCell>
                     <TableCell className="text-sm">{tx.date}</TableCell>
                     <TableCell className="text-sm">{tx.desc}</TableCell>
                     <TableCell className="font-semibold">{tx.amount}</TableCell>
                     <TableCell>
-                      <Badge className="bg-green-100 text-green-700 text-xs">{tx.status}</Badge>
+                      <Badge className={`text-xs ${tx.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{tx.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" className="text-xs"><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
@@ -502,46 +516,17 @@ export function CompanyDataTabs({
   }
 
   if (tab === 'history') {
-    const events: { icon: LucideIcon; color: string; action: string; detail: string; time: string; date: string }[] = [
-      { icon: Headphones, color: 'bg-green-100 text-green-600', action: 'New agent added', detail: 'James Wilson joined the team', time: '2 hours ago', date: 'Feb 11, 2026' },
-      { icon: FolderKanban, color: 'bg-primary/10 text-primary', action: 'Project created', detail: 'Mobile App project was created', time: '1 day ago', date: 'Feb 10, 2026' },
-      { icon: CreditCard, color: 'bg-secondary/10 text-secondary', action: 'Payment received', detail: `Invoice INV-2026-012 paid \u2014 ${defaultMeta.mrr}`, time: '3 days ago', date: 'Feb 8, 2026' },
-      { icon: ArrowUpRight, color: 'bg-orange-100 text-orange-600', action: 'Plan upgraded', detail: `Upgraded from Starter to ${company.plan}`, time: '1 week ago', date: 'Feb 4, 2026' },
-      { icon: Settings, color: 'bg-muted text-muted-foreground', action: 'Settings updated', detail: 'Chat widget appearance was customized', time: '1 week ago', date: 'Feb 3, 2026' },
-      { icon: UserPlus, color: 'bg-teal-100 text-teal-600', action: 'Agent invited', detail: 'Invitation sent to emily@company.com', time: '2 weeks ago', date: 'Jan 28, 2026' },
-      { icon: BookOpen, color: 'bg-indigo-100 text-indigo-600', action: 'KB article published', detail: 'Published "Getting Started Guide"', time: '2 weeks ago', date: 'Jan 27, 2026' },
-      { icon: Shield, color: 'bg-red-100 text-red-600', action: 'Security alert', detail: 'Admin password was changed', time: '3 weeks ago', date: 'Jan 21, 2026' },
-      { icon: Globe, color: 'bg-cyan-100 text-cyan-600', action: 'Domain verified', detail: `${companyProjects[0]?.website?.replace('https://', '') || 'company.com'} was verified`, time: '1 month ago', date: 'Jan 11, 2026' },
-      { icon: Building2, color: 'bg-amber-100 text-amber-600', action: 'Company registered', detail: `${company.name} account was created`, time: defaultMeta.joined, date: defaultMeta.joined },
-    ];
-
     return (
       <div className="space-y-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle className="text-base">Activity History</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search activity..." className="pl-8 h-9 w-[200px]" />
-            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1">
-              {events.map((event, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${event.color.split(' ')[0]}`}>
-                    <event.icon className={`h-4 w-4 ${event.color.split(' ')[1]}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{event.action}</p>
-                    <p className="text-xs text-muted-foreground">{event.detail}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-muted-foreground">{event.time}</p>
-                    <p className="text-[10px] text-muted-foreground/60">{event.date}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Building2 className="h-10 w-10 mb-3 text-muted" />
+              <p className="text-sm font-medium">Activity log coming soon</p>
+              <p className="text-xs mt-1">Per-company audit trail will be available in a future update.</p>
             </div>
           </CardContent>
         </Card>

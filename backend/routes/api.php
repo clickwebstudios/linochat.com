@@ -344,6 +344,8 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::get('/companies/{companyId}/projects', [SuperadminController::class, 'companyProjects']);
     Route::get('/companies/{companyId}/agents', [SuperadminController::class, 'companyAgents']);
     Route::get('/companies/{companyId}/tickets', [SuperadminController::class, 'companyTickets']);
+    Route::get('/companies/{companyId}/kb-articles', [SuperadminController::class, 'companyKbArticles']);
+    Route::get('/companies/{companyId}/invoices', [SuperadminController::class, 'companyInvoices']);
     Route::post('/companies/{companyId}/invite', [SuperadminController::class, 'companyInvite']);
     Route::get('/companies/{companyId}/invitations', [SuperadminController::class, 'companyInvitations']);
     Route::get('/dashboard-stats', [SuperadminController::class, 'dashboardStats']);

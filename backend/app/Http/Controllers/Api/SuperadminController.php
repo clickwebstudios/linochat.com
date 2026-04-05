@@ -428,6 +428,45 @@ class SuperadminController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
+    public function companyKbArticles(Request $request, $companyId)
+    {
+        $company = \App\Models\Company::find($companyId);
+        if (!$company) return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        $projectIds = $company->ownedProjects()->pluck('id');
+        $articles = \App\Models\KbArticle::whereHas('category', fn($q) => $q->whereIn('project_id', $projectIds))
+            ->with('category:id,name,project_id')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+        $data = $articles->map(fn($a) => [
+            'id'       => (string) $a->id,
+            'title'    => $a->title,
+            'category' => $a->category?->name ?? '—',
+            'status'   => $a->status ?? 'published',
+            'views'    => $a->views_count ?? 0,
+            'updated'  => $a->updated_at?->format('M j, Y') ?? '—',
+        ]);
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    public function companyInvoices(Request $request, $companyId)
+    {
+        $company = \App\Models\Company::find($companyId);
+        if (!$company) return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        $invoices = \App\Models\Invoice::where('company_id', $companyId)
+            ->orderBy('issued_at', 'desc')
+            ->limit(50)
+            ->get();
+        $data = $invoices->map(fn($inv) => [
+            'id'     => 'INV-' . $inv->id,
+            'date'   => $inv->issued_at?->format('M j, Y') ?? '—',
+            'desc'   => ucfirst($company->plan ?? 'Plan') . ' Plan - Monthly',
+            'amount' => '$' . number_format($inv->amount, 2),
+            'status' => ucfirst($inv->status),
+        ]);
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
     /**
      * Invite member to company (uses first project)
      */
