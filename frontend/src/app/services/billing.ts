@@ -14,4 +14,12 @@ export const billingService = {
     api.get('/billing/topup-packs').then((r: AxiosResponse<ApiResponse<TopUpPacksResponse>>) => r.data.data),
   createTopUpIntent: (packType: string): Promise<TopUpIntent> =>
     api.post('/billing/topup', { pack_type: packType }).then((r: AxiosResponse<ApiResponse<TopUpIntent>>) => r.data.data),
+  createCheckoutSession: (data: { plan_id: number; billing_cycle: string; success_url: string; cancel_url: string }): Promise<string> =>
+    api.post('/billing/checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
+  createPortalSession: (returnUrl: string): Promise<string> =>
+    api.post('/billing/portal', { return_url: returnUrl }).then((r: AxiosResponse<{ url: string }>) => r.data.url),
+  cancelSubscription: (): Promise<void> =>
+    api.delete('/billing/subscription').then(() => undefined),
+  createTopUpCheckout: (data: { pack_type: string; success_url: string; cancel_url: string }): Promise<string> =>
+    api.post('/billing/topup-checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
 };
