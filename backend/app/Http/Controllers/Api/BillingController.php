@@ -135,6 +135,61 @@ class BillingController extends Controller {
         ]);
     }
 
+    public function createTopUpCheckout(Request $request)
+    {
+        $data = $request->validate([
+            'pack_type'   => 'required|in:starter_pack,growth_pack,power_pack,scale_pack',
+            'success_url' => 'required|url',
+            'cancel_url'  => 'required|url',
+        ]);
+
+        $company = $request->user()->company;
+        $packs   = TokenService::topUpPacks();
+        $pack    = $packs[$data['pack_type']];
+
+        if (!$company->stripe_customer_id) {
+            $this->stripeService->createCustomer($company);
+            $company->refresh();
+        }
+
+        $stripe  = new \Stripe\StripeClient(config('services.stripe.secret'));
+        $session = $stripe->checkout->sessions->create([
+            'mode'        => 'payment',
+            'customer'    => $company->stripe_customer_id,
+            'line_items'  => [[
+                'price_data' => [
+                    'currency'     => 'usd',
+                    'unit_amount'  => $pack['price_cents'],
+                    'product_data' => [
+                        'name'        => $pack['label'],
+                        'description' => "{$pack['tokens']} AI tokens for LinoChat",
+                    ],
+                ],
+                'quantity' => 1,
+            ]],
+            'metadata'    => [
+                'company_id' => $company->id,
+                'pack_type'  => $data['pack_type'],
+                'tokens'     => $pack['tokens'],
+                'type'       => 'token_topup',
+            ],
+            'success_url' => $data['success_url'],
+            'cancel_url'  => $data['cancel_url'],
+        ]);
+
+        // Record pending purchase keyed by checkout session ID
+        \App\Models\TokenPurchase::create([
+            'company_id'               => $company->id,
+            'pack_type'                => $data['pack_type'],
+            'tokens_purchased'         => $pack['tokens'],
+            'amount_paid'              => $pack['price_cents'] / 100,
+            'stripe_payment_intent_id' => $session->id,
+            'status'                   => 'pending',
+        ]);
+
+        return response()->json(['url' => $session->url]);
+    }
+
     public function createTopUpIntent(Request $request)
     {
         $data = $request->validate([

@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import {
@@ -894,12 +895,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                   {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                 </div>
                 <div className="text-xs text-muted-foreground capitalize">{user?.role || role}</div>
-                {!isSuperadmin && tokenBalance !== null && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Zap className="h-3 w-3 text-yellow-500" />
-                    <span className="text-xs font-medium text-yellow-600">{tokenBalance.toLocaleString()} tokens</span>
-                  </div>
-                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -907,7 +902,21 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
+                  {!isSuperadmin && tokenBalance !== null && (
+                    <>
+                      <div className="flex items-center justify-between px-2 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                        </div>
+                        {tokenBalance < 100 && (
+                          <span className="text-xs text-red-500 font-medium">Low</span>
+                        )}
+                      </div>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to={`${basePath}/profile-settings`} className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" />
@@ -925,9 +934,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                       <Link to={`${basePath}/billing?tab=tokens`} className="flex items-center">
                         <Zap className="mr-2 h-4 w-4 text-yellow-500" />
                         Top Up Tokens
-                        {tokenBalance !== null && tokenBalance < 100 && (
-                          <span className="ml-auto text-xs text-red-500 font-medium">Low</span>
-                        )}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -935,6 +941,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                     <User className="mr-2 h-4 w-4" />
                     Update Status
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-red-600" onClick={() => { logout(); navigate('/'); }}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Log Out

@@ -16,6 +16,7 @@ export interface ChatConversationsListProps {
   setChatFilter: (filter: 'all' | 'active' | 'closed' | 'archived') => void;
   getProjectById: (id: string) => any;
   formatRelativeTime: (dateString: string) => string;
+  totalProjects?: number;
 }
 
 export function ChatConversationsList({
@@ -26,6 +27,7 @@ export function ChatConversationsList({
   setChatFilter,
   getProjectById,
   formatRelativeTime,
+  totalProjects = 1,
 }: ChatConversationsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   // Re-render every 15s so online/offline status updates based on customer_last_seen_at
@@ -167,7 +169,7 @@ export function ChatConversationsList({
                           <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-[#00a63e]' : 'bg-muted-foreground'}`} />
                           {isOnline ? 'Online' : 'Offline'}
                         </span>
-                        {project && (
+                        {project && totalProjects > 1 && (
                           <span
                             className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] text-white"
                             style={{ backgroundColor: project.color || '#3b82f6' }}
