@@ -19,6 +19,7 @@ import {
   Phone,
   BookOpen,
   Search,
+  ExternalLink,
 } from 'lucide-react';
 import { articleService } from '../../services/articles';
 import type { Article } from '../../types';
@@ -44,6 +45,7 @@ export interface ChatActivityPanelProps {
   activityLoading: boolean;
   onClose: () => void;
   onOpenPreviousChat: (chat: any) => void;
+  onInjectLink?: (text: string) => void;
 }
 
 type Tab = 'info' | 'kb' | 'history';
@@ -53,6 +55,7 @@ export function ChatActivityPanel({
   activity,
   activityLoading,
   onOpenPreviousChat,
+  onInjectLink,
 }: ChatActivityPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [showCustomerDetails, setShowCustomerDetails] = useState(true);
@@ -266,8 +269,23 @@ export function ChatActivityPanel({
             ) : (
               <div className="space-y-2">
                 {filteredArticles.map((article) => (
-                  <div key={article.id} className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                    <p className="text-sm font-medium text-[#0a0a0a] mb-1">{article.title}</p>
+                  <div key={article.id} className="border border-[rgba(0,0,0,0.1)] rounded-[10px] p-3 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium text-[#0a0a0a] mb-1 flex-1">{article.title}</p>
+                      {onInjectLink && (
+                        <button
+                          onClick={() => {
+                            const url = article.slug ? `${window.location.origin}/help/${article.slug}` : null;
+                            onInjectLink(url ? `${article.title}: ${url}` : article.title);
+                          }}
+                          className="shrink-0 flex items-center gap-1 text-xs text-primary font-medium hover:underline mt-0.5"
+                          title="Insert link into chat"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Insert
+                        </button>
+                      )}
+                    </div>
                     {article.excerpt && (
                       <p className="text-xs text-[#6a7282] line-clamp-2">{article.excerpt}</p>
                     )}

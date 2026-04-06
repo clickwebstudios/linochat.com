@@ -164,6 +164,7 @@ export interface Article {
   id: number;
   author_id?: number;
   title: string;
+  slug?: string;
   category?: string;
   category_id?: number;
   status?: 'draft' | 'published';

@@ -29,6 +29,7 @@ import {
   Inbox,
   Loader2,
   Zap,
+  ArrowUpCircle,
 } from 'lucide-react';
 import { billingService } from '../../services/billing';
 // Mock data removed — projects from API/store
@@ -903,23 +904,44 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {!isSuperadmin && tokenBalance !== null && (
+                  {!isSuperadmin && (user?.company_plan || tokenBalance !== null) && (
                     <>
-                      <div className="flex items-center justify-between px-2 py-2">
-                        <div className="flex items-center gap-1.5">
-                          <Zap className="h-4 w-4 text-yellow-500" />
-                          <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
-                          {tokenBalance < 100 && (
-                            <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                      {user?.company_plan && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Plan</span>
+                            <span className="text-xs font-semibold bg-primary/10 text-primary rounded px-1.5 py-0.5 leading-none">
+                              {user.company_plan}
+                            </span>
+                          </div>
+                          {user.company_plan.toLowerCase() !== 'enterprise' && (
+                            <Link
+                              to={`${basePath}/billing?tab=plans`}
+                              className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                            >
+                              <ArrowUpCircle className="h-3 w-3" />
+                              Upgrade
+                            </Link>
                           )}
                         </div>
-                        <Link
-                          to={`${basePath}/billing?tab=tokens`}
-                          className="text-xs text-primary font-medium hover:underline"
-                        >
-                          Top Up
-                        </Link>
-                      </div>
+                      )}
+                      {tokenBalance !== null && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                            {tokenBalance < 100 && (
+                              <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                            )}
+                          </div>
+                          <Link
+                            to={`${basePath}/billing?tab=tokens`}
+                            className="text-xs text-primary font-medium hover:underline"
+                          >
+                            Top Up
+                          </Link>
+                        </div>
+                      )}
                       <DropdownMenuSeparator />
                     </>
                   )}
