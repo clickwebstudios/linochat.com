@@ -378,6 +378,20 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::put('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'update']);
     Route::get('/ai-usage-stats', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'aiUsageStats']);
     Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
+    Route::post('/fix-missing-companies', function () {
+        $fixed = [];
+        \App\Models\User::whereNull('company_id')->each(function ($user) use (&$fixed) {
+            $company = \App\Models\Company::create([
+                'name'                    => trim($user->first_name . ' ' . $user->last_name) . "'s Company",
+                'plan'                    => 'Free',
+                'monthly_token_allowance' => 100,
+            ]);
+            (new \App\Services\TokenService())->credit($company, 100, \App\Enums\TokenActionType::MonthlyGrant);
+            $user->update(['company_id' => $company->id, 'company_name' => $company->name]);
+            $fixed[] = ['email' => $user->email, 'company_id' => $company->id];
+        });
+        return response()->json(['fixed' => $fixed, 'count' => count($fixed)]);
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
