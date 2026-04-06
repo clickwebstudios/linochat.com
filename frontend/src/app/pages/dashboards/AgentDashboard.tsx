@@ -47,6 +47,7 @@ import { CreateTicketDialog } from '../../components/CreateTicketDialog';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { InitiateTransferDialog } from '../../components/InitiateTransferDialog';
 import { AIGenerateKBDialog } from '../../components/AIGenerateKBDialog';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import { AddCategoryDialog, EditCategoryDialog, DeleteCategoryDialog } from '../../components/CategoryDialogs';
 import { DashboardView } from '../../components/agent-dashboard/DashboardView';
 import { ChatsView } from '../../components/agent-dashboard/ChatsView';
@@ -896,82 +897,12 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                   {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                 </div>
                 <div className="text-xs">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium capitalize">
-                    {user?.role || role}
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                    {user?.company_plan || 'Free'}
                   </span>
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {!isSuperadmin && (user?.company_plan || tokenBalance !== null) && (
-                    <>
-                      {user?.company_plan && (
-                        <div className="flex items-center justify-between px-2 py-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-muted-foreground">Plan</span>
-                            <span className="text-xs font-semibold bg-primary/10 text-primary rounded px-1.5 py-0.5 leading-none">
-                              {user.company_plan}
-                            </span>
-                          </div>
-                          {user.company_plan.toLowerCase() !== 'enterprise' && (
-                            <Link
-                              to={`${basePath}/billing?tab=plans`}
-                              className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
-                            >
-                              <ArrowUpCircle className="h-3 w-3" />
-                              Upgrade
-                            </Link>
-                          )}
-                        </div>
-                      )}
-                      {tokenBalance !== null && (
-                        <div className="flex items-center justify-between px-2 py-2">
-                          <div className="flex items-center gap-1.5">
-                            <Zap className="h-4 w-4 text-yellow-500" />
-                            <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
-                            {tokenBalance < 100 && (
-                              <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
-                            )}
-                          </div>
-                          <Link
-                            to={`${basePath}/billing?tab=tokens`}
-                            className="text-xs text-primary font-medium hover:underline"
-                          >
-                            Top Up
-                          </Link>
-                        </div>
-                      )}
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link to={`${basePath}/profile-settings`} className="flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Profile Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to={`${basePath}/billing`} className="flex items-center">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Billing
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-                    <User className="mr-2 h-4 w-4" />
-                    Update Status
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600" onClick={() => { logout(); navigate('/'); }}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} onStatusClick={() => setStatusDialogOpen(true)} />
             </div>
           </div>
         </header>

@@ -5,22 +5,14 @@ import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
+import { ProfileDropdown } from '../components/ProfileDropdown';
 import {
   Archive,
   ArrowLeft,
   Edit,
-  Settings,
   Bell,
-  LogOut,
   Search,
   Menu,
-  ChevronDown,
   Globe,
   Building2,
   ExternalLink,
@@ -125,7 +117,7 @@ export default function ProjectDetails() {
   const projectChatsList: any[] = []; // Chats loaded via API in chat components
 
   const { toggleMobileSidebar } = useLayout();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [copiedWidgetId, setCopiedWidgetId] = useState(false);
 
   const widgetId = project?.widget_id || (project ? `widget_lc_${project.id}` : '');
@@ -276,27 +268,13 @@ export default function ProjectDetails() {
                   <div className="text-sm font-semibold">
                     {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                   </div>
-                  <div className="text-xs text-muted-foreground capitalize">{user?.role ?? (basePath === '/admin' ? 'Admin' : 'Agent')}</div>
+                  <div className="text-xs">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                      {user?.company_plan ?? 'Free'}
+                    </span>
+                  </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link to={`${basePath}/profile-settings`} className="flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Profile Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600" onClick={() => { logout(); navigate('/'); }}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} />
               </div>
             </div>
           </header>

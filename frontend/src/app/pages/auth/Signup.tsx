@@ -837,10 +837,10 @@ export default function Signup() {
                         onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
                         placeholder="#2563eb" className="flex-1 h-11 font-mono text-sm" />
                     </div>
-                    <div className="flex gap-2 mt-3">
-                      {['#2563eb', '#7c3aed', '#059669', '#dc2626', '#d97706', '#0f172a'].map((c) => (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {['#4F46E5', '#2563EB', '#0891B2', '#059669', '#16A34A', '#CA8A04', '#EA580C', '#DC2626', '#DB2777', '#9333EA', '#475569', '#111827'].map((c) => (
                         <button key={c} onClick={() => setFormData({ ...formData, primaryColor: c })}
-                          className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110 cursor-pointer ${formData.primaryColor === c ? 'border-slate-900 scale-110' : 'border-transparent'}`}
+                          className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110 cursor-pointer ${formData.primaryColor.toUpperCase() === c.toUpperCase() ? 'border-slate-900 scale-110' : 'border-transparent'}`}
                           style={{ backgroundColor: c }} />
                       ))}
                     </div>
