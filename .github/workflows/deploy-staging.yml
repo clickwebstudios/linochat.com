@@ -55,6 +55,10 @@ jobs:
 
             echo ">>> Staging deploy complete!"
 
+      - name: Get commit title
+        id: commit
+        run: echo "title=$(echo '${{ github.event.head_commit.message }}' | head -1)" >> $GITHUB_OUTPUT
+
       - name: Notify Slack - Deploy Success
         if: success()
         uses: slackapi/slack-github-action@v2.0.0
@@ -65,7 +69,7 @@ jobs:
             {
               "attachments": [{
                 "color": "#2eb886",
-                "text": ":white_check_mark: <https://staging.linochat.com|staging.linochat.com> deployment success\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+                "text": ":white_check_mark: <https://staging.linochat.com|staging.linochat.com> deployment success\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ steps.commit.outputs.title }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
               }]
             }
 
@@ -79,6 +83,6 @@ jobs:
             {
               "attachments": [{
                 "color": "#dc3545",
-                "text": ":x: <https://staging.linochat.com|staging.linochat.com> deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ github.event.head_commit.message || 'Manual deploy' }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
+                "text": ":x: <https://staging.linochat.com|staging.linochat.com> deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`\nMessage: `${{ steps.commit.outputs.title }}`\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Show more>"
               }]
             }
