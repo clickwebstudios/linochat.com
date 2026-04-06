@@ -88,38 +88,54 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-white to-primary/10 flex items-center justify-center p-4">
-      {/* Logo in top left */}
-      <Link to="/" className="fixed top-6 left-6 z-10">
-        <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-10" />
-      </Link>
+    <div className="min-h-screen flex">
+      {/* Left Side - Video Background */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col">
+        {/* Video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src="https://assets.mixkit.co/videos/preview/mixkit-hands-texting-on-a-mobile-phone-at-night-14669-large.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/60" />
 
-      {/* Close button in top right */}
-      <Link
-        to="/"
-        className="fixed top-6 right-6 z-10 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-        aria-label="Close"
-      >
-        <X className="h-6 w-6 text-muted-foreground" />
-      </Link>
-
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        {/* Left Side - Branding */}
-        <div className="hidden lg:block space-y-6">
-          <div className="space-y-4">
-            <h2 className="text-4xl text-foreground">
-              Welcome back to your
-              <br />
-              <span className="text-primary">Support Dashboard</span>
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Manage tickets, chat with customers, and deliver exceptional support experiences.
-            </p>
-          </div>
+        {/* Logo top-left */}
+        <div className="relative z-10 p-10">
+          <Link to="/">
+            <img src="/logo-horizontal-white.svg" alt="LinoChat" className="h-10" onError={(e) => { (e.target as HTMLImageElement).src = '/logo-horizontal.svg'; }} />
+          </Link>
         </div>
 
-        {/* Right Side - Login Form */}
-        <div className="flex items-center justify-center">
+        {/* Text bottom */}
+        <div className="relative z-10 mt-auto p-10 pb-14">
+          <h2 className="text-4xl font-bold text-white leading-tight mb-4">
+            Welcome back to your
+            <br />
+            <span className="text-primary">Support Dashboard</span>
+          </h2>
+          <p className="text-lg text-white/70">
+            Manage tickets, chat with customers, and deliver exceptional support experiences.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="flex-1 flex flex-col bg-gradient-to-br from-primary/5 via-white to-primary/5">
+        {/* Mobile logo + close */}
+        <div className="flex items-center justify-between p-6 lg:justify-end">
+          <Link to="/" className="lg:hidden">
+            <img src="/images/logo-branded@2x.png" alt="LinoChat" className="h-9" />
+          </Link>
+          <Link to="/" className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Close">
+            <X className="h-6 w-6 text-muted-foreground" />
+          </Link>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-6">
           <Card className="w-full max-w-md shadow-xl border-0">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl">Sign in to your account</CardTitle>
@@ -128,7 +144,6 @@ export default function Login() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Error Alert */}
               {(validationError || error) && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -138,9 +153,7 @@ export default function Login() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm">
-                    Email address
-                  </label>
+                  <label htmlFor="email" className="text-sm">Email address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
@@ -157,9 +170,7 @@ export default function Login() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="text-sm">
-                      Password
-                    </label>
+                    <label htmlFor="password" className="text-sm">Password</label>
                     <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                       Forgot password?
                     </Link>
@@ -184,18 +195,12 @@ export default function Login() {
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                   />
-                  <label
-                    htmlFor="remember"
-                    className="text-sm cursor-pointer select-none"
-                  >
+                  <label htmlFor="remember" className="text-sm cursor-pointer select-none">
                     Remember me for 30 days
                   </label>
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                   Sign in
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -211,7 +216,6 @@ export default function Login() {
                       <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-1 gap-3">
                     <GoogleLoginButton
                       onSuccess={async (token) => {
