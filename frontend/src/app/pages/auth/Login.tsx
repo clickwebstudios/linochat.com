@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -55,6 +55,14 @@ export default function Login() {
   };
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.play().catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +101,7 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col">
         {/* Video */}
         <video
+          ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover"
           src="https://assets.mixkit.co/videos/preview/mixkit-hands-texting-on-a-mobile-phone-at-night-14669-large.mp4"
           autoPlay
@@ -106,7 +115,7 @@ export default function Login() {
         {/* Logo top-left */}
         <div className="relative z-10 p-10">
           <Link to="/">
-            <img src="/logo-horizontal-white.svg" alt="LinoChat" className="h-10" onError={(e) => { (e.target as HTMLImageElement).src = '/logo-horizontal.svg'; }} />
+            <img src="/logo-horizontal.svg" alt="LinoChat" className="h-10" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
         </div>
 
