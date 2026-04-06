@@ -17,6 +17,7 @@ export interface User {
   status: 'Active' | 'Away' | 'Offline' | 'Deactivated' | 'Invited';
   avatar_url?: string;
   join_date: string;
+  company_plan?: string;
 }
 
 export interface Project {
