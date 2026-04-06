@@ -391,44 +391,77 @@ export default function Signup() {
   // ── Analysis loading screen ────────────────────────────────────────────────
   if (isAnalyzing) {
     const pct = analysisComplete ? 100 : ((analysisStep + 1) / ANALYSIS_STEPS.length) * 100;
+    const analysisPanelData = STEP_PANELS['project'];
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-              <Bot className="h-8 w-8 text-primary" />
+      <div className="min-h-screen flex">
+        {/* Left branded panel — same as main wizard */}
+        <aside className="hidden lg:flex w-[480px] xl:w-[580px] shrink-0 flex-col bg-[#1e3a8a] relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #60a5fa 0%, transparent 50%), radial-gradient(circle at 80% 20%, #818cf8 0%, transparent 50%)' }} />
+          <div className="relative flex flex-col h-full p-10">
+            <Link to="/" className="mb-16">
+              <img src="/logo-light.svg" alt="LinoChat" className="h-10" />
+            </Link>
+            <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center text-white mb-6">
+              {analysisPanelData.icon}
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Analyzing your website</h2>
-            <p className="text-slate-500 mt-1">Building your AI knowledge base in real time</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-slate-600 font-medium">Progress</span>
-                <span className="text-primary font-semibold">{Math.round(pct)}%</span>
-              </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-            <div className="space-y-3">
-              {ANALYSIS_STEPS.map((label, i) => (
-                <div key={i} className={`flex items-center gap-3 text-sm transition-opacity duration-300 ${i > analysisStep ? 'opacity-30' : 'opacity-100'}`}>
-                  {i < analysisStep ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                  ) : i === analysisStep ? (
-                    <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border border-slate-200 shrink-0" />
-                  )}
-                  <span className={i === analysisStep ? 'text-primary font-medium' : i < analysisStep ? 'text-slate-500 line-through' : 'text-slate-400'}>
-                    {label}
-                  </span>
-                </div>
+            <h2 className="text-2xl xl:text-3xl font-bold text-white leading-tight mb-3">{analysisPanelData.headline}</h2>
+            <p className="text-blue-200 text-sm leading-relaxed mb-10">{analysisPanelData.sub}</p>
+            <ul className="space-y-4">
+              {analysisPanelData.bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div className="mt-0.5 shrink-0 w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center text-blue-200">{b.icon}</div>
+                  <span className="text-blue-100 text-sm">{b.text}</span>
+                </li>
               ))}
+            </ul>
+            <div className="mt-auto pt-10">
+              <div className="rounded-xl bg-white/10 p-4">
+                <p className="text-blue-100 text-sm italic leading-relaxed">"LinoChat cut our support response time by 70% in the first week."</p>
+                <p className="text-blue-300 text-xs mt-2 font-medium">— Sarah K., Head of Support at Growly</p>
+              </div>
             </div>
           </div>
-          <p className="text-center text-xs text-slate-400 mt-6">This usually takes 30–60 seconds</p>
+        </aside>
+
+        {/* Right panel */}
+        <div className="flex-1 flex items-center justify-center bg-white p-8">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <Bot className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900">Analyzing your website</h2>
+              <p className="text-slate-500 mt-1">Building your AI knowledge base in real time</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600 font-medium">Progress</span>
+                  <span className="text-primary font-semibold">{Math.round(pct)}%</span>
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <div className="space-y-3">
+                {ANALYSIS_STEPS.map((label, i) => (
+                  <div key={i} className={`flex items-center gap-3 text-sm transition-opacity duration-300 ${i > analysisStep ? 'opacity-30' : 'opacity-100'}`}>
+                    {i < analysisStep ? (
+                      <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                    ) : i === analysisStep ? (
+                      <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border border-slate-200 shrink-0" />
+                    )}
+                    <span className={i === analysisStep ? 'text-primary font-medium' : i < analysisStep ? 'text-slate-500 line-through' : 'text-slate-400'}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-center text-xs text-slate-400 mt-6">This usually takes 30–60 seconds</p>
+          </div>
         </div>
       </div>
     );
