@@ -472,8 +472,8 @@ export default function BillingPage() {
         cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
       });
       window.location.href = url;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start checkout';
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to start checkout';
       toast.error('Checkout failed', { description: msg });
       setIsConfirmingPlan(false);
     }

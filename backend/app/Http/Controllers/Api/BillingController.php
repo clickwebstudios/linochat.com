@@ -70,12 +70,16 @@ class BillingController extends Controller {
             return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan'], 422);
         }
 
-        $url = $this->stripeService->createCheckoutSession(
-            $company,
-            $stripePriceId,
-            $data['success_url'],
-            $data['cancel_url']
-        );
+        try {
+            $url = $this->stripeService->createCheckoutSession(
+                $company,
+                $stripePriceId,
+                $data['success_url'],
+                $data['cancel_url']
+            );
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['url' => $url]);
     }
