@@ -466,6 +466,8 @@ class AuthController extends Controller
         $accessToken  = $user->createToken('access-token')->plainTextToken;
         $refreshToken = $user->createToken('refresh-token')->plainTextToken;
 
+        $user->loadMissing('company');
+
         return response()->json([
             'success' => true,
             'message' => 'Success',
@@ -474,7 +476,7 @@ class AuthController extends Controller
                 'refresh_token' => $refreshToken,
                 'token_type'    => 'bearer',
                 'expires_in'    => 3600,
-                'user'          => $user,
+                'user'          => new UserResource($user),
             ],
         ]);
     }
