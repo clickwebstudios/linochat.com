@@ -54,23 +54,24 @@ class BillingController extends Controller {
 
         $company = $request->user()->company;
 
-        if (!$company->stripe_customer_id) {
-            $this->stripeService->createCustomer($company);
-            $company->refresh();
-        }
-
-        $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
-        if (!$plan) {
-            return response()->json(['success' => false, 'message' => 'Plan not found'], 422);
-        }
-        $priceIdKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
-        $stripePriceId = config('services.stripe.price_ids.' . $priceIdKey);
-
-        if (!$stripePriceId) {
-            return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan'], 422);
-        }
-
         try {
+            if (!$company->stripe_customer_id) {
+                $this->stripeService->createCustomer($company);
+                $company->refresh();
+            }
+
+            $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
+            if (!$plan) {
+                return response()->json(['success' => false, 'message' => 'Plan not found'], 422);
+            }
+
+            $priceIdKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
+            $stripePriceId = config('services.stripe.price_ids.' . $priceIdKey);
+
+            if (!$stripePriceId) {
+                return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan: ' . $priceIdKey], 422);
+            }
+
             $url = $this->stripeService->createCheckoutSession(
                 $company,
                 $stripePriceId,
