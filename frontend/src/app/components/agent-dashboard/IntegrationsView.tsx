@@ -95,6 +95,18 @@ export function IntegrationsView() {
       .catch(() => {});
   }, []);
 
+  const loadEmailStatus = useCallback(async (pid: string) => {
+    setEmailLoading(true);
+    try {
+      const res = await api.get(`/projects/${pid}/integrations/email`);
+      const d = (res as any)?.data?.data ?? (res as any)?.data;
+      setEmailStatus(d ?? null);
+      if (d?.support_email) setEmailAddress(d.support_email);
+      if (d?.from_name) setEmailFromName(d.from_name);
+    } catch { setEmailStatus(null); }
+    finally { setEmailLoading(false); }
+  }, []);
+
   // Load integration settings
   useEffect(() => {
     if (!projectId) return;
@@ -253,18 +265,6 @@ export function IntegrationsView() {
       setWhatsappEnabling(false);
     }
   };
-
-  const loadEmailStatus = useCallback(async (pid: string) => {
-    setEmailLoading(true);
-    try {
-      const res = await api.get(`/projects/${pid}/integrations/email`);
-      const d = (res as any)?.data?.data ?? (res as any)?.data;
-      setEmailStatus(d ?? null);
-      if (d?.support_email) setEmailAddress(d.support_email);
-      if (d?.from_name) setEmailFromName(d.from_name);
-    } catch { setEmailStatus(null); }
-    finally { setEmailLoading(false); }
-  }, []);
 
   const handleEmailConnect = async () => {
     if (!emailAddress.trim()) { toast.error('Please enter a support email address'); return; }
