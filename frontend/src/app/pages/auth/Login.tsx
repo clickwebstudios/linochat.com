@@ -103,12 +103,13 @@ export default function Login() {
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover"
-          src="https://assets.mixkit.co/videos/preview/mixkit-hands-texting-on-a-mobile-phone-at-night-14669-large.mp4"
           autoPlay
           loop
           muted
           playsInline
-        />
+        >
+          <source src="/videos/login-bg.mp4" type="video/mp4" />
+        </video>
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/60" />
 
