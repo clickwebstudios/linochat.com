@@ -116,7 +116,7 @@ export default function Login() {
         {/* Logo top-left */}
         <div className="relative z-10 p-10">
           <Link to="/">
-            <img src="/logo-horizontal.svg" alt="LinoChat" className="h-10" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo-light.svg" alt="LinoChat" className="h-10" />
           </Link>
         </div>
 
