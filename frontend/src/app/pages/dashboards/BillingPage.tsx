@@ -462,17 +462,11 @@ export default function BillingPage() {
     }
 
     // Paid plan: redirect to Stripe Checkout
-    const apiPlan = apiPlans.find(p => p.name.toLowerCase() === selectedUpgradePlan);
-    if (!apiPlan) {
-      toast.error('Plan not found. Please try again.');
-      return;
-    }
-
     setIsConfirmingPlan(true);
     try {
       const origin = window.location.origin;
       const url = await billingService.createCheckoutSession({
-        plan_id: apiPlan.id,
+        plan_name: selectedUpgradePlan,
         billing_cycle: billingCycle,
         success_url: `${origin}${window.location.pathname}?billing=success`,
         cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
