@@ -76,12 +76,29 @@ class BillingController extends Controller {
                 return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan: ' . $priceIdKey], 422);
             }
 
-            $url = $this->stripeService->createCheckoutSession(
-                $company,
-                $stripePriceId,
-                $data['success_url'],
-                $data['cancel_url']
-            );
+            try {
+                $url = $this->stripeService->createCheckoutSession(
+                    $company,
+                    $stripePriceId,
+                    $data['success_url'],
+                    $data['cancel_url']
+                );
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                // Customer exists in wrong Stripe mode (test vs live) — recreate it
+                if (str_contains($e->getMessage(), 'No such customer')) {
+                    $company->update(['stripe_customer_id' => null]);
+                    $this->stripeService->createCustomer($company);
+                    $company->refresh();
+                    $url = $this->stripeService->createCheckoutSession(
+                        $company,
+                        $stripePriceId,
+                        $data['success_url'],
+                        $data['cancel_url']
+                    );
+                } else {
+                    throw $e;
+                }
+            }
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
