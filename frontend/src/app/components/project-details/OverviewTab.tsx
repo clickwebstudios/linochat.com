@@ -178,17 +178,17 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Onboarding Process */}
         {(() => {
-          const hasMembers = (projectAgents.length > 0) || ((project?.members ?? 0) > 0);
-          const hasWidget = !!project?.widget_id;
-          const hasTicket = (project?.totalTickets ?? 0) > 0;
+          // projectAgents includes owner + assigned agents; >1 means someone was actually invited
+          const hasMembers = projectAgents.length > 1 || (project?.agents_count ?? 0) > 0;
           const hasDescription = !!(project?.description?.trim());
-          const hasChat = (projectChatsList?.length ?? 0) > 0;
+          const hasChat = (project?.chats_count ?? 0) > 0;
+          const hasTicket = (project?.totalTickets ?? 0) > 0;
           const steps = [
             { label: 'Create your workspace', done: true },
-            { label: 'Add workspace description', done: hasDescription },
-            { label: 'Invite a team member', done: hasMembers },
-            { label: 'Set up chat widget', done: hasWidget },
-            { label: 'Install chat widget on your site', done: hasWidget },
+            { label: 'Add workspace description', done: hasDescription, tab: 'settings' },
+            { label: 'Invite a team member', done: hasMembers, tab: 'settings' },
+            { label: 'Set up chat widget', done: true },
+            { label: 'Install chat widget on your site', done: hasChat, tab: 'widget' },
             { label: 'Receive first chat', done: hasChat },
             { label: 'Create first ticket', done: hasTicket },
             { label: 'Configure AI settings', done: false, tab: 'ai-settings' },
@@ -243,7 +243,7 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
             </Button>
           </CardHeader>
           <CardContent>
-            {(isSuperadmin ? projectAgents : [...Array(Math.min(5, project?.members || 0))]).length === 0 ? (
+            {projectAgents.length === 0 ? (
               <div className="text-center py-8">
                 <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="h-6 w-6 text-muted-foreground" />
@@ -253,45 +253,26 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
               </div>
             ) : (
               <div className="space-y-3 max-h-[320px] overflow-y-auto">
-                {isSuperadmin ? (
-                  projectAgents.slice(0, 5).map(agent => (
-                    <div
-                      key={agent.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                      onClick={() => navigate(`/superadmin/agent/${agent.id}`)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
-                          <p className="text-xs text-muted-foreground">{agent.email}</p>
-                        </div>
+                {projectAgents.slice(0, 5).map(agent => (
+                  <div
+                    key={agent.id}
+                    className={`flex items-center justify-between p-3 bg-muted/50 rounded-lg transition-colors ${isSuperadmin ? 'hover:bg-muted cursor-pointer' : ''}`}
+                    onClick={isSuperadmin ? () => navigate(`/superadmin/agent/${agent.id}`) : undefined}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {(agent.name ?? `${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim()).split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{agent.name ?? (`${agent.first_name ?? ''} ${agent.last_name ?? ''}`.trim() || agent.email)}</p>
+                        <p className="text-xs text-muted-foreground">{agent.email}</p>
                       </div>
-                      <Badge variant="outline">Agent</Badge>
                     </div>
-                  ))
-                ) : (
-                  [...Array(Math.min(5, project?.members || 0))].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {String.fromCharCode(65 + i)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">Team Member {i + 1}</p>
-                          <p className="text-xs text-muted-foreground">member{i + 1}@example.com</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline">Agent</Badge>
-                    </div>
-                  ))
-                )}
+                    <Badge variant="outline" className="capitalize">{agent.role ?? 'Agent'}</Badge>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
