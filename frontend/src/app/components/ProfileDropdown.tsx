@@ -11,7 +11,6 @@ import { Button } from './ui/button';
 import { ChevronDown, Settings, CreditCard, User, LogOut, Zap, ArrowUpCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { billingService } from '../services/billing';
-import type { Subscription } from '../types';
 
 interface ProfileDropdownProps {
   basePath: string;
@@ -23,19 +22,15 @@ export function ProfileDropdown({ basePath, isSuperadmin = false, onStatusClick 
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
     if (isSuperadmin) return;
     billingService.getTokenBalance()
       .then(data => setTokenBalance(data.token_balance))
       .catch(() => {});
-    billingService.getSubscription()
-      .then(data => setSubscription(data))
-      .catch(() => {});
   }, [isSuperadmin]);
 
-  const planName = subscription?.plan?.name ?? null;
+  const planName = user?.company_plan ?? null;
   const isEnterprise = planName?.toLowerCase() === 'enterprise';
 
   const isLow = tokenBalance !== null && tokenBalance < 100;

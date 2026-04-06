@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'bio' => $this->bio ?? '',
             'avatar_url' => $this->avatar_url ?? '',
             'role' => $this->role ?? 'agent',
+            'company_plan' => $this->company?->plan ?? 'Free',
             'status' => $this->status ?? 'Active',
             'two_factor_enabled' => $this->two_factor_enabled ?? false,
             'last_active_at' => $this->last_active_at ?? null,

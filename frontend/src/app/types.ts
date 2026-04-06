@@ -31,6 +31,7 @@ export interface User {
   bio?: string;
   avatar_url?: string;
   role: 'admin' | 'agent' | 'superadmin';
+  company_plan?: string;
   status: 'Active' | 'Away' | 'Offline' | 'Deactivated' | 'Invited';
   two_factor_enabled?: boolean;
   last_active_at?: string;
