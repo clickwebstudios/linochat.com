@@ -178,7 +178,15 @@ export default function Signup() {
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: async (r) => {
       try {
-        await googleLogin(r.access_token);
+        const { isNewUser } = await googleLogin(r.access_token);
+        if (!isNewUser) {
+          // Existing account — log them in and go to dashboard
+          setEmailTaken(true);
+          // Also navigate to login to make it clear
+          toast('Account already exists. Signing you in…', { duration: 2000 });
+          setTimeout(() => navigate('/dashboard'), 2000);
+          return;
+        }
         const authUser = useAuthStore.getState().user;
         if (authUser) {
           setFormData(prev => ({
