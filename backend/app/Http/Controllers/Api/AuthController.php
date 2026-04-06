@@ -406,9 +406,10 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid Google credentials'], 401);
         }
 
-        $user = User::where('google_id', $googleUser->getId())
+        $user      = User::where('google_id', $googleUser->getId())
             ->orWhere('email', $googleUser->getEmail())
             ->first();
+        $isNewUser = !$user;
 
         if ($user) {
             if (!$user->google_id) {
@@ -455,13 +456,13 @@ class AuthController extends Controller
             ]);
         }
 
-        return $this->respondWithToken($user);
+        return $this->respondWithToken($user, $isNewUser);
     }
 
     /**
      * Build the standard token response the frontend expects.
      */
-    protected function respondWithToken(User $user)
+    protected function respondWithToken(User $user, bool $isNewUser = false)
     {
         $accessToken  = $user->createToken('access-token')->plainTextToken;
         $refreshToken = $user->createToken('refresh-token')->plainTextToken;
@@ -477,6 +478,7 @@ class AuthController extends Controller
                 'token_type'    => 'bearer',
                 'expires_in'    => 3600,
                 'user'          => new UserResource($user),
+                'is_new_user'   => $isNewUser,
             ],
         ]);
     }

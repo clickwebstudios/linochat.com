@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // Google Login
-      googleLogin: async (credential: string) => {
+      googleLogin: async (credential: string): Promise<{ isNewUser: boolean }> => {
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.googleLogin(credential);
@@ -92,6 +92,7 @@ export const useAuthStore = create<AuthState>()(
               agentStatusStore.setStatus(String(response.data.user.id), 'Active');
             }
           }
+          return { isNewUser: response.data.is_new_user ?? false };
         } catch (error: any) {
           set({
             error: error.message || 'Google login failed',
