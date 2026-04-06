@@ -516,21 +516,58 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid gap-2">
-                    <Label htmlFor="widget-color">Widget Color</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="widget-color"
-                        type="color"
-                        value={widgetColor}
-                        onChange={(e) => setWidgetColor(e.target.value)}
-                        className="w-20 h-10"
-                      />
+                  <div className="grid gap-3">
+                    <Label>Widget Color</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        '#4F46E5','#2563EB','#0891B2','#059669','#16A34A',
+                        '#CA8A04','#EA580C','#DC2626','#DB2777','#9333EA',
+                        '#475569','#111827',
+                      ].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setWidgetColor(c)}
+                          className="w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110"
+                          style={{
+                            backgroundColor: c,
+                            borderColor: widgetColor === c ? '#000' : 'transparent',
+                            boxShadow: widgetColor === c ? '0 0 0 2px #fff, 0 0 0 4px #000' : undefined,
+                          }}
+                        />
+                      ))}
+                      {/* Custom color */}
+                      <label
+                        htmlFor="widget-color-custom"
+                        className="w-8 h-8 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-500 transition-colors text-slate-400 text-xs font-bold overflow-hidden"
+                        title="Custom color"
+                        style={![
+                          '#4F46E5','#2563EB','#0891B2','#059669','#16A34A',
+                          '#CA8A04','#EA580C','#DC2626','#DB2777','#9333EA',
+                          '#475569','#111827',
+                        ].includes(widgetColor) ? { backgroundColor: widgetColor, borderStyle: 'solid', borderColor: '#000', boxShadow: '0 0 0 2px #fff, 0 0 0 4px #000' } : {}}
+                      >
+                        <input
+                          id="widget-color-custom"
+                          type="color"
+                          value={widgetColor}
+                          onChange={(e) => setWidgetColor(e.target.value)}
+                          className="opacity-0 absolute w-px h-px"
+                        />
+                        {[
+                          '#4F46E5','#2563EB','#0891B2','#059669','#16A34A',
+                          '#CA8A04','#EA580C','#DC2626','#DB2777','#9333EA',
+                          '#475569','#111827',
+                        ].includes(widgetColor) && '+'}
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-6 h-6 rounded" style={{ backgroundColor: widgetColor }} />
                       <Input
                         value={widgetColor}
                         onChange={(e) => setWidgetColor(e.target.value)}
                         placeholder="#000000"
-                        className="flex-1"
+                        className="w-32 text-sm font-mono"
                       />
                     </div>
                   </div>
