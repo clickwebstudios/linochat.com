@@ -429,3 +429,24 @@ Route::middleware('oauth:chats:read')->post('/v1/chats/{chatId}/suggest-replies'
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/agent-status', [IntegrationsController::class, 'frubixAgentStatus']);
+
+// ONE-TIME: update Stripe env vars (remove after use)
+Route::post('/update-stripe-env', function (Request $request) {
+    if ($request->header('X-Fix-Key') !== 'lino2024fix') {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+    $envPath = base_path('.env');
+    $env = file_get_contents($envPath);
+    $replacements = $request->input('vars', []);
+    foreach ($replacements as $key => $value) {
+        if (!preg_match('/^[A-Z0-9_]+$/', $key)) continue;
+        if (preg_match('/^' . $key . '=.*/m', $env)) {
+            $env = preg_replace('/^' . $key . '=.*/m', $key . '=' . $value, $env);
+        } else {
+            $env .= "\n" . $key . '=' . $value;
+        }
+    }
+    file_put_contents($envPath, $env);
+    \Artisan::call('config:cache');
+    return response()->json(['success' => true, 'updated' => array_keys($replacements)]);
+});
