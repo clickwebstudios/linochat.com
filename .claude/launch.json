@@ -3,9 +3,16 @@
   "configurations": [
     {
       "name": "linochat-frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "/Users/alexandrdomashev/Sites/linochat.com/frontend"],
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:$PATH /opt/homebrew/bin/pnpm --dir /Users/vasilydomashev/Apps/linochat.com/frontend run dev"],
       "port": 5173
+    },
+    {
+      "name": "linochat-backend",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "PATH=/opt/homebrew/opt/php/bin:/opt/homebrew/bin:$PATH /opt/homebrew/opt/php/bin/php artisan serve --host=127.0.0.1 --port=8000"],
+      "cwd": "/Users/vasilydomashev/Apps/linochat.com/backend",
+      "port": 8000
     }
   ]
 }

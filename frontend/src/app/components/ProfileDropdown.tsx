@@ -8,9 +8,10 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Button } from './ui/button';
-import { ChevronDown, Settings, CreditCard, User, LogOut, Zap } from 'lucide-react';
+import { ChevronDown, Settings, CreditCard, User, LogOut, Zap, ArrowUpCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { billingService } from '../services/billing';
+import type { Subscription } from '../types';
 
 interface ProfileDropdownProps {
   basePath: string;
@@ -22,13 +23,20 @@ export function ProfileDropdown({ basePath, isSuperadmin = false, onStatusClick 
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
     if (isSuperadmin) return;
     billingService.getTokenBalance()
       .then(data => setTokenBalance(data.token_balance))
       .catch(() => {});
+    billingService.getSubscription()
+      .then(data => setSubscription(data))
+      .catch(() => {});
   }, [isSuperadmin]);
+
+  const planName = subscription?.plan?.name ?? null;
+  const isEnterprise = planName?.toLowerCase() === 'enterprise';
 
   const isLow = tokenBalance !== null && tokenBalance < 100;
 
@@ -40,23 +48,44 @@ export function ProfileDropdown({ basePath, isSuperadmin = false, onStatusClick 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        {!isSuperadmin && tokenBalance !== null && (
+        {!isSuperadmin && (planName !== null || tokenBalance !== null) && (
           <>
-            <div className="flex items-center justify-between px-2 py-2">
-              <div className="flex items-center gap-1.5">
-                <Zap className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
-                {isLow && (
-                  <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+            {planName !== null && (
+              <div className="flex items-center justify-between px-2 py-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Plan</span>
+                  <span className="text-xs font-semibold bg-primary/10 text-primary rounded px-1.5 py-0.5 leading-none">
+                    {planName}
+                  </span>
+                </div>
+                {!isEnterprise && (
+                  <Link
+                    to={`${basePath}/billing?tab=plans`}
+                    className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                  >
+                    <ArrowUpCircle className="h-3 w-3" />
+                    Upgrade
+                  </Link>
                 )}
               </div>
-              <Link
-                to={`${basePath}/billing?tab=tokens`}
-                className="text-xs text-primary font-medium hover:underline"
-              >
-                Top Up
-              </Link>
-            </div>
+            )}
+            {tokenBalance !== null && (
+              <div className="flex items-center justify-between px-2 py-2">
+                <div className="flex items-center gap-1.5">
+                  <Zap className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                  {isLow && (
+                    <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                  )}
+                </div>
+                <Link
+                  to={`${basePath}/billing?tab=tokens`}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  Top Up
+                </Link>
+              </div>
+            )}
             <DropdownMenuSeparator />
           </>
         )}
