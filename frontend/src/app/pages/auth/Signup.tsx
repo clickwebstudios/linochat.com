@@ -807,9 +807,11 @@ export default function Signup() {
                       <ArrowLeft className="mr-2 h-4 w-4" />Back
                     </Button>
                     <Button onClick={handleNext} variant="outline" className="h-11 px-5 text-slate-500">Skip</Button>
-                    <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
-                      <UserPlus className="mr-2 h-4 w-4" />Send Invites
-                    </Button>
+                    {formData.teamEmails.some(e => e.trim()) && (
+                      <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
+                        <UserPlus className="mr-2 h-4 w-4" />Send Invites
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
