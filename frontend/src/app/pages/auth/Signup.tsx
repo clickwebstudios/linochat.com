@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { authApi } from '../../api/client';
+import { projectService } from '../../services/projects';
 
 type SignupStep = 'account' | 'verify' | 'project' | 'team' | 'customize' | 'complete';
 
@@ -171,11 +172,23 @@ export default function Signup() {
   const { register, googleLogin, isLoading, error, clearError } = useAuthStore();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+  const [googleAuthed, setGoogleAuthed] = useState(false);
+
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: async (r) => {
       try {
         await googleLogin(r.access_token);
-        navigate('/dashboard');
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          setFormData(prev => ({
+            ...prev,
+            fullName: [authUser.first_name, authUser.last_name].filter(Boolean).join(' '),
+            email: authUser.email || '',
+            companyName: (authUser as any).company_name || prev.companyName,
+          }));
+        }
+        setGoogleAuthed(true);
+        setCurrentStep('project');
       } catch (e: any) {
         toast.error(e.message || 'Google sign up failed');
       }
@@ -316,30 +329,40 @@ export default function Signup() {
     clearError();
     let website = formData.website.trim();
     if (!website.startsWith('http')) website = `https://${website}`;
-    const nameParts = formData.fullName.trim().split(' ');
     setIsAnalyzing(true);
     simulateAnalysisProgress();
     try {
-      const result = await register({
-        first_name: nameParts[0] || '',
-        last_name: nameParts.slice(1).join(' ') || nameParts[0] || '',
-        email: formData.email,
-        password: formData.password,
-        password_confirmation: formData.confirmPassword,
-        website,
-        company_name: formData.companyName,
-      });
-      setAnalysisStep(ANALYSIS_STEPS.length - 1);
-      setKbArticlesCount(result.kbCount);
-      setAnalysisComplete(true);
-      setFormData((prev) => ({ ...prev, projectName: prev.projectName || `${prev.companyName} Support` }));
+      if (googleAuthed) {
+        // User already created via Google — just create the project
+        const projectName = formData.projectName || `${formData.companyName} Support`;
+        await projectService.create({ name: projectName, website, color: formData.primaryColor });
+        setAnalysisStep(ANALYSIS_STEPS.length - 1);
+        setKbArticlesCount(0);
+        setAnalysisComplete(true);
+        setFormData((prev) => ({ ...prev, projectName: prev.projectName || projectName }));
+      } else {
+        const nameParts = formData.fullName.trim().split(' ');
+        const result = await register({
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || nameParts[0] || '',
+          email: formData.email,
+          password: formData.password,
+          password_confirmation: formData.confirmPassword,
+          website,
+          company_name: formData.companyName,
+        });
+        setAnalysisStep(ANALYSIS_STEPS.length - 1);
+        setKbArticlesCount(result.kbCount);
+        setAnalysisComplete(true);
+        setFormData((prev) => ({ ...prev, projectName: prev.projectName || `${prev.companyName} Support` }));
+      }
       setIsAnalyzing(false);
       setWebsiteAnalyzed(true);
     } catch (err: any) {
       setIsAnalyzing(false);
       setAnalysisStep(0);
       setAnalysisComplete(false);
-      toast.error(err.message || 'Registration failed. Please try again.');
+      toast.error(err.message || (googleAuthed ? 'Failed to create workspace. Please try again.' : 'Registration failed. Please try again.'));
     }
   };
 
