@@ -389,16 +389,13 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex">
       {/* Left branded panel */}
-      <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 flex-col bg-[#1e3a8a] relative overflow-hidden">
+      <aside className="hidden lg:flex w-[480px] xl:w-[580px] shrink-0 flex-col bg-[#1e3a8a] relative overflow-hidden">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #60a5fa 0%, transparent 50%), radial-gradient(circle at 80% 20%, #818cf8 0%, transparent 50%)' }} />
         <div className="relative flex flex-col h-full p-10">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 mb-16">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-white font-bold text-lg tracking-tight">LinoChat</span>
+          <Link to="/" className="mb-16">
+            <img src="/logo-light.svg" alt="LinoChat" className="h-10" />
           </Link>
 
           {/* Step icon */}
@@ -442,13 +439,10 @@ export default function Signup() {
       <div className="flex-1 flex flex-col bg-white">
         {/* Progress bar */}
         <div className="px-8 pt-8 pb-0">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-1.5">
               {steps.map((s, i) => (
-                <div
-                  key={s.id}
-                  className={`flex items-center gap-1.5 ${i < steps.length - 1 ? 'flex-1' : ''}`}
-                >
+                <div key={s.id} className="flex items-center gap-1.5">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
                     i < currentIndex ? 'bg-primary text-white' :
                     i === currentIndex ? 'bg-primary text-white ring-4 ring-primary/20' :
@@ -457,12 +451,12 @@ export default function Signup() {
                     {i < currentIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
                   </div>
                   {i < steps.length - 1 && (
-                    <div className={`h-0.5 w-6 xl:w-10 rounded-full transition-all ${i < currentIndex ? 'bg-primary' : 'bg-slate-100'}`} />
+                    <div className={`h-0.5 w-8 xl:w-12 rounded-full transition-all ${i < currentIndex ? 'bg-primary' : 'bg-slate-100'}`} />
                   )}
                 </div>
               ))}
             </div>
-            <span className="text-xs text-slate-400 font-medium ml-4 shrink-0">
+            <span className="text-xs text-slate-400 font-medium">
               Step {currentIndex + 1} of {steps.length}
             </span>
           </div>
