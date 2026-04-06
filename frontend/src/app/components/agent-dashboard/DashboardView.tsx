@@ -248,10 +248,19 @@ export function DashboardView({
       }))
     : filteredChats;
 
-  const chartContent = (data: { name: string; value?: number; tickets?: number }[], dataKey: string, color: string) => (
-    loading ? (
-      <div className="h-[160px] flex items-center justify-center text-muted-foreground text-sm">Loading...</div>
-    ) : (
+  const chartContent = (data: { name: string; value?: number; tickets?: number }[], dataKey: string, color: string) => {
+    if (loading) {
+      return <div className="h-[160px] flex items-center justify-center text-muted-foreground text-sm">Loading...</div>;
+    }
+    const hasData = data.some(d => ((d as any)[dataKey] ?? 0) > 0);
+    if (!hasData) {
+      return (
+        <div className="h-[160px] flex items-center justify-center text-muted-foreground">
+          <p className="text-sm">No data for this period</p>
+        </div>
+      );
+    }
+    return (
       <ResponsiveContainer width="100%" height={160}>
         <AreaChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -261,8 +270,8 @@ export function DashboardView({
           <Area type="monotone" dataKey={dataKey} stroke={color} fill={color} fillOpacity={0.2} />
         </AreaChart>
       </ResponsiveContainer>
-    )
-  );
+    );
+  };
 
   return (
     <>
