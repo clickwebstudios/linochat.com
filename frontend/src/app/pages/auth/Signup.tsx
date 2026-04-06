@@ -171,6 +171,18 @@ export default function Signup() {
   const { register, googleLogin, isLoading, error, clearError } = useAuthStore();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+  const handleGoogleSignup = useGoogleLogin({
+    onSuccess: async (r) => {
+      try {
+        await googleLogin(r.access_token);
+        navigate('/dashboard');
+      } catch (e: any) {
+        toast.error(e.message || 'Google sign up failed');
+      }
+    },
+    onError: () => toast.error('Google sign up failed'),
+  });
+
   const [currentStep, setCurrentStep] = useState<SignupStep>('account');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
   const [isSendingCode, setIsSendingCode] = useState(false);
@@ -553,15 +565,7 @@ export default function Signup() {
                       <button
                         type="button"
                         className="w-full h-11 flex items-center justify-center gap-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          useGoogleLogin({
-                            onSuccess: async (r) => {
-                              try { await googleLogin(r.access_token); navigate('/dashboard'); }
-                              catch (e: any) { toast.error(e.message || 'Google sign up failed'); }
-                            },
-                            onError: () => toast.error('Google sign up failed'),
-                          })();
-                        }}
+                        onClick={() => handleGoogleSignup()}
                       >
                         <GoogleIcon className="h-4 w-4" />
                         Google
