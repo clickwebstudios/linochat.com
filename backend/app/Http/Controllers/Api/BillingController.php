@@ -54,6 +54,10 @@ class BillingController extends Controller {
 
         $company = $request->user()->company;
 
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
+
         try {
             if (!$company->stripe_customer_id) {
                 $this->stripeService->createCustomer($company);
