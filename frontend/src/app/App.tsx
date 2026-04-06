@@ -130,7 +130,7 @@ export default function App() {
               />
               <Route
                 path="/signup"
-                element={<PublicRoute redirectTo="/dashboard"><RegisterPage /></PublicRoute>}
+                element={<RegisterPage />}
               />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
