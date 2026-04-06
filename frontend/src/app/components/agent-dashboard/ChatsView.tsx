@@ -714,6 +714,7 @@ export function ChatsView({
             activity={activity}
             activityLoading={activityLoading}
             onOpenPreviousChat={(chat) => { setSelectedPreviousChat(chat); setShowChatPopup(true); }}
+            onInjectLink={(text) => setChatMessage((prev) => prev ? `${prev}\n${text}` : text)}
           />
         )}
       </div>
