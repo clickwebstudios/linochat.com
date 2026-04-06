@@ -184,7 +184,8 @@ export default function Signup() {
             ...prev,
             fullName: [authUser.first_name, authUser.last_name].filter(Boolean).join(' '),
             email: authUser.email || '',
-            companyName: (authUser as any).company_name || prev.companyName,
+            companyName: authUser.company_name || prev.companyName,
+            projectName: authUser.company_name ? `${authUser.company_name} Support` : prev.projectName,
           }));
         }
         setGoogleAuthed(true);

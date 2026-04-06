@@ -80,8 +80,11 @@ class ProjectController extends Controller
         if ($website && !preg_match('/^https?:\/\//', $website)) {
             $website = 'https://' . $website;
         }
-        $website   = rtrim(strtolower($website), '/');
-        $duplicate = Project::whereRaw("LOWER(TRIM(TRAILING '/' FROM website)) = ?", [$website])->first();
+        $website        = rtrim(strtolower($website), '/');
+        $companyUserIds = \App\Models\User::where('company_id', $user->company_id)->pluck('id');
+        $duplicate      = Project::whereIn('user_id', $companyUserIds)
+            ->whereRaw("LOWER(TRIM(TRAILING '/' FROM website)) = ?", [$website])
+            ->first();
 
         if ($duplicate) {
             return response()->json([
