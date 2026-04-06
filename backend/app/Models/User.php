@@ -66,6 +66,11 @@ class User extends Authenticatable
         return $this->role === 'agent';
     }
 
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function projects()
     {
         return $this->belongsToMany(Project::class, 'project_user')

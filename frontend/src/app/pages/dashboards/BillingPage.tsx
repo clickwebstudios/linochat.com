@@ -290,7 +290,8 @@ export default function BillingPage() {
       billingService.getInvoices().catch(() => []),
       billingService.getPlans().catch(() => []),
       billingService.getUsage().catch(() => null),
-    ]).then(([sub, tb, invs, apiPlanList, usageResp]) => {
+      billingService.getPaymentMethod().catch(() => null),
+    ]).then(([sub, tb, invs, apiPlanList, usageResp, pmResp]) => {
       if (Array.isArray(apiPlanList) && apiPlanList.length > 0) {
         setApiPlans(apiPlanList.map(p => ({ id: p.id, name: p.name })));
       }
@@ -311,6 +312,11 @@ export default function BillingPage() {
       }
       if (usageResp) {
         setUsageData({ tickets: usageResp.tickets, chats: usageResp.chats, storage_gb: usageResp.storage_gb });
+      }
+      if (pmResp) {
+        const expMonth = String(pmResp.exp_month).padStart(2, '0');
+        const expYear = String(pmResp.exp_year).slice(-2);
+        setSavedCard({ brand: pmResp.brand, last4: pmResp.last4, expiry: `${expMonth}/${expYear}`, name: pmResp.name, email: pmResp.email });
       }
       if (Array.isArray(invs)) {
         setInvoices(invs.map(inv => ({
@@ -350,20 +356,14 @@ export default function BillingPage() {
         cancel_url: `${origin}${window.location.pathname}?topup=cancelled`,
       });
       window.location.href = url;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Purchase failed';
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Purchase failed';
       toast.error('Top-up failed', { description: msg });
       setBuyingPack(null);
     }
   };
 
-  // Saved payment method state (simulates persisted card)
-  const [savedCard, setSavedCard] = useState({
-    brand: 'visa' as CardBrand,
-    last4: '4532',
-    expiry: '08/2027',
-    name: authUserName,
-  });
+  const [savedCard, setSavedCard] = useState<{ brand: string; last4: string; expiry: string; name: string | null; email: string | null } | null>(null);
 
   // ─── Derived values ────────────────────────────────
   const currentPlan = plans.find(p => p.id === currentPlanId) ?? plans[0];
@@ -415,7 +415,6 @@ export default function BillingPage() {
     };
   }, [currentPlan, billingCycle, agentCount, subscriptionEndsAt]);
 
-  // Usage mock data (derived from current plan)
   const usage = useMemo(() => ({
     agents: { current: agentCount, limit: currentPlan.agentLimit },
     tickets: { current: usageData.tickets, limit: currentPlan.ticketLimit },
@@ -463,24 +462,18 @@ export default function BillingPage() {
     }
 
     // Paid plan: redirect to Stripe Checkout
-    const apiPlan = apiPlans.find(p => p.name.toLowerCase() === selectedUpgradePlan);
-    if (!apiPlan) {
-      toast.error('Plan not found. Please try again.');
-      return;
-    }
-
     setIsConfirmingPlan(true);
     try {
       const origin = window.location.origin;
       const url = await billingService.createCheckoutSession({
-        plan_id: apiPlan.id,
+        plan_name: selectedUpgradePlan,
         billing_cycle: billingCycle,
         success_url: `${origin}${window.location.pathname}?billing=success`,
         cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
       });
       window.location.href = url;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start checkout';
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to start checkout';
       toast.error('Checkout failed', { description: msg });
       setIsConfirmingPlan(false);
     }
@@ -954,15 +947,22 @@ export default function BillingPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
-                    <div className={`h-10 w-14 rounded bg-gradient-to-r ${brandColors[savedCard.brand]} flex items-center justify-center`}>
-                      <CreditCard className="h-5 w-5 text-white" />
+                  {savedCard ? (
+                    <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
+                      <div className={`h-10 w-14 rounded bg-gradient-to-r ${brandColors[savedCard.brand as CardBrand] ?? brandColors.unknown} flex items-center justify-center`}>
+                        <CreditCard className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-foreground capitalize">{savedCard.brand} ending in {savedCard.last4}</p>
+                        <p className="text-xs text-muted-foreground">Expires {savedCard.expiry}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-foreground">{brandLabels[savedCard.brand]} ending in {savedCard.last4}</p>
-                      <p className="text-xs text-muted-foreground">Expires {savedCard.expiry}</p>
+                  ) : (
+                    <div className="flex items-center gap-3 p-4 border rounded-lg bg-muted/50 text-muted-foreground">
+                      <CreditCard className="h-5 w-5 shrink-0" />
+                      <p className="text-sm">No payment method on file</p>
                     </div>
-                  </div>
+                  )}
 
                   {isReadOnly ? (
                     <Tooltip>
@@ -988,24 +988,23 @@ export default function BillingPage() {
                     </Button>
                   )}
 
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Billing Address</p>
-                    <div className="text-sm text-muted-foreground">
-                      <p>{savedCard.name}</p>
-                      <p>Acme Corporation</p>
-                      <p>123 Business Ave, Suite 400</p>
-                      <p>San Francisco, CA 94105</p>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Billing Email</p>
-                    <p className="text-sm text-muted-foreground">billing@acmecorp.com</p>
-                  </div>
+                  {(savedCard?.name || savedCard?.email) && (
+                    <>
+                      <Separator />
+                      {savedCard.name && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Billing Name</p>
+                          <p className="text-sm">{savedCard.name}</p>
+                        </div>
+                      )}
+                      {savedCard.email && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Billing Email</p>
+                          <p className="text-sm">{savedCard.email}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1085,7 +1084,7 @@ export default function BillingPage() {
 
         {/* ─── Change Plan Dialog ─────────────────────────── */}
         <Dialog open={changePlanDialogOpen} onOpenChange={setChangePlanDialogOpen}>
-          <DialogContent className="sm:max-w-3xl">
+          <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Change Your Plan</DialogTitle>
               <DialogDescription>
@@ -1154,17 +1153,12 @@ export default function BillingPage() {
                       </p>
                     )}
                     <ul className="mt-3 space-y-1.5">
-                      {plan.features.slice(0, 4).map((feature) => (
+                      {plan.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                           <Check className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
                           {feature}
                         </li>
                       ))}
-                      {plan.features.length > 4 && (
-                        <li className="text-xs text-primary">
-                          +{plan.features.length - 4} more
-                        </li>
-                      )}
                     </ul>
                   </div>
                 );
@@ -1186,7 +1180,7 @@ export default function BillingPage() {
                       </p>
                       {newPrice !== -1 && (
                         <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
-                          New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` &times; 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} agents
+                          New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` × 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} {agentCount === 1 ? 'agent' : 'agents'}
                         </p>
                       )}
                     </div>

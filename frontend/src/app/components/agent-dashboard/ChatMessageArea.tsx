@@ -1,4 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { articleService } from '../../services/articles';
+import type { Article } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -24,12 +26,12 @@ import {
   Bookmark,
   Plus,
   ChevronDown,
-  Info,
   UserPlus,
   ArrowRightLeft,
   Sparkles,
   Bot,
   Loader2,
+  Search,
 } from 'lucide-react';
 // Mock data removed
 
@@ -59,8 +61,6 @@ export interface ChatMessageAreaProps {
   customerTyping: boolean;
   attachmentFiles: File[];
   setAttachmentFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  showActivityHistory: boolean;
-  setShowActivityHistory: (value: boolean) => void;
   isTakingOverFromAgent: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onSendMessage: () => void;
@@ -87,8 +87,6 @@ export function ChatMessageArea({
   customerTyping,
   attachmentFiles,
   setAttachmentFiles,
-  showActivityHistory,
-  setShowActivityHistory,
   isTakingOverFromAgent,
   messagesEndRef,
   onSendMessage,
@@ -101,6 +99,24 @@ export function ChatMessageArea({
   formatRelativeTime,
 }: ChatMessageAreaProps) {
   const agentTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [kbOpen, setKbOpen] = useState(false);
+  const [kbArticles, setKbArticles] = useState<Article[]>([]);
+  const [kbLoading, setKbLoading] = useState(false);
+  const [kbSearch, setKbSearch] = useState('');
+
+  useEffect(() => {
+    if (!kbOpen || kbArticles.length > 0) return;
+    setKbLoading(true);
+    articleService.getAll({ project_id: activeChat?.project_id })
+      .then((r) => setKbArticles(r.data ?? []))
+      .catch(() => setKbArticles([]))
+      .finally(() => setKbLoading(false));
+  }, [kbOpen]);
+
+  const filteredKbArticles = kbArticles.filter((a) =>
+    !kbSearch || a.title.toLowerCase().includes(kbSearch.toLowerCase())
+  );
 
   if (!activeChat) {
     return (
@@ -232,15 +248,6 @@ export function ChatMessageArea({
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Take Over
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={`h-8 rounded-lg border-[rgba(0,0,0,0.1)] bg-card hover:bg-muted/50 ${showActivityHistory ? 'bg-primary/10 border-primary' : ''}`}
-            onClick={() => setShowActivityHistory(!showActivityHistory)}
-          >
-            <Info className="h-4 w-4 mr-2" />
-            Info
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -427,7 +434,7 @@ export function ChatMessageArea({
                   </div>
                 </PopoverContent>
               </Popover>
-              <Popover>
+              <Popover open={kbOpen} onOpenChange={setKbOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Bookmark className="h-4 w-4 mr-2" />
@@ -436,17 +443,38 @@ export function ChatMessageArea({
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-0" align="start">
                   <div className="p-3 border-b">
-                    <p className="text-sm text-muted-foreground">Insert article link into message</p>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search articles…"
+                        className="pl-8 h-8 text-sm"
+                        value={kbSearch}
+                        onChange={(e) => setKbSearch(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {([] as { id: number; title: string; category: string }[]).map((article) => (
+                  <div className="max-h-64 overflow-y-auto">
+                    {kbLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : filteredKbArticles.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        {kbSearch ? 'No articles match' : 'No articles found'}
+                      </p>
+                    ) : filteredKbArticles.map((article) => (
                       <button
                         key={article.id}
                         className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
-                        onClick={() => setChatMessage(chatMessage ? `${chatMessage} [KB: ${article.title}]` : `[KB: ${article.title}]`)}
+                        onClick={() => {
+                          const url = article.slug ? `${window.location.origin}/help/${article.slug}` : null;
+                          const insert = url ? `${article.title}: ${url}` : article.title;
+                          setChatMessage(chatMessage ? `${chatMessage}\n${insert}` : insert);
+                          setKbOpen(false);
+                        }}
                       >
-                        <p className="text-sm">{article.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{article.category}</p>
+                        <p className="text-sm font-medium">{article.title}</p>
+                        {article.category && <p className="text-xs text-muted-foreground mt-0.5">{article.category}</p>}
                       </button>
                     ))}
                   </div>

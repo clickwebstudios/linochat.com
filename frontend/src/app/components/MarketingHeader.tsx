@@ -1,21 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown, Search, Settings, CreditCard, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, ChevronDown, Search, Settings, CreditCard, LogOut, LayoutDashboard, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { useAuthStore } from '../stores/authStore';
+import { billingService } from '../services/billing';
 
 export default function MarketingHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user || user.role === 'superadmin') return;
+    billingService.getTokenBalance()
+      .then(data => setTokenBalance(data.token_balance))
+      .catch(() => {});
+  }, [user]);
 
   const dashboardPath = user?.role === 'superadmin'
     ? '/superadmin/dashboard'
@@ -119,7 +129,24 @@ export default function MarketingHeader() {
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-56">
+                    {user?.role !== 'superadmin' && tokenBalance !== null && (
+                      <>
+                        <div className="flex items-center justify-between px-2 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                            {tokenBalance < 100 && (
+                              <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                            )}
+                          </div>
+                          <Link to={`${basePath}/billing?tab=tokens`} className="text-xs text-primary font-medium hover:underline">
+                            Top Up
+                          </Link>
+                        </div>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link to={dashboardPath} className="flex items-center">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -132,12 +159,15 @@ export default function MarketingHeader() {
                         Profile Settings
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to={`${basePath}/billing`} className="flex items-center">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Billing
-                      </Link>
-                    </DropdownMenuItem>
+                    {user?.role !== 'superadmin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to={`${basePath}/billing`} className="flex items-center">
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Billing
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       Log Out
@@ -186,6 +216,20 @@ export default function MarketingHeader() {
                           <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
                         </div>
                       </div>
+                      {user?.role !== 'superadmin' && tokenBalance !== null && (
+                        <div className="flex items-center justify-between rounded-md px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm font-medium">{tokenBalance.toLocaleString()} tokens</span>
+                            {tokenBalance < 100 && (
+                              <span className="text-xs font-semibold text-red-500 border border-red-400 rounded px-1 py-0.5 leading-none">Low</span>
+                            )}
+                          </div>
+                          <Link to={`${basePath}/billing?tab=tokens`} onClick={() => setMobileOpen(false)} className="text-xs text-primary font-medium hover:underline">
+                            Top Up
+                          </Link>
+                        </div>
+                      )}
                       <Link to={dashboardPath} onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-2 hover:bg-muted flex items-center gap-2">
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard

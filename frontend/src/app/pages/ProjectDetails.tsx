@@ -57,6 +57,7 @@ export default function ProjectDetails() {
 
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Load project from API
   useEffect(() => {
@@ -378,7 +379,7 @@ export default function ProjectDetails() {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="overview" className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <div className={`bg-card -mx-6 px-6 pb-0 ${isSuperadmin ? 'sticky top-14 z-40 border-b' : ''}`}>
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -401,6 +402,7 @@ export default function ProjectDetails() {
                 projectAgents={projectAgents}
                 projectChatsList={projectChatsList}
                 onAddMemberClick={() => setAddMemberDialogOpen(true)}
+                onNavigateToTab={setActiveTab}
               />
             </TabsContent>
 

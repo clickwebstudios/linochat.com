@@ -14,7 +14,7 @@ export const billingService = {
     api.get('/billing/topup-packs').then((r: AxiosResponse<ApiResponse<TopUpPacksResponse>>) => r.data.data),
   createTopUpIntent: (packType: string): Promise<TopUpIntent> =>
     api.post('/billing/topup', { pack_type: packType }).then((r: AxiosResponse<ApiResponse<TopUpIntent>>) => r.data.data),
-  createCheckoutSession: (data: { plan_id: number; billing_cycle: string; success_url: string; cancel_url: string }): Promise<string> =>
+  createCheckoutSession: (data: { plan_name: string; billing_cycle: string; success_url: string; cancel_url: string }): Promise<string> =>
     api.post('/billing/checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
   createPortalSession: (returnUrl: string): Promise<string> =>
     api.post('/billing/portal', { return_url: returnUrl }).then((r: AxiosResponse<{ url: string }>) => r.data.url),
@@ -24,4 +24,6 @@ export const billingService = {
     api.post('/billing/topup-checkout', data).then((r: AxiosResponse<{ url: string }>) => r.data.url),
   getUsage: (): Promise<{ tickets: number; chats: number; storage_gb: number; period_start: string }> =>
     api.get('/billing/usage').then((r: AxiosResponse<ApiResponse<{ tickets: number; chats: number; storage_gb: number; period_start: string }>>) => r.data.data),
+  getPaymentMethod: (): Promise<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null> =>
+    api.get('/billing/payment-method').then((r: AxiosResponse<ApiResponse<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null>>) => r.data.data),
 };

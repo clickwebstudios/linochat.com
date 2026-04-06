@@ -54,28 +54,54 @@ class BillingController extends Controller {
 
         $company = $request->user()->company;
 
-        if (!$company->stripe_customer_id) {
-            $this->stripeService->createCustomer($company);
-            $company->refresh();
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
         }
 
-        $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
-        if (!$plan) {
-            return response()->json(['success' => false, 'message' => 'Plan not found'], 422);
-        }
-        $priceIdKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
-        $stripePriceId = config('services.stripe.price_ids.' . $priceIdKey);
+        try {
+            if (!$company->stripe_customer_id) {
+                $this->stripeService->createCustomer($company);
+                $company->refresh();
+            }
 
-        if (!$stripePriceId) {
-            return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan'], 422);
-        }
+            $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
+            if (!$plan) {
+                return response()->json(['success' => false, 'message' => 'Plan not found'], 422);
+            }
 
-        $url = $this->stripeService->createCheckoutSession(
-            $company,
-            $stripePriceId,
-            $data['success_url'],
-            $data['cancel_url']
-        );
+            $priceIdKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
+            $stripePriceId = config('services.stripe.price_ids.' . $priceIdKey);
+
+            if (!$stripePriceId) {
+                return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan: ' . $priceIdKey], 422);
+            }
+
+            try {
+                $url = $this->stripeService->createCheckoutSession(
+                    $company,
+                    $stripePriceId,
+                    $data['success_url'],
+                    $data['cancel_url']
+                );
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                // Customer exists in wrong Stripe mode (test vs live) — recreate it
+                if (str_contains($e->getMessage(), 'No such customer')) {
+                    $company->update(['stripe_customer_id' => null]);
+                    $this->stripeService->createCustomer($company);
+                    $company->refresh();
+                    $url = $this->stripeService->createCheckoutSession(
+                        $company,
+                        $stripePriceId,
+                        $data['success_url'],
+                        $data['cancel_url']
+                    );
+                } else {
+                    throw $e;
+                }
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['url' => $url]);
     }
@@ -158,6 +184,38 @@ class BillingController extends Controller {
         ]]);
     }
 
+    public function paymentMethod(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company || !$company->stripe_customer_id) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+        try {
+            $stripe   = new \Stripe\StripeClient(config('services.stripe.secret'));
+            $customer = $stripe->customers->retrieve($company->stripe_customer_id, [
+                'expand' => ['invoice_settings.default_payment_method'],
+            ]);
+            $pm = $customer->invoice_settings->default_payment_method ?? null;
+            if (!$pm) {
+                $list = $stripe->customers->allPaymentMethods($company->stripe_customer_id, ['type' => 'card', 'limit' => 1]);
+                $pm = $list->data[0] ?? null;
+            }
+            if (!$pm || !isset($pm->card)) {
+                return response()->json(['success' => true, 'data' => null]);
+            }
+            return response()->json(['success' => true, 'data' => [
+                'brand'     => $pm->card->brand,
+                'last4'     => $pm->card->last4,
+                'exp_month' => $pm->card->exp_month,
+                'exp_year'  => $pm->card->exp_year,
+                'name'      => $pm->billing_details->name ?? $customer->name,
+                'email'     => $customer->email,
+            ]]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+    }
+
     public function topUpPacks()
     {
         return response()->json([
@@ -185,9 +243,9 @@ class BillingController extends Controller {
 
         $stripe  = new \Stripe\StripeClient(config('services.stripe.secret'));
         $session = $stripe->checkout->sessions->create([
-            'mode'        => 'payment',
-            'customer'    => $company->stripe_customer_id,
-            'line_items'  => [[
+            'mode'              => 'payment',
+            'customer'          => $company->stripe_customer_id,
+            'line_items'        => [[
                 'price_data' => [
                     'currency'     => 'usd',
                     'unit_amount'  => $pack['price_cents'],
@@ -198,14 +256,17 @@ class BillingController extends Controller {
                 ],
                 'quantity' => 1,
             ]],
-            'metadata'    => [
+            'automatic_tax'     => ['enabled' => true],
+            'customer_update'   => ['address' => 'auto'],
+            'tax_id_collection' => ['enabled' => true],
+            'metadata'          => [
                 'company_id' => $company->id,
                 'pack_type'  => $data['pack_type'],
                 'tokens'     => $pack['tokens'],
                 'type'       => 'token_topup',
             ],
-            'success_url' => $data['success_url'],
-            'cancel_url'  => $data['cancel_url'],
+            'success_url'       => $data['success_url'],
+            'cancel_url'        => $data['cancel_url'],
         ]);
 
         // Record pending purchase keyed by checkout session ID

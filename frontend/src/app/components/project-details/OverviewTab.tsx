@@ -22,13 +22,14 @@ interface OverviewTabProps {
   projectAgents: any[];
   projectChatsList: any[];
   onAddMemberClick: () => void;
+  onNavigateToTab?: (tab: string) => void;
 }
 
 // Placeholder — will be populated from API when real analytics endpoints exist
 const ticketTrendData: { day: string; created: number; resolved: number }[] = [];
 const chatVolumeData: { hour: string; chats: number }[] = [];
 
-export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList, onAddMemberClick }: OverviewTabProps) {
+export function OverviewTab({ project, isSuperadmin, company, projectAgents, projectChatsList, onAddMemberClick, onNavigateToTab }: OverviewTabProps) {
   const navigate = useNavigate();
 
   return (
@@ -190,7 +191,7 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
             { label: 'Install chat widget on your site', done: hasWidget },
             { label: 'Receive first chat', done: hasChat },
             { label: 'Create first ticket', done: hasTicket },
-            { label: 'Configure AI settings', done: false },
+            { label: 'Configure AI settings', done: false, tab: 'ai-settings' },
           ];
           const completed = steps.filter(s => s.done).length;
           const pct = Math.round((completed / steps.length) * 100);
@@ -205,16 +206,23 @@ export function OverviewTab({ project, isSuperadmin, company, projectAgents, pro
                   <div className="h-1.5 bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
                 <div className="space-y-2.5">
-                  {steps.map((step, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      {step.done
-                        ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
-                        : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
-                      <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
+                  {steps.map((step, i) => {
+                    const isClickable = !step.done && !!step.tab && !!onNavigateToTab;
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-2.5 ${isClickable ? 'cursor-pointer group' : ''}`}
+                        onClick={isClickable ? () => onNavigateToTab!(step.tab!) : undefined}
+                      >
+                        {step.done
+                          ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                          : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : isClickable ? 'text-primary group-hover:underline' : 'text-foreground'}`}>
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

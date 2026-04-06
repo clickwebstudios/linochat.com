@@ -71,12 +71,12 @@ return [
         'secret'         => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'price_ids'      => [
-            'starter_monthly' => env('STRIPE_PRICE_STARTER_MONTHLY'),
-            'starter_annual'  => env('STRIPE_PRICE_STARTER_ANNUAL'),
-            'growth_monthly'  => env('STRIPE_PRICE_GROWTH_MONTHLY'),
-            'growth_annual'   => env('STRIPE_PRICE_GROWTH_ANNUAL'),
-            'scale_monthly'   => env('STRIPE_PRICE_SCALE_MONTHLY'),
-            'scale_annual'    => env('STRIPE_PRICE_SCALE_ANNUAL'),
+            'starter_monthly'    => env('STRIPE_PRICE_STARTER_MONTHLY'),
+            'starter_annual'     => env('STRIPE_PRICE_STARTER_ANNUAL'),
+            'pro_monthly'        => env('STRIPE_PRICE_PRO_MONTHLY',    env('STRIPE_PRICE_GROWTH_MONTHLY')),
+            'pro_annual'         => env('STRIPE_PRICE_PRO_ANNUAL',     env('STRIPE_PRICE_GROWTH_ANNUAL')),
+            'enterprise_monthly' => env('STRIPE_PRICE_ENTERPRISE_MONTHLY', env('STRIPE_PRICE_SCALE_MONTHLY')),
+            'enterprise_annual'  => env('STRIPE_PRICE_ENTERPRISE_ANNUAL',  env('STRIPE_PRICE_SCALE_ANNUAL')),
         ],
     ],
 

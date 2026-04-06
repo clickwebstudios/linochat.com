@@ -72,7 +72,6 @@ export function ChatsView({
   onTakeOverComplete,
   onHumanRequestedInChat,
 }: ChatsViewProps) {
-  const [showActivityHistory, setShowActivityHistory] = useState(false);
   const [showChatPopup, setShowChatPopup] = useState(false);
   const [selectedPreviousChat, setSelectedPreviousChat] = useState<any>(null);
   const [chatMessage, setChatMessage] = useState('');
@@ -672,8 +671,6 @@ export function ChatsView({
           customerTyping={customerTyping}
           attachmentFiles={attachmentFiles}
           setAttachmentFiles={setAttachmentFiles}
-          showActivityHistory={showActivityHistory}
-          setShowActivityHistory={setShowActivityHistory}
           isTakingOverFromAgent={isTakingOverFromAgent}
           messagesEndRef={messagesEndRef}
           onSendMessage={handleSendMessage}
@@ -711,13 +708,13 @@ export function ChatsView({
           formatRelativeTime={formatRelativeTime}
         />
 
-        {showActivityHistory && activeChat && (
+        {activeChat && (
           <ChatActivityPanel
             activeChat={activeChat}
             activity={activity}
             activityLoading={activityLoading}
-            onClose={() => setShowActivityHistory(false)}
             onOpenPreviousChat={(chat) => { setSelectedPreviousChat(chat); setShowChatPopup(true); }}
+            onInjectLink={(text) => setChatMessage((prev) => prev ? `${prev}\n${text}` : text)}
           />
         )}
       </div>

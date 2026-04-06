@@ -418,17 +418,30 @@ class AuthController extends Controller
                 $user->update(['avatar_url' => $googleUser->getAvatar()]);
             }
         } else {
-            $nameParts = explode(' ', $googleUser->getName(), 2);
-            $user      = User::create([
-                'first_name' => $nameParts[0] ?? '',
-                'last_name'  => $nameParts[1] ?? '',
-                'email'      => $googleUser->getEmail(),
-                'google_id'  => $googleUser->getId(),
-                'avatar_url' => $googleUser->getAvatar(),
-                'password'   => Hash::make(Str::random(32)),
-                'role'       => 'admin',
-                'status'     => 'Active',
-                'join_date'  => now(),
+            $nameParts   = explode(' ', $googleUser->getName(), 2);
+            $companyName = trim(($nameParts[0] ?? '') . ' ' . ($nameParts[1] ?? '')) . "'s Company";
+
+            $company = Company::create([
+                'name'                    => $companyName,
+                'plan'                    => 'Free',
+                'monthly_token_allowance' => 100,
+            ]);
+
+            $tokenService = new \App\Services\TokenService();
+            $tokenService->credit($company, 100, \App\Enums\TokenActionType::MonthlyGrant);
+
+            $user = User::create([
+                'company_id'   => $company->id,
+                'first_name'   => $nameParts[0] ?? '',
+                'last_name'    => $nameParts[1] ?? '',
+                'company_name' => $companyName,
+                'email'        => $googleUser->getEmail(),
+                'google_id'    => $googleUser->getId(),
+                'avatar_url'   => $googleUser->getAvatar(),
+                'password'     => Hash::make(Str::random(32)),
+                'role'         => 'admin',
+                'status'       => 'Active',
+                'join_date'    => now(),
             ]);
             $user->notificationPreferences()->create([
                 'email_notifications'   => true,

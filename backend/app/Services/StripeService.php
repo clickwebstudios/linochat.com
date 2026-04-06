@@ -34,16 +34,19 @@ class StripeService
         string $cancelUrl
     ): string {
         $session = $this->stripe->checkout->sessions->create([
-            'customer'   => $company->stripe_customer_id,
-            'mode'       => 'subscription',
-            'line_items' => [
+            'customer'          => $company->stripe_customer_id,
+            'mode'              => 'subscription',
+            'line_items'        => [
                 [
                     'price'    => $stripePriceId,
                     'quantity' => 1,
                 ],
             ],
-            'success_url' => $successUrl,
-            'cancel_url'  => $cancelUrl,
+            'automatic_tax'     => ['enabled' => true],
+            'customer_update'   => ['address' => 'auto'],
+            'tax_id_collection' => ['enabled' => true],
+            'success_url'       => $successUrl,
+            'cancel_url'        => $cancelUrl,
         ]);
 
         return $session->url;
