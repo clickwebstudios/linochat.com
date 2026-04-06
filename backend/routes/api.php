@@ -429,3 +429,23 @@ Route::middleware('oauth:chats:read')->post('/v1/chats/{chatId}/suggest-replies'
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-connect', [IntegrationsController::class, 'frubixRegisterConnection']);
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/frubix-disconnect', [IntegrationsController::class, 'frubixUnregisterConnection']);
 Route::middleware('oauth:projects:write')->post('/v1/projects/{projectId}/agent-status', [IntegrationsController::class, 'frubixAgentStatus']);
+
+// ONE-TIME SEED — remove after use
+Route::post('/seed-plans', function (\Illuminate\Http\Request $request) {
+    if ($request->header('X-Fix-Key') !== 'lino2024fix') abort(403);
+    $plans = [
+        ['name' => 'Free',       'price_monthly' => 0,  'price_annual' => 0,   'is_popular' => false, 'features' => json_encode(['1 agent', 'Basic chat widget', '100 tickets/month', 'Email support', '7-day chat history'])],
+        ['name' => 'Starter',    'price_monthly' => 19, 'price_annual' => 182, 'is_popular' => false, 'features' => json_encode(['Up to 5 agents', 'Unlimited chats', 'Unlimited tickets', 'Email & chat support', '30-day history', 'Basic analytics'])],
+        ['name' => 'Pro',        'price_monthly' => 49, 'price_annual' => 470, 'is_popular' => true,  'features' => json_encode(['Unlimited agents', 'AI chatbots', 'Advanced analytics', 'Priority support', 'Unlimited history', 'Custom integrations', 'SLA management'])],
+        ['name' => 'Enterprise', 'price_monthly' => 0,  'price_annual' => 0,   'is_popular' => false, 'features' => json_encode(['Everything in Pro', 'Dedicated account manager', 'Custom AI training', 'White-label options', 'GDPR compliance tools', 'Advanced security', '24/7 phone support'])],
+    ];
+    $created = [];
+    foreach ($plans as $plan) {
+        $existing = \App\Models\Plan::whereRaw('LOWER(name) = ?', [strtolower($plan['name'])])->first();
+        if (!$existing) {
+            \App\Models\Plan::create($plan);
+            $created[] = $plan['name'];
+        }
+    }
+    return response()->json(['seeded' => $created, 'total' => \App\Models\Plan::count()]);
+});
