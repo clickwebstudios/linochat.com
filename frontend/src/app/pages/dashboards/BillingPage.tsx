@@ -1180,7 +1180,7 @@ export default function BillingPage() {
                       </p>
                       {newPrice !== -1 && (
                         <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
-                          New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` &times; 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} agents
+                          New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` × 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} {agentCount === 1 ? 'agent' : 'agents'}
                         </p>
                       )}
                     </div>
