@@ -895,7 +895,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
                 <div className="text-sm font-semibold">
                   {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
                 </div>
-                <div className="text-xs text-muted-foreground capitalize">{user?.role || role}</div>
+                <div className="text-xs">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium capitalize">
+                    {user?.role || role}
+                  </span>
+                </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
