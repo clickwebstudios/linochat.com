@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
 import type { FrubixIntegration } from '../../types/frubix';
@@ -36,6 +37,11 @@ export function IntegrationsView() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const isConnected = frubix?.enabled === true;
+
+  // Dialog open state
+  const [messengerDialogOpen, setMessengerDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
 
   // Messenger state
   const [messengerStatus, setMessengerStatus] = useState<MessengerStatus | null>(null);
@@ -211,6 +217,7 @@ export function IntegrationsView() {
         setMessengerPageId('');
         setMessengerPageName('');
         setMessengerToken('');
+        setMessengerDialogOpen(false);
         toast.success('Messenger connected successfully');
       }
     } catch (err: any) {
@@ -277,6 +284,7 @@ export function IntegrationsView() {
       });
       const d = (res as any)?.data?.data ?? (res as any)?.data;
       setEmailStatus(d);
+      setEmailDialogOpen(false);
       toast.success('Email channel connected');
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to connect email channel');
@@ -461,130 +469,100 @@ export function IntegrationsView() {
             <CardContent className="p-6">
               {messengerLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
+                  <Loader2 className="h-4 w-4 animate-spin" />Loading...
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <MessageSquare className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-foreground">Messenger</h3>
-                          {messengerStatus?.connected ? (
-                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Connected
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Not connected</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          Receive and reply to Facebook Messenger messages from your Page.
-                        </p>
-                        {messengerStatus?.connected && messengerStatus.page_id && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Page ID: <span className="font-medium">{messengerStatus.page_id}</span>
-                          </p>
-                        )}
-                      </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <MessageSquare className="h-6 w-6 text-blue-600" />
                     </div>
-                    {messengerStatus?.connected && (
+                    <div>
                       <div className="flex items-center gap-2">
-                        {messengerConfirm ? (
-                          <>
-                            <span className="text-sm text-muted-foreground">Are you sure?</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={handleMessengerDisconnect}
-                              disabled={messengerDisconnecting}
-                            >
-                              {messengerDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}
-                              Confirm
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setMessengerConfirm(false)}>
-                              Cancel
-                            </Button>
-                          </>
+                        <h3 className="text-lg font-semibold text-foreground">Messenger</h3>
+                        {messengerStatus?.connected ? (
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />Connected
+                          </Badge>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => setMessengerConfirm(true)}
-                          >
-                            <Unplug className="h-4 w-4 mr-2" />
-                            Disconnect
-                          </Button>
+                          <Badge variant="secondary">Not connected</Badge>
                         )}
                       </div>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Receive and reply to Facebook Messenger messages from your Page.
+                      </p>
+                      {messengerStatus?.connected && messengerStatus.page_id && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Page ID: <span className="font-medium">{messengerStatus.page_id}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {messengerStatus?.connected ? (
+                      messengerConfirm ? (
+                        <>
+                          <span className="text-sm text-muted-foreground">Are you sure?</span>
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleMessengerDisconnect} disabled={messengerDisconnecting}>
+                            {messengerDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}Confirm
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setMessengerConfirm(false)}>Cancel</Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setMessengerConfirm(true)}>
+                          <Unplug className="h-4 w-4 mr-2" />Disconnect
+                        </Button>
+                      )
+                    ) : (
+                      <Button onClick={() => setMessengerDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                        <Plug className="h-4 w-4 mr-2" />Connect
+                      </Button>
                     )}
                   </div>
-
-                  {!messengerStatus?.connected && (
-                    <div className="space-y-3 pt-2 border-t border-border">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label htmlFor="messenger-page-id" className="text-xs">Page ID</Label>
-                          <Input
-                            id="messenger-page-id"
-                            placeholder="123456789"
-                            value={messengerPageId}
-                            onChange={(e) => setMessengerPageId(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="messenger-page-name" className="text-xs">Page Name</Label>
-                          <Input
-                            id="messenger-page-name"
-                            placeholder="My Business Page"
-                            value={messengerPageName}
-                            onChange={(e) => setMessengerPageName(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="messenger-token" className="text-xs">Page Access Token</Label>
-                        <Input
-                          id="messenger-token"
-                          type="password"
-                          placeholder="EAAxxxxx..."
-                          value={messengerToken}
-                          onChange={(e) => setMessengerToken(e.target.value)}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleMessengerConnect}
-                        disabled={messengerConnecting}
-                        className="bg-indigo-600 hover:bg-indigo-700"
-                        size="sm"
-                      >
-                        {messengerConnecting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          <>
-                            <Plug className="h-4 w-4 mr-2" />
-                            Connect
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  <p className="text-xs text-muted-foreground">Token cost: 1 token per message sent or received</p>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Messenger connect dialog */}
+          <Dialog open={messengerDialogOpen} onOpenChange={setMessengerDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                  </div>
+                  Connect Messenger
+                </DialogTitle>
+                <DialogDescription>
+                  Enter your Facebook Page credentials to receive and reply to Messenger messages.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="messenger-page-id" className="text-xs">Page ID</Label>
+                    <Input id="messenger-page-id" placeholder="123456789" value={messengerPageId} onChange={(e) => setMessengerPageId(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="messenger-page-name" className="text-xs">Page Name</Label>
+                    <Input id="messenger-page-name" placeholder="My Business Page" value={messengerPageName} onChange={(e) => setMessengerPageName(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="messenger-token" className="text-xs">Page Access Token</Label>
+                  <Input id="messenger-token" type="password" placeholder="EAAxxxxx..." value={messengerToken} onChange={(e) => setMessengerToken(e.target.value)} />
+                </div>
+                <p className="text-xs text-muted-foreground">Token cost: 1 token per message sent or received</p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setMessengerDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={async () => { await handleMessengerConnect(); if (!messengerConnecting) setMessengerDialogOpen(false); }} disabled={messengerConnecting} className="bg-indigo-600 hover:bg-indigo-700">
+                    {messengerConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Plug className="h-4 w-4 mr-2" />Connect</>}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Email Channel Card */}
           <Card className={`border shadow-sm ${emailStatus?.connected ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
@@ -595,7 +573,6 @@ export function IntegrationsView() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -622,54 +599,33 @@ export function IntegrationsView() {
                         )}
                       </div>
                     </div>
-                    {emailStatus?.connected && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleEmailTest}
-                          disabled={emailTesting}
-                        >
-                          {emailTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Test Email'}
-                        </Button>
-                        {emailConfirm ? (
-                          <>
-                            <span className="text-sm text-muted-foreground">Are you sure?</span>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleEmailDisconnect} disabled={emailDisconnecting}>
-                              {emailDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}Confirm
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setEmailConfirm(false)}>Cancel</Button>
-                          </>
-                        ) : (
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEmailConfirm(true)}>
-                            <Unplug className="h-4 w-4 mr-2" />Disconnect
+                    <div className="flex items-center gap-2">
+                      {emailStatus?.connected ? (
+                        <>
+                          <Button variant="outline" size="sm" onClick={handleEmailTest} disabled={emailTesting}>
+                            {emailTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Test Email'}
                           </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Connect form */}
-                  {!emailStatus?.connected && (
-                    <div className="space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        Use a subdomain address like <code className="bg-muted px-1 rounded">support@help.yourdomain.com</code>. You'll add 4 DNS records to enable sending and receiving.
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
-                          <Input id="email-address" type="email" placeholder="support@help.yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="email-from-name" className="text-xs">Display Name</Label>
-                          <Input id="email-from-name" placeholder="Acme Support" value={emailFromName} onChange={(e) => setEmailFromName(e.target.value)} />
-                        </div>
-                      </div>
-                      <Button onClick={handleEmailConnect} disabled={emailConnecting} className="bg-indigo-600 hover:bg-indigo-700" size="sm">
-                        {emailConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Plug className="h-4 w-4 mr-2" />Connect</>}
-                      </Button>
+                          {emailConfirm ? (
+                            <>
+                              <span className="text-sm text-muted-foreground">Are you sure?</span>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleEmailDisconnect} disabled={emailDisconnecting}>
+                                {emailDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4 mr-2" />}Confirm
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => setEmailConfirm(false)}>Cancel</Button>
+                            </>
+                          ) : (
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEmailConfirm(true)}>
+                              <Unplug className="h-4 w-4 mr-2" />Disconnect
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <Button onClick={() => setEmailDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                          <Plug className="h-4 w-4 mr-2" />Connect
+                        </Button>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Domain setup — shown when connected */}
                   {emailStatus?.connected && (
@@ -780,13 +736,48 @@ export function IntegrationsView() {
             </CardContent>
           </Card>
 
+          {/* Email connect dialog */}
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Mail className="h-4 w-4 text-blue-500" />
+                  </div>
+                  Connect Email Channel
+                </DialogTitle>
+                <DialogDescription>
+                  Use a subdomain address like <code className="bg-muted px-1 rounded text-xs">support@help.yourdomain.com</code>. You'll add 4 DNS records to enable sending and receiving.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="email-address" className="text-xs">Support Email Address</Label>
+                    <Input id="email-address" type="email" placeholder="support@help.yourdomain.com" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="email-from-name" className="text-xs">Display Name</Label>
+                    <Input id="email-from-name" placeholder="Acme Support" value={emailFromName} onChange={(e) => setEmailFromName(e.target.value)} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Token cost: 1 token per email sent or received</p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={async () => { await handleEmailConnect(); }} disabled={emailConnecting} className="bg-indigo-600 hover:bg-indigo-700">
+                    {emailConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Plug className="h-4 w-4 mr-2" />Connect</>}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* WhatsApp Sandbox Card */}
-          <Card className="border shadow-sm border-amber-200 bg-amber-50/20">
+          <Card className={`border shadow-sm ${whatsappStatus?.sandbox_number ? 'border-green-200 bg-green-50/30' : 'border-border'}`}>
             <CardContent className="p-6">
               {whatsappLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
+                  <Loader2 className="h-4 w-4 animate-spin" />Loading...
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -797,53 +788,36 @@ export function IntegrationsView() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-foreground">WhatsApp (Sandbox / Testing)</h3>
-                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">
-                            Sandbox Mode
-                          </Badge>
+                          <h3 className="text-lg font-semibold text-foreground">WhatsApp</h3>
+                          {whatsappStatus?.sandbox_number ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />Connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Not connected</Badge>
+                          )}
+                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Sandbox Mode</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mt-0.5">
                           Test WhatsApp messaging using the Twilio sandbox number.
                         </p>
                       </div>
                     </div>
-                    {(!whatsappStatus?.sandbox_number) && (
-                      <Button
-                        onClick={handleWhatsAppEnable}
-                        disabled={whatsappEnabling}
-                        className="bg-green-600 hover:bg-green-700"
-                        size="sm"
-                      >
-                        {whatsappEnabling ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Enabling...
-                          </>
-                        ) : (
-                          'Enable Sandbox'
-                        )}
+                    {!whatsappStatus?.sandbox_number && (
+                      <Button onClick={() => setWhatsappDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plug className="h-4 w-4 mr-2" />Connect
                       </Button>
                     )}
                   </div>
 
                   {whatsappStatus?.sandbox_number && (
-                    <div className="space-y-3 pt-2 border-t border-amber-200">
+                    <div className="space-y-3 pt-2 border-t border-border">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-1">Send a message to</p>
                           <div className="flex items-center gap-2">
-                            <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">
-                              {whatsappStatus.sandbox_number}
-                            </code>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => {
-                                navigator.clipboard.writeText(whatsappStatus.sandbox_number!);
-                                toast.success('Copied to clipboard');
-                              }}
-                            >
+                            <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">{whatsappStatus.sandbox_number}</code>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { navigator.clipboard.writeText(whatsappStatus.sandbox_number!); toast.success('Copied to clipboard'); }}>
                               <Copy className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -852,18 +826,8 @@ export function IntegrationsView() {
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">With keyword</p>
                             <div className="flex items-center gap-2">
-                              <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">
-                                join {whatsappStatus.join_keyword}
-                              </code>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`join ${whatsappStatus.join_keyword}`);
-                                  toast.success('Copied to clipboard');
-                                }}
-                              >
+                              <code className="flex-1 text-sm bg-muted px-3 py-1.5 rounded-md font-mono">join {whatsappStatus.join_keyword}</code>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { navigator.clipboard.writeText(`join ${whatsappStatus.join_keyword}`); toast.success('Copied to clipboard'); }}>
                                 <Copy className="h-3.5 w-3.5" />
                               </Button>
                             </div>
@@ -877,15 +841,43 @@ export function IntegrationsView() {
                   )}
 
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Production WhatsApp with your own number requires Business Account verification — contact us to get started.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Production WhatsApp with your own number requires Business Account verification — contact us to get started.</p>
                     <p className="text-xs text-muted-foreground">Token cost: 1 token per service message</p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* WhatsApp connect dialog */}
+          <Dialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <Phone className="h-4 w-4 text-green-600" />
+                  </div>
+                  Enable WhatsApp Sandbox
+                </DialogTitle>
+                <DialogDescription>
+                  Enable the Twilio sandbox to test WhatsApp messaging. You'll get a shared sandbox number and a join keyword.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+                  <p className="text-sm text-amber-800 font-medium">Sandbox / Testing mode</p>
+                  <p className="text-xs text-amber-700 mt-1">This uses a shared Twilio number for testing. For production WhatsApp with your own number, contact us.</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Token cost: 1 token per service message</p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setWhatsappDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={async () => { await handleWhatsAppEnable(); setWhatsappDialogOpen(false); }} disabled={whatsappEnabling} className="bg-green-600 hover:bg-green-700">
+                    {whatsappEnabling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enabling...</> : <><Plug className="h-4 w-4 mr-2" />Enable Sandbox</>}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
