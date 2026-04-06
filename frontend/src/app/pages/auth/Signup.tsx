@@ -255,6 +255,9 @@ export default function Signup() {
     }
   };
 
+  // Clear any leftover auth error from previous pages (e.g. failed login)
+  useEffect(() => { clearError(); }, []);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
