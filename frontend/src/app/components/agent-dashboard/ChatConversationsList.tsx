@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 import {
   MessageCircle,
   Search,
   User,
   Bot,
+  Code2,
+  CheckCircle,
 } from 'lucide-react';
 
 export interface ChatConversationsListProps {
@@ -29,6 +33,8 @@ export function ChatConversationsList({
   formatRelativeTime,
   totalProjects = 1,
 }: ChatConversationsListProps) {
+  const location = useLocation();
+  const basePath = `/${location.pathname.split('/')[1]}`;
   const [searchQuery, setSearchQuery] = useState('');
   // Re-render every 15s so online/offline status updates based on customer_last_seen_at
   const [, setTick] = useState(0);
@@ -90,29 +96,65 @@ export function ChatConversationsList({
       </div>
       <div className="flex-1 overflow-y-auto">
         {displayedChats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <MessageCircle className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-sm font-medium text-[#0a0a0a] mb-1">
-              {searchQuery.trim()
-                ? 'No matching conversations'
-                : chatFilter === 'all' ? 'No conversations yet'
-                : chatFilter === 'active' ? 'No active conversations'
-                : chatFilter === 'archived' ? 'No archived conversations'
-                : 'No closed conversations'}
-            </h3>
-            <p className="text-xs text-[#6a7282] max-w-[200px]">
-              {searchQuery.trim()
-                ? 'Try a different search term.'
-                : chatFilter === 'all'
-                ? "Customer chats will appear here when they start a conversation."
-                : chatFilter === 'active'
-                ? "No active chats at the moment. Check back soon!"
-                : chatFilter === 'archived'
-                ? "No archived chats yet. Ended chats will appear here."
-                : "No closed chats yet. They'll appear here once resolved."}
-            </p>
+          <div className="flex flex-col h-full p-4 overflow-y-auto">
+            {searchQuery.trim() || chatFilter !== 'all' ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                  <MessageCircle className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-sm font-medium text-[#0a0a0a] mb-1">
+                  {searchQuery.trim() ? 'No matching conversations'
+                    : chatFilter === 'active' ? 'No active conversations'
+                    : chatFilter === 'archived' ? 'No archived conversations'
+                    : 'No closed conversations'}
+                </h3>
+                <p className="text-xs text-[#6a7282] max-w-[180px]">
+                  {searchQuery.trim() ? 'Try a different search term.'
+                    : chatFilter === 'active' ? 'No active chats at the moment.'
+                    : chatFilter === 'archived' ? 'Ended chats will appear here.'
+                    : "They'll appear here once resolved."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                <div className="text-center mb-2">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MessageCircle className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-[#0a0a0a]">No conversations yet</h3>
+                  <p className="text-xs text-[#6a7282] mt-1">Get started by installing the widget on your site.</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-white">1</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[#0a0a0a]">Install the chat widget</p>
+                      <p className="text-[11px] text-[#6a7282] mt-0.5">Add a one-line script to your website. Go to Workspaces → Chat Widget → Embed Code.</p>
+                      <Link to={`${basePath}/projects`}>
+                        <Button variant="outline" size="sm" className="mt-1.5 h-6 text-[11px] px-2 gap-1">
+                          <Code2 className="h-3 w-3" />Get embed code
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-muted-foreground/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-muted-foreground">2</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[#0a0a0a]">Verify it's working</p>
+                      <p className="text-[11px] text-[#6a7282] mt-0.5">Open your site and start a test chat — it'll appear here instantly.</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <CheckCircle className="h-3 w-3 text-muted-foreground/50" />
+                        <span className="text-[11px] text-muted-foreground">Waiting for first conversation...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           displayedChats.map((chat) => {

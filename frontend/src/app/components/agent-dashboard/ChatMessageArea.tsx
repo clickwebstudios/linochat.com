@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { articleService } from '../../services/articles';
 import type { Article } from '../../types';
 import { Button } from '../ui/button';
@@ -32,6 +33,9 @@ import {
   Bot,
   Loader2,
   Search,
+  Mail,
+  Phone,
+  Settings,
 } from 'lucide-react';
 // Mock data removed
 
@@ -98,6 +102,8 @@ export function ChatMessageArea({
   sendAgentTyping,
   formatRelativeTime,
 }: ChatMessageAreaProps) {
+  const location = useLocation();
+  const basePath = `/${location.pathname.split('/')[1]}`;
   const agentTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [kbOpen, setKbOpen] = useState(false);
@@ -121,19 +127,83 @@ export function ChatMessageArea({
   if (!activeChat) {
     return (
       <div className="flex-1 flex flex-col bg-card">
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/50">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-            <MessageCircle className="h-12 w-12 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            Select a conversation
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-6">
-            Choose a chat from the list on the left to view messages and respond to customers.
-          </p>
-          {filteredChats.length > 0 && (
-            <div className="text-xs text-muted-foreground">
-              {filteredChats.length} conversation{filteredChats.length !== 1 ? 's' : ''} available
+        <div className="flex-1 flex flex-col items-center justify-center p-10 bg-muted/30">
+          {filteredChats.length > 0 ? (
+            <div className="text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <MessageCircle className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Select a conversation</h3>
+              <p className="text-sm text-muted-foreground">
+                {filteredChats.length} conversation{filteredChats.length !== 1 ? 's' : ''} waiting on the left.
+              </p>
+            </div>
+          ) : (
+            <div className="w-full max-w-lg space-y-8">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <MessageCircle className="h-10 w-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">All channels in one place</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Connect your communication channels and manage every customer conversation from a single inbox.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                    <MessageCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Chat Widget</p>
+                    <p className="text-xs text-muted-foreground">Embed a widget on your website — customers chat directly in your inbox.</p>
+                  </div>
+                  <Link to={`${basePath}/projects`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Set up →</Link>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="h-10 w-10 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                    <MessageCircle className="h-5 w-5 text-violet-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Facebook Messenger</p>
+                    <p className="text-xs text-muted-foreground">Receive and reply to Messenger messages from your Facebook Page.</p>
+                  </div>
+                  <Link to={`${basePath}/settings`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Connect →</Link>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                    <Phone className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">Connect WhatsApp Business to handle customer messages at scale.</p>
+                  </div>
+                  <Link to={`${basePath}/settings`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Connect →</Link>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="h-10 w-10 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
+                    <Mail className="h-5 w-5 text-sky-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Email</p>
+                    <p className="text-xs text-muted-foreground">Route inbound emails to your inbox and reply from your support address.</p>
+                  </div>
+                  <Link to={`${basePath}/settings`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Connect →</Link>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Link to={`${basePath}/settings`}>
+                  <button className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <Settings className="h-4 w-4" />
+                    Manage all integrations
+                  </button>
+                </Link>
+              </div>
             </div>
           )}
         </div>
