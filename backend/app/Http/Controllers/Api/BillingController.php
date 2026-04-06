@@ -243,9 +243,9 @@ class BillingController extends Controller {
 
         $stripe  = new \Stripe\StripeClient(config('services.stripe.secret'));
         $session = $stripe->checkout->sessions->create([
-            'mode'        => 'payment',
-            'customer'    => $company->stripe_customer_id,
-            'line_items'  => [[
+            'mode'              => 'payment',
+            'customer'          => $company->stripe_customer_id,
+            'line_items'        => [[
                 'price_data' => [
                     'currency'     => 'usd',
                     'unit_amount'  => $pack['price_cents'],
@@ -256,14 +256,17 @@ class BillingController extends Controller {
                 ],
                 'quantity' => 1,
             ]],
-            'metadata'    => [
+            'automatic_tax'     => ['enabled' => true],
+            'customer_update'   => ['address' => 'auto'],
+            'tax_id_collection' => ['enabled' => true],
+            'metadata'          => [
                 'company_id' => $company->id,
                 'pack_type'  => $data['pack_type'],
                 'tokens'     => $pack['tokens'],
                 'type'       => 'token_topup',
             ],
-            'success_url' => $data['success_url'],
-            'cancel_url'  => $data['cancel_url'],
+            'success_url'       => $data['success_url'],
+            'cancel_url'        => $data['cancel_url'],
         ]);
 
         // Record pending purchase keyed by checkout session ID
