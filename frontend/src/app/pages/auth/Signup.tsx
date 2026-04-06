@@ -173,6 +173,7 @@ export default function Signup() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const [googleAuthed, setGoogleAuthed] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
 
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: async (r) => {
@@ -277,12 +278,17 @@ export default function Signup() {
 
   const sendCode = async (email: string) => {
     setIsSendingCode(true);
+    setEmailTaken(false);
     try {
       await authApi.sendVerificationCode(email);
       setResendCooldown(60);
       toast.success('Verification code sent');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send code');
+      if (err.message?.toLowerCase().includes('already registered')) {
+        setEmailTaken(true);
+      } else {
+        toast.error(err.message || 'Failed to send code');
+      }
       throw err;
     } finally {
       setIsSendingCode(false);
@@ -532,9 +538,16 @@ export default function Signup() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input id="email" type="email" placeholder="you@company.com" value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="pl-9 h-11" />
+                        onChange={(e) => { setEmailTaken(false); setFormData({ ...formData, email: e.target.value }); }}
+                        className={`pl-9 h-11 ${emailTaken ? 'border-amber-400 focus-visible:ring-amber-400' : ''}`} />
                     </div>
+                    {emailTaken && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm">
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                        <span className="text-amber-800">This email is already registered.</span>
+                        <Link to="/login" className="ml-auto text-primary font-medium hover:underline whitespace-nowrap">Sign in →</Link>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
