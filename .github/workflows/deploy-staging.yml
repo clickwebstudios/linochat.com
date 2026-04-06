@@ -24,6 +24,12 @@ jobs:
             export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:$PATH"
             DEPLOY_PATH="/home/admin2/web/staging.linochat.com/public_html"
 
+            # Skip gracefully if staging server is not yet provisioned
+            if [ ! -d "$DEPLOY_PATH" ]; then
+              echo ">>> Staging directory not found — server not provisioned yet. Skipping."
+              exit 0
+            fi
+
             # Safety check: ensure we're not deploying to production DB
             DB_NAME=$(grep '^DB_DATABASE=' $DEPLOY_PATH/backend/.env | cut -d= -f2 | tr -d "'")
             if [ "$DB_NAME" = "admin2_linochat" ]; then
