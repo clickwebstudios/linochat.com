@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi, setToken, setRefreshToken, clearTokens, User, Project } from '../api/client';
 import { agentStatusStore } from '../data/agentStatusStore';
+import { useProjectsStore } from './projectsStore';
 
 interface AuthState {
   // State
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.login(email, password);
           
           if (response.success) {
+            useProjectsStore.getState().clearProjects();
             setToken(response.data.access_token);
             setRefreshToken(response.data.refresh_token);
             set({
@@ -77,6 +79,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.googleLogin(credential);
           if (response.success) {
+            useProjectsStore.getState().clearProjects();
             setToken(response.data.access_token);
             setRefreshToken(response.data.refresh_token);
             set({
@@ -105,6 +108,7 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.register(data);
           
           if (response.success) {
+            useProjectsStore.getState().clearProjects();
             setToken(response.data.access_token);
             setRefreshToken(response.data.refresh_token);
             set({
@@ -146,6 +150,7 @@ export const useAuthStore = create<AuthState>()(
             agentStatusStore.setStatus(String(currentUser.id), 'Offline');
           }
           clearTokens();
+          useProjectsStore.getState().clearProjects();
           set({
             user: null,
             project: null,

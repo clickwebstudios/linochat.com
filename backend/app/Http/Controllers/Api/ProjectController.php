@@ -37,7 +37,7 @@ class ProjectController extends Controller
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
         } else {
-            $projects = Project::whereIn('id', $companyProjectIds ?? Project::pluck('id'))
+            $projects = Project::whereIn('id', $companyProjectIds ?? [])
                 ->where('status', 'active')
                 ->withCount(['agents', 'chats', 'tickets'])
                 ->paginate(20);
