@@ -42,6 +42,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { authApi } from '../../api/client';
 import { projectService } from '../../services/projects';
+import { api } from '../../api/client';
 
 type SignupStep = 'account' | 'verify' | 'project' | 'team' | 'customize' | 'complete';
 
@@ -212,6 +213,7 @@ export default function Signup() {
   const [analysisStep, setAnalysisStep] = useState(0);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [kbArticlesCount, setKbArticlesCount] = useState(0);
+  const [isSendingInvites, setIsSendingInvites] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -387,6 +389,27 @@ export default function Signup() {
   };
   const removeTeamEmail = (i: number) =>
     setFormData({ ...formData, teamEmails: formData.teamEmails.filter((_, idx) => idx !== i) });
+
+  const handleSendInvites = async () => {
+    const emails = formData.teamEmails.map(e => e.trim()).filter(Boolean);
+    if (emails.length === 0) { handleNext(); return; }
+    const project = useAuthStore.getState().project;
+    if (!project) { handleNext(); return; }
+    setIsSendingInvites(true);
+    try {
+      await Promise.allSettled(
+        emails.map(email =>
+          api.post('/agent/invitations', { email, role: 'agent', project_ids: [String(project.id)] })
+        )
+      );
+      toast.success(`Invite${emails.length > 1 ? 's' : ''} sent`);
+    } catch {
+      // Silently proceed — individual errors won't block onboarding
+    } finally {
+      setIsSendingInvites(false);
+    }
+    handleNext();
+  };
 
   // ── Analysis loading screen ────────────────────────────────────────────────
   if (isAnalyzing) {
@@ -808,8 +831,9 @@ export default function Signup() {
                     </Button>
                     <Button onClick={handleNext} variant="outline" className="h-11 px-5 text-slate-500">Skip</Button>
                     {formData.teamEmails.some(e => e.trim()) && (
-                      <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
-                        <UserPlus className="mr-2 h-4 w-4" />Send Invites
+                      <Button onClick={handleSendInvites} disabled={isSendingInvites} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
+                        {isSendingInvites ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        {isSendingInvites ? 'Sending...' : 'Send Invites'}
                       </Button>
                     )}
                   </div>
