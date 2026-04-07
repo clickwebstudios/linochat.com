@@ -364,9 +364,7 @@ export default function ProjectDetails() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
                 <TabsTrigger value="popovers">Popovers</TabsTrigger>
-                <TabsTrigger value="team">Team Members</TabsTrigger>
-                <TabsTrigger value="tickets">Tickets</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
+<TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="ai-settings">AI Settings</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
                 <TabsTrigger value="integrations">Integrations</TabsTrigger>
