@@ -342,19 +342,6 @@ export default function ProjectDetails() {
               <Badge className="bg-green-600">Active</Badge>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                className="bg-primary hover:bg-primary/90"
-                onClick={() => setEditProjectDialogOpen(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Project
-              </Button>
-              <Button variant="outline">
-                <Archive className="h-4 w-4 mr-2" />
-                Archive
-              </Button>
-            </div>
           </div>
 
           {/* Tabs */}
