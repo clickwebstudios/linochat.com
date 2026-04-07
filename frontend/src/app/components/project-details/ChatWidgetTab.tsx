@@ -969,11 +969,20 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
   s.async = true;
   document.body.appendChild(s);
 
+  // Apply live color preview (overrides server-saved color)
+  var currentColor = '${widgetColor}';
+  function applyColor() {
+    var wrap = document.getElementById('linochat-wrap');
+    if (!wrap) { setTimeout(applyColor, 300); return; }
+    wrap.style.setProperty('--lc-color', currentColor);
+  }
+  setTimeout(applyColor, 800);
+
   // Apply live animation preview from parent settings
   var animMap = {bounce:'lc-bounce',pulse:'lc-pulse',shake:'lc-shake',wobble:'lc-wobble',tada:'lc-tada',heartbeat:'lc-heartbeat','rubber-band':'lc-rubber-band',swing:'lc-swing',jello:'lc-jello',float:'lc-float'};
   var currentAnim = '${widgetAnimation || 'none'}';
   function applyAnim() {
-    var btn = document.getElementById('linochat-button');
+    var btn = document.getElementById('lc-btn');
     if (!btn) { setTimeout(applyAnim, 500); return; }
     var name = animMap[currentAnim];
     btn.style.animation = name ? name + ' 1s ease-in-out infinite' : 'none';
