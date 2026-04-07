@@ -584,7 +584,6 @@ export default function Signup() {
               <div>
                 <div className="mb-8">
                   <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-                  <p className="text-slate-500 text-sm mt-1">Free for 14 days — no credit card required</p>
                 </div>
                 <div className="space-y-4">
                   <div>
