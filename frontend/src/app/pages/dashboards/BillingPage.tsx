@@ -81,10 +81,10 @@ const plans = [
     priceMonthly: 0,
     priceAnnual: 0,
     period: 'forever',
-    features: ['1 agent', 'Basic chat widget', '100 tickets/month', 'Email support', '7-day chat history'],
+    features: ['1 agent', 'Basic chat widget', '100 tickets/month', '100 chats/month', 'Email support', '7-day chat history'],
     agentLimit: 1,
     ticketLimit: 100,
-    chatLimit: 500,
+    chatLimit: 100,
   },
   {
     id: 'starter',

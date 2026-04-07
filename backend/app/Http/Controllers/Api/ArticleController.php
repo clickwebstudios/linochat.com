@@ -32,8 +32,22 @@ class ArticleController extends Controller {
         return new ArticleResource($article->load('author'));
     }
     public function store(Request $request) {
+        $user = $request->user();
+        if (!$user->isSuperadmin()) {
+            $company    = $user->company;
+            $planLimits = ['free' => 10, 'starter' => 50, 'growth' => 100, 'pro' => 200, 'scale' => 500, 'enterprise' => PHP_INT_MAX];
+            $plan       = strtolower($company?->plan ?? 'free');
+            $limit      = $planLimits[$plan] ?? 10;
+            $count      = Article::whereIn('author_id', $this->companyAuthorIds())->count();
+            if ($count >= $limit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Article limit reached ({$limit} on " . ucfirst($plan) . " plan). Upgrade to add more.",
+                ], 422);
+            }
+        }
         $data = $request->validate(['title' => 'required|string', 'category' => 'nullable|string', 'category_id' => 'nullable|string', 'status' => 'sometimes|in:published,draft', 'excerpt' => 'nullable|string', 'content' => 'nullable|string', 'tags' => 'nullable|array']);
-        $article = Article::create(array_merge($data, ['author_id' => $request->user()->id]));
+        $article = Article::create(array_merge($data, ['author_id' => $user->id]));
         return new ArticleResource($article->load('author'));
     }
     public function update(Request $request, Article $article) {

@@ -26,6 +26,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../../stores/projectsStore';
 import { getDynamicArticlesByCategory, DynamicArticle } from '../../lib/articleStore';
 import { toast } from 'sonner';
+import { usePlanGuard } from '../../hooks/usePlanGuard';
+import { UpgradeLimitDialog } from '../UpgradeLimitDialog';
 
 interface AgentKnowledgeViewProps {
   basePath: string;
@@ -47,6 +49,8 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
   const [kbRefreshKey, setKbRefreshKey] = useState(0);
   const [newKBArticleDialogOpen, setNewKBArticleDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [upgradeArticleDialogOpen, setUpgradeArticleDialogOpen] = useState(false);
+  const { isAllowed } = usePlanGuard();
   
   // Real data from API
   const [currentProject, setCurrentProject] = useState<any>(null);
@@ -231,7 +235,15 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
         </div>
         <Button
           className="bg-primary hover:bg-primary/90 h-9 px-4"
-          onClick={() => setNewKBArticleDialogOpen(true)}
+          onClick={() => {
+            const totalArticleCount = categories.reduce((sum: number, c: any) =>
+              sum + (articles[c.id]?.length || 0) + getDynamicArticlesByCategory(c.id).length, 0);
+            if (!isAllowed('maxArticles', totalArticleCount)) {
+              setUpgradeArticleDialogOpen(true);
+            } else {
+              setNewKBArticleDialogOpen(true);
+            }
+          }}
         >
           <Plus className="h-4 w-4 mr-2" />
           New Article
@@ -456,6 +468,14 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
           // and return the new category ID
           return Date.now().toString();
         }}
+      />
+
+      <UpgradeLimitDialog
+        open={upgradeArticleDialogOpen}
+        onClose={() => setUpgradeArticleDialogOpen(false)}
+        title="Article limit reached"
+        description="You've reached your plan's article limit. Upgrade to publish more knowledge base articles."
+        basePath={basePath}
       />
     </div>
   );

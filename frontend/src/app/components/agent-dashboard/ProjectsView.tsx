@@ -29,6 +29,7 @@ import {
 import { useProjectsStore, selectProjects, selectProjectsLoading, selectProjectsError } from '../../stores/projectsStore';
 import { usePlanGuard } from '../../hooks/usePlanGuard';
 import { api } from '../../api/client';
+import { UpgradeLimitDialog } from '../UpgradeLimitDialog';
 
 interface ProjectsViewProps {
   basePath: string;
@@ -39,6 +40,7 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
   const navigate = useNavigate();
   const { isAllowed, getLimit } = usePlanGuard();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [upgradePlanDialogOpen, setUpgradePlanDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -107,9 +109,7 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
           Create your first workspace to get started
         </p>
         <Button
-          onClick={atProjectLimit ? undefined : onAddProjectClick}
-          disabled={atProjectLimit}
-          title={atProjectLimit ? `Your plan allows ${projectLimit} workspace${projectLimit !== 1 ? 's' : ''}. Upgrade to add more.` : undefined}
+          onClick={() => atProjectLimit ? setUpgradePlanDialogOpen(true) : onAddProjectClick()}
           className="bg-primary hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -124,7 +124,10 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Workspaces</h1>
-          <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
+          <Button
+            onClick={() => atProjectLimit ? setUpgradePlanDialogOpen(true) : onAddProjectClick()}
+            className="bg-primary hover:bg-primary/90"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Workspace
           </Button>
@@ -264,6 +267,14 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UpgradeLimitDialog
+        open={upgradePlanDialogOpen}
+        onClose={() => setUpgradePlanDialogOpen(false)}
+        title="Workspace limit reached"
+        description={`Your current plan allows ${projectLimit} workspace${projectLimit !== 1 ? 's' : ''}. Upgrade to add more.`}
+        basePath={basePath}
+      />
     </div>
   );
 }

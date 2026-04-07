@@ -34,6 +34,8 @@ import { api } from '../api/client';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../stores/projectsStore';
 import { TICKET_CATEGORIES } from '../lib/constants';
 import { toast } from 'sonner';
+import { UpgradeLimitDialog } from './UpgradeLimitDialog';
+import { useLocation } from 'react-router-dom';
 
 interface NewTicket {
   subject: string;
@@ -90,6 +92,9 @@ export function CreateTicketDialog({
   const [newTicket, setNewTicket] = useState<NewTicket>(INITIAL_TICKET);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/agent') ? '/agent' : location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
   
   // Use projects store
   const projects = useProjectsStore(selectProjects);
@@ -142,7 +147,12 @@ export function CreateTicketDialog({
         toast.error('Failed to create ticket');
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to create ticket. Please try again.');
+      if (error?.message?.toLowerCase().includes('limit reached')) {
+        onOpenChange(false);
+        setShowUpgradeDialog(true);
+      } else {
+        toast.error(error?.message || 'Failed to create ticket. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -163,6 +173,14 @@ export function CreateTicketDialog({
   };
 
   return (
+    <>
+    <UpgradeLimitDialog
+      open={showUpgradeDialog}
+      onClose={() => setShowUpgradeDialog(false)}
+      title="Ticket limit reached"
+      description="You've reached your monthly ticket limit. Upgrade your plan to create unlimited tickets."
+      basePath={basePath}
+    />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
@@ -465,5 +483,6 @@ export function CreateTicketDialog({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

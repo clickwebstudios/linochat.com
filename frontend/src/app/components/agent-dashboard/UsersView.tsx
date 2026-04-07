@@ -38,10 +38,10 @@ import {
   ArrowRightLeft,
   Loader2,
   Send,
-  Zap,
 } from 'lucide-react';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../../stores/projectsStore';
 import { usePlanGuard } from '../../hooks/usePlanGuard';
+import { UpgradeLimitDialog } from '../UpgradeLimitDialog';
 import { useAgentStatuses, agentStatusStore } from '../../data/agentStatusStore';
 import { toast } from 'sonner';
 import { api } from '../../api/client';
@@ -583,30 +583,13 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
         </DialogContent>
       </Dialog>
 
-      {/* Upgrade Plan Dialog */}
-      <Dialog open={upgradePlanDialogOpen} onOpenChange={setUpgradePlanDialogOpen}>
-        <DialogContent className="max-w-sm text-center">
-          <DialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-              <Zap className="h-6 w-6 text-amber-500" />
-            </div>
-            <DialogTitle>Agent limit reached</DialogTitle>
-            <DialogDescription>
-              Your current plan doesn't allow more agents. Upgrade to add unlimited teammates.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-center gap-2">
-            <Button variant="outline" onClick={() => setUpgradePlanDialogOpen(false)}>Cancel</Button>
-            <Button
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={() => { setUpgradePlanDialogOpen(false); navigate(`${basePath}/billing?upgrade=1`); }}
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Upgrade plan
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UpgradeLimitDialog
+        open={upgradePlanDialogOpen}
+        onClose={() => setUpgradePlanDialogOpen(false)}
+        title="Agent limit reached"
+        description="Your current plan doesn't allow more agents. Upgrade to add unlimited teammates."
+        basePath={basePath}
+      />
 
       {/* Deactivate Agent Dialog */}
       <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
