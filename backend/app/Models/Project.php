@@ -22,6 +22,7 @@ class Project extends Model
         'website',
         'status',
         'description',
+        'is_active',
     ];
 
     protected $casts = [

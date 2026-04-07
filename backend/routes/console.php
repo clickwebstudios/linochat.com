@@ -10,3 +10,7 @@ Artisan::command('inspire', function () {
 
 // Daily auto-learn: review resolved chats and generate KB articles
 Schedule::job(new \App\Jobs\DailyAutoLearnJob)->dailyAt('03:00');
+
+// Subscription lifecycle
+Schedule::command('subscriptions:send-expiring-warnings')->dailyAt('09:00');
+Schedule::command('subscriptions:purge-expired-data')->dailyAt('04:00');

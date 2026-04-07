@@ -290,6 +290,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/billing/checkout', [BillingController::class, 'createCheckoutSession']);
     Route::post('/billing/portal', [BillingController::class, 'createPortalSession']);
     Route::delete('/billing/subscription', [BillingController::class, 'cancelSubscription']);
+    Route::post('/billing/downgrade-selection', [BillingController::class, 'downgradeSelection']);
     Route::get('/billing/token-balance', [BillingController::class, 'tokenBalance']);
     Route::get('/billing/usage', [BillingController::class, 'usage']);
     Route::get('/billing/payment-method', [BillingController::class, 'paymentMethod']);

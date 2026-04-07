@@ -8,9 +8,11 @@ use App\Models\TrainingDocument;
 use App\Http\Resources\PlanResource;
 use App\Http\Resources\SubscriptionResource;
 use App\Http\Resources\InvoiceResource;
+use App\Mail\SubscriptionCancelledMail;
 use App\Services\StripeService;
 use App\Services\TokenService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class BillingController extends Controller {
@@ -28,6 +30,9 @@ class BillingController extends Controller {
     public function updateSubscription(Request $request) {
         $data = $request->validate(['plan_id' => 'required|exists:plans,id', 'billing_cycle' => 'required|in:monthly,annual']);
         $company = $request->user()->company;
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
         $plan = Plan::findOrFail($data['plan_id']);
         $subscription = $company->subscription()->updateOrCreate(
             ['company_id' => $company->id],
@@ -111,6 +116,10 @@ class BillingController extends Controller {
         $data = $request->validate(['return_url' => 'required|url']);
         $company = $request->user()->company;
 
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
+
         if (!$company->stripe_customer_id) {
             return response()->json(['success' => false, 'message' => 'No Stripe customer found'], 404);
         }
@@ -122,18 +131,77 @@ class BillingController extends Controller {
 
     public function cancelSubscription(Request $request)
     {
+        $data = $request->validate(['reason' => 'nullable|string|max:100']);
         $company = $request->user()->company;
-        $subscription = $company->subscription()->first();
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
+        $subscription = $company->subscription()->with('plan')->first();
 
         if (!$subscription || !$subscription->stripe_subscription_id) {
             return response()->json(['success' => false, 'message' => 'No active subscription'], 404);
         }
+        if ($subscription->status === 'cancelled') {
+            return response()->json(['success' => false, 'message' => 'Subscription is already cancelled'], 422);
+        }
 
         $this->stripeService->cancelSubscription($subscription->stripe_subscription_id);
 
-        $subscription->update(['status' => 'cancelled']);
+        $subscription->update([
+            'status'               => 'cancelled',
+            'cancellation_reason'  => $data['reason'] ?? null,
+        ]);
+
+        $admins = $company->users()->where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Mail::to($admin->email)->queue(new SubscriptionCancelledMail($admin, $subscription));
+        }
 
         return response()->json(['success' => true, 'message' => 'Subscription will be cancelled at end of billing period']);
+    }
+
+    public function downgradeSelection(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
+
+        $subscription = $company->subscription()->first();
+
+        if (!$subscription || $subscription->status !== 'cancelled') {
+            return response()->json(['success' => false, 'message' => 'No cancelled subscription found'], 422);
+        }
+
+        $data = $request->validate([
+            'keep_agent_ids'   => 'nullable|array',
+            'keep_agent_ids.*' => 'integer',
+            'keep_project_ids'   => 'nullable|array',
+            'keep_project_ids.*' => 'integer',
+        ]);
+
+        // Scope submitted IDs to only those belonging to this company (prevent cross-tenant manipulation)
+        $companyAgentIds = $company->users()->where('role', 'agent')->pluck('id')->toArray();
+        $keepAgentIds = array_values(array_intersect($data['keep_agent_ids'] ?? [], $companyAgentIds));
+
+        $companyProjectIds = $company->projects()->pluck('id')->toArray();
+        $keepProjectIds = array_values(array_intersect($data['keep_project_ids'] ?? [], $companyProjectIds));
+
+        // Deactivate agents not in the keep list
+        $company->users()
+            ->where('role', 'agent')
+            ->whereNotIn('status', ['Deactivated', 'Invited'])
+            ->when(count($keepAgentIds) > 0, fn($q) => $q->whereNotIn('id', $keepAgentIds))
+            ->each(function ($agent) {
+                $agent->update(['status' => 'Deactivated', 'deactivated_reason' => 'plan_downgrade']);
+            });
+
+        // Deactivate projects not in the keep list
+        $company->projects()
+            ->when(count($keepProjectIds) > 0, fn($q) => $q->whereNotIn('id', $keepProjectIds))
+            ->update(['is_active' => false]);
+
+        return response()->json(['success' => true, 'message' => 'Downgrade selection saved']);
     }
 
     public function tokenBalance(Request $request)
