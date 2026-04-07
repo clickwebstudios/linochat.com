@@ -43,7 +43,7 @@ class StripeService
                 ],
             ],
             'automatic_tax'     => ['enabled' => true],
-            'customer_update'   => ['address' => 'auto'],
+            'customer_update'   => ['address' => 'auto', 'name' => 'auto'],
             'tax_id_collection' => ['enabled' => true],
             'success_url'       => $successUrl,
             'cancel_url'        => $cancelUrl,

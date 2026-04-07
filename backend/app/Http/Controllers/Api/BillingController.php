@@ -257,7 +257,7 @@ class BillingController extends Controller {
                 'quantity' => 1,
             ]],
             'automatic_tax'     => ['enabled' => true],
-            'customer_update'   => ['address' => 'auto'],
+            'customer_update'   => ['address' => 'auto', 'name' => 'auto'],
             'tax_id_collection' => ['enabled' => true],
             'metadata'          => [
                 'company_id' => $company->id,
