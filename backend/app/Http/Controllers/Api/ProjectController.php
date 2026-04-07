@@ -75,6 +75,21 @@ class ProjectController extends Controller
     public function store(StoreProjectRequest $request)
     {
         $user    = auth('api')->user();
+        $company = $user->company;
+
+        if ($company && !$user->isSuperadmin()) {
+            $planLimits = ['free' => 1, 'starter' => 3, 'growth' => 5, 'pro' => 10, 'scale' => 20, 'enterprise' => PHP_INT_MAX];
+            $plan       = strtolower($company->plan ?? 'free');
+            $limit      = $planLimits[$plan] ?? 1;
+            $count      = Project::where('user_id', $company->id)->where('status', 'active')->count();
+            if ($count >= $limit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Project limit reached ({$limit} on " . ucfirst($plan) . " plan). Upgrade to add more.",
+                ], 422);
+            }
+        }
+
         $website = $request->input('website');
 
         if ($website && !preg_match('/^https?:\/\//', $website)) {
