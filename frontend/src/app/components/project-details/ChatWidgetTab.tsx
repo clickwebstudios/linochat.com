@@ -1048,7 +1048,10 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
     var greetEl   = document.getElementById('lc-greeting');
     if (greetText && greetEl && p.greetingEnabled && p.greetingMessage) {
       greetText.textContent = p.greetingMessage;
-      setTimeout(function() { greetEl.classList.add('lc-show'); }, Number(p.greetingDelay) * 1000);
+      if (!greetEl._scheduled) {
+        greetEl._scheduled = true;
+        setTimeout(function() { greetEl.classList.add('lc-show'); }, Number(p.greetingDelay) * 1000);
+      }
     }
 
     // Animation
@@ -1058,7 +1061,9 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
     }
   }
 
+  // Run at 800ms for fast API responses, and again at 3s to override slow ones
   setTimeout(applyAll, 800);
+  setTimeout(applyAll, 3000);
 })();
 </script>
 </body></html>`}
