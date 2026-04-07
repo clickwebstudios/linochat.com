@@ -38,6 +38,7 @@ import {
   ArrowRightLeft,
   Loader2,
   Send,
+  Zap,
 } from 'lucide-react';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../../stores/projectsStore';
 import { usePlanGuard } from '../../hooks/usePlanGuard';
@@ -87,6 +88,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
   const [addUserError, setAddUserError] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [resendError, setResendError] = useState<string | null>(null);
+  const [upgradePlanDialogOpen, setUpgradePlanDialogOpen] = useState(false);
 
   const projects = useProjectsStore(selectProjects);
   const projectsLoading = useProjectsStore(selectProjectsLoading);
@@ -256,14 +258,9 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
         </div>
         {(() => {
           const activeAgentCount = agents.filter(a => a.status !== 'Deactivated' && a.status !== 'Invited').length;
-          const agentLimit = getLimit('maxAgents') as number;
           const atLimit = !isAllowed('maxAgents', activeAgentCount);
           return (
-            <Button
-              onClick={atLimit ? undefined : () => setAddUserDialogOpen(true)}
-              disabled={atLimit}
-              title={atLimit ? `Your plan allows ${agentLimit} agent${agentLimit !== 1 ? 's' : ''}. Upgrade to add more.` : undefined}
-            >
+            <Button onClick={() => atLimit ? setUpgradePlanDialogOpen(true) : setAddUserDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add New Agent
             </Button>
@@ -581,6 +578,31 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
                   Add Agent
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade Plan Dialog */}
+      <Dialog open={upgradePlanDialogOpen} onOpenChange={setUpgradePlanDialogOpen}>
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+              <Zap className="h-6 w-6 text-amber-500" />
+            </div>
+            <DialogTitle>Agent limit reached</DialogTitle>
+            <DialogDescription>
+              Your current plan doesn't allow more agents. Upgrade to add unlimited teammates.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center gap-2">
+            <Button variant="outline" onClick={() => setUpgradePlanDialogOpen(false)}>Cancel</Button>
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => { setUpgradePlanDialogOpen(false); navigate(`${basePath}/billing`); }}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Upgrade plan
             </Button>
           </DialogFooter>
         </DialogContent>
