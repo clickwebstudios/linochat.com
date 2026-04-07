@@ -204,10 +204,14 @@ class StripeWebhookController extends Controller
                 ? \Illuminate\Support\Carbon::createFromTimestamp($periodEnd)
                 : null;
 
+            // When cancel_at_period_end=true, Stripe still reports status='active'.
+            // Preserve our local 'cancelled' status so the UI stays correct.
+            $localStatus = $subscription->cancel_at_period_end ? 'cancelled' : $subscription->status;
+
             if ($localSubscription) {
                 $localSubscription->update(array_filter([
                     'stripe_subscription_id' => $subscription->id,
-                    'status'                 => $subscription->status,
+                    'status'                 => $localStatus,
                     'plan_id'                => $plan?->id,
                     'billing_cycle'          => $billingCycle,
                     'renews_at'              => $renewsAt,
@@ -221,7 +225,7 @@ class StripeWebhookController extends Controller
 
             // On re-subscribe (transitioning from cancelled/expired back to active), restore agents
             $wasInactive = $localSubscription && in_array($localSubscription->status, ['cancelled', 'expired']);
-            $isNowActive = $subscription->status === 'active';
+            $isNowActive = $localStatus === 'active';
 
             if ($wasInactive && $isNowActive) {
                 $company->users()
