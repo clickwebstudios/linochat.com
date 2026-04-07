@@ -128,6 +128,7 @@ interface DisplayInvoice {
   date: string;
   amount: string;
   status: string;
+  pdf_url: string | null;
 }
 
 // ─── Card brand detection helpers ──────────────────────
@@ -242,6 +243,7 @@ export default function BillingPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [invoiceFilter, setInvoiceFilter] = useState('all');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [tokenTransactions, setTokenTransactions] = useState<{ id: number; action_type: string; tokens_amount: number; balance_after: number; created_at: string }[]>([]);
   const [userStatus, setUserStatus] = useState<'online' | 'away' | 'offline'>('online');
 
   // Payment form state
@@ -291,11 +293,12 @@ export default function BillingPage() {
     return Promise.all([
       billingService.getSubscription().catch(() => null),
       billingService.getTokenBalance().catch(() => null),
-      billingService.getInvoices().catch(() => []),
+      billingService.getStripeInvoices().catch(() => []),
       billingService.getPlans().catch(() => []),
       billingService.getUsage().catch(() => null),
       billingService.getPaymentMethod().catch(() => null),
-    ]).then(([sub, tb, invs, apiPlanList, usageResp, pmResp]) => {
+      billingService.getTokenTransactions().catch(() => []),
+    ]).then(([sub, tb, invs, apiPlanList, usageResp, pmResp, txns]) => {
       if (Array.isArray(apiPlanList) && apiPlanList.length > 0) {
         setApiPlans(apiPlanList.map(p => ({ id: p.id, name: p.name })));
       }
@@ -325,11 +328,15 @@ export default function BillingPage() {
       }
       if (Array.isArray(invs)) {
         setInvoices(invs.map(inv => ({
-          id: `INV-${inv.id}`,
-          date: inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+          id: inv.number ?? inv.id,
+          date: new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           amount: `$${(inv.amount).toFixed(2)}`,
           status: inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
+          pdf_url: inv.pdf_url ?? null,
         })));
+      }
+      if (Array.isArray(txns)) {
+        setTokenTransactions(txns);
       }
     }).finally(() => setBillingLoading(false));
   }, []);
@@ -497,10 +504,12 @@ export default function BillingPage() {
     }
   };
 
-  const handleDownloadInvoice = (invoiceId: string) => {
-    toast.success(`Downloading ${invoiceId}`, {
-      description: 'Your invoice PDF will be ready shortly.',
-    });
+  const handleDownloadInvoice = (invoice: DisplayInvoice) => {
+    if (invoice.pdf_url) {
+      window.open(invoice.pdf_url, '_blank', 'noopener,noreferrer');
+    } else {
+      toast.error('PDF not available for this invoice');
+    }
   };
 
   const resetPaymentForm = useCallback(() => {
@@ -954,9 +963,53 @@ export default function BillingPage() {
                 <CardDescription>Recent token additions and usage</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
-                  Transaction history coming soon
-                </div>
+                {billingLoading ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">Loading…</div>
+                ) : tokenTransactions.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">No transactions yet</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right">Tokens</TableHead>
+                        <TableHead className="text-right">Balance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tokenTransactions.map((tx) => {
+                        const isCredit = tx.tokens_amount > 0;
+                        const label: Record<string, string> = {
+                          monthly_grant: 'Monthly Grant',
+                          rollover: 'Rollover',
+                          expiry: 'Expiry',
+                          topup: 'Top-Up Purchase',
+                          ai_reply: 'AI Reply',
+                          ai_resolution: 'AI Resolution',
+                          messenger: 'Messenger',
+                          whatsapp_service: 'WhatsApp Service',
+                          whatsapp_utility: 'WhatsApp Utility',
+                          whatsapp_marketing: 'WhatsApp Marketing',
+                        };
+                        return (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </TableCell>
+                            <TableCell className="text-sm">{label[tx.action_type] ?? tx.action_type}</TableCell>
+                            <TableCell className={`text-right font-medium ${isCredit ? 'text-green-600' : 'text-red-500'}`}>
+                              {isCredit ? '+' : ''}{tx.tokens_amount.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground text-sm">
+                              {tx.balance_after.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
 
@@ -1090,7 +1143,7 @@ export default function BillingPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDownloadInvoice(invoice.id)}
+                              onClick={() => handleDownloadInvoice(invoice)}
                             >
                               <Download className="h-4 w-4 mr-1" />
                               PDF

@@ -298,6 +298,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/billing/topup-packs', [BillingController::class, 'topUpPacks']);
     Route::post('/billing/topup', [BillingController::class, 'createTopUpIntent']);
     Route::post('/billing/topup-checkout', [BillingController::class, 'createTopUpCheckout']);
+    Route::get('/billing/token-transactions', [BillingController::class, 'tokenTransactions']);
+    Route::get('/billing/stripe-invoices', [BillingController::class, 'stripeInvoices']);
 
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);
