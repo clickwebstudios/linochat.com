@@ -654,6 +654,7 @@ export function ChatsView({
           getProjectById={getProjectById}
           formatRelativeTime={formatRelativeTime}
           totalProjects={projects.length}
+          firstProjectId={projects[0]?.id}
         />
 
         <ChatMessageArea

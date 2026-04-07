@@ -21,6 +21,7 @@ export interface ChatConversationsListProps {
   getProjectById: (id: string) => any;
   formatRelativeTime: (dateString: string) => string;
   totalProjects?: number;
+  firstProjectId?: string;
 }
 
 export function ChatConversationsList({
@@ -32,6 +33,7 @@ export function ChatConversationsList({
   getProjectById,
   formatRelativeTime,
   totalProjects = 1,
+  firstProjectId,
 }: ChatConversationsListProps) {
   const location = useLocation();
   const basePath = `/${location.pathname.split('/')[1]}`;
@@ -132,7 +134,7 @@ export function ChatConversationsList({
                     <div>
                       <p className="text-xs font-medium text-[#0a0a0a]">Install the chat widget</p>
                       <p className="text-[11px] text-[#6a7282] mt-0.5">Add a one-line script to your website. Go to Workspaces → Chat Widget → Embed Code.</p>
-                      <Link to={`${basePath}/projects`}>
+                      <Link to={firstProjectId ? `${basePath}/project/${firstProjectId}?tab=chat-widget` : `${basePath}/projects`}>
                         <Button variant="outline" size="sm" className="mt-1.5 h-6 text-[11px] px-2 gap-1">
                           <Code2 className="h-3 w-3" />Get embed code
                         </Button>
