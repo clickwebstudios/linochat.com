@@ -160,6 +160,41 @@ class BillingController extends Controller {
         return response()->json(['success' => true, 'message' => 'Subscription will be cancelled at end of billing period']);
     }
 
+    public function upgradePaidPlan(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'plan_name'     => 'required|string',
+            'billing_cycle' => 'required|in:monthly,annual',
+        ]);
+
+        $company = $request->user()->company;
+        if (!$company || !$company->stripe_subscription_id) {
+            return response()->json(['success' => false, 'message' => 'No active Stripe subscription found.'], 422);
+        }
+
+        $plan = Plan::whereRaw('LOWER(name) = ?', [strtolower($data['plan_name'])])->first();
+        if (!$plan) {
+            return response()->json(['success' => false, 'message' => 'Plan not found.'], 422);
+        }
+
+        $planKey = strtolower($plan->name) . '_' . $data['billing_cycle'];
+        $priceId = config('services.stripe.price_ids.' . $planKey);
+        if (!$priceId) {
+            return response()->json(['success' => false, 'message' => 'Stripe price not configured for this plan.'], 422);
+        }
+
+        $this->stripeService->upgradeSubscription($company->stripe_subscription_id, $priceId);
+
+        // Update local record immediately (webhook will also fire shortly after)
+        $localSub = $company->subscription;
+        if ($localSub) {
+            $localSub->update(['plan_id' => $plan->id, 'billing_cycle' => $data['billing_cycle'], 'status' => 'active']);
+        }
+        $company->update(['plan' => $plan->name]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function downgradeSelection(Request $request)
     {
         $company = $request->user()->company;

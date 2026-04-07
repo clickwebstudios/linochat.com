@@ -69,6 +69,17 @@ class StripeService
         ]);
     }
 
+    public function upgradeSubscription(string $stripeSubscriptionId, string $newPriceId): void
+    {
+        $stripeSub = $this->stripe->subscriptions->retrieve($stripeSubscriptionId);
+        $itemId = $stripeSub->items->data[0]->id;
+
+        $this->stripe->subscriptions->update($stripeSubscriptionId, [
+            'items'              => [['id' => $itemId, 'price' => $newPriceId]],
+            'proration_behavior' => 'create_prorations',
+        ]);
+    }
+
     public function constructWebhookEvent(string $payload, string $sigHeader): Event
     {
         return \Stripe\Webhook::constructEvent(

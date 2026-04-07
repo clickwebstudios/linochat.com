@@ -288,6 +288,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/billing/subscription', [BillingController::class, 'updateSubscription']);
     Route::get('/billing/invoices', [BillingController::class, 'invoices']);
     Route::post('/billing/checkout', [BillingController::class, 'createCheckoutSession']);
+    Route::post('/billing/upgrade', [BillingController::class, 'upgradePaidPlan']);
     Route::post('/billing/portal', [BillingController::class, 'createPortalSession']);
     Route::delete('/billing/subscription', [BillingController::class, 'cancelSubscription']);
     Route::post('/billing/downgrade-selection', [BillingController::class, 'downgradeSelection']);
