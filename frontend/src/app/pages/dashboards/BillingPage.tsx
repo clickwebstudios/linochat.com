@@ -466,20 +466,31 @@ export default function BillingPage() {
       return;
     }
 
-    // Paid plan: redirect to Stripe Checkout
+    // Paid plan: update existing subscription (with proration) or start new checkout
     setIsConfirmingPlan(true);
     try {
-      const origin = window.location.origin;
-      const url = await billingService.createCheckoutSession({
-        plan_name: selectedUpgradePlan,
-        billing_cycle: billingCycle,
-        success_url: `${origin}${window.location.pathname}?billing=success`,
-        cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
-      });
-      window.location.href = url;
+      if (subscriptionStatus === 'active' || subscriptionStatus === 'cancelled') {
+        // Existing subscriber — update Stripe subscription in-place with proration
+        await billingService.upgradePaidPlan({ plan_name: selectedUpgradePlan, billing_cycle: billingCycle });
+        await loadBillingData();
+        setChangePlanDialogOpen(false);
+        setSelectedUpgradePlan(null);
+        toast.success(`Plan updated to ${selectedUpgradePlan}`, { description: 'Prorated charges have been applied.' });
+        setIsConfirmingPlan(false);
+      } else {
+        // New subscriber — create Stripe Checkout session
+        const origin = window.location.origin;
+        const url = await billingService.createCheckoutSession({
+          plan_name: selectedUpgradePlan,
+          billing_cycle: billingCycle,
+          success_url: `${origin}${window.location.pathname}?billing=success`,
+          cancel_url: `${origin}${window.location.pathname}?billing=cancelled`,
+        });
+        window.location.href = url;
+      }
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to start checkout';
-      toast.error('Checkout failed', { description: msg });
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to update plan';
+      toast.error('Plan update failed', { description: msg });
       setIsConfirmingPlan(false);
     }
   };
@@ -1109,6 +1120,7 @@ export default function BillingPage() {
               <Switch
                 checked={billingCycle === 'annual'}
                 onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+                disabled={currentPlanId !== 'free'}
               />
               <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Annual
@@ -1116,6 +1128,9 @@ export default function BillingPage() {
                   -20%
                 </Badge>
               </span>
+              {currentPlanId !== 'free' && (
+                <span className="text-xs text-muted-foreground">(manage via billing portal)</span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-2">
@@ -1190,9 +1205,25 @@ export default function BillingPage() {
                         {isUpgrade ? 'Upgrade' : 'Downgrade'} from <span className="font-medium">{currentPlan.name}</span> to <span className="font-medium">{newPlan.name}</span>
                       </p>
                       {newPrice !== -1 && (
-                        <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
-                          New cost: ${newPrice * agentCount}{billingCycle === 'annual' ? ` × 12 = $${newPrice * agentCount * 12}/year` : '/month'} for {agentCount} {agentCount === 1 ? 'agent' : 'agents'}
-                        </p>
+                        <>
+                          <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
+                            New cost: ${newPrice}{billingCycle === 'annual' ? ` × 12 = $${newPrice * 12}/year` : '/month'}
+                          </p>
+                          {isUpgrade && subscriptionStatus === 'active' && subscriptionEndsAt && (() => {
+                            const msRemaining = new Date(subscriptionEndsAt).getTime() - Date.now();
+                            const daysRemaining = Math.max(0, Math.ceil(msRemaining / 86400000));
+                            const daysInCycle = billingCycle === 'annual' ? 365 : 30;
+                            const currentPrice = billingCycle === 'annual' ? currentPlan.priceAnnual : currentPlan.priceMonthly;
+                            const credit = Math.round((daysRemaining / daysInCycle) * currentPrice * 100) / 100;
+                            const charge = Math.round((daysRemaining / daysInCycle) * newPrice * 100) / 100;
+                            const net = Math.max(0, Math.round((charge - credit) * 100) / 100);
+                            return (
+                              <p className="mt-1 text-xs opacity-70">
+                                Prorated today: ~${net} ({daysRemaining} days remaining · ${charge} new − ${credit} credit)
+                              </p>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
                   </div>
