@@ -230,6 +230,7 @@ export default function BillingPage() {
   const [apiPlans, setApiPlans] = useState<{ id: number; name: string }[]>([]);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [agentCount, setAgentCount] = useState(1);
   const [invoices, setInvoices] = useState<DisplayInvoice[]>([]);
   const [billingLoading, setBillingLoading] = useState(true);
@@ -301,6 +302,7 @@ export default function BillingPage() {
         setCurrentPlanDbId(sub.plan_id);
         setBillingCycle(sub.billing_cycle ?? 'monthly');
         setSubscriptionEndsAt(sub.renews_at ?? sub.ends_at ?? null);
+        setSubscriptionStatus(sub.status);
       }
       if (tb) {
         setAgentCount(tb.agent_count || 1);
@@ -669,9 +671,16 @@ export default function BillingPage() {
                   </CardTitle>
                   <CardDescription>Your subscription details and billing</CardDescription>
                 </div>
-                <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
-                  {currentPlan.name}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {subscriptionStatus === 'cancelled' && (
+                    <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                      Cancellation pending
+                    </Badge>
+                  )}
+                  <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                    {currentPlan.name}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Price breakdown */}
@@ -703,7 +712,7 @@ export default function BillingPage() {
 
                     {!pricing.isFree && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        Next billing date: <span className="text-foreground">{pricing.nextBillingDate}</span>
+                        {subscriptionStatus === 'cancelled' ? 'Expires on' : 'Next billing date'}: <span className="text-foreground">{pricing.nextBillingDate}</span>
                       </p>
                     )}
                   </div>
@@ -1193,7 +1202,7 @@ export default function BillingPage() {
 
             <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2">
               <div>
-                {!pricing.isFree && (
+                {!pricing.isFree && subscriptionStatus !== 'cancelled' && (
                   <Button
                     variant="outline"
                     className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
