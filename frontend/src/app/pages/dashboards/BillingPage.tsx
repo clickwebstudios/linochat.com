@@ -229,7 +229,7 @@ export default function BillingPage() {
   const [currentPlanId, setCurrentPlanId] = useState('free');
   const [currentPlanDbId, setCurrentPlanDbId] = useState<number | null>(null);
   const [apiPlans, setApiPlans] = useState<{ id: number; name: string }[]>([]);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [agentCount, setAgentCount] = useState(1);
@@ -341,7 +341,16 @@ export default function BillingPage() {
     }).finally(() => setBillingLoading(false));
   }, []);
 
-  useEffect(() => { loadBillingData(); }, [loadBillingData]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('billing') === 'success') {
+      // Sync subscription from Stripe before loading (webhook may not have fired yet)
+      navigate(location.pathname, { replace: true });
+      billingService.syncSubscription().catch(() => {}).finally(() => loadBillingData());
+    } else {
+      loadBillingData();
+    }
+  }, [loadBillingData, location.search, location.pathname, navigate]);
 
   // Load top-up packs on mount
   useEffect(() => {
@@ -1264,6 +1273,11 @@ export default function BillingPage() {
                           <p className={`mt-0.5 ${isUpgrade ? 'text-primary' : 'text-amber-600'}`}>
                             New cost: ${newPrice}{billingCycle === 'annual' ? ` × 12 = $${newPrice * 12}/year` : '/month'}
                           </p>
+                          {billingCycle === 'annual' && newPlan.priceMonthly > 0 && newPrice !== -1 && (
+                            <p className="mt-0.5 text-xs text-green-600">
+                              Save ${(newPlan.priceMonthly - newPrice) * 12}/year vs monthly billing
+                            </p>
+                          )}
                           {isUpgrade && subscriptionStatus === 'active' && subscriptionEndsAt && (() => {
                             const msRemaining = new Date(subscriptionEndsAt).getTime() - Date.now();
                             const daysRemaining = Math.max(0, Math.ceil(msRemaining / 86400000));

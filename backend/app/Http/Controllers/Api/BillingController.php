@@ -195,6 +195,70 @@ class BillingController extends Controller {
         return response()->json(['success' => true]);
     }
 
+    public function syncSubscription(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $company = $request->user()->company;
+        if (!$company || !$company->stripe_customer_id) {
+            return response()->json(['success' => true]);
+        }
+
+        try {
+            $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+
+            $subscriptions = $stripe->subscriptions->all([
+                'customer' => $company->stripe_customer_id,
+                'status'   => 'active',
+                'limit'    => 1,
+            ]);
+
+            if (empty($subscriptions->data)) {
+                return response()->json(['success' => true]);
+            }
+
+            $stripeSub    = $subscriptions->data[0];
+            $stripePriceId = $stripeSub->items->data[0]->price->id ?? null;
+
+            $plan         = null;
+            $billingCycle = null;
+            if ($stripePriceId) {
+                $priceIds = config('services.stripe.price_ids', []);
+                $planKey  = array_search($stripePriceId, $priceIds);
+                if ($planKey !== false) {
+                    $parts        = explode('_', $planKey);
+                    $planName     = $parts[0];
+                    $billingCycle = $parts[1] ?? 'monthly';
+                    $plan         = Plan::whereRaw('LOWER(name) = ?', [strtolower($planName)])->first();
+                }
+            }
+
+            $renewsAt = $stripeSub->current_period_end
+                ? Carbon::createFromTimestamp($stripeSub->current_period_end)
+                : null;
+
+            $company->subscription()->updateOrCreate(
+                ['company_id' => $company->id],
+                array_filter([
+                    'stripe_subscription_id' => $stripeSub->id,
+                    'status'                 => 'active',
+                    'plan_id'                => $plan?->id,
+                    'billing_cycle'          => $billingCycle,
+                    'started_at'             => now(),
+                    'renews_at'              => $renewsAt,
+                ], fn($v) => $v !== null)
+            );
+
+            $companyUpdates = ['stripe_subscription_id' => $stripeSub->id];
+            if ($plan) {
+                $companyUpdates['plan'] = $plan->name;
+            }
+            $company->update($companyUpdates);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('syncSubscription failed', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     public function downgradeSelection(Request $request)
     {
         $company = $request->user()->company;

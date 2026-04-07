@@ -3,15 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   Bell,
   Search,
-  LogOut,
-  User,
   Mail,
   Phone,
   MapPin,
   Camera,
   Save,
   Key,
-  ChevronDown,
   Shield,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
@@ -23,11 +20,11 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '../../components/ui/dropdown-menu';
 import { ProjectSelector } from '../../components/ProjectSelector';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 
 export default function SuperadminProfileSettings() {
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [twoFaSetupOpen, setTwoFaSetupOpen] = useState(false);
 
   return (
     <>
@@ -45,36 +42,7 @@ export default function SuperadminProfileSettings() {
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600"></span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 ml-4 pl-4 border-l hover:bg-muted/50 rounded-lg p-2 transition-colors cursor-pointer">
-                <div className="text-right hidden sm:block">
-                  <div className="text-sm font-semibold">Admin User</div>
-                  <div className="text-xs text-muted-foreground">Superadmin</div>
-                </div>
-                <Avatar>
-                  <AvatarFallback className="bg-secondary text-secondary-foreground">AD</AvatarFallback>
-                </Avatar>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <Link to="/superadmin/profile-settings">Profile Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onSelect={(e) => {
-                e.preventDefault();
-                setLogoutDialogOpen(true);
-              }}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProfileDropdown basePath="/superadmin" isSuperadmin={true} />
         </div>
       </header>
 
@@ -271,18 +239,11 @@ export default function SuperadminProfileSettings() {
                       Require authentication code in addition to password
                     </p>
                   </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1">
-                    <Key className="mr-2 h-4 w-4" />
-                    Set Up Authenticator App
-                  </Button>
-                  <Button variant="outline" className="flex-1">
-                    <Key className="mr-2 h-4 w-4" />
-                    View Recovery Codes
-                  </Button>
+                  <Switch
+                    onCheckedChange={(checked) => {
+                      if (checked) setTwoFaSetupOpen(true);
+                    }}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -311,27 +272,27 @@ export default function SuperadminProfileSettings() {
         </div>
       </div>
 
-      {/* Logout Confirmation Dialog */}
-      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+      {/* 2FA Setup Dialog */}
+      <Dialog open={twoFaSetupOpen} onOpenChange={setTwoFaSetupOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Set Up Two-Factor Authentication
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to log out? Any unsaved changes will be lost.
+              Scan the QR code below with your authenticator app (e.g. Google Authenticator, Authy), then enter the 6-digit code to confirm.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center border">
+              <p className="text-sm text-muted-foreground text-center px-4">QR code will appear here</p>
+            </div>
+            <Input placeholder="Enter 6-digit code" className="max-w-48 text-center tracking-widest" maxLength={6} />
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              className="bg-red-600 hover:bg-red-700" 
-              asChild
-            >
-              <Link to="/">
-                Log Out
-              </Link>
-            </Button>
+            <Button variant="outline" onClick={() => setTwoFaSetupOpen(false)}>Cancel</Button>
+            <Button onClick={() => setTwoFaSetupOpen(false)}>Verify & Enable</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

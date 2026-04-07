@@ -1,7 +1,4 @@
 import {
-  Settings,
-  LogOut,
-  User,
   Mail,
   Phone,
   MapPin,
@@ -10,11 +7,9 @@ import {
   ArrowLeft,
   Shield,
   Key,
-  ChevronDown,
   Menu,
   Building2,
   Globe,
-  CreditCard,
   Loader2,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
@@ -28,10 +23,10 @@ import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../../components/ui/dropdown-menu';
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { useAuthStore } from '../../stores/authStore';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import {
   Select,
   SelectContent,
@@ -41,8 +36,8 @@ import {
 } from '../../components/ui/select';
 
 export default function ProfileSettings() {
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [twoFaSetupOpen, setTwoFaSetupOpen] = useState(false);
   const [userStatus, setUserStatus] = useState<'online' | 'away' | 'offline'>('online');
   const [isSaving, setIsSaving] = useState(false);
   const { toggleMobileSidebar } = useLayout();
@@ -129,12 +124,6 @@ export default function ProfileSettings() {
     }
   };
   
-  // Handle logout
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -175,38 +164,7 @@ export default function ProfileSettings() {
             <div className="text-sm font-semibold">{getDisplayName()}</div>
             <div className="text-xs text-muted-foreground">{user.role === 'admin' ? 'Admin' : 'Agent'}</div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to={`${basePath}/profile-settings`} className="flex items-center">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Profile Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to={`${basePath}/billing`} className="flex items-center">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Billing
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-                <User className="mr-2 h-4 w-4" />
-                Update Status
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600" onSelect={(e) => {
-                e.preventDefault();
-                setLogoutDialogOpen(true);
-              }}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProfileDropdown basePath={basePath} onStatusClick={() => setStatusDialogOpen(true)} />
         </div>
       </header>
 
@@ -487,19 +445,26 @@ export default function ProfileSettings() {
                       Require authentication code in addition to password
                     </p>
                   </div>
-                  <Switch />
+                  <Switch
+                    checked={!!(user as any).two_factor_enabled}
+                    onCheckedChange={(checked) => {
+                      if (checked) setTwoFaSetupOpen(true);
+                    }}
+                  />
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1">
-                    <Key className="mr-2 h-4 w-4" />
-                    Set Up Authenticator App
-                  </Button>
-                  <Button variant="outline" className="flex-1">
-                    <Key className="mr-2 h-4 w-4" />
-                    View Recovery Codes
-                  </Button>
-                </div>
+                {(user as any).two_factor_enabled && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1">
+                      <Key className="mr-2 h-4 w-4" />
+                      Set Up Authenticator App
+                    </Button>
+                    <Button variant="outline" className="flex-1">
+                      <Key className="mr-2 h-4 w-4" />
+                      View Recovery Codes
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -530,25 +495,27 @@ export default function ProfileSettings() {
         </div>
       </main>
 
-      {/* Logout Confirmation Dialog */}
-      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+      {/* 2FA Setup Dialog */}
+      <Dialog open={twoFaSetupOpen} onOpenChange={setTwoFaSetupOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Set Up Two-Factor Authentication
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to log out? Any unsaved changes will be lost.
+              Scan the QR code below with your authenticator app (e.g. Google Authenticator, Authy), then enter the 6-digit code to confirm.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center border">
+              <p className="text-sm text-muted-foreground text-center px-4">QR code will appear here</p>
+            </div>
+            <Input placeholder="Enter 6-digit code" className="max-w-48 text-center tracking-widest" maxLength={6} />
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              className="bg-red-600 hover:bg-red-700" 
-              onClick={handleLogout}
-            >
-              Log Out
-            </Button>
+            <Button variant="outline" onClick={() => setTwoFaSetupOpen(false)}>Cancel</Button>
+            <Button onClick={() => setTwoFaSetupOpen(false)}>Verify & Enable</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
