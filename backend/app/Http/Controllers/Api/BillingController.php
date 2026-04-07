@@ -435,4 +435,39 @@ class BillingController extends Controller {
             ],
         ]);
     }
+
+    public function tokenTransactions(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company) return response()->json(['success' => true, 'data' => []]);
+
+        $transactions = $company->tokenTransactions()
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(fn ($t) => [
+                'id'           => $t->id,
+                'action_type'  => $t->action_type,
+                'tokens_amount'=> $t->tokens_amount,
+                'balance_after'=> $t->balance_after,
+                'created_at'   => $t->created_at->toIso8601String(),
+                'metadata'     => $t->metadata,
+            ]);
+
+        return response()->json(['success' => true, 'data' => $transactions]);
+    }
+
+    public function stripeInvoices(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company || !$company->stripe_customer_id) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+        try {
+            $invoices = $this->stripeService->listInvoices($company->stripe_customer_id);
+            return response()->json(['success' => true, 'data' => $invoices]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+    }
 }

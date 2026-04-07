@@ -80,6 +80,28 @@ class StripeService
         ]);
     }
 
+    public function listInvoices(string $stripeCustomerId, int $limit = 50): array
+    {
+        $invoices = $this->stripe->invoices->all([
+            'customer' => $stripeCustomerId,
+            'limit'    => $limit,
+            'expand'   => ['data.charge'],
+        ]);
+
+        return array_map(function ($inv) {
+            return [
+                'id'          => $inv->id,
+                'number'      => $inv->number ?? $inv->id,
+                'amount'      => $inv->amount_paid / 100,
+                'currency'    => strtoupper($inv->currency),
+                'status'      => $inv->status,
+                'created_at'  => date('Y-m-d\TH:i:s\Z', $inv->created),
+                'pdf_url'     => $inv->invoice_pdf,
+                'hosted_url'  => $inv->hosted_invoice_url,
+            ];
+        }, $invoices->data);
+    }
+
     public function constructWebhookEvent(string $payload, string $sigHeader): Event
     {
         return \Stripe\Webhook::constructEvent(

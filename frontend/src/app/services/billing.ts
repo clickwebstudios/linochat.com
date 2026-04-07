@@ -30,4 +30,8 @@ export const billingService = {
     api.get('/billing/usage').then((r: AxiosResponse<ApiResponse<{ tickets: number; chats: number; storage_gb: number; period_start: string }>>) => r.data.data),
   getPaymentMethod: (): Promise<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null> =>
     api.get('/billing/payment-method').then((r: AxiosResponse<ApiResponse<{ brand: string; last4: string; exp_month: number; exp_year: number; name: string | null; email: string | null } | null>>) => r.data.data),
+  getTokenTransactions: (): Promise<{ id: number; action_type: string; tokens_amount: number; balance_after: number; created_at: string; metadata: Record<string, unknown> | null }[]> =>
+    api.get('/billing/token-transactions').then((r: AxiosResponse<ApiResponse<{ id: number; action_type: string; tokens_amount: number; balance_after: number; created_at: string; metadata: Record<string, unknown> | null }[]>>) => r.data.data),
+  getStripeInvoices: (): Promise<{ id: string; number: string; amount: number; currency: string; status: string; created_at: string; pdf_url: string | null; hosted_url: string | null }[]> =>
+    api.get('/billing/stripe-invoices').then((r: AxiosResponse<ApiResponse<{ id: string; number: string; amount: number; currency: string; status: string; created_at: string; pdf_url: string | null; hosted_url: string | null }[]>>) => r.data.data),
 };
