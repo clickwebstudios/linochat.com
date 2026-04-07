@@ -75,6 +75,7 @@ export interface ChatMessageAreaProps {
   onEndChat: () => void;
   sendAgentTyping: (isTyping: boolean) => void;
   formatRelativeTime: (dateString: string) => string;
+  firstProjectId?: string;
 }
 
 export function ChatMessageArea({
@@ -101,6 +102,7 @@ export function ChatMessageArea({
   onEndChat,
   sendAgentTyping,
   formatRelativeTime,
+  firstProjectId,
 }: ChatMessageAreaProps) {
   const location = useLocation();
   const basePath = `/${location.pathname.split('/')[1]}`;
@@ -159,7 +161,7 @@ export function ChatMessageArea({
                     <p className="text-sm font-semibold text-foreground">Chat Widget</p>
                     <p className="text-xs text-muted-foreground">Embed a widget on your website — customers chat directly in your inbox.</p>
                   </div>
-                  <Link to={`${basePath}/projects`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Set up →</Link>
+                  <Link to={firstProjectId ? `${basePath}/project/${firstProjectId}?tab=chat-widget` : `${basePath}/projects`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">Set up →</Link>
                 </div>
 
                 <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">

@@ -707,6 +707,7 @@ export function ChatsView({
           onEndChat={handleEndChat}
           sendAgentTyping={sendAgentTyping}
           formatRelativeTime={formatRelativeTime}
+          firstProjectId={projects[0]?.id}
         />
 
         {activeChat && (
