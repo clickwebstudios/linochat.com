@@ -219,6 +219,7 @@ export interface Subscription {
   status: 'active' | 'cancelled' | 'paused';
   started_at?: string;
   ends_at?: string;
+  renews_at?: string;
   created_at?: string;
   updated_at?: string;
   // Relationships
