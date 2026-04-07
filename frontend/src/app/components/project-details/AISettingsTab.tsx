@@ -20,9 +20,7 @@ import {
 } from '../ui/select';
 import {
   CheckCircle,
-  TrendingUp,
   AlertCircle,
-  BarChart3,
   MessageSquare,
   Settings2,
   Database,
@@ -43,7 +41,7 @@ import { Input } from '../ui/input';
 import api from '../../lib/api';
 import { toast } from 'sonner';
 
-type SidebarSection = 'overview' | 'prompt' | 'configuration' | 'training';
+type SidebarSection = 'prompt' | 'configuration' | 'training';
 
 interface AISettings {
   ai_enabled: boolean;
@@ -96,7 +94,6 @@ interface VersionEntry {
 }
 
 const NAV_ITEMS = [
-  { id: 'overview' as SidebarSection, label: 'Overview', icon: BarChart3 },
   { id: 'prompt' as SidebarSection, label: 'Prompt', icon: MessageSquare },
   { id: 'configuration' as SidebarSection, label: 'Configuration', icon: Settings2 },
   { id: 'training' as SidebarSection, label: 'Training Data Sources', icon: Database },
@@ -115,7 +112,7 @@ const defaultSettings: AISettings = {
 };
 
 export function AISettingsTab({ projectId }: { projectId?: number | string }) {
-  const [active, setActive] = useState<SidebarSection>('overview');
+  const [active, setActive] = useState<SidebarSection>('prompt');
   const [settings, setSettings] = useState<AISettings>(defaultSettings);
   const [liveSettings, setLiveSettings] = useState<AISettings>(defaultSettings);
   const [stats, setStats] = useState<AIStats | null>(null);
@@ -132,6 +129,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [crawling, setCrawling] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [promptGenInput, setPromptGenInput] = useState('');
   const [trainingDocs, setTrainingDocs] = useState<TrainingDoc[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -164,7 +162,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
       if (st) setStats(st);
       if (art) setArticles(art as KbArticle[]);
       if (gen?.status) setGenerationStatus(gen.status);
-      if (proj?.website) setWebsiteUrl(proj.website);
+      if (proj?.website) { setWebsiteUrl(proj.website); setPromptGenInput(proj.website); }
       setTrainingDocs(docs as TrainingDoc[]);
     }).finally(() => setLoading(false));
   }, [projectId]);
@@ -403,93 +401,6 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
       {/* Content */}
       <div className="flex-1 space-y-4 min-w-0 pb-16">
 
-        {/* OVERVIEW */}
-        {active === 'overview' && (
-          <>
-            <Card>
-              <CardHeader><CardTitle>AI Performance Metrics</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground mb-1">Resolution Rate</div>
-                    <div className="text-2xl font-bold text-green-600">{stats ? `${stats.resolution_rate}%` : '—'}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Conversations resolved by AI</p>
-                  </div>
-                  <div className="border rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground mb-1">Total Chats</div>
-                    <div className="text-2xl font-bold text-primary">{stats ? stats.total_chats : '—'}</div>
-                    <p className="text-xs text-muted-foreground mt-1">All conversations</p>
-                  </div>
-                  <div className="border rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground mb-1">AI-Handled Chats</div>
-                    <div className="text-2xl font-bold text-orange-600">{stats ? stats.ai_handled_chats : '—'}</div>
-                    <p className="text-xs text-muted-foreground mt-1">With AI enabled</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle>AI Learning Overview</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Published Articles</span>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="text-2xl font-bold">{stats?.articles_indexed ?? '—'}</div>
-                      <p className="text-xs text-muted-foreground mt-1">In knowledge base</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Total Articles</span>
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">{stats?.total_articles ?? '—'}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Including drafts</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Current Version</span>
-                        <History className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">{currentVersion || '—'}</div>
-                      <p className="text-xs text-muted-foreground mt-1">{lastPublishedAt ? `Published ${new Date(lastPublishedAt).toLocaleDateString()}` : 'Not published yet'}</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">AI Status</span>
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="text-lg font-bold">{settings.ai_enabled ? 'Active' : 'Disabled'}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Bot status</p>
-                    </div>
-                  </div>
-
-                  {stats?.recent_articles && stats.recent_articles.length > 0 && (
-                    <div>
-                      <Label className="mb-3 block">Recent Knowledge Base Activity</Label>
-                      <div className="space-y-2">
-                        {stats.recent_articles.map(a => (
-                          <div key={a.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                            {a.is_published ? <CheckCircle className="h-4 w-4 text-green-600 shrink-0" /> : <AlertCircle className="h-4 w-4 text-orange-400 shrink-0" />}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{a.title}</p>
-                              <p className="text-xs text-muted-foreground">{a.is_published ? 'Published' : 'Draft'} &bull; {new Date(a.created_at).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
         {/* PROMPT */}
         {active === 'prompt' && (
           <Card>
@@ -515,6 +426,8 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                     id="prompt-generator-input"
                     placeholder="e.g., 'Plumbing company in Vancouver' or 'https://mysite.com'"
                     className="flex-1"
+                    value={promptGenInput}
+                    onChange={e => setPromptGenInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); (document.getElementById('generate-prompt-btn') as HTMLButtonElement)?.click(); } }}
                   />
                   <Button
@@ -522,7 +435,7 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                     variant="outline"
                     size="sm"
                     onClick={async () => {
-                      const input = (document.getElementById('prompt-generator-input') as HTMLInputElement)?.value;
+                      const input = promptGenInput;
                       if (!input?.trim()) return;
                       const btn = document.getElementById('generate-prompt-btn') as HTMLButtonElement;
                       btn.disabled = true;

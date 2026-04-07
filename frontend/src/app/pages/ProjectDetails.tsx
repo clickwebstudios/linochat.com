@@ -7,9 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { ProfileDropdown } from '../components/ProfileDropdown';
 import {
-  Archive,
   ArrowLeft,
-  Edit,
   Bell,
   Search,
   Menu,
@@ -36,7 +34,7 @@ import { SettingsTab } from '../components/project-details/SettingsTab';
 import { IntegrationsTab } from '../components/project-details/IntegrationsTab';
 
 // Extracted dialog components
-import { InviteMemberDialog, CreateTicketDialogPD, EditProjectDialog } from '../components/project-details/ProjectDetailsDialogs';
+import { InviteMemberDialog, CreateTicketDialogPD } from '../components/project-details/ProjectDetailsDialogs';
 
 export default function ProjectDetails() {
   const { projectId } = useParams();
@@ -132,8 +130,6 @@ export default function ProjectDetails() {
   // Dialog open states
   const [createTicketDialogOpen, setCreateTicketDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
-  const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
-
   // Ticket form state for CreateTicketDialogPD
   const [newTicket, setNewTicket] = useState({
     subject: '',
@@ -438,11 +434,6 @@ export default function ProjectDetails() {
         setNewTicket={setNewTicket}
       />
 
-      <EditProjectDialog
-        open={editProjectDialogOpen}
-        onOpenChange={setEditProjectDialogOpen}
-        project={project}
-      />
     </div>
   );
 }
