@@ -469,8 +469,8 @@ export default function BillingPage() {
     // Paid plan: update existing subscription (with proration) or start new checkout
     setIsConfirmingPlan(true);
     try {
-      if (subscriptionStatus === 'active' || subscriptionStatus === 'cancelled') {
-        // Existing subscriber — update Stripe subscription in-place with proration
+      if (subscriptionStatus === 'active') {
+        // Active subscriber — update Stripe subscription in-place with proration
         await billingService.upgradePaidPlan({ plan_name: selectedUpgradePlan, billing_cycle: billingCycle });
         await loadBillingData();
         setChangePlanDialogOpen(false);
@@ -478,7 +478,7 @@ export default function BillingPage() {
         toast.success(`Plan updated to ${selectedUpgradePlan}`, { description: 'Prorated charges have been applied.' });
         setIsConfirmingPlan(false);
       } else {
-        // New subscriber — create Stripe Checkout session
+        // No active subscription or cancelled — create fresh Stripe Checkout session
         const origin = window.location.origin;
         const url = await billingService.createCheckoutSession({
           plan_name: selectedUpgradePlan,
