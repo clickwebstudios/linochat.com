@@ -40,6 +40,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useProjectsStore, selectProjects, selectProjectsLoading } from '../../stores/projectsStore';
+import { usePlanGuard } from '../../hooks/usePlanGuard';
 import { useAgentStatuses, agentStatusStore } from '../../data/agentStatusStore';
 import { toast } from 'sonner';
 import { api } from '../../api/client';
@@ -67,6 +68,7 @@ interface AgentRow {
 
 export function UsersView({ basePath, selectedProjects, selectedCompanyId }: UsersViewProps) {
   const navigate = useNavigate();
+  const { isAllowed, getLimit } = usePlanGuard();
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [agentToDeactivate, setAgentToDeactivate] = useState<AgentRow | null>(null);
@@ -252,10 +254,21 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
             </div>
           )}
         </div>
-        <Button onClick={() => setAddUserDialogOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add New Agent
-        </Button>
+        {(() => {
+          const activeAgentCount = agents.filter(a => a.status !== 'Deactivated' && a.status !== 'Invited').length;
+          const agentLimit = getLimit('maxAgents') as number;
+          const atLimit = !isAllowed('maxAgents', activeAgentCount);
+          return (
+            <Button
+              onClick={atLimit ? undefined : () => setAddUserDialogOpen(true)}
+              disabled={atLimit}
+              title={atLimit ? `Your plan allows ${agentLimit} agent${agentLimit !== 1 ? 's' : ''}. Upgrade to add more.` : undefined}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add New Agent
+            </Button>
+          );
+        })()}
       </div>
 
       <Card>

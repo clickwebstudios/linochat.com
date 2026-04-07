@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   CreditCard,
@@ -213,6 +213,7 @@ const brandLabels: Record<CardBrand, string> = {
 export default function BillingPage() {
   const { toggleMobileSidebar, role } = useLayout();
   const location = useLocation();
+  const navigate = useNavigate();
   const basePath = location.pathname.startsWith('/admin')
     ? '/admin'
     : location.pathname.startsWith('/superadmin')
@@ -281,10 +282,10 @@ export default function BillingPage() {
     return Math.max(0, Math.ceil((reset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   }, [tokenBalance.token_cycle_reset_at]);
 
-  // Load subscription, token balance, invoices, and plans on mount
-  useEffect(() => {
+  // Load subscription, token balance, invoices, and plans
+  const loadBillingData = useCallback(() => {
     setBillingLoading(true);
-    Promise.all([
+    return Promise.all([
       billingService.getSubscription().catch(() => null),
       billingService.getTokenBalance().catch(() => null),
       billingService.getInvoices().catch(() => []),
@@ -299,7 +300,7 @@ export default function BillingPage() {
         setCurrentPlanId(sub.plan.name.toLowerCase());
         setCurrentPlanDbId(sub.plan_id);
         setBillingCycle(sub.billing_cycle ?? 'monthly');
-        setSubscriptionEndsAt(sub.ends_at ?? null);
+        setSubscriptionEndsAt(sub.renews_at ?? sub.ends_at ?? null);
       }
       if (tb) {
         setAgentCount(tb.agent_count || 1);
@@ -328,6 +329,8 @@ export default function BillingPage() {
       }
     }).finally(() => setBillingLoading(false));
   }, []);
+
+  useEffect(() => { loadBillingData(); }, [loadBillingData]);
 
   // Load top-up packs on mount
   useEffect(() => {
@@ -508,15 +511,21 @@ export default function BillingPage() {
   };
 
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState<string>('');
 
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
     try {
-      await billingService.cancelSubscription();
+      await billingService.cancelSubscription(cancelReason || undefined);
       setCancelDialogOpen(false);
       toast.success('Subscription cancelled', {
-        description: `Your plan will remain active until ${pricing.nextBillingDate}.`,
+        description: `Your plan will remain active until ${pricing.nextBillingDate}. Choose which agents and workspaces to keep before expiry.`,
+        action: {
+          label: 'Choose what to keep',
+          onClick: () => navigate(`${basePath}/billing/downgrade-selection`),
+        },
       });
+      await loadBillingData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to cancel subscription';
       toast.error('Cancellation failed', { description: msg });
@@ -677,21 +686,14 @@ export default function BillingPage() {
                       )}
                     </div>
 
-                    {!pricing.isCustom && !pricing.isFree && (
+                    {!pricing.isCustom && !pricing.isFree && billingCycle === 'annual' && (
                       <div className="mt-1 space-y-0.5">
-                        <p className="text-sm text-muted-foreground">
-                          {agentCount} agents &times; ${pricing.perUser}/mo
-                          {billingCycle === 'annual'
-                            ? <> &times; 12 months = <span className="text-foreground">${typeof pricing.totalPeriod === 'number' ? pricing.totalPeriod.toLocaleString() : pricing.totalPeriod}{pricing.periodLabel}</span></>
-                            : <> = <span className="text-foreground">${pricing.totalPeriod}{pricing.periodLabel}</span></>
-                          }
-                        </p>
-                        {billingCycle === 'annual' && pricing.monthlyEquivalent !== null && (
+                        {pricing.monthlyEquivalent !== null && (
                           <p className="text-sm text-muted-foreground">
                             Effective monthly cost: <span className="text-foreground">${pricing.monthlyEquivalent}/month</span>
                           </p>
                         )}
-                        {billingCycle === 'annual' && pricing.savingsAnnual !== null && pricing.savingsAnnual > 0 && (
+                        {pricing.savingsAnnual !== null && pricing.savingsAnnual > 0 && (
                           <p className="text-sm text-green-600">
                             You save ${pricing.savingsAnnual.toLocaleString()}/year compared to monthly billing
                           </p>
@@ -721,7 +723,7 @@ export default function BillingPage() {
 
                 {!isReadOnly && (
                   <div className="flex flex-wrap gap-3">
-                    <Button onClick={() => setChangePlanDialogOpen(true)}>
+                    <Button onClick={() => { setBillingCycle('annual'); setChangePlanDialogOpen(true); }}>
                       <Zap className="mr-2 h-4 w-4" />
                       Change Plan
                     </Button>
@@ -1083,7 +1085,7 @@ export default function BillingPage() {
         </div>
 
         {/* ─── Change Plan Dialog ─────────────────────────── */}
-        <Dialog open={changePlanDialogOpen} onOpenChange={setChangePlanDialogOpen}>
+        <Dialog open={changePlanDialogOpen} onOpenChange={(open) => { setChangePlanDialogOpen(open); if (!open) setSelectedUpgradePlan(null); }}>
           <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Change Your Plan</DialogTitle>
@@ -1205,17 +1207,23 @@ export default function BillingPage() {
                 <Button variant="outline" onClick={() => { setChangePlanDialogOpen(false); setSelectedUpgradePlan(null); }}>
                   Close
                 </Button>
-                <Button
-                  disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId || isConfirmingPlan}
-                  onClick={confirmPlanChange}
-                >
-                  {isConfirmingPlan ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</> :
-                    selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
-                    ? 'Upgrade Plan'
-                    : selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) < plans.findIndex(p => p.id === currentPlanId)
-                      ? 'Downgrade Plan'
-                      : 'Confirm Change'}
-                </Button>
+                {selectedUpgradePlan === 'enterprise' ? (
+                  <Button onClick={() => { setChangePlanDialogOpen(false); navigate('/contact'); }}>
+                    Contact Support
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={!selectedUpgradePlan || selectedUpgradePlan === currentPlanId || isConfirmingPlan}
+                    onClick={confirmPlanChange}
+                  >
+                    {isConfirmingPlan ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</> :
+                      selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) > plans.findIndex(p => p.id === currentPlanId)
+                      ? 'Upgrade Plan'
+                      : selectedUpgradePlan && plans.findIndex(p => p.id === selectedUpgradePlan) < plans.findIndex(p => p.id === currentPlanId)
+                        ? 'Downgrade Plan'
+                        : 'Confirm Change'}
+                  </Button>
+                )}
               </div>
             </DialogFooter>
           </DialogContent>
@@ -1409,7 +1417,7 @@ export default function BillingPage() {
         </Dialog>
 
         {/* ─── Cancel Subscription Dialog ──────────────────── */}
-        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <Dialog open={cancelDialogOpen} onOpenChange={(open) => { setCancelDialogOpen(open); if (!open) setCancelReason(''); }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1420,7 +1428,7 @@ export default function BillingPage() {
                 Are you sure you want to cancel your subscription?
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 py-4">
+            <div className="space-y-4 py-4">
               <div className="p-4 bg-red-50 rounded-lg space-y-2">
                 <p className="text-sm text-red-800">If you cancel:</p>
                 <ul className="text-sm text-red-700 space-y-1 list-disc pl-5">
@@ -1430,9 +1438,35 @@ export default function BillingPage() {
                   <li>Your data will be retained for 30 days</li>
                 </ul>
               </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Why are you cancelling? <span className="text-muted-foreground font-normal">(optional)</span></p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    'Too expensive',
+                    'Missing features',
+                    'Switching to competitor',
+                    'Not using it enough',
+                    'Technical issues',
+                    'Other',
+                  ].map((reason) => (
+                    <button
+                      key={reason}
+                      type="button"
+                      onClick={() => setCancelReason(cancelReason === reason ? '' : reason)}
+                      className={`text-left text-xs px-3 py-2 rounded-lg border transition-colors ${
+                        cancelReason === reason
+                          ? 'border-primary bg-primary/5 text-primary font-medium'
+                          : 'border-border text-muted-foreground hover:border-muted-foreground'
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              <Button variant="outline" onClick={() => { setCancelDialogOpen(false); setCancelReason(''); }}>
                 Keep Subscription
               </Button>
               <Button variant="destructive" onClick={handleCancelSubscription} disabled={isCancelling}>

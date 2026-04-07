@@ -12,6 +12,8 @@ use App\Models\AppNotification;
 use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\Project;
+use App\Models\Company;
+use App\Models\User;
 use App\Services\AiChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -355,6 +357,21 @@ class WidgetController extends Controller
         }
 
         if (!$chat) {
+            // Enforce monthly chat limit for Free plan companies
+            $projectOwner = User::find($project->user_id);
+            $company = $projectOwner ? Company::find($projectOwner->company_id) : null;
+            if ($company && strtolower($company->plan) === 'free') {
+                $chatCount = Chat::where('project_id', $project->id)
+                    ->where('created_at', '>=', now()->startOfMonth())
+                    ->count();
+                if ($chatCount >= 100) {
+                    return $this->initResponse($request, [
+                        'success' => false,
+                        'message' => 'Monthly chat limit reached. Please contact support.',
+                    ], 422);
+                }
+            }
+
             $metadata = $this->buildSessionMetadata($request);
 
             $chat = Chat::create([

@@ -83,6 +83,21 @@ class TicketController extends Controller
      */
     public function store(StoreTicketRequest $request)
     {
+        // Enforce monthly ticket limit for Free plan
+        $company = $request->user()->company;
+        if ($company && strtolower($company->plan) === 'free') {
+            $projectIds = $company->projects()->pluck('id');
+            $ticketCount = Ticket::whereIn('project_id', $projectIds)
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->count();
+            if ($ticketCount >= 100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Monthly ticket limit reached (100/month on Free plan). Upgrade your plan to create more tickets.',
+                ], 422);
+            }
+        }
+
         $ticket = $this->ticketService->create($request->validated(), $request->user());
 
         return response()->json([

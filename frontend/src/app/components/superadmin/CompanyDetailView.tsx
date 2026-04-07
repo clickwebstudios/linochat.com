@@ -45,6 +45,8 @@ interface Company {
   status?: string;
   usage?: number;
   color?: string;
+  subscription_status?: string;
+  subscription_ends_at?: string;
 }
 
 interface Project {

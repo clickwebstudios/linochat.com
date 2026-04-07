@@ -27,6 +27,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useProjectsStore, selectProjects, selectProjectsLoading, selectProjectsError } from '../../stores/projectsStore';
+import { usePlanGuard } from '../../hooks/usePlanGuard';
 import { api } from '../../api/client';
 
 interface ProjectsViewProps {
@@ -36,6 +37,7 @@ interface ProjectsViewProps {
 
 export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps) {
   const navigate = useNavigate();
+  const { isAllowed, getLimit } = usePlanGuard();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -47,6 +49,9 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
   const fetchProjects = useProjectsStore(state => state.fetchProjects);
   const refreshProjects = useProjectsStore(state => state.refreshProjects);
   const removeProject = useProjectsStore(state => state.removeProject);
+
+  const projectLimit = getLimit('maxProjects') as number;
+  const atProjectLimit = isAllowed('maxProjects', projects.length) === false;
 
   const handleDeleteClick = (e: React.MouseEvent, project: { id: string; name: string }) => {
     e.stopPropagation();
@@ -101,7 +106,12 @@ export function ProjectsView({ basePath, onAddProjectClick }: ProjectsViewProps)
         <p className="text-muted-foreground mb-8 text-center max-w-md">
           Create your first workspace to get started
         </p>
-        <Button onClick={onAddProjectClick} className="bg-primary hover:bg-primary/90">
+        <Button
+          onClick={atProjectLimit ? undefined : onAddProjectClick}
+          disabled={atProjectLimit}
+          title={atProjectLimit ? `Your plan allows ${projectLimit} workspace${projectLimit !== 1 ? 's' : ''}. Upgrade to add more.` : undefined}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Workspace
         </Button>

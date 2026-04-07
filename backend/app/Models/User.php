@@ -24,6 +24,7 @@ class User extends Authenticatable
         'avatar_url',
         'role',
         'status',
+        'deactivated_reason',
         'password',
         'two_factor_enabled',
         'last_active_at',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
 use App\Jobs\GenerateKbFromWebsiteJob;
+use App\Models\Company;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Chat;
@@ -194,6 +195,9 @@ class SuperadminController extends Controller
         // Use company_name if available, fallback to user's full name
         $companyName = $company->company_name ?: $company->name;
 
+        $companyRecord = Company::with('subscription')->find($company->company_id);
+        $subscription = $companyRecord?->subscription;
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -210,6 +214,8 @@ class SuperadminController extends Controller
                 'stats' => $stats,
                 'projects' => $company->ownedProjects,
                 'agents' => $agents,
+                'subscription_status' => $subscription?->status,
+                'subscription_ends_at' => $subscription?->ends_at?->toDateString(),
             ]
         ]);
     }

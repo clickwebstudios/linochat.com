@@ -12,6 +12,7 @@ class SubscriptionResource extends JsonResource {
             'status' => $this->status,
             'started_at' => $this->started_at,
             'ends_at' => $this->ends_at,
+            'renews_at' => $this->renews_at,
             'plan' => new PlanResource($this->plan),
         ];
     }

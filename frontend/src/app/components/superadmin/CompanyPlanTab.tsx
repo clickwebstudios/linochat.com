@@ -7,6 +7,7 @@ import {
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight,
+  Clock,
 } from 'lucide-react';
 
 interface Company {
@@ -20,6 +21,8 @@ interface Company {
   status?: string;
   usage?: number;
   color?: string;
+  subscription_status?: string;
+  subscription_ends_at?: string;
 }
 
 interface CompanyPlanTabProps {
@@ -50,9 +53,17 @@ export function CompanyPlanTab({
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base">Current Plan</CardTitle>
-            <Badge className={company.plan === 'Enterprise' ? 'bg-secondary/10 text-secondary' : company.plan === 'Pro' ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground'}>
-              {company.plan}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {company.subscription_status === 'cancelled' && (
+                <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Cancelling{company.subscription_ends_at ? ` · expires ${new Date(company.subscription_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                </Badge>
+              )}
+              <Badge className={company.plan === 'Enterprise' ? 'bg-secondary/10 text-secondary' : company.plan === 'Pro' ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground'}>
+                {company.plan}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-2 gap-4">

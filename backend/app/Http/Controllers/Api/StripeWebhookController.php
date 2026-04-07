@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\TokenActionType;
 use App\Http\Controllers\Controller;
+use App\Mail\SubscriptionExpiredMail;
+use App\Mail\SubscriptionReactivatedMail;
 use App\Models\Company;
+use App\Models\Plan;
 use App\Models\TokenPurchase;
 use App\Services\StripeService;
 use App\Services\TokenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class StripeWebhookController extends Controller
 {
@@ -24,8 +28,8 @@ class StripeWebhookController extends Controller
         $sigHeader = $request->header('Stripe-Signature');
 
         try {
-            $event = $this->stripeService->constructWebhookEvent($payload, $sigHeader);
-        } catch (\Exception $e) {
+            $event = $this->stripeService->constructWebhookEvent($payload, $sigHeader ?? '');
+        } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
 
@@ -72,14 +76,49 @@ class StripeWebhookController extends Controller
 
                 $stripeSubscriptionId = $session->subscription ?? null;
                 if ($stripeSubscriptionId) {
+                    // Resolve plan from Stripe price ID
+                    $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+                    $stripeSub = $stripe->subscriptions->retrieve($stripeSubscriptionId, [
+                        'expand' => ['latest_invoice.lines'],
+                    ]);
+                    $stripePriceId = $stripeSub->items->data[0]->price->id ?? null;
+
+                    $plan = null;
+                    $billingCycle = null;
+                    if ($stripePriceId) {
+                        $priceIds = config('services.stripe.price_ids', []);
+                        $planKey = array_search($stripePriceId, $priceIds);
+                        if ($planKey !== false) {
+                            $parts = explode('_', $planKey);
+                            $planName = $parts[0];
+                            $billingCycle = $parts[1] ?? 'monthly';
+                            $plan = \App\Models\Plan::whereRaw('LOWER(name) = ?', [strtolower($planName)])->first();
+                        }
+                    }
+
+                    $periodEnd = $stripeSub->current_period_end
+                        ?? ($stripeSub->latest_invoice->lines->data[0]->period->end ?? null);
+                    $renewsAt = $periodEnd
+                        ? \Illuminate\Support\Carbon::createFromTimestamp($periodEnd)
+                        : null;
+
                     $localSubscription = $company->subscription;
                     if ($localSubscription) {
-                        $localSubscription->update([
+                        $localSubscription->update(array_filter([
                             'stripe_subscription_id' => $stripeSubscriptionId,
                             'status'                 => 'active',
-                        ]);
+                            'plan_id'                => $plan?->id,
+                            'billing_cycle'          => $billingCycle,
+                            'started_at'             => now(),
+                            'renews_at'              => $renewsAt,
+                        ], fn($v) => $v !== null));
                     }
-                    $company->update(['stripe_subscription_id' => $stripeSubscriptionId]);
+
+                    $companyUpdates = ['stripe_subscription_id' => $stripeSubscriptionId];
+                    if ($plan) {
+                        $companyUpdates['plan'] = $plan->name;
+                    }
+                    $company->update($companyUpdates);
                 }
             }
         } catch (\Exception $e) {
@@ -145,16 +184,69 @@ class StripeWebhookController extends Controller
                 return;
             }
 
-            $localSubscription = $company->subscription;
-
-            if ($localSubscription) {
-                $localSubscription->update([
-                    'stripe_subscription_id' => $subscription->id,
-                    'status'                 => $subscription->status,
-                ]);
+            $stripePriceId = $subscription->items->data[0]->price->id ?? null;
+            $plan = null;
+            $billingCycle = null;
+            if ($stripePriceId) {
+                $priceIds = config('services.stripe.price_ids', []);
+                $planKey = array_search($stripePriceId, $priceIds);
+                if ($planKey !== false) {
+                    $parts = explode('_', $planKey);
+                    $billingCycle = $parts[1] ?? 'monthly';
+                    $plan = \App\Models\Plan::whereRaw('LOWER(name) = ?', [strtolower($parts[0])])->first();
+                }
             }
 
-            $company->update(['stripe_subscription_id' => $subscription->id]);
+            $localSubscription = $company->subscription;
+
+            $periodEnd = $subscription->current_period_end ?? null;
+            $renewsAt = $periodEnd
+                ? \Illuminate\Support\Carbon::createFromTimestamp($periodEnd)
+                : null;
+
+            if ($localSubscription) {
+                $localSubscription->update(array_filter([
+                    'stripe_subscription_id' => $subscription->id,
+                    'status'                 => $subscription->status,
+                    'plan_id'                => $plan?->id,
+                    'billing_cycle'          => $billingCycle,
+                    'renews_at'              => $renewsAt,
+                ], fn($v) => $v !== null));
+            }
+
+            $companyUpdates = ['stripe_subscription_id' => $subscription->id];
+            if ($plan) {
+                $companyUpdates['plan'] = $plan->name;
+            }
+
+            // On re-subscribe (transitioning from cancelled/expired back to active), restore agents
+            $wasInactive = $localSubscription && in_array($localSubscription->status, ['cancelled', 'expired']);
+            $isNowActive = $subscription->status === 'active';
+
+            if ($wasInactive && $isNowActive) {
+                $company->users()
+                    ->where('role', 'agent')
+                    ->where('status', 'Deactivated')
+                    ->where('deactivated_reason', 'plan_downgrade')
+                    ->update(['status' => 'Active', 'deactivated_reason' => null]);
+
+                // Reset token allowance for new plan
+                $planAllowances = ['Free' => 100, 'Starter' => 1000, 'Pro' => 5000, 'Enterprise' => 20000];
+                $newPlanName = $plan?->name ?? $company->plan;
+                if (isset($planAllowances[$newPlanName])) {
+                    $companyUpdates['monthly_token_allowance'] = $planAllowances[$newPlanName];
+                    $companyUpdates['token_balance'] = $planAllowances[$newPlanName];
+                }
+
+                // Send reactivation email to admins
+                $subscription_model = $localSubscription->load('plan');
+                $admins = $company->users()->where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    Mail::to($admin->email)->queue(new SubscriptionReactivatedMail($admin, $subscription_model));
+                }
+            }
+
+            $company->update($companyUpdates);
         } catch (\Exception $e) {
             Log::error('Stripe webhook: error handling customer.subscription.updated', [
                 'subscription_id' => $subscription->id,
@@ -187,6 +279,34 @@ class StripeWebhookController extends Controller
                     'status'  => 'cancelled',
                     'ends_at' => $endsAt,
                 ]);
+
+                // Downgrade company plan to Free
+                $freePlan = Plan::where('name', 'Free')->first();
+                if ($freePlan) {
+                    $localSubscription->update(['plan_id' => $freePlan->id]);
+                    $company->update([
+                        'plan'                   => 'Free',
+                        'monthly_token_allowance' => 100,
+                        'token_balance'           => 100,
+                    ]);
+                }
+
+                // Soft-lock agents beyond the Free plan limit (1 agent)
+                $freeAgentLimit = 1;
+                $company->users()
+                    ->where('role', 'agent')
+                    ->whereNotIn('status', ['Deactivated', 'Invited'])
+                    ->orderBy('id')
+                    ->skip($freeAgentLimit)
+                    ->each(function ($agent) {
+                        $agent->update(['status' => 'Deactivated', 'deactivated_reason' => 'plan_downgrade']);
+                    });
+
+                // Send expiry email to admins
+                $admins = $company->users()->where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    Mail::to($admin->email)->queue(new SubscriptionExpiredMail($admin));
+                }
             }
         } catch (\Exception $e) {
             Log::error('Stripe webhook: error handling customer.subscription.deleted', [

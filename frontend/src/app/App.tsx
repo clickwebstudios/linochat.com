@@ -45,6 +45,7 @@ const AIArticleGenerator = lazy(() => import('./pages/AIArticleGenerator'));
 const CreateArticle = lazy(() => import('./pages/CreateArticle'));
 const ArticleDetails = lazy(() => import('./pages/ArticleDetails'));
 const BillingPage = lazy(() => import('./pages/dashboards/BillingPage'));
+const DowngradeSelectionPage = lazy(() => import('./pages/dashboards/DowngradeSelectionPage'));
 const SuperadminSelectView = lazy(() => import('./pages/dashboards/SuperadminSelectView'));
 const SuperadminPlatform = lazy(() => import('./pages/dashboards/SuperadminPlatform'));
 const OAuthAuthorizePage = lazy(() => import('./pages/oauth/OAuthAuthorizePage'));
@@ -159,6 +160,7 @@ export default function App() {
                 <Route path="/agent/knowledge/article/:articleId" element={<ArticleDetails />} />
                 <Route path="/agent/profile-settings" element={<ProfileSettings />} />
                 <Route path="/agent/billing" element={<BillingPage />} />
+                <Route path="/agent/billing/downgrade-selection" element={<DowngradeSelectionPage />} />
                 <Route path="/agent/notifications" element={<NotificationsPage />} />
               </Route>
 
@@ -181,6 +183,7 @@ export default function App() {
                 <Route path="/admin/knowledge/article/:articleId" element={<ArticleDetails />} />
                 <Route path="/admin/profile-settings" element={<ProfileSettings />} />
                 <Route path="/admin/billing" element={<BillingPage />} />
+                <Route path="/admin/billing/downgrade-selection" element={<DowngradeSelectionPage />} />
                 <Route path="/admin/notifications" element={<NotificationsPage />} />
               </Route>
 
