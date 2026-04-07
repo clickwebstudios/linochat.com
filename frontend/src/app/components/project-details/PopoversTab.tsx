@@ -23,8 +23,10 @@ import {
   Settings2,
   ChevronLeft,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import { api } from '../../api/client';
+import { usePlanGuard } from '../../hooks/usePlanGuard';
 
 // --- Types ---
 interface PopoverButtonConfig {
@@ -104,6 +106,8 @@ interface PopoversTabProps {
 }
 
 export function PopoversTab({ projectId }: PopoversTabProps) {
+  const { planName, isLoading: planLoading } = usePlanGuard();
+  const isPaid = !planLoading && planName !== 'free';
   const [popover, setPopover] = useState<PopoverConfig>(DEFAULT_POPOVER);
   const [savedPopover, setSavedPopover] = useState<string>('');
   const [widgetColor, setWidgetColor] = useState('#4F46E5');
@@ -574,7 +578,7 @@ export function PopoversTab({ projectId }: PopoversTabProps) {
           </div>
         </div>
       ) : (
-        <PopoverShowcase popover={popover} update={update} widgetColor={widgetColor} />
+        <PopoverShowcase popover={popover} update={update} widgetColor={widgetColor} isPaid={isPaid} />
       )}
 
       {/* Fixed save bar */}
@@ -601,11 +605,12 @@ const SHOWCASE_DESIGNS = [
 ] as const;
 
 function PopoverShowcase({
-  popover, update, widgetColor,
+  popover, update, widgetColor, isPaid,
 }: {
   popover: PopoverConfig;
   update: (patch: Partial<PopoverConfig>) => void;
   widgetColor: string;
+  isPaid: boolean;
 }) {
   const [idx, setIdx] = useState(0);
   const [fading, setFading] = useState(false);
@@ -639,9 +644,19 @@ function PopoverShowcase({
         <p className="text-sm text-muted-foreground">
           Engage visitors with targeted messages. Pick a design and enable to get started.
         </p>
-        <Button size="sm" onClick={() => update({ enabled: true, design: current.id })}>
-          Activate Popover
-        </Button>
+        {isPaid ? (
+          <Button size="sm" onClick={() => update({ enabled: true, design: current.id })}>
+            Activate Popover
+          </Button>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+              <Lock className="h-3 w-3" />
+              Available on paid plans
+            </div>
+            <p className="text-xs text-muted-foreground">Upgrade to Starter or higher to use Popovers.</p>
+          </div>
+        )}
       </div>
 
       {/* Carousel */}

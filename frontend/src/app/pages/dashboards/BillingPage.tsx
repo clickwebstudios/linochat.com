@@ -92,7 +92,7 @@ const plans = [
     priceMonthly: 19,
     priceAnnual: 15,
     period: 'per user/month',
-    features: ['Up to 5 agents', 'Unlimited chats', 'Unlimited tickets', 'Email & chat support', '30-day history', 'Basic analytics'],
+    features: ['Up to 5 agents', 'Unlimited chats', 'Unlimited tickets', 'Popover campaigns', 'Email & chat support', '30-day history', 'Basic analytics'],
     agentLimit: 5,
     ticketLimit: -1,
     chatLimit: -1,
@@ -103,7 +103,7 @@ const plans = [
     priceMonthly: 49,
     priceAnnual: 39,
     period: 'per user/month',
-    features: ['Unlimited agents', 'AI chatbots', 'Advanced analytics', 'Priority support', 'Unlimited history', 'Custom integrations', 'SLA management'],
+    features: ['Unlimited agents', 'AI chatbots', 'Popover campaigns', 'Advanced analytics', 'Priority support', 'Unlimited history', 'Custom integrations', 'SLA management'],
     agentLimit: -1,
     ticketLimit: -1,
     chatLimit: -1,
@@ -813,10 +813,12 @@ export default function BillingPage() {
                         {usage.tickets.limit !== -1 ? ` / ${usage.tickets.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
                     </div>
-                    <Progress
-                      value={usage.tickets.limit !== -1 ? (usage.tickets.current / usage.tickets.limit) * 100 : 25}
-                      className="h-2"
-                    />
+                    {usage.tickets.limit !== -1 && (
+                      <Progress
+                        value={(usage.tickets.current / usage.tickets.limit) * 100}
+                        className="h-2"
+                      />
+                    )}
                   </div>
 
                   {/* Chats */}
@@ -831,10 +833,12 @@ export default function BillingPage() {
                         {usage.chats.limit !== -1 ? ` / ${usage.chats.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
                     </div>
-                    <Progress
-                      value={usage.chats.limit !== -1 ? (usage.chats.current / usage.chats.limit) * 100 : 35}
-                      className="h-2"
-                    />
+                    {usage.chats.limit !== -1 && (
+                      <Progress
+                        value={(usage.chats.current / usage.chats.limit) * 100}
+                        className="h-2"
+                      />
+                    )}
                   </div>
 
                   {/* Storage */}
