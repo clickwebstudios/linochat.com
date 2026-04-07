@@ -300,6 +300,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/billing/topup-checkout', [BillingController::class, 'createTopUpCheckout']);
     Route::get('/billing/token-transactions', [BillingController::class, 'tokenTransactions']);
     Route::get('/billing/stripe-invoices', [BillingController::class, 'stripeInvoices']);
+    Route::post('/billing/sync', [BillingController::class, 'syncSubscription']);
 
     // Integrations
     Route::get('/projects/{projectId}/integrations', [IntegrationsController::class, 'getSettings']);

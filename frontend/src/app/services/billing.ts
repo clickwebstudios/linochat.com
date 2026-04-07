@@ -34,4 +34,6 @@ export const billingService = {
     api.get('/billing/token-transactions').then((r: AxiosResponse<ApiResponse<{ id: number; action_type: string; tokens_amount: number; balance_after: number; created_at: string; metadata: Record<string, unknown> | null }[]>>) => r.data.data),
   getStripeInvoices: (): Promise<{ id: string; number: string; amount: number; currency: string; status: string; created_at: string; pdf_url: string | null; hosted_url: string | null }[]> =>
     api.get('/billing/stripe-invoices').then((r: AxiosResponse<ApiResponse<{ id: string; number: string; amount: number; currency: string; status: string; created_at: string; pdf_url: string | null; hosted_url: string | null }[]>>) => r.data.data),
+  syncSubscription: (): Promise<void> =>
+    api.post('/billing/sync').then(() => undefined),
 };
