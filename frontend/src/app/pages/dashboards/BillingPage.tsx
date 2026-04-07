@@ -234,7 +234,9 @@ export default function BillingPage() {
   const [agentCount, setAgentCount] = useState(1);
   const [invoices, setInvoices] = useState<DisplayInvoice[]>([]);
   const [billingLoading, setBillingLoading] = useState(true);
-  const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
+  const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(
+    () => new URLSearchParams(location.search).get('upgrade') === '1'
+  );
   const [selectedUpgradePlan, setSelectedUpgradePlan] = useState<string | null>(null);
   const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);

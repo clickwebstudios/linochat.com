@@ -599,7 +599,7 @@ export function UsersView({ basePath, selectedProjects, selectedCompanyId }: Use
             <Button variant="outline" onClick={() => setUpgradePlanDialogOpen(false)}>Cancel</Button>
             <Button
               className="bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={() => { setUpgradePlanDialogOpen(false); navigate(`${basePath}/billing`); }}
+              onClick={() => { setUpgradePlanDialogOpen(false); navigate(`${basePath}/billing?upgrade=1`); }}
             >
               <Zap className="h-4 w-4 mr-2" />
               Upgrade plan
