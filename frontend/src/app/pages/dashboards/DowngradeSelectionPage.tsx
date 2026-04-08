@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle2, Users, Folder, ArrowRight, ArrowLeft, Loader2, Info } from 'lucide-react';
+import { CheckCircle2, Users, Folder, ArrowRight, ArrowLeft, Loader2, Info, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -37,6 +37,7 @@ export default function DowngradeSelectionPage() {
 
   const [step, setStep] = useState<Step>('agents');
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [adminUsers, setAdminUsers] = useState<Agent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<number[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
@@ -48,9 +49,14 @@ export default function DowngradeSelectionPage() {
       api.get('/agent/users').then(r => r.data?.data ?? r.data ?? []).catch(() => []),
       api.get('/projects').then(r => r.data?.data ?? r.data ?? []).catch(() => []),
     ]).then(([agentData, projectData]) => {
-      const activeAgents = (Array.isArray(agentData) ? agentData : []).filter(
+      const allUsers = Array.isArray(agentData) ? agentData : [];
+      const admins = allUsers.filter(
+        (a: Agent) => a.status !== 'Deactivated' && a.status !== 'Invited' && a.role === 'admin'
+      );
+      const activeAgents = allUsers.filter(
         (a: Agent) => a.status !== 'Deactivated' && a.status !== 'Invited' && a.role !== 'admin'
       );
+      setAdminUsers(admins);
       setAgents(activeAgents);
       setSelectedAgentIds(activeAgents.slice(0, FREE_AGENT_LIMIT).map((a: Agent) => a.id));
 
@@ -152,8 +158,21 @@ export default function DowngradeSelectionPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-2">
+            {/* Admin users are always kept */}
+            {adminUsers.map(admin => (
+              <div key={admin.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{admin.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
+                </div>
+                <Badge variant="secondary" className="text-xs shrink-0">Owner · Always kept</Badge>
+              </div>
+            ))}
             {agents.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No agents found.</p>
+              adminUsers.length === 0
+                ? <p className="text-sm text-muted-foreground py-4 text-center">No agents found.</p>
+                : <p className="text-sm text-muted-foreground py-2 text-center text-xs">No additional agents to select.</p>
             ) : (
               agents.map(agent => {
                 const isSelected = selectedAgentIds.includes(agent.id);
@@ -260,7 +279,13 @@ export default function DowngradeSelectionPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Keeping {selectedAgentIds.length} agent{selectedAgentIds.length !== 1 ? 's' : ''}:</p>
+              <p className="text-sm font-medium">Keeping {selectedAgentIds.length + adminUsers.length} agent{(selectedAgentIds.length + adminUsers.length) !== 1 ? 's' : ''}:</p>
+              {adminUsers.map(a => (
+                <div key={a.id} className="flex items-center gap-2 text-sm text-muted-foreground pl-2">
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  {a.name} <span className="text-xs">(owner)</span>
+                </div>
+              ))}
               {agents.filter(a => selectedAgentIds.includes(a.id)).map(a => (
                 <div key={a.id} className="flex items-center gap-2 text-sm text-muted-foreground pl-2">
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />

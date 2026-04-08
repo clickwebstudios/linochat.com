@@ -25,7 +25,7 @@ class AgentInvitationMail extends Mailable
     {
         $this->invitation = $invitation;
         $this->project = $project;
-        $this->inviteUrl = env('FRONTEND_URL', 'http://localhost:5174') . '/invite/' . $invitation->token;
+        $this->inviteUrl = config('app.frontend_url') . '/invite/' . $invitation->token;
     }
 
     /**

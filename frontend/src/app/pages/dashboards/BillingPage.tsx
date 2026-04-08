@@ -552,11 +552,7 @@ export default function BillingPage() {
       await billingService.cancelSubscription(cancelReason || undefined);
       setCancelDialogOpen(false);
       toast.success('Subscription cancelled', {
-        description: `Your plan will remain active until ${pricing.nextBillingDate}. Choose which agents and workspaces to keep before expiry.`,
-        action: {
-          label: 'Choose what to keep',
-          onClick: () => navigate(`${basePath}/billing/downgrade-selection`),
-        },
+        description: `Your plan will remain active until ${pricing.nextBillingDate}.`,
       });
       await loadBillingData();
     } catch (err) {

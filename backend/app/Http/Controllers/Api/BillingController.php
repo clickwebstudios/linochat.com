@@ -283,7 +283,9 @@ class BillingController extends Controller {
         $companyAgentIds = $company->users()->where('role', 'agent')->pluck('id')->toArray();
         $keepAgentIds = array_values(array_intersect($data['keep_agent_ids'] ?? [], $companyAgentIds));
 
-        $companyProjectIds = $company->projects()->pluck('id')->toArray();
+        // Projects belong to the admin user (user_id), not the company directly
+        $adminIds = $company->users()->where('role', 'admin')->pluck('id');
+        $companyProjectIds = \App\Models\Project::whereIn('user_id', $adminIds)->pluck('id')->toArray();
         $keepProjectIds = array_values(array_intersect($data['keep_project_ids'] ?? [], $companyProjectIds));
 
         // Deactivate agents not in the keep list
@@ -296,9 +298,9 @@ class BillingController extends Controller {
             });
 
         // Deactivate projects not in the keep list
-        $company->projects()
+        \App\Models\Project::whereIn('user_id', $adminIds)
             ->when(count($keepProjectIds) > 0, fn($q) => $q->whereNotIn('id', $keepProjectIds))
-            ->update(['is_active' => false]);
+            ->update(['status' => 'inactive']);
 
         return response()->json(['success' => true, 'message' => 'Downgrade selection saved']);
     }
