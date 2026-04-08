@@ -194,15 +194,28 @@ export default function MarketingHeader() {
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
-              <nav className="flex flex-col gap-4">
-                <Link to="/" onClick={() => setMobileOpen(false)}>Home</Link>
-                <Link to="/features" onClick={() => setMobileOpen(false)}>Features</Link>
-                <Link to="/pricing" onClick={() => setMobileOpen(false)}>Pricing</Link>
-                <Link to="/resources" onClick={() => setMobileOpen(false)}>Resources</Link>
-                <Link to="/about" onClick={() => setMobileOpen(false)}>About Us</Link>
-                <Link to="/contact" onClick={() => setMobileOpen(false)}>Contact</Link>
-                <div className="mt-4 flex flex-col gap-2">
+            <SheetContent side="right" className="w-[300px] p-0">
+              <nav className="flex flex-col h-full">
+                <div className="flex flex-col px-2 pt-14 pb-4">
+                  {[
+                    { to: '/', label: 'Home' },
+                    { to: '/features', label: 'Features' },
+                    { to: '/pricing', label: 'Pricing' },
+                    { to: '/resources', label: 'Resources' },
+                    { to: '/about', label: 'About Us' },
+                    { to: '/contact', label: 'Contact' },
+                  ].map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMobileOpen(false)}
+                      className="px-4 py-3 text-[15px] font-medium text-slate-700 hover:text-primary hover:bg-slate-50 rounded-lg transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="border-t border-slate-100 mt-auto px-4 pt-4 pb-6 flex flex-col gap-2.5">
                   {user ? (
                     <>
                       <div className="flex items-center gap-2 py-2">
@@ -249,10 +262,10 @@ export default function MarketingHeader() {
                     </>
                   ) : (
                     <>
-                      <Button variant="outline" asChild>
+                      <Button variant="outline" className="h-11 w-full" asChild>
                         <Link to="/login" onClick={() => setMobileOpen(false)}>Login</Link>
                       </Button>
-                      <Button className="bg-primary" asChild>
+                      <Button className="h-11 w-full bg-primary hover:bg-primary/90" asChild>
                         <Link to="/signup" onClick={() => setMobileOpen(false)}>Sign Up Free</Link>
                       </Button>
                     </>
