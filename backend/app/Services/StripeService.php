@@ -62,10 +62,17 @@ class StripeService
         return $session->url;
     }
 
-    public function cancelSubscription(string $stripeSubscriptionId): void
+    public function cancelSubscription(string $stripeSubscriptionId): \Stripe\Subscription
+    {
+        return $this->stripe->subscriptions->update($stripeSubscriptionId, [
+            'cancel_at_period_end' => true,
+        ]);
+    }
+
+    public function resumeSubscription(string $stripeSubscriptionId): void
     {
         $this->stripe->subscriptions->update($stripeSubscriptionId, [
-            'cancel_at_period_end' => true,
+            'cancel_at_period_end' => false,
         ]);
     }
 

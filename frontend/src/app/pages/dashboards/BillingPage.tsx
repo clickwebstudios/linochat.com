@@ -543,6 +543,24 @@ export default function BillingPage() {
     }
   };
 
+  const [isResuming, setIsResuming] = useState(false);
+
+  const handleResumeSubscription = async () => {
+    setIsResuming(true);
+    try {
+      await billingService.resumeSubscription();
+      toast.success('Subscription resumed', {
+        description: 'Your subscription is now active again.',
+      });
+      await loadBillingData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to resume subscription';
+      toast.error('Resume failed', { description: msg });
+    } finally {
+      setIsResuming(false);
+    }
+  };
+
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState<string>('');
 
@@ -759,10 +777,22 @@ export default function BillingPage() {
 
                 {!isReadOnly && (
                   <div className="flex flex-wrap gap-3">
-                    <Button onClick={() => { setBillingCycle('annual'); setChangePlanDialogOpen(true); }}>
-                      <Zap className="mr-2 h-4 w-4" />
-                      Change Plan
-                    </Button>
+                    {subscriptionStatus === 'cancelled' ? (
+                      <>
+                        <Button onClick={handleResumeSubscription} disabled={isResuming}>
+                          {isResuming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
+                          Resume Subscription
+                        </Button>
+                        <Button variant="outline" onClick={() => navigate(`${basePath}/billing/downgrade-selection`)}>
+                          Choose what to keep
+                        </Button>
+                      </>
+                    ) : (
+                      <Button onClick={() => { setBillingCycle('annual'); setChangePlanDialogOpen(true); }}>
+                        <Zap className="mr-2 h-4 w-4" />
+                        Change Plan
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -809,12 +839,10 @@ export default function BillingPage() {
                         {usage.tickets.limit !== -1 ? ` / ${usage.tickets.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
                     </div>
-                    {usage.tickets.limit !== -1 && (
-                      <Progress
-                        value={(usage.tickets.current / usage.tickets.limit) * 100}
-                        className="h-2"
-                      />
-                    )}
+                    <Progress
+                      value={usage.tickets.limit !== -1 ? (usage.tickets.current / usage.tickets.limit) * 100 : 100}
+                      className="h-2"
+                    />
                   </div>
 
                   {/* Chats */}
@@ -829,12 +857,10 @@ export default function BillingPage() {
                         {usage.chats.limit !== -1 ? ` / ${usage.chats.limit.toLocaleString()}` : ' / Unlimited'}
                       </span>
                     </div>
-                    {usage.chats.limit !== -1 && (
-                      <Progress
-                        value={(usage.chats.current / usage.chats.limit) * 100}
-                        className="h-2"
-                      />
-                    )}
+                    <Progress
+                      value={usage.chats.limit !== -1 ? (usage.chats.current / usage.chats.limit) * 100 : 100}
+                      className="h-2"
+                    />
                   </div>
 
                   {/* Storage */}

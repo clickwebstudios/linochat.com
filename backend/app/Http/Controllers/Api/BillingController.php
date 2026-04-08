@@ -145,11 +145,16 @@ class BillingController extends Controller {
             return response()->json(['success' => false, 'message' => 'Subscription is already cancelled'], 422);
         }
 
-        $this->stripeService->cancelSubscription($subscription->stripe_subscription_id);
+        $stripeSub = $this->stripeService->cancelSubscription($subscription->stripe_subscription_id);
+
+        $renewsAt = $stripeSub->current_period_end
+            ? Carbon::createFromTimestamp($stripeSub->current_period_end)
+            : null;
 
         $subscription->update([
             'status'               => 'cancelled',
             'cancellation_reason'  => $data['reason'] ?? null,
+            'renews_at'            => $renewsAt,
         ]);
 
         $admins = $company->users()->where('role', 'admin')->get();
@@ -158,6 +163,24 @@ class BillingController extends Controller {
         }
 
         return response()->json(['success' => true, 'message' => 'Subscription will be cancelled at end of billing period']);
+    }
+
+    public function resumeSubscription(Request $request)
+    {
+        $company = $request->user()->company;
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'No company found for this account'], 422);
+        }
+        $subscription = $company->subscription()->with('plan')->first();
+        if (!$subscription || !$subscription->stripe_subscription_id) {
+            return response()->json(['success' => false, 'message' => 'No subscription found'], 404);
+        }
+        if ($subscription->status !== 'cancelled') {
+            return response()->json(['success' => false, 'message' => 'Subscription is not cancelled'], 422);
+        }
+        $this->stripeService->resumeSubscription($subscription->stripe_subscription_id);
+        $subscription->update(['status' => 'active', 'cancellation_reason' => null]);
+        return response()->json(['success' => true, 'message' => 'Subscription resumed successfully']);
     }
 
     public function upgradePaidPlan(Request $request): \Illuminate\Http\JsonResponse
