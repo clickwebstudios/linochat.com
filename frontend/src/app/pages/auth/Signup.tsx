@@ -408,7 +408,6 @@ export default function Signup() {
     } finally {
       setIsSendingInvites(false);
     }
-    handleNext();
   };
 
   // ── Analysis loading screen ────────────────────────────────────────────────
@@ -798,22 +797,28 @@ export default function Signup() {
                   <p className="text-slate-500 text-sm mt-1">Add teammates now or skip and do it later from your dashboard</p>
                 </div>
                 <div className="space-y-5">
-                  <div className="space-y-2.5">
-                    {formData.teamEmails.map((email, i) => (
-                      <div key={i} className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input placeholder="colleague@company.com" value={email}
-                            onChange={(e) => updateTeamEmail(i, e.target.value)}
-                            className="pl-9 h-11" />
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2.5">
+                      {formData.teamEmails.map((email, i) => (
+                        <div key={i} className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input placeholder="colleague@company.com" value={email}
+                              onChange={(e) => updateTeamEmail(i, e.target.value)}
+                              className="pl-9 h-11" />
+                          </div>
+                          {formData.teamEmails.length > 1 && (
+                            <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => removeTeamEmail(i)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                        {formData.teamEmails.length > 1 && (
-                          <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => removeTeamEmail(i)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    <Button onClick={handleSendInvites} disabled={isSendingInvites} className="h-11 shrink-0 bg-primary hover:bg-primary/90 text-white">
+                      {isSendingInvites ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                      {isSendingInvites ? 'Sending...' : 'Send Invites'}
+                    </Button>
                   </div>
                   <button onClick={addTeamEmail} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
                     <span className="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center text-primary text-base leading-none">+</span>
@@ -828,13 +833,9 @@ export default function Signup() {
                     <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                       <ArrowLeft className="mr-2 h-4 w-4" />Back
                     </Button>
-                    <Button onClick={handleNext} variant="outline" className="h-11 px-5 text-slate-500">Skip</Button>
-                    {formData.teamEmails.some(e => e.trim()) && (
-                      <Button onClick={handleSendInvites} disabled={isSendingInvites} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
-                        {isSendingInvites ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                        {isSendingInvites ? 'Sending...' : 'Send Invites'}
-                      </Button>
-                    )}
+                    <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
+                      Continue<ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
