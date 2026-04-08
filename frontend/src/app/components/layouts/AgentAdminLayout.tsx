@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { Button } from '../ui/button';
@@ -10,8 +10,10 @@ import { usePlanGuard } from '../../hooks/usePlanGuard';
 function CancellationBanner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin' }) {
   const { subscription, isLoading } = usePlanGuard();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  if (isLoading || subscription?.status !== 'cancelled' || role === 'Agent') return null;
+  const isBillingPage = location.pathname.includes('/billing');
+  if (isLoading || subscription?.status !== 'cancelled' || role === 'Agent' || isBillingPage) return null;
 
   const basePath = role === 'Admin' ? '/admin' : '/agent';
 
