@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
@@ -80,32 +81,7 @@ export default function SuperadminPlatform() {
             <Badge variant="outline" className="text-xs">Superadmin</Badge>
           </div>
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 hover:bg-muted/50 rounded-lg p-2 transition-colors cursor-pointer">
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{user ? `${user.first_name} ${user.last_name}` : 'Admin'}</div>
-                  </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
-                      {user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` : 'AD'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/superadmin/dashboard')}>
-                  <User className="mr-2 h-4 w-4" /> Switch View
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => { logout(); navigate('/'); }}>
-                  <LogOut className="mr-2 h-4 w-4" /> Log Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ProfileDropdown basePath="/superadmin" isSuperadmin={true} />
           </div>
         </div>
 

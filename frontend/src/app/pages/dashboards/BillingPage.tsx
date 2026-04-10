@@ -129,70 +129,11 @@ interface DisplayInvoice {
   amount: string;
   status: string;
   pdf_url: string | null;
+  receipt_url: string | null;
 }
 
-// ─── Card brand detection helpers ──────────────────────
+// ─── Card brand helpers ──────────────────────
 type CardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'unknown';
-
-function detectCardBrand(number: string): CardBrand {
-  const cleaned = number.replace(/\s/g, '');
-  if (/^4/.test(cleaned)) return 'visa';
-  if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return 'mastercard';
-  if (/^3[47]/.test(cleaned)) return 'amex';
-  if (/^6(?:011|5)/.test(cleaned)) return 'discover';
-  return 'unknown';
-}
-
-function formatCardNumber(value: string, brand: CardBrand): string {
-  const cleaned = value.replace(/\D/g, '');
-  const maxLen = brand === 'amex' ? 15 : 16;
-  const truncated = cleaned.slice(0, maxLen);
-
-  if (brand === 'amex') {
-    // 4-6-5 grouping
-    return truncated.replace(/(\d{4})(\d{0,6})(\d{0,5})/, (_, a, b, c) =>
-      [a, b, c].filter(Boolean).join(' ')
-    );
-  }
-  // 4-4-4-4 grouping
-  return truncated.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-}
-
-function formatExpiry(value: string): string {
-  const cleaned = value.replace(/\D/g, '').slice(0, 4);
-  if (cleaned.length >= 3) {
-    return `${cleaned.slice(0, 2)} / ${cleaned.slice(2)}`;
-  }
-  return cleaned;
-}
-
-function luhnCheck(num: string): boolean {
-  const cleaned = num.replace(/\s/g, '');
-  if (cleaned.length < 13) return false;
-  let sum = 0;
-  let alternate = false;
-  for (let i = cleaned.length - 1; i >= 0; i--) {
-    let n = parseInt(cleaned[i], 10);
-    if (alternate) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
-    sum += n;
-    alternate = !alternate;
-  }
-  return sum % 10 === 0;
-}
-
-function isValidExpiry(value: string): boolean {
-  const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length !== 4) return false;
-  const month = parseInt(cleaned.slice(0, 2), 10);
-  const year = parseInt(`20${cleaned.slice(2)}`, 10);
-  if (month < 1 || month > 12) return false;
-  const now = new Date();
-  const expiry = new Date(year, month);
-  return expiry > now;
-}
 
 const brandColors: Record<CardBrand, string> = {
   visa: 'from-primary to-primary/85',
@@ -200,14 +141,6 @@ const brandColors: Record<CardBrand, string> = {
   amex: 'from-blue-400 to-cyan-600',
   discover: 'from-orange-400 to-orange-600',
   unknown: 'from-gray-500 to-gray-700',
-};
-
-const brandLabels: Record<CardBrand, string> = {
-  visa: 'Visa',
-  mastercard: 'Mastercard',
-  amex: 'American Express',
-  discover: 'Discover',
-  unknown: 'Card',
 };
 
 // ─── Component ─────────────────────────────────────────
@@ -232,6 +165,7 @@ export default function BillingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [downgradeSelected, setDowngradeSelected] = useState(false);
   const [agentCount, setAgentCount] = useState(1);
   const [invoices, setInvoices] = useState<DisplayInvoice[]>([]);
   const [billingLoading, setBillingLoading] = useState(true);
@@ -239,26 +173,13 @@ export default function BillingPage() {
     () => new URLSearchParams(location.search).get('upgrade') === '1'
   );
   const [selectedUpgradePlan, setSelectedUpgradePlan] = useState<string | null>(null);
-  const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [invoiceFilter, setInvoiceFilter] = useState('all');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [tokenTransactions, setTokenTransactions] = useState<{ id: number; action_type: string; tokens_amount: number; balance_after: number; created_at: string }[]>([]);
   const [userStatus, setUserStatus] = useState<'online' | 'away' | 'offline'>('online');
 
-  // Payment form state
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showCvc, setShowCvc] = useState(false);
-  const [paymentFormTouched, setPaymentFormTouched] = useState({
-    name: false,
-    number: false,
-    expiry: false,
-    cvc: false,
-  });
 
   // ─── Token Top-Up state ────────────────────────────
   const [topUpPacks, setTopUpPacks] = useState<TopUpPacksResponse>({});
@@ -308,6 +229,7 @@ export default function BillingPage() {
         setBillingCycle(sub.billing_cycle ?? 'monthly');
         setSubscriptionEndsAt(sub.renews_at ?? sub.ends_at ?? null);
         setSubscriptionStatus(sub.status);
+        setDowngradeSelected(!!sub.downgrade_selected_at);
       }
       if (tb) {
         setAgentCount(tb.agent_count || 1);
@@ -333,6 +255,7 @@ export default function BillingPage() {
           amount: `$${(inv.amount).toFixed(2)}`,
           status: inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
           pdf_url: inv.pdf_url ?? null,
+          receipt_url: inv.receipt_url ?? null,
         })));
       }
       if (Array.isArray(txns)) {
@@ -445,16 +368,6 @@ export default function BillingPage() {
     storage: { current: usageData.storage_gb, limit: currentPlan.id === 'free' ? 1 : currentPlan.id === 'starter' ? 5 : 10 },
   }), [currentPlan, agentCount, usageData]);
 
-  // Card form validation
-  const detectedBrand = detectCardBrand(cardNumber);
-  const cvcMaxLen = detectedBrand === 'amex' ? 4 : 3;
-  const cardNumberClean = cardNumber.replace(/\s/g, '');
-  const isCardNumberValid = cardNumberClean.length >= 13 && luhnCheck(cardNumberClean);
-  const isExpiryValid = isValidExpiry(cardExpiry);
-  const isCvcValid = cardCvc.length === cvcMaxLen;
-  const isCardNameValid = cardName.trim().length >= 2;
-  const isPaymentFormValid = isCardNumberValid && isExpiryValid && isCvcValid && isCardNameValid;
-
   // ─── Handlers ──────────────────────────────────────
 
   const [isConfirmingPlan, setIsConfirmingPlan] = useState(false);
@@ -521,15 +434,6 @@ export default function BillingPage() {
     }
   };
 
-  const resetPaymentForm = useCallback(() => {
-    setCardName('');
-    setCardNumber('');
-    setCardExpiry('');
-    setCardCvc('');
-    setShowCvc(false);
-    setPaymentFormTouched({ name: false, number: false, expiry: false, cvc: false });
-  }, []);
-
   const handleUpdatePayment = async () => {
     setIsProcessing(true);
     try {
@@ -579,21 +483,6 @@ export default function BillingPage() {
     } finally {
       setIsCancelling(false);
     }
-  };
-
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    const brand = detectCardBrand(raw);
-    setCardNumber(formatCardNumber(raw, brand));
-  };
-
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCardExpiry(formatExpiry(e.target.value));
-  };
-
-  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const cleaned = e.target.value.replace(/\D/g, '').slice(0, cvcMaxLen);
-    setCardCvc(cleaned);
   };
 
   const filteredInvoices = invoiceFilter === 'all'
@@ -783,9 +672,11 @@ export default function BillingPage() {
                           {isResuming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
                           Resume Subscription
                         </Button>
-                        <Button variant="outline" onClick={() => navigate(`${basePath}/billing/downgrade-selection`)}>
-                          Choose what to keep
-                        </Button>
+                        {!downgradeSelected && (
+                          <Button variant="outline" onClick={() => navigate(`${basePath}/billing/downgrade-selection`)}>
+                            Choose what to keep
+                          </Button>
+                        )}
                       </>
                     ) : (
                       <Button onClick={() => { setBillingCycle('annual'); setChangePlanDialogOpen(true); }}>
@@ -1094,9 +985,14 @@ export default function BillingPage() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => setPaymentMethodDialogOpen(true)}
+                      onClick={handleUpdatePayment}
+                      disabled={isProcessing}
                     >
-                      Update Payment Method
+                      {isProcessing ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Redirecting…</>
+                      ) : (
+                        'Update Payment Method'
+                      )}
                     </Button>
                   )}
 
@@ -1174,14 +1070,23 @@ export default function BillingPage() {
                               {invoice.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDownloadInvoice(invoice)}
                             >
                               <Download className="h-4 w-4 mr-1" />
-                              PDF
+                              Invoice
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={!invoice.receipt_url}
+                              onClick={() => invoice.receipt_url && window.open(invoice.receipt_url, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Receipt
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -1360,193 +1265,6 @@ export default function BillingPage() {
                   </Button>
                 )}
               </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* ─── Stripe-style Update Payment Method Dialog ── */}
-        <Dialog
-          open={paymentMethodDialogOpen}
-          onOpenChange={(open) => {
-            setPaymentMethodDialogOpen(open);
-            if (!open) resetPaymentForm();
-          }}
-        >
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Update Payment Method</DialogTitle>
-              <DialogDescription>
-                Enter your card details below. Your information is encrypted and processed securely.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              {/* Live card preview */}
-              <div className={`relative w-full h-40 rounded-xl bg-gradient-to-br ${brandColors[detectedBrand]} p-5 text-white shadow-lg overflow-hidden`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-8 -translate-x-8" />
-                <div className="relative z-10 flex flex-col justify-between h-full">
-                  <div className="flex justify-between items-start">
-                    <div className="h-8 w-10 rounded bg-white/20 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <span className="text-xs opacity-80">{brandLabels[detectedBrand]}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm tracking-widest opacity-90 font-mono">
-                      {cardNumber || '•••• •••• •••• ••••'}
-                    </p>
-                    <div className="flex justify-between items-end mt-2">
-                      <div>
-                        <p className="text-[10px] uppercase opacity-60">Card Holder</p>
-                        <p className="text-xs">{cardName || 'YOUR NAME'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase opacity-60">Expires</p>
-                        <p className="text-xs">{cardExpiry || 'MM/YY'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Name on Card */}
-              <div className="space-y-1.5">
-                <Label htmlFor="card-name">Name on Card</Label>
-                <Input
-                  id="card-name"
-                  placeholder="Card holder name"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                  onBlur={() => setPaymentFormTouched(t => ({ ...t, name: true }))}
-                  className={paymentFormTouched.name && !isCardNameValid ? 'border-red-300 focus-visible:ring-red-400' : ''}
-                />
-                {paymentFormTouched.name && !isCardNameValid && (
-                  <p className="text-xs text-red-500">Please enter the name on your card</p>
-                )}
-              </div>
-
-              {/* Card Number */}
-              <div className="space-y-1.5">
-                <Label htmlFor="card-number">Card Number</Label>
-                <div className="relative">
-                  <Input
-                    id="card-number"
-                    placeholder="4242 4242 4242 4242"
-                    value={cardNumber}
-                    onChange={handleCardNumberChange}
-                    onBlur={() => setPaymentFormTouched(t => ({ ...t, number: true }))}
-                    className={`pr-16 ${paymentFormTouched.number && cardNumberClean.length > 0 && !isCardNumberValid ? 'border-red-300 focus-visible:ring-red-400' : ''}`}
-                    maxLength={detectedBrand === 'amex' ? 17 : 19}
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    {cardNumberClean.length > 0 && (
-                      isCardNumberValid ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : paymentFormTouched.number ? (
-                        <AlertCircle className="h-4 w-4 text-red-400" />
-                      ) : null
-                    )}
-                    <div className={`h-5 w-8 rounded bg-gradient-to-r ${brandColors[detectedBrand]} opacity-60`} />
-                  </div>
-                </div>
-                {paymentFormTouched.number && cardNumberClean.length > 0 && !isCardNumberValid && (
-                  <p className="text-xs text-red-500">Please enter a valid card number</p>
-                )}
-              </div>
-
-              {/* Expiry + CVC */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="card-expiry">Expiry Date</Label>
-                  <Input
-                    id="card-expiry"
-                    placeholder="MM / YY"
-                    value={cardExpiry}
-                    onChange={handleExpiryChange}
-                    onBlur={() => setPaymentFormTouched(t => ({ ...t, expiry: true }))}
-                    className={paymentFormTouched.expiry && cardExpiry.length > 0 && !isExpiryValid ? 'border-red-300 focus-visible:ring-red-400' : ''}
-                    maxLength={7}
-                  />
-                  {paymentFormTouched.expiry && cardExpiry.length > 0 && !isExpiryValid && (
-                    <p className="text-xs text-red-500">Invalid expiry date</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="card-cvc">CVC</Label>
-                  <div className="relative">
-                    <Input
-                      id="card-cvc"
-                      type={showCvc ? 'text' : 'password'}
-                      placeholder={detectedBrand === 'amex' ? '1234' : '123'}
-                      value={cardCvc}
-                      onChange={handleCvcChange}
-                      onBlur={() => {
-                        setPaymentFormTouched(t => ({ ...t, cvc: true }));
-                      }}
-                      className={paymentFormTouched.cvc && cardCvc.length > 0 && !isCvcValid ? 'border-red-300 focus-visible:ring-red-400 pr-8' : 'pr-8'}
-                      maxLength={cvcMaxLen}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setShowCvc(v => !v);
-                      }}
-                    >
-                      {showCvc ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                  {paymentFormTouched.cvc && cardCvc.length > 0 && !isCvcValid && (
-                    <p className="text-xs text-red-500">{detectedBrand === 'amex' ? '4 digits required' : '3 digits required'}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Security info */}
-              <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg">
-                <Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-primary">
-                    Your payment is processed securely via Stripe. LinoChat never stores your full card number, CVC, or sensitive card data on our servers.
-                  </p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-[10px] text-primary flex items-center gap-1">
-                      <Lock className="h-3 w-3" /> 256-bit SSL
-                    </span>
-                    <span className="text-[10px] text-primary flex items-center gap-1">
-                      <Shield className="h-3 w-3" /> PCI DSS Compliant
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => { setPaymentMethodDialogOpen(false); resetPaymentForm(); }}
-                disabled={isProcessing}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpdatePayment}
-                disabled={!isPaymentFormValid || isProcessing}
-              >
-                {isProcessing ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    Save Card Securely
-                  </span>
-                )}
-              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

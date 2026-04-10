@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
@@ -270,16 +271,7 @@ export default function AgentDetails() {
             </div>
             <div className="text-xs text-muted-foreground capitalize">{(currentUser as any)?.role ?? 'Agent'}</div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm"><ChevronDown className="h-4 w-4" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`${basePath}/profile-settings`)}>
-                <User className="mr-2 h-4 w-4" /> Profile Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProfileDropdown basePath={basePath} />
         </div>
       </header>
 

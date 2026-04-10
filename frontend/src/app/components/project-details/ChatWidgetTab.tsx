@@ -312,6 +312,27 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     if (savedSnapshot === 'pending') setSavedSnapshot(currentSnapshot);
   }, [savedSnapshot, currentSnapshot]);
 
+  // Push live updates to the iframe preview when settings change
+  useEffect(() => {
+    const iframe = document.getElementById('widget-preview-iframe') as HTMLIFrameElement;
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage({
+      type: 'lc-preview-update',
+      settings: {
+        color: widgetColor,
+        position: widgetPosition,
+        design: widgetDesign,
+        title: widgetTitle,
+        fontSize,
+        greetingEnabled,
+        greetingDelay,
+        greetingMessage,
+        animation: widgetAnimation || 'none',
+        gradient: widgetGradient,
+      },
+    }, '*');
+  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, widgetGradient]);
+
   const handleSaveSettings = async () => {
     if (!project?.id) return;
     setSaving(true);
@@ -1064,6 +1085,14 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
   // Run at 800ms for fast API responses, and again at 3s to override slow ones
   setTimeout(applyAll, 800);
   setTimeout(applyAll, 3000);
+
+  // Listen for live updates from parent editor
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'lc-preview-update') {
+      Object.assign(p, e.data.settings);
+      applyAll();
+    }
+  });
 })();
 </script>
 </body></html>`}

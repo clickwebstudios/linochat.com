@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
@@ -405,38 +406,7 @@ export default function TicketDetails() {
             <Button className="bg-primary hover:bg-primary/90 hidden md:inline-flex">
               + New Ticket
             </Button>
-            {/* Agent Info */}
-            <div className="hidden md:flex items-center gap-3 pl-4 border-l">
-              <div className="relative">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary text-primary-foreground">SC</AvatarFallback>
-                </Avatar>
-                <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
-              </div>
-              <div>
-                <div className="text-sm font-semibold">Sarah Chen</div>
-                <div className="text-xs text-muted-foreground">Admin</div>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/agent/profile-settings" className="flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Profile Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <Link to="/">Log Out</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} />
           </div>
         </header>
 

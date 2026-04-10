@@ -220,6 +220,7 @@ export interface Subscription {
   started_at?: string;
   ends_at?: string;
   renews_at?: string;
+  downgrade_selected_at?: string | null;
   created_at?: string;
   updated_at?: string;
   // Relationships

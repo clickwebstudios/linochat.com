@@ -23,7 +23,6 @@ import {
   ArrowLeft,
   Sparkles,
   Globe,
-  Palette,
   X,
   Loader2,
   AlertCircle,
@@ -34,8 +33,6 @@ import {
   BarChart3,
   Shield,
   Rocket,
-  UserPlus,
-  Brush,
   PartyPopper,
   ChevronRight,
 } from 'lucide-react';
@@ -44,7 +41,7 @@ import { authApi } from '../../api/client';
 import { projectService } from '../../services/projects';
 import { api } from '../../api/client';
 
-type SignupStep = 'account' | 'verify' | 'project' | 'team' | 'customize' | 'complete';
+type SignupStep = 'account' | 'verify' | 'project' | 'complete';
 
 const ANALYSIS_STEPS = [
   'Connecting to website...',
@@ -125,26 +122,6 @@ const STEP_PANELS: Record<SignupStep, {
       { icon: <Zap className="h-4 w-4" />, text: 'AI starts answering questions immediately' },
     ],
   },
-  team: {
-    icon: <UserPlus className="h-10 w-10" />,
-    headline: 'Better support starts with the right team',
-    sub: 'Invite teammates to collaborate, share workload, and respond faster together.',
-    bullets: [
-      { icon: <Users className="h-4 w-4" />, text: 'Unlimited agents on all plans' },
-      { icon: <Check className="h-4 w-4" />, text: 'Role-based permissions & visibility' },
-      { icon: <MessageSquare className="h-4 w-4" />, text: 'Real-time handoff between AI and agents' },
-    ],
-  },
-  customize: {
-    icon: <Brush className="h-10 w-10" />,
-    headline: 'Make the widget feel like yours',
-    sub: 'Match your brand colors so the chat widget blends seamlessly into your site.',
-    bullets: [
-      { icon: <Palette className="h-4 w-4" />, text: 'Custom colors, logo, and welcome message' },
-      { icon: <Globe className="h-4 w-4" />, text: 'Works on any website with one line of code' },
-      { icon: <Sparkles className="h-4 w-4" />, text: 'More customization options in the dashboard' },
-    ],
-  },
   complete: {
     icon: <PartyPopper className="h-10 w-10" />,
     headline: "You're live — let's grow",
@@ -170,7 +147,7 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { register, googleLogin, isLoading, error, clearError } = useAuthStore();
+  const { register, googleLogin, isLoading, error, clearError, user, project } = useAuthStore();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const [googleAuthed, setGoogleAuthed] = useState(false);
@@ -213,8 +190,6 @@ export default function Signup() {
   const [analysisStep, setAnalysisStep] = useState(0);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [kbArticlesCount, setKbArticlesCount] = useState(0);
-  const [isSendingInvites, setIsSendingInvites] = useState(false);
-
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -225,15 +200,12 @@ export default function Signup() {
     projectName: '',
     website: '',
     primaryColor: '#2563eb',
-    teamEmails: [''],
   });
 
   const steps: { id: SignupStep; label: string }[] = [
     { id: 'account', label: 'Account' },
     { id: 'verify', label: 'Verify' },
     { id: 'project', label: 'Workspace' },
-    { id: 'team', label: 'Team' },
-    { id: 'customize', label: 'Brand' },
     { id: 'complete', label: 'Done' },
   ];
 
@@ -277,10 +249,16 @@ export default function Signup() {
   useEffect(() => {
     if (currentStep !== 'complete') return;
     const timer = setTimeout(() => {
-      const { user } = useAuthStore.getState();
-      if (user?.role === 'superadmin') navigate('/superadmin/dashboard', { replace: true });
-      else if (user?.role === 'admin') navigate('/admin/dashboard', { replace: true });
-      else navigate('/agent/dashboard', { replace: true });
+      const { user, project } = useAuthStore.getState();
+      if (project) {
+        if (user?.role === 'superadmin') navigate(`/superadmin/project/${project.id}`, { replace: true });
+        else if (user?.role === 'admin') navigate(`/admin/project/${project.id}`, { replace: true });
+        else navigate(`/agent/project/${project.id}`, { replace: true });
+      } else {
+        if (user?.role === 'superadmin') navigate('/superadmin/dashboard', { replace: true });
+        else if (user?.role === 'admin') navigate('/admin/dashboard', { replace: true });
+        else navigate('/agent/dashboard', { replace: true });
+      }
     }, 3000);
     return () => clearTimeout(timer);
   }, [currentStep, navigate]);
@@ -382,33 +360,6 @@ export default function Signup() {
     }
   };
 
-  const addTeamEmail = () => setFormData({ ...formData, teamEmails: [...formData.teamEmails, ''] });
-  const updateTeamEmail = (i: number, v: string) => {
-    const emails = [...formData.teamEmails]; emails[i] = v;
-    setFormData({ ...formData, teamEmails: emails });
-  };
-  const removeTeamEmail = (i: number) =>
-    setFormData({ ...formData, teamEmails: formData.teamEmails.filter((_, idx) => idx !== i) });
-
-  const handleSendInvites = async () => {
-    const emails = formData.teamEmails.map(e => e.trim()).filter(Boolean);
-    if (emails.length === 0) { handleNext(); return; }
-    const project = useAuthStore.getState().project;
-    if (!project) { handleNext(); return; }
-    setIsSendingInvites(true);
-    try {
-      await Promise.allSettled(
-        emails.map(email =>
-          api.post('/agent/invitations', { email, role: 'agent', project_ids: [String(project.id)] })
-        )
-      );
-      toast.success(`Invite${emails.length > 1 ? 's' : ''} sent`);
-    } catch {
-      // Silently proceed — individual errors won't block onboarding
-    } finally {
-      setIsSendingInvites(false);
-    }
-  };
 
   // ── Analysis loading screen ────────────────────────────────────────────────
   if (isAnalyzing) {
@@ -789,118 +740,6 @@ export default function Signup() {
               </div>
             )}
 
-            {/* ── Step 4: Team ── */}
-            {currentStep === 'team' && (
-              <div>
-                <div className="mb-8">
-                  <h1 className="text-2xl font-bold text-slate-900">Invite your team</h1>
-                  <p className="text-slate-500 text-sm mt-1">Add teammates now or skip and do it later from your dashboard</p>
-                </div>
-                <div className="space-y-5">
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1 space-y-2.5">
-                      {formData.teamEmails.map((email, i) => (
-                        <div key={i} className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input placeholder="colleague@company.com" value={email}
-                              onChange={(e) => updateTeamEmail(i, e.target.value)}
-                              className="pl-9 h-11" />
-                          </div>
-                          {formData.teamEmails.length > 1 && (
-                            <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => removeTeamEmail(i)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <Button onClick={handleSendInvites} disabled={isSendingInvites} className="h-11 shrink-0 bg-primary hover:bg-primary/90 text-white">
-                      {isSendingInvites ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                      {isSendingInvites ? 'Sending...' : 'Send Invites'}
-                    </Button>
-                  </div>
-                  <button onClick={addTeamEmail} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
-                    <span className="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center text-primary text-base leading-none">+</span>
-                    Add another person
-                  </button>
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                    <p className="text-xs text-slate-500">
-                      Each teammate gets an email invite with a link to join your workspace. They can set up their password on their own.
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
-                      <ArrowLeft className="mr-2 h-4 w-4" />Back
-                    </Button>
-                    <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
-                      Continue<ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── Step 5: Customize ── */}
-            {currentStep === 'customize' && (
-              <div>
-                <div className="mb-8">
-                  <h1 className="text-2xl font-bold text-slate-900">Brand your chat widget</h1>
-                  <p className="text-slate-500 text-sm mt-1">Pick a color that matches your website — visitors will trust it more</p>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Primary color</label>
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Input type="color" value={formData.primaryColor}
-                          onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                          className="w-14 h-14 p-1 rounded-xl cursor-pointer border-slate-200" />
-                      </div>
-                      <Input value={formData.primaryColor}
-                        onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                        placeholder="#2563eb" className="flex-1 h-11 font-mono text-sm" />
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {['#4F46E5', '#2563EB', '#0891B2', '#059669', '#16A34A', '#CA8A04', '#EA580C', '#DC2626', '#DB2777', '#9333EA', '#475569', '#111827'].map((c) => (
-                        <button key={c} onClick={() => setFormData({ ...formData, primaryColor: c })}
-                          className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110 cursor-pointer ${formData.primaryColor.toUpperCase() === c.toUpperCase() ? 'border-slate-900 scale-110' : 'border-transparent'}`}
-                          style={{ backgroundColor: c }} />
-                      ))}
-                    </div>
-                  </div>
-                  {/* Live preview */}
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                    <p className="text-xs font-medium text-slate-500 mb-3">Live preview</p>
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 max-w-xs">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: formData.primaryColor }}>
-                          <MessageSquare className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-slate-900">{formData.companyName || 'Your Company'}</p>
-                          <p className="text-xs text-slate-400">We reply in a few minutes</p>
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-2.5 text-xs text-slate-600 mb-3">
-                        Hi! How can I help you today?
-                      </div>
-                      <button className="w-full text-xs text-white py-2 rounded-lg font-medium" style={{ backgroundColor: formData.primaryColor }}>
-                        Start a conversation
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
-                      <ArrowLeft className="mr-2 h-4 w-4" />Back
-                    </Button>
-                    <Button onClick={handleNext} className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white">
-                      Complete Setup <Check className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* ── Step 6: Complete ── */}
             {currentStep === 'complete' && (
@@ -930,8 +769,8 @@ export default function Signup() {
                   ))}
                 </div>
                 <Button asChild className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium text-base">
-                  <Link to="/admin/dashboard">
-                    Go to Dashboard <ChevronRight className="ml-1.5 h-5 w-5" />
+                  <Link to={project ? `/${user?.role === 'superadmin' ? 'superadmin' : user?.role === 'admin' ? 'admin' : 'agent'}/project/${project.id}` : '/admin/dashboard'}>
+                    Go to Workspace <ChevronRight className="ml-1.5 h-5 w-5" />
                   </Link>
                 </Button>
                 <p className="text-xs text-slate-400 mt-4 flex items-center justify-center gap-1.5">

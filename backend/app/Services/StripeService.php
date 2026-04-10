@@ -104,6 +104,7 @@ class StripeService
                 'status'      => $inv->status,
                 'created_at'  => date('Y-m-d\TH:i:s\Z', $inv->created),
                 'pdf_url'     => $inv->invoice_pdf,
+                'receipt_url' => $inv->charge?->receipt_url,
                 'hosted_url'  => $inv->hosted_invoice_url,
             ];
         }, $invoices->data);
