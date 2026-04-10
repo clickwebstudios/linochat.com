@@ -13,6 +13,7 @@ class SubscriptionResource extends JsonResource {
             'started_at' => $this->started_at,
             'ends_at' => $this->ends_at,
             'renews_at' => $this->renews_at,
+            'downgrade_selected_at' => $this->downgrade_selected_at,
             'plan' => new PlanResource($this->plan),
         ];
     }

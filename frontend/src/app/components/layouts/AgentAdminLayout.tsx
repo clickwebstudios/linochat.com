@@ -13,7 +13,7 @@ function CancellationBanner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin' }
   const location = useLocation();
 
   const isBillingPage = location.pathname.includes('/billing');
-  if (isLoading || subscription?.status !== 'cancelled' || role === 'Agent' || isBillingPage) return null;
+  if (isLoading || subscription?.status !== 'cancelled' || subscription?.downgrade_selected_at || role === 'Agent' || isBillingPage) return null;
 
   const basePath = role === 'Admin' ? '/admin' : '/agent';
 

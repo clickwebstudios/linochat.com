@@ -325,6 +325,8 @@ class BillingController extends Controller {
             ->when(count($keepProjectIds) > 0, fn($q) => $q->whereNotIn('id', $keepProjectIds))
             ->update(['status' => 'inactive']);
 
+        $subscription->update(['downgrade_selected_at' => now()]);
+
         return response()->json(['success' => true, 'message' => 'Downgrade selection saved']);
     }
 
