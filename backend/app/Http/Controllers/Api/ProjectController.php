@@ -81,7 +81,8 @@ class ProjectController extends Controller
             $planLimits = ['free' => 1, 'starter' => 3, 'growth' => 5, 'pro' => 10, 'scale' => 20, 'enterprise' => PHP_INT_MAX];
             $plan       = strtolower($company->plan ?? 'free');
             $limit      = $planLimits[$plan] ?? 1;
-            $count      = Project::where('user_id', $company->id)->where('status', 'active')->count();
+            $allCompanyUserIds = \App\Models\User::where('company_id', $company->id)->pluck('id');
+            $count      = Project::whereIn('user_id', $allCompanyUserIds)->where('status', 'active')->count();
             if ($count >= $limit) {
                 return response()->json([
                     'success' => false,
@@ -164,7 +165,7 @@ class ProjectController extends Controller
                 $website = 'https://' . $website;
             }
             $website   = rtrim(strtolower($website), '/');
-            $duplicate = Project::whereRaw("LOWER(RTRIM(website, '/')) = ?", [$website])
+            $duplicate = Project::whereRaw("LOWER(TRIM(TRAILING '/' FROM website)) = ?", [$website])
                 ->where('id', '!=', $project_id)
                 ->first();
             if ($duplicate) {

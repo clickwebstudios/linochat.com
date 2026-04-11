@@ -8,9 +8,9 @@ class ChatMessageResource extends JsonResource {
         return [
             'id' => $this->id,
             'chat_id' => $this->chat_id,
-            'sender' => $this->sender,
-            'text' => $this->text,
-            'is_read' => $this->is_read,
+            'sender_type' => $this->sender_type,
+            'content' => $this->content,
+            'is_read' => (bool) $this->read_at,
             'timestamp' => $this->created_at,
         ];
     }

@@ -13,7 +13,7 @@ class ChatMessageController extends Controller {
         return ChatMessageResource::collection($messages);
     }
     public function store(Request $request, Chat $chat) {
-        $data = $request->validate(['sender' => 'required|in:customer,agent,system', 'text' => 'required|string']);
+        $data = $request->validate(['sender_type' => 'required|in:customer,agent,system', 'content' => 'required|string']);
         $message = $chat->messages()->create($data);
         $chat->update(['last_message_at' => now()]);
         broadcast(new MessageSent($message))->toOthers();
