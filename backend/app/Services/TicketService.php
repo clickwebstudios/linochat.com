@@ -249,7 +249,7 @@ class TicketService
             $project      = $ticket->project;
             $emailChannel = $project?->integrations['email'] ?? [];
             $fromEmail    = $emailChannel['support_email'] ?? null;
-            $fromName     = $emailChannel['from_name'] ?? ($project?->name . ' Support') ?: config('mail.from.name');
+            $fromName     = $emailChannel['from_name'] ?? ($project?->name ? $project->name . ' Support' : null) ?? config('mail.from.name');
             $replyTo      = $fromEmail ?? config('mail.from.address');
             $isVerified   = ($emailChannel['domain_auth']['status'] ?? '') === 'verified';
 

@@ -341,10 +341,21 @@ class AISettingsController extends Controller
         $context = $input;
         if (preg_match('/^https?:\/\//', $input) || preg_match('/\.\w{2,}$/', $input)) {
             $url = preg_match('/^https?:\/\//', $input) ? $input : 'https://' . $input;
-            // Block SSRF: reject internal/private IPs
+            // Block SSRF: reject internal/private IPs (direct IPs and DNS-resolved)
             $host = parse_url($url, PHP_URL_HOST);
-            $ip = $host ? gethostbyname($host) : null;
-            $isPrivate = $ip && $ip !== $host && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+            $resolvedIp = null;
+            if ($host) {
+                if (filter_var($host, FILTER_VALIDATE_IP)) {
+                    // Host is already a bare IP address — check it directly
+                    $resolvedIp = $host;
+                } else {
+                    $dns = gethostbyname($host);
+                    if ($dns !== $host) {
+                        $resolvedIp = $dns;
+                    }
+                }
+            }
+            $isPrivate = $resolvedIp && !filter_var($resolvedIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
             if (!$isPrivate) {
                 try {
                     $response = \Illuminate\Support\Facades\Http::timeout(5)->connectTimeout(3)
