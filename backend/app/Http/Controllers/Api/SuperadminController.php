@@ -141,13 +141,33 @@ class SuperadminController extends Controller
             $project->agents()->detach();
             $project->kbCategories()->each(fn ($c) => $c->articles()->delete());
             $project->kbCategories()->delete();
-            $project->chats()->each(fn ($c) => $c->messages()->delete());
+            $project->chats()->each(function ($c) {
+                $c->messages()->delete();
+                $c->transfers()->delete();
+            });
             $project->chats()->delete();
             $project->tickets()->each(fn ($t) => $t->messages()->delete());
             $project->tickets()->delete();
+            \App\Models\ContactForm::where('project_id', $project->id)->delete();
+            \App\Models\TrainingDocument::where('project_id', $project->id)->delete();
             Invitation::where('project_id', $project->id)->delete();
             $project->delete();
         });
+
+        // Delete company record and other users in the company
+        if ($company->company_id) {
+            $companyModel = \App\Models\Company::find($company->company_id);
+            if ($companyModel) {
+                // Delete other users (agents) in the company
+                $companyModel->users()->where('id', '!=', $company->id)->delete();
+                $companyModel->usageLimitNotifications()->delete();
+                $companyModel->tokenTransactions()->delete();
+                $companyModel->invoices()->delete();
+                $companyModel->subscription()->delete();
+                $companyModel->delete();
+            }
+        }
+
         $company->delete();
         return response()->json(['success' => true, 'message' => 'Company deleted']);
     }
