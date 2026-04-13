@@ -104,6 +104,14 @@ class WidgetSettingsController extends Controller
                     'show_on_pages' => 'all',
                     'page_urls' => [],
                 ],
+                'inactivity' => $settings['inactivity'] ?? [
+                    'enabled' => false,
+                    'follow_up_delay_minutes' => 1,
+                    'follow_up_message' => 'Are you still here? Let me know if you need any more help.',
+                    'auto_close_enabled' => false,
+                    'auto_close_delay_minutes' => 5,
+                    'auto_close_message' => 'This chat has been closed due to inactivity. Feel free to start a new conversation anytime!',
+                ],
                 'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
             ],
         ]);
@@ -208,6 +216,13 @@ class WidgetSettingsController extends Controller
             'popover.show_on_pages'                => 'nullable|string|in:all,specific',
             'popover.page_urls'                    => 'nullable|array|max:20',
             'popover.page_urls.*'                  => 'nullable|string|max:500',
+            'inactivity'                           => 'nullable|array',
+            'inactivity.enabled'                   => 'nullable|boolean',
+            'inactivity.follow_up_delay_minutes'   => 'nullable|integer|min:1|max:60',
+            'inactivity.follow_up_message'         => 'nullable|string|max:500',
+            'inactivity.auto_close_enabled'        => 'nullable|boolean',
+            'inactivity.auto_close_delay_minutes'  => 'nullable|integer|min:1|max:60',
+            'inactivity.auto_close_message'        => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -229,7 +244,7 @@ class WidgetSettingsController extends Controller
             'greeting_enabled', 'greeting_delay', 'greeting_message', 'font_size',
             'animation', 'animation_repeat', 'animation_delay', 'animation_duration',
             'animation_stop_after', 'gradient', 'offline_behavior', 'offline_message',
-            'schedule', 'popover',
+            'schedule', 'popover', 'inactivity',
         ];
 
         foreach ($updatableFields as $field) {

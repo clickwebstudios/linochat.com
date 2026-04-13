@@ -37,9 +37,14 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
-    public function projects(): HasMany
+    /**
+     * Get projects owned by any user in this company.
+     * Projects don't have company_id — they link via user_id (the admin owner).
+     */
+    public function projects()
     {
-        return $this->hasMany(Project::class);
+        $userIds = $this->users()->pluck('id');
+        return Project::whereIn('user_id', $userIds);
     }
 
     public function subscription(): HasOne
@@ -60,5 +65,10 @@ class Company extends Model
     public function tokenPurchases(): HasMany
     {
         return $this->hasMany(TokenPurchase::class);
+    }
+
+    public function usageLimitNotifications(): HasMany
+    {
+        return $this->hasMany(UsageLimitNotification::class);
     }
 }

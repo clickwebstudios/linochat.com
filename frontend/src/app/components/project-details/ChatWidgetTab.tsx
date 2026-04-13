@@ -191,13 +191,14 @@ interface ChatWidgetTabProps {
   onCopyWidgetId: () => void;
 }
 
-type WidgetSection = 'appearance' | 'greeting' | 'animations' | 'schedule' | 'embed';
+type WidgetSection = 'appearance' | 'greeting' | 'animations' | 'schedule' | 'inactivity' | 'embed';
 
 const WIDGET_NAV = [
   { id: 'appearance' as WidgetSection, label: 'Appearance', icon: Paintbrush },
   { id: 'greeting' as WidgetSection, label: 'Greeting', icon: HandMetal },
   { id: 'animations' as WidgetSection, label: 'Animations', icon: Sparkles },
   { id: 'schedule' as WidgetSection, label: 'Schedule', icon: Clock },
+  { id: 'inactivity' as WidgetSection, label: 'Inactivity', icon: Clock },
   { id: 'embed' as WidgetSection, label: 'Embed Code', icon: Code },
 ];
 
@@ -232,6 +233,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const [buttonText, setButtonText] = useState('💬');
   const [schedule, setSchedule] = useState<WidgetSchedule>(DEFAULT_SCHEDULE);
   const [showOfflinePreview, setShowOfflinePreview] = useState(false);
+  const [inactivity, setInactivity] = useState({
+    enabled: false,
+    follow_up_delay_minutes: 1,
+    follow_up_message: 'Are you still here? Let me know if you need any more help.',
+    auto_close_enabled: false,
+    auto_close_delay_minutes: 5,
+    auto_close_message: 'This chat has been closed due to inactivity. Feel free to start a new conversation anytime!',
+  });
 
   // Derive offline fields from schedule for WidgetPreview backward compat
   const offlineBehavior = schedule.offline_behavior;
@@ -248,7 +257,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const currentSnapshot = JSON.stringify({
     widgetColor, widgetPosition, widgetTitle, welcomeMessage, buttonText, widgetDesign,
     widgetActive, greetingEnabled, greetingDelay, greetingMessage, fontSize,
-    widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, schedule,
+    widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, schedule, inactivity,
   });
   const isDirty = savedSnapshot !== '' && currentSnapshot !== savedSnapshot;
 
@@ -294,6 +303,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                 offline_message: d.offline_message ?? prev.offline_message,
               }));
             }
+          }
+          if (d.inactivity) {
+            setInactivity(prev => ({ ...prev, ...d.inactivity }));
           }
         }
       } catch {
@@ -359,6 +371,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         offline_behavior: schedule.offline_behavior,
         offline_message: schedule.offline_message,
         schedule,
+        inactivity,
       });
       if (response.success) {
         setSavedSnapshot(currentSnapshot);
@@ -853,6 +866,118 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   showOfflinePreview={showOfflinePreview}
                   setShowOfflinePreview={setShowOfflinePreview}
                 />
+              </div>
+            )}
+
+            {/* ── Inactivity ── */}
+            {activeSection === 'inactivity' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold">Inactivity Handling</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Automatically follow up when a customer goes silent after receiving a reply.
+                  </p>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-6">
+                    {/* Master toggle */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Enable inactivity follow-up</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Send a follow-up message when the customer doesn't reply
+                        </p>
+                      </div>
+                      <Switch
+                        checked={inactivity.enabled}
+                        onCheckedChange={(checked) => setInactivity(prev => ({ ...prev, enabled: checked }))}
+                      />
+                    </div>
+
+                    {inactivity.enabled && (
+                      <>
+                        {/* Follow-up delay */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Follow-up after (minutes)</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Minutes of customer silence before sending the follow-up message
+                          </p>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={inactivity.follow_up_delay_minutes}
+                            onChange={(e) => setInactivity(prev => ({ ...prev, follow_up_delay_minutes: Math.max(1, Math.min(60, parseInt(e.target.value) || 1)) }))}
+                            className="w-24"
+                          />
+                        </div>
+
+                        {/* Follow-up message */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Follow-up message</Label>
+                          <Textarea
+                            value={inactivity.follow_up_message}
+                            onChange={(e) => setInactivity(prev => ({ ...prev, follow_up_message: e.target.value }))}
+                            maxLength={500}
+                            rows={2}
+                            placeholder="Are you still here? Let me know if you need any more help."
+                          />
+                          <p className="text-xs text-muted-foreground text-right">{inactivity.follow_up_message.length}/500</p>
+                        </div>
+
+                        <hr className="border-border" />
+
+                        {/* Auto-close toggle */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-medium">Auto-close after follow-up</Label>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Automatically close the chat if customer still doesn't reply
+                            </p>
+                          </div>
+                          <Switch
+                            checked={inactivity.auto_close_enabled}
+                            onCheckedChange={(checked) => setInactivity(prev => ({ ...prev, auto_close_enabled: checked }))}
+                          />
+                        </div>
+
+                        {inactivity.auto_close_enabled && (
+                          <>
+                            {/* Auto-close delay */}
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Auto-close after (minutes)</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Minutes after the follow-up before auto-closing the chat
+                              </p>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={60}
+                                value={inactivity.auto_close_delay_minutes}
+                                onChange={(e) => setInactivity(prev => ({ ...prev, auto_close_delay_minutes: Math.max(1, Math.min(60, parseInt(e.target.value) || 1)) }))}
+                                className="w-24"
+                              />
+                            </div>
+
+                            {/* Auto-close message */}
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Auto-close message</Label>
+                              <Textarea
+                                value={inactivity.auto_close_message}
+                                onChange={(e) => setInactivity(prev => ({ ...prev, auto_close_message: e.target.value }))}
+                                maxLength={500}
+                                rows={2}
+                                placeholder="This chat has been closed due to inactivity."
+                              />
+                              <p className="text-xs text-muted-foreground text-right">{inactivity.auto_close_message.length}/500</p>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             )}
 

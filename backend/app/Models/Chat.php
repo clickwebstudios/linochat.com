@@ -28,11 +28,13 @@ class Chat extends Model
         'customer_last_seen_at',
         'metadata',
         'resolution_type',
+        'follow_up_sent_at',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
         'customer_last_seen_at' => 'datetime',
+        'follow_up_sent_at' => 'datetime',
         'metadata' => 'array',
         'ai_enabled' => 'boolean',
     ];
