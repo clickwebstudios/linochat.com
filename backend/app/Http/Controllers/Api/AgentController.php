@@ -293,6 +293,28 @@ class AgentController extends Controller
     }
 
     /**
+     * Delete chat and all its messages
+     */
+    public function destroy(string $chat_id)
+    {
+        $user = auth('api')->user();
+        $chat = Chat::where('id', $chat_id)->first();
+
+        if (!$chat) {
+            return response()->json(['success' => false, 'message' => 'Chat not found'], 404);
+        }
+        if (!$user->can('delete', $chat)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $chat->messages()->delete();
+        $chat->transfers()->delete();
+        $chat->delete();
+
+        return response()->json(['success' => true, 'message' => 'Chat deleted']);
+    }
+
+    /**
      * Send typing indicator
      */
     public function typing(Request $request, string $chat_id)

@@ -174,6 +174,7 @@ Route::middleware('auth:sanctum')->prefix('agent')->group(function () {
     Route::post('/chats/{chat_id}/take', [AgentController::class, 'take']);
     Route::post('/chats/{chat_id}/message', [AgentController::class, 'sendMessage']);
     Route::post('/chats/{chat_id}/close', [AgentController::class, 'close']);
+    Route::delete('/chats/{chat_id}', [AgentController::class, 'destroy']);
     Route::post('/chats/{chat_id}/typing', [AgentController::class, 'typing']);
     Route::post('/chats/{chat_id}/mark-read', [AgentController::class, 'markRead']);
     Route::post('/chats/{id}/toggle-ai', [AgentController::class, 'toggleAi']);

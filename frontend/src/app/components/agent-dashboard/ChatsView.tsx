@@ -588,6 +588,29 @@ export function ChatsView({
     }
   };
 
+  const handleDeleteChat = async () => {
+    if (!activeChat?.id) return;
+    if (!window.confirm('Are you sure you want to permanently delete this chat? This cannot be undone.')) return;
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const response = await fetch(`/api/agent/chats/${activeChat.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to delete chat');
+      onChatsUpdate?.((prevChats) =>
+        prevChats.filter((c) => c.id !== activeChat.id)
+      );
+      setActiveChat(null);
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+    }
+  };
+
   const handleSubmitTransfer = () => {
     if (selectedOperatorForTransfer && transferReason.trim()) {
       setShowTransferDialog(false);
@@ -714,6 +737,7 @@ export function ChatsView({
           }}
           onShowTakeoverDialog={() => setShowTakeoverDialog(true)}
           onEndChat={handleEndChat}
+          onDeleteChat={(_role === 'Admin' || _role === 'Superadmin') ? handleDeleteChat : undefined}
           sendAgentTyping={sendAgentTyping}
           formatRelativeTime={formatRelativeTime}
           firstProjectId={projects[0]?.id}
