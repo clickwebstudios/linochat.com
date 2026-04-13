@@ -129,10 +129,6 @@ class UsageLimitNotificationService
 
     private function getBillingPeriodStart(Company $company): Carbon
     {
-        $subscription = $company->subscription;
-        if ($subscription && $subscription->started_at) {
-            return Carbon::parse($subscription->started_at)->startOfDay();
-        }
         return Carbon::now()->startOfMonth();
     }
 }
