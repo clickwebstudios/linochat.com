@@ -39,7 +39,8 @@ class AgentController extends Controller
             ->withCount(['messages as unread_messages_count' => fn ($q) => $q->whereIn('sender_type', ['customer', 'ai'])->whereNull('read_at')]);
 
         if ($status === 'active') {
-            $query->whereIn('status', ['active', 'waiting', 'ai_handling']);
+            $query->whereIn('status', ['active', 'waiting', 'ai_handling'])
+                  ->where('customer_last_seen_at', '>=', now()->subSeconds(30));
         } elseif ($status === 'mine') {
             $query->where('agent_id', $user->id)->whereIn('status', ['active', 'waiting']);
         } elseif ($status === 'unassigned') {
