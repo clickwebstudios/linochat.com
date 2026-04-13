@@ -224,6 +224,7 @@ export function CompanyDetailView({
     try {
       const res = await api.post<any>(`/superadmin/impersonate/${agent.id}`, {});
       if (res.success && res.data) {
+        localStorage.setItem('superadmin_token', localStorage.getItem('access_token') || '');
         localStorage.setItem('access_token', res.data.access_token);
         localStorage.setItem('impersonated_by', res.data.impersonated_by);
         useAuthStore.getState().setUser(res.data.user);

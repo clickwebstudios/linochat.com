@@ -24,6 +24,11 @@ class TokenService
             $company = Company::lockForUpdate()->findOrFail($company->id);
 
             if ($company->token_balance < $cost) {
+                $companyId = $company->id;
+                dispatch(function () use ($companyId) {
+                    $c = Company::find($companyId);
+                    if ($c) app(UsageLimitNotificationService::class)->notifyTokensExhausted($c);
+                })->afterResponse();
                 return false;
             }
 

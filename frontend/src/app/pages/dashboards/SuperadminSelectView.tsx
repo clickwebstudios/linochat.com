@@ -79,6 +79,7 @@ export default function SuperadminSelectView() {
       const res = await api.post<any>(`/superadmin/impersonate/${targetUser.id}`, {});
       if (res.success && res.data) {
         // Switch to impersonated user
+        localStorage.setItem('superadmin_token', localStorage.getItem('access_token') || '');
         localStorage.setItem('access_token', res.data.access_token);
         localStorage.setItem('impersonated_by', res.data.impersonated_by);
 

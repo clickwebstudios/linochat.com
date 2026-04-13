@@ -25,9 +25,7 @@ class ContactFormController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $projectIds = $user->projects()->pluck('projects.id')
-            ->merge($user->ownedProjects()->pluck('id'))
-            ->unique();
+        $projectIds = $user->getCompanyProjectIds();
 
         $forms = ContactForm::whereIn('project_id', $projectIds)
             ->with('project:id,name')

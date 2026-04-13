@@ -360,15 +360,22 @@ class WidgetController extends Controller
             // Enforce monthly chat limit for Free plan companies
             $projectOwner = User::find($project->user_id);
             $company = $projectOwner ? Company::find($projectOwner->company_id) : null;
-            if ($company && strtolower($company->plan) === 'free') {
-                $chatCount = Chat::where('project_id', $project->id)
-                    ->where('created_at', '>=', now()->startOfMonth())
-                    ->count();
-                if ($chatCount >= 100) {
-                    return $this->initResponse($request, [
-                        'success' => false,
-                        'message' => 'Monthly chat limit reached. Please contact support.',
-                    ], 422);
+            if ($company) {
+                $plan = strtolower($company->plan ?? 'free');
+                $maxChats = config("plan_limits.{$plan}.max_chats_per_month");
+                if ($maxChats) {
+                    $chatCount = Chat::where('project_id', $project->id)
+                        ->where('created_at', '>=', now()->startOfMonth())
+                        ->count();
+                    if ($chatCount >= $maxChats) {
+                        dispatch(function () use ($company) {
+                            app(\App\Services\UsageLimitNotificationService::class)->notifyChatLimitReached($company);
+                        })->afterResponse();
+                        return $this->initResponse($request, [
+                            'success' => false,
+                            'message' => 'Monthly chat limit reached. Please contact support.',
+                        ], 422);
+                    }
                 }
             }
 
@@ -583,6 +590,7 @@ class WidgetController extends Controller
                 'status' => 'ai_handling',
                 'ai_enabled' => true,
                 'agent_id' => null,
+                'follow_up_sent_at' => null,
             ]);
             ChatMessage::create([
                 'chat_id' => $chat->id,
@@ -603,7 +611,7 @@ class WidgetController extends Controller
 
             // Extract name/phone/email from customer message and update chat immediately
             $chatMeta = $chat->metadata ?? [];
-            $chatUpdates = ['last_message_at' => now(), 'customer_last_seen_at' => now()];
+            $chatUpdates = ['last_message_at' => now(), 'customer_last_seen_at' => now(), 'follow_up_sent_at' => null];
             $customerMsg = $input['message'];
 
             // Extract name from customer message (e.g. "Alex James", "my name is Alex", "I'm Alex")
