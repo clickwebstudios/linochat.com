@@ -36,6 +36,7 @@ import {
   Mail,
   Phone,
   Settings,
+  Trash2,
 } from 'lucide-react';
 // Mock data removed
 
@@ -73,6 +74,7 @@ export interface ChatMessageAreaProps {
   onShowCreateTicketDialog: () => void;
   onShowTakeoverDialog: () => void;
   onEndChat: () => void;
+  onDeleteChat?: () => void;
   sendAgentTyping: (isTyping: boolean) => void;
   formatRelativeTime: (dateString: string) => string;
   firstProjectId?: string;
@@ -100,6 +102,7 @@ export function ChatMessageArea({
   onShowCreateTicketDialog,
   onShowTakeoverDialog,
   onEndChat,
+  onDeleteChat,
   sendAgentTyping,
   formatRelativeTime,
   firstProjectId,
@@ -336,6 +339,12 @@ export function ChatMessageArea({
                 <X className="mr-2 h-4 w-4" />
                 End Chat
               </DropdownMenuItem>
+              {onDeleteChat && (
+                <DropdownMenuItem className="text-red-600" onClick={onDeleteChat}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Chat
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
