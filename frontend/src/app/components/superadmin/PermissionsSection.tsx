@@ -51,7 +51,7 @@ const initialPermissionModules: PermissionModule[] = [
       { key: 'chats.view', label: 'View chats', roles: { Superadmin: true, Admin: true, Agent: true, Viewer: true, 'Billing Manager': false } },
       { key: 'chats.manage', label: 'Send messages', roles: { Superadmin: true, Admin: true, Agent: true, Viewer: false, 'Billing Manager': false } },
       { key: 'chats.transfer', label: 'Transfer chats', roles: { Superadmin: true, Admin: true, Agent: true, Viewer: false, 'Billing Manager': false } },
-      { key: 'chats.delete', label: 'Delete chats', roles: { Superadmin: true, Admin: true, Agent: false, Viewer: false, 'Billing Manager': false } },
+      { key: 'chats.delete', label: 'Delete chats', roles: { Superadmin: true, Admin: false, Agent: false, Viewer: false, 'Billing Manager': false } },
     ],
   },
   {
