@@ -51,6 +51,9 @@ interface ChatsViewProps {
   onTakeOverComplete?: () => void;
   /** Called when "Transferring to human agent..." is received (fallback when agent channel event doesn't fire) */
   onHumanRequestedInChat?: (payload: { chat_id: string; customer_name: string; project_id: string; project_name: string }) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export function ChatsView({
@@ -71,6 +74,9 @@ export function ChatsView({
   onTakeoverTriggerHandled,
   onTakeOverComplete,
   onHumanRequestedInChat,
+  onLoadMore,
+  hasMore,
+  loadingMore,
 }: ChatsViewProps) {
   const [showChatPopup, setShowChatPopup] = useState(false);
   const [selectedPreviousChat, setSelectedPreviousChat] = useState<any>(null);
@@ -655,6 +661,9 @@ export function ChatsView({
           formatRelativeTime={formatRelativeTime}
           totalProjects={projects.length}
           firstProjectId={projects[0]?.id}
+          onLoadMore={onLoadMore}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
         />
 
         <ChatMessageArea

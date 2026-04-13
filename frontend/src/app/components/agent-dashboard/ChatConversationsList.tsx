@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
@@ -10,6 +10,7 @@ import {
   Bot,
   Code2,
   CheckCircle,
+  Loader2,
 } from 'lucide-react';
 
 export interface ChatConversationsListProps {
@@ -22,6 +23,9 @@ export interface ChatConversationsListProps {
   formatRelativeTime: (dateString: string) => string;
   totalProjects?: number;
   firstProjectId?: string;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export function ChatConversationsList({
@@ -34,6 +38,9 @@ export function ChatConversationsList({
   formatRelativeTime,
   totalProjects = 1,
   firstProjectId,
+  onLoadMore,
+  hasMore,
+  loadingMore,
 }: ChatConversationsListProps) {
   const location = useLocation();
   const basePath = `/${location.pathname.split('/')[1]}`;
@@ -44,6 +51,23 @@ export function ChatConversationsList({
     const timer = setInterval(() => setTick(t => t + 1), 15000);
     return () => clearInterval(timer);
   }, []);
+
+  // Infinite scroll: observe sentinel at end of list
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loadingMore && onLoadMore) onLoadMore();
+  }, [hasMore, loadingMore, onLoadMore]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !onLoadMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) handleLoadMore(); },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [handleLoadMore, onLoadMore]);
 
   const displayedChats = searchQuery.trim()
     ? filteredChats.filter((chat) => {
@@ -240,6 +264,16 @@ export function ChatConversationsList({
               </div>
             );
           })
+        )}
+        {/* Infinite scroll sentinel */}
+        {displayedChats.length > 0 && !searchQuery.trim() && (
+          <div ref={sentinelRef} className="py-2">
+            {loadingMore && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-[#6a7282]" />
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

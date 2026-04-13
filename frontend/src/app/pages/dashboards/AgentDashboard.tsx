@@ -191,13 +191,17 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       const data = await api.get<any>(endpoint);
       if (data.success) {
         const chatsData = data.data?.data || data.data || [];
-        // Merge: keep any WebSocket-added chats that aren't in the API response yet
+        const meta = data.data?.meta;
+        // Merge: keep any WebSocket-added chats or older-page chats not in page 1
         setChats(prev => {
           if (!options?.silent) return chatsData;
           const apiIds = new Set(chatsData.map((c: any) => String(c.id)));
-          const kept = prev.filter((c: any) => !apiIds.has(String(c.id)) && Date.now() - (c._addedAt || 0) < 30000);
+          const kept = prev.filter((c: any) => !apiIds.has(String(c.id)));
           return [...chatsData, ...kept];
         });
+        if (!options?.silent && meta) {
+          setChatsPagination({ currentPage: meta.current_page, lastPage: meta.last_page });
+        }
         if (options?.setFirstAsActive !== false && chatsData.length > 0) {
           setActiveChat((prev: any) => prev ?? chatsData[0]);
         }
@@ -211,6 +215,36 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       if (!options?.silent) setChatsLoading(false);
     }
   }, [user]);
+
+  // Load next page of chats (infinite scroll)
+  const loadMoreChats = useCallback(async () => {
+    if (!user || !chatsPagination || chatsPagination.currentPage >= chatsPagination.lastPage || loadingMoreChats) return;
+    setLoadingMoreChats(true);
+    try {
+      const nextPage = chatsPagination.currentPage + 1;
+      const targetCompanyId = selectedCompanyId;
+      const endpoint = targetCompanyId && isSuperadmin
+        ? `/agent/chats?company_id=${targetCompanyId}&page=${nextPage}`
+        : `/agent/chats?page=${nextPage}`;
+      const data = await api.get<any>(endpoint);
+      if (data.success) {
+        const newChats = data.data?.data || data.data || [];
+        const meta = data.data?.meta;
+        setChats(prev => {
+          const existingIds = new Set(prev.map((c: any) => String(c.id)));
+          const uniqueNew = newChats.filter((c: any) => !existingIds.has(String(c.id)));
+          return [...prev, ...uniqueNew];
+        });
+        if (meta) {
+          setChatsPagination({ currentPage: meta.current_page, lastPage: meta.last_page });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load more chats:', error);
+    } finally {
+      setLoadingMoreChats(false);
+    }
+  }, [user, chatsPagination, loadingMoreChats, selectedCompanyId, isSuperadmin]);
 
   useEffect(() => {
     if (user && !takeoverChatId) {
@@ -344,6 +378,8 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const [activeChat, setActiveChat] = useState<any>(null);
   const [chats, setChats] = useState<any[]>([]);
+  const [chatsPagination, setChatsPagination] = useState<{ currentPage: number; lastPage: number } | null>(null);
+  const [loadingMoreChats, setLoadingMoreChats] = useState(false);
 
   // Derive unread count from chats and update sidebar badge (stats.chats = unread, not total)
   useEffect(() => {
@@ -559,6 +595,9 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             takeoverFromAi={takeoverFromAiFlag}
             onTakeoverTriggerHandled={() => { setOpenTakeoverForChatId(null); setTakeoverFromAiFlag(false); }}
             onTakeOverComplete={() => loadChats({ setFirstAsActive: false, companyId: selectedCompanyId })}
+            onLoadMore={loadMoreChats}
+            hasMore={!!chatsPagination && chatsPagination.currentPage < chatsPagination.lastPage}
+            loadingMore={loadingMoreChats}
             onHumanRequestedInChat={(payload) => {
               useTransferRequestsStore.getState().addHumanRequested(payload);
               useTransferRequestsStore.getState().setDialogOpen(true);
