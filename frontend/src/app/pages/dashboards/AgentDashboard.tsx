@@ -185,11 +185,14 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     if (!user) return [];
     if (!options?.silent) setChatsLoading(true);
     try {
-      // Build URL with company_id filter for superadmin
+      // Build URL with company_id filter for superadmin and status filter
       const targetCompanyId = options?.companyId !== undefined ? options.companyId : selectedCompanyId;
-      const endpoint = targetCompanyId && isSuperadmin
-        ? `/agent/chats?company_id=${targetCompanyId}`
-        : '/agent/chats';
+      const statusParam = chatFilter === 'archived' ? 'closed' : chatFilter === 'active' ? 'active' : '';
+      const params = new URLSearchParams();
+      if (targetCompanyId && isSuperadmin) params.set('company_id', targetCompanyId);
+      if (statusParam) params.set('status', statusParam);
+      const qs = params.toString();
+      const endpoint = `/agent/chats${qs ? `?${qs}` : ''}`;
 
       const data = await api.get<any>(endpoint);
       if (data.success) {
@@ -217,7 +220,15 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     } finally {
       if (!options?.silent) setChatsLoading(false);
     }
-  }, [user]);
+  }, [user, chatFilter, selectedCompanyId, isSuperadmin]);
+
+  // Reload chats when filter changes
+  useEffect(() => {
+    if (user && activeSection === 'chats') {
+      setActiveChat(null);
+      loadChats({ companyId: selectedCompanyId });
+    }
+  }, [chatFilter]);
 
   // Load next page of chats (infinite scroll)
   const loadMoreChats = useCallback(async () => {
