@@ -893,7 +893,7 @@ export function getActivityForChat(chat: { id?: string; customer_name?: string; 
   // Fallback: use first mock entry as template, override with real chat data
   const template = Object.values(mockCustomerActivity)[0] as CustomerActivity;
   const createdAt = chat.created_at ? new Date(chat.created_at) : new Date();
-  const sessionStart = createdAt.toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const sessionStart = createdAt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
   return {
     ...template,
