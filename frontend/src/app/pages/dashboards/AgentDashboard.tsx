@@ -179,6 +179,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const [chatsPagination, setChatsPagination] = useState<{ currentPage: number; lastPage: number } | null>(null);
   const [loadingMoreChats, setLoadingMoreChats] = useState(false);
+  const [chatFilter, setChatFilter] = useState<'all' | 'active' | 'closed' | 'archived'>('all');
 
   // Load chats from API
   const loadChats = useCallback(async (options?: { setFirstAsActive?: boolean; companyId?: string | null; silent?: boolean }): Promise<any[]> => {
@@ -412,7 +413,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
   const [, setChatsLoading] = useState(true);
   const [, setTicketsLoading] = useState(true);
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'pending' | 'closed'>('all');
-  const [chatFilter, setChatFilter] = useState<'all' | 'active' | 'closed' | 'archived'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [projectPopoverOpen, setProjectPopoverOpen] = useState(false);
