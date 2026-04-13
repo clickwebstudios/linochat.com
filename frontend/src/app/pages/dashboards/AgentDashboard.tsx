@@ -177,6 +177,9 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const existingTeamMembers = teamMembers.map(({ id, name, email, avatar, role }) => ({ id, name, email, avatar, role }));
 
+  const [chatsPagination, setChatsPagination] = useState<{ currentPage: number; lastPage: number } | null>(null);
+  const [loadingMoreChats, setLoadingMoreChats] = useState(false);
+
   // Load chats from API
   const loadChats = useCallback(async (options?: { setFirstAsActive?: boolean; companyId?: string | null; silent?: boolean }): Promise<any[]> => {
     if (!user) return [];
@@ -378,8 +381,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const [activeChat, setActiveChat] = useState<any>(null);
   const [chats, setChats] = useState<any[]>([]);
-  const [chatsPagination, setChatsPagination] = useState<{ currentPage: number; lastPage: number } | null>(null);
-  const [loadingMoreChats, setLoadingMoreChats] = useState(false);
 
   // Derive unread count from chats and update sidebar badge (stats.chats = unread, not total)
   useEffect(() => {
