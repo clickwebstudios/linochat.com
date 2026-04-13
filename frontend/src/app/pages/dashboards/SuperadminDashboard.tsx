@@ -202,11 +202,15 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
     try {
       const res = await api.delete(`/superadmin/companies/${companyToDelete.id}`);
       if (res.success) {
-        setCompanies(prev => prev.filter(c => c.id !== companyToDelete.id));
+        const deletedId = String(companyToDelete.id);
+        setCompanies(prev => prev.filter(c => String(c.id) !== deletedId));
         setCompanyToDelete(null);
+        // Refresh the full list to ensure sync
+        fetchCompanies();
       }
     } catch (error) {
       console.error('Failed to delete company:', error);
+      alert('Failed to delete company. Please try again.');
     } finally {
       setIsDeleting(false);
     }
