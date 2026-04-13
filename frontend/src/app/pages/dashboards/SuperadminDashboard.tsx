@@ -137,6 +137,10 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
+  // Delete company state
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Data states
   const [companies, setCompanies] = useState<Company[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -189,6 +193,22 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
       console.error('Failed to fetch companies:', error);
     } finally {
       setIsLoadingCompanies(false);
+    }
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!companyToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await api.delete(`/superadmin/companies/${companyToDelete.id}`);
+      if (res.success) {
+        setCompanies(prev => prev.filter(c => c.id !== companyToDelete.id));
+        setCompanyToDelete(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete company:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -539,7 +559,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                                   Settings
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
+                                <DropdownMenuItem className="text-red-600" onClick={() => setCompanyToDelete(company)}>
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
                                 </DropdownMenuItem>
@@ -554,6 +574,35 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
               </CardContent>
             </Card>
           )}
+
+          {/* Delete Company Confirmation Dialog */}
+          <Dialog open={!!companyToDelete} onOpenChange={(open) => { if (!open) setCompanyToDelete(null); }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Company</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete <strong>{companyToDelete?.name}</strong>? This will permanently remove:
+                </DialogDescription>
+              </DialogHeader>
+              <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
+                <li>All workspaces and their settings</li>
+                <li>All chats and messages</li>
+                <li>All tickets</li>
+                <li>All knowledge base articles</li>
+                <li>All users and agents</li>
+              </ul>
+              <p className="text-sm font-medium text-red-600">This action cannot be undone.</p>
+              <div className="flex justify-end gap-3 mt-2">
+                <Button variant="outline" onClick={() => setCompanyToDelete(null)} disabled={isDeleting}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteCompany} disabled={isDeleting}>
+                  {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Delete Company
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {activeSection === 'companies' && viewingCompanyId && (
             <CompanyDetailView
