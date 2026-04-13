@@ -675,7 +675,7 @@ class WidgetLoaderController extends Controller
             startPollingMessages();
             return data.data;
         }
-        throw new Error('Failed to init chat');
+        throw new Error(data.message || 'Failed to init chat');
     }
     
     function initChatJsonp() {
@@ -976,6 +976,18 @@ class WidgetLoaderController extends Controller
                 console.error('LinoChat Widget Error:', err);
                 btn.innerHTML = DEFAULT_ICON;
                 btn.style.pointerEvents = 'auto';
+                // Show error tooltip near the button
+                var tip = document.createElement('div');
+                tip.style.cssText = 'position:fixed;bottom:95px;right:20px;max-width:260px;padding:10px 14px;background:#1f2937;color:white;border-radius:10px;font-size:13px;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:2147483647;opacity:0;transition:opacity 0.2s';
+                tip.textContent = err && err.message && err.message !== 'Failed to init chat'
+                    ? err.message
+                    : 'Chat is temporarily unavailable. Please try again later.';
+                document.body.appendChild(tip);
+                requestAnimationFrame(function() { tip.style.opacity = '1'; });
+                setTimeout(function() {
+                    tip.style.opacity = '0';
+                    setTimeout(function() { if (tip.parentNode) tip.parentNode.removeChild(tip); }, 300);
+                }, 5000);
             };
 
             if (CHAT_INIT_PROMISE) {
