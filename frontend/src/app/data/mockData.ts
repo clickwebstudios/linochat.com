@@ -894,6 +894,7 @@ export function getActivityForChat(chat: { id?: string; customer_name?: string; 
   const template = Object.values(mockCustomerActivity)[0] as CustomerActivity;
   const createdAt = chat.created_at ? new Date(chat.created_at) : new Date();
   const sessionStart = createdAt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+  const timeOnly = createdAt.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
   return {
     ...template,
@@ -901,7 +902,7 @@ export function getActivityForChat(chat: { id?: string; customer_name?: string; 
     sessionStart,
     chatInitiatedFrom: (chat.metadata as { current_page?: string })?.current_page || '/',
     pagesVisited: [
-      { page: 'Chat Initiated', url: (chat.metadata as { current_page?: string })?.current_page || '/', timestamp: sessionStart.split(' ').slice(1).join(' ') || '', duration: 'Active' },
+      { page: 'Chat Initiated', url: (chat.metadata as { current_page?: string })?.current_page || '/', timestamp: timeOnly, duration: 'Active' },
     ],
     previousChats: [],
     totalTickets: template.totalTickets,
