@@ -664,10 +664,10 @@ class WidgetLoaderController extends Controller
             CUSTOMER_ID = data.data.customer_id;
             localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
             MESSAGES = data.data.messages || [];
-            // Pre-populate tracking so existing messages don't trigger notifications
+            // Pre-populate notification tracking so existing messages don't trigger sounds
+            // Note: do NOT set ADDED_MESSAGE_IDS here — that would prevent createWidget from rendering them
             MESSAGES.forEach(function(m) {
                 if (m.id) {
-                    ADDED_MESSAGE_IDS[m.id] = true;
                     NOTIFIED_MSG_IDS[m.id] = true;
                 }
             });
