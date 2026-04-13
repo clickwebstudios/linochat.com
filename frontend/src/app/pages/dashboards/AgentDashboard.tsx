@@ -188,10 +188,10 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     try {
       // Build URL with company_id filter for superadmin and status filter
       const targetCompanyId = options?.companyId !== undefined ? options.companyId : selectedCompanyId;
-      const statusParam = chatFilter === 'archived' ? 'closed' : chatFilter === 'active' ? 'active' : '';
+      const statusParam = chatFilter === 'archived' ? 'closed' : chatFilter === 'active' ? 'active' : 'all';
       const params = new URLSearchParams();
       if (targetCompanyId && isSuperadmin) params.set('company_id', targetCompanyId);
-      if (statusParam) params.set('status', statusParam);
+      params.set('status', statusParam);
       const qs = params.toString();
       const endpoint = `/agent/chats${qs ? `?${qs}` : ''}`;
 
@@ -541,15 +541,11 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   const filteredChats = chats.filter(chat => {
     const matchesProject = selectedProjects.length === 0 || selectedProjects.map(String).includes(String(chat.project_id));
-    const matchesStatus = chatFilter === 'all' ? chat.status !== 'closed' :
-      chatFilter === 'active' ? (chat.status === 'active' || chat.status === 'waiting' || chat.status === 'ai_handling') :
-      chatFilter === 'archived' ? chat.status === 'closed' :
-      (chatFilter === 'closed' && chat.status === 'closed');
     const matchesSearch = searchQuery === '' ||
       chat.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.customer_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(chat.id).toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesProject && matchesStatus && matchesSearch;
+    return matchesProject && matchesSearch;
   });
 
   const getProjectById = (projectId: string) => {
