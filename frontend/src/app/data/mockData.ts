@@ -885,7 +885,7 @@ export type CustomerActivity = {
 /**
  * Get activity data for a chat. Uses mock data when ID matches, otherwise builds from chat + defaults.
  */
-export function getActivityForChat(chat: { id?: string; customer_name?: string; customer_email?: string; created_at?: string; metadata?: Record<string, unknown> } | null): CustomerActivity | null {
+export function getActivityForChat(chat: { id?: string; customer_name?: string; customer_email?: string; created_at?: string; customer_last_seen_at?: string; status?: string; metadata?: Record<string, unknown> } | null): CustomerActivity | null {
   if (!chat) return null;
 
   const mock = mockCustomerActivity[chat.id as keyof typeof mockCustomerActivity];
@@ -895,14 +895,26 @@ export function getActivityForChat(chat: { id?: string; customer_name?: string; 
   const createdAt = chat.created_at ? new Date(chat.created_at) : new Date();
   const sessionStart = createdAt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
-  // Compute session duration from created_at to now
-  const durationMs = Date.now() - createdAt.getTime();
-  const durationMins = Math.floor(durationMs / 60000);
+  // Session duration: from created_at to customer_last_seen_at (or "Active" if still online)
+  const lastSeen = chat.customer_last_seen_at ? new Date(chat.customer_last_seen_at).getTime() : 0;
+  const isOnline = lastSeen > 0 && (Date.now() - lastSeen) < 30000;
   let sessionDuration: string;
-  if (durationMins < 1) sessionDuration = 'Just started';
-  else if (durationMins < 60) sessionDuration = `${durationMins}m`;
-  else if (durationMins < 1440) sessionDuration = `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
-  else sessionDuration = `${Math.floor(durationMins / 1440)}d ${Math.floor((durationMins % 1440) / 60)}h`;
+  if (isOnline) {
+    const durationMs = Date.now() - createdAt.getTime();
+    const mins = Math.floor(durationMs / 60000);
+    if (mins < 1) sessionDuration = 'Active now';
+    else if (mins < 60) sessionDuration = `${mins}m (active)`;
+    else sessionDuration = `${Math.floor(mins / 60)}h ${mins % 60}m (active)`;
+  } else if (lastSeen > 0) {
+    const durationMs = lastSeen - createdAt.getTime();
+    const mins = Math.max(0, Math.floor(durationMs / 60000));
+    if (mins < 1) sessionDuration = '< 1m';
+    else if (mins < 60) sessionDuration = `${mins}m`;
+    else if (mins < 1440) sessionDuration = `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    else sessionDuration = `${Math.floor(mins / 1440)}d ${Math.floor((mins % 1440) / 60)}h`;
+  } else {
+    sessionDuration = '—';
+  }
 
   const currentPage = (meta.current_page as string) || '/';
 
