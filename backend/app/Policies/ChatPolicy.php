@@ -35,8 +35,6 @@ class ChatPolicy
 
     public function delete(User $user, Chat $chat): bool
     {
-        // Only admins (project owners) and superadmins can delete chats
-        return $user->isSuperadmin()
-            || ($user->isAdmin() && $user->ownedProjects()->where('id', $chat->project_id)->exists());
+        return $user->isSuperadmin();
     }
 }
