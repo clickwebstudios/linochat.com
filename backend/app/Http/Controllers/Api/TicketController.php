@@ -86,7 +86,7 @@ class TicketController extends Controller
         // Enforce monthly ticket limit for Free plan
         $company = $request->user()->company;
         if ($company && strtolower($company->plan) === 'free') {
-            $projectIds = $company->projects()->pluck('id');
+            $projectIds = $request->user()->getCompanyProjectIds();
             $ticketCount = Ticket::whereIn('project_id', $projectIds)
                 ->where('created_at', '>=', now()->startOfMonth())
                 ->count();

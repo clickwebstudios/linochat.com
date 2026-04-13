@@ -72,6 +72,7 @@ class KbController extends Controller
         }
 
         $articles = KbArticle::where('category_id', $category_id)
+            ->whereHas('category', fn ($q) => $q->where('project_id', $project_id))
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($article) {
@@ -122,7 +123,22 @@ class KbController extends Controller
     public function createCategory(Request $request, string $project_id)
     {
         $user = auth('api')->user();
-        
+
+        if ($user->role === 'superadmin') {
+            $project = Project::find($project_id);
+        } else {
+            $project = Project::where('id', $project_id)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('agents', fn ($q) => $q->where('users.id', $user->id));
+                })
+                ->first();
+        }
+
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',

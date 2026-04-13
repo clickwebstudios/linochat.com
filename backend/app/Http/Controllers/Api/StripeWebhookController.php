@@ -102,17 +102,17 @@ class StripeWebhookController extends Controller
                         ? \Illuminate\Support\Carbon::createFromTimestamp($periodEnd)
                         : null;
 
-                    $localSubscription = $company->subscription;
-                    if ($localSubscription) {
-                        $localSubscription->update(array_filter([
+                    $company->subscription()->updateOrCreate(
+                        ['company_id' => $company->id],
+                        array_filter([
                             'stripe_subscription_id' => $stripeSubscriptionId,
                             'status'                 => 'active',
                             'plan_id'                => $plan?->id,
                             'billing_cycle'          => $billingCycle,
                             'started_at'             => now(),
                             'renews_at'              => $renewsAt,
-                        ], fn($v) => $v !== null));
-                    }
+                        ], fn($v) => $v !== null)
+                    );
 
                     $companyUpdates = ['stripe_subscription_id' => $stripeSubscriptionId];
                     if ($plan) {
@@ -197,7 +197,9 @@ class StripeWebhookController extends Controller
                 }
             }
 
+            // Capture pre-update state for re-subscribe detection
             $localSubscription = $company->subscription;
+            $wasInactive = $localSubscription && in_array($localSubscription->status, ['cancelled', 'expired']);
 
             $periodEnd = $subscription->current_period_end ?? null;
             $renewsAt = $periodEnd
@@ -208,15 +210,16 @@ class StripeWebhookController extends Controller
             // Preserve our local 'cancelled' status so the UI stays correct.
             $localStatus = $subscription->cancel_at_period_end ? 'cancelled' : $subscription->status;
 
-            if ($localSubscription) {
-                $localSubscription->update(array_filter([
+            $company->subscription()->updateOrCreate(
+                ['company_id' => $company->id],
+                array_filter([
                     'stripe_subscription_id' => $subscription->id,
                     'status'                 => $localStatus,
                     'plan_id'                => $plan?->id,
                     'billing_cycle'          => $billingCycle,
                     'renews_at'              => $renewsAt,
-                ], fn($v) => $v !== null));
-            }
+                ], fn($v) => $v !== null)
+            );
 
             $companyUpdates = ['stripe_subscription_id' => $subscription->id];
             if ($plan) {
@@ -224,7 +227,6 @@ class StripeWebhookController extends Controller
             }
 
             // On re-subscribe (transitioning from cancelled/expired back to active), restore agents
-            $wasInactive = $localSubscription && in_array($localSubscription->status, ['cancelled', 'expired']);
             $isNowActive = $localStatus === 'active';
 
             if ($wasInactive && $isNowActive) {
@@ -243,10 +245,10 @@ class StripeWebhookController extends Controller
                 }
 
                 // Send reactivation email to admins
-                $subscription_model = $localSubscription->load('plan');
+                $freshSub = $company->subscription()->with('plan')->first();
                 $admins = $company->users()->where('role', 'admin')->get();
                 foreach ($admins as $admin) {
-                    Mail::to($admin->email)->queue(new SubscriptionReactivatedMail($admin, $subscription_model));
+                    Mail::to($admin->email)->queue(new SubscriptionReactivatedMail($admin, $freshSub));
                 }
             }
 

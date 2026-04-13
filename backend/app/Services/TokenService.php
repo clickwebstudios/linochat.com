@@ -70,9 +70,11 @@ class TokenService
      */
     public function completeTopUp(TokenPurchase $purchase): void
     {
-        if ($purchase->status === 'completed') return;
-
         DB::transaction(function () use ($purchase) {
+            $purchase = TokenPurchase::lockForUpdate()->findOrFail($purchase->id);
+
+            if ($purchase->status === 'completed') return;
+
             $purchase->update(['status' => 'completed', 'completed_at' => now()]);
             $this->credit(
                 $purchase->company,
