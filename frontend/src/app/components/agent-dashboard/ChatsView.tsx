@@ -98,6 +98,7 @@ export function ChatsView({
     customer: string;
     customer_email: string;
     sessionStart: string;
+    sessionDuration?: string;
     chatInitiatedFrom: string;
     location: string;
     device: string;

@@ -464,13 +464,15 @@ class WidgetController extends Controller
 
         $referralSource = $this->deriveReferralSource($currentPage, $referrer);
 
+        $location = $this->resolveLocation($request);
+
         return array_filter([
             'current_page' => $currentPage,
             'referrer' => $referrer ?: null,
             'referral_source' => $referralSource,
             'browser' => $browser,
             'device' => $device,
-            'location' => null, // Requires IP geolocation service
+            'location' => $location,
         ], fn ($v) => $v !== null && $v !== '');
     }
 
@@ -528,6 +530,27 @@ class WidgetController extends Controller
         }
 
         return $refHost;
+    }
+
+    private function resolveLocation(Request $request): ?string
+    {
+        try {
+            $ip = $request->ip();
+            if (!$ip || in_array($ip, ['127.0.0.1', '::1'])) {
+                return null;
+            }
+            $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}?fields=city,regionName,country,status");
+            if ($response->ok()) {
+                $data = $response->json();
+                if (($data['status'] ?? '') === 'success') {
+                    $parts = array_filter([$data['city'] ?? null, $data['regionName'] ?? null, $data['country'] ?? null]);
+                    return implode(', ', $parts) ?: null;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silently fail — location is not critical
+        }
+        return null;
     }
 
     private function initResponse(Request $request, array $data, int $status)

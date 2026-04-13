@@ -28,6 +28,7 @@ interface ActivityData {
   customer: string;
   customer_email: string;
   sessionStart: string;
+  sessionDuration?: string;
   chatInitiatedFrom: string;
   location: string;
   device: string;
@@ -188,9 +189,15 @@ export function ChatActivityPanel({
                         <Clock className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
                         <div><p className="text-xs text-[#4a5565]">Session Started</p><p className="text-sm text-[#0a0a0a]">{activity.sessionStart}</p></div>
                       </div>
+                      {activity.sessionDuration && (
+                        <div className="flex items-start gap-2">
+                          <History className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
+                          <div><p className="text-xs text-[#4a5565]">Session Duration</p><p className="text-sm text-[#0a0a0a]">{activity.sessionDuration}</p></div>
+                        </div>
+                      )}
                       <div className="flex items-start gap-2">
                         <MapPin className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />
-                        <div><p className="text-xs text-[#4a5565]">Location</p><p className="text-sm text-[#0a0a0a]">{activity.location}</p></div>
+                        <div><p className="text-xs text-[#4a5565]">Location</p><p className="text-sm text-[#0a0a0a]">{activity.location || '—'}</p></div>
                       </div>
                       <div className="flex items-start gap-2">
                         <User className="h-4 w-4 text-[#4a5565] mt-0.5 shrink-0" />

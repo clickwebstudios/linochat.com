@@ -873,6 +873,7 @@ export type CustomerActivity = {
   device: string;
   location: string;
   sessionStart: string;
+  sessionDuration?: string;
   chatInitiatedFrom: string;
   pagesVisited: Array<{ page: string; url: string; timestamp: string; duration: string }>;
   previousChats: Array<{ date: string; topic: string; duration: string; agent: string; messages?: Array<{ sender: string; text: string; time: string }> }>;
@@ -890,21 +891,35 @@ export function getActivityForChat(chat: { id?: string; customer_name?: string; 
   const mock = mockCustomerActivity[chat.id as keyof typeof mockCustomerActivity];
   if (mock) return mock as CustomerActivity;
 
-  // Fallback: use first mock entry as template, override with real chat data
-  const template = Object.values(mockCustomerActivity)[0] as CustomerActivity;
+  const meta = (chat.metadata ?? {}) as Record<string, unknown>;
   const createdAt = chat.created_at ? new Date(chat.created_at) : new Date();
   const sessionStart = createdAt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
+  // Compute session duration from created_at to now
+  const durationMs = Date.now() - createdAt.getTime();
+  const durationMins = Math.floor(durationMs / 60000);
+  let sessionDuration: string;
+  if (durationMins < 1) sessionDuration = 'Just started';
+  else if (durationMins < 60) sessionDuration = `${durationMins}m`;
+  else if (durationMins < 1440) sessionDuration = `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
+  else sessionDuration = `${Math.floor(durationMins / 1440)}d ${Math.floor((durationMins % 1440) / 60)}h`;
+
+  const currentPage = (meta.current_page as string) || '/';
+
   return {
-    ...template,
     customer: chat.customer_name || chat.customer_email || 'Guest',
+    browser: (meta.browser as string) || '—',
+    device: (meta.device as string) || '—',
+    location: (meta.location as string) || (meta.city as string) || '—',
     sessionStart,
-    chatInitiatedFrom: (chat.metadata as { current_page?: string })?.current_page || '/',
+    sessionDuration,
+    chatInitiatedFrom: currentPage,
+    referralSource: (meta.referral_source as string) || 'Direct',
     pagesVisited: [
-      { page: 'Chat Initiated', url: (chat.metadata as { current_page?: string })?.current_page || '/', timestamp: sessionStart.split(' ').slice(1).join(' ') || '', duration: 'Active' },
+      { page: 'Chat Initiated', url: currentPage, timestamp: sessionStart.split(',').slice(1).join(',').trim() || '', duration: 'Active' },
     ],
     previousChats: [],
-    totalTickets: template.totalTickets,
-    customerTier: template.customerTier,
+    totalTickets: 0,
+    customerTier: null,
   };
 }
