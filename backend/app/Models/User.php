@@ -170,13 +170,26 @@ class User extends Authenticatable
     /**
      * Resolve project IDs for data queries.
      * Superadmin with companyId → that company's projects.
-     * Superadmin without → all projects (null = no filter).
+     * Superadmin without companyId, with superadminUnscoped=true → all projects (null = no filter).
+     * Superadmin without companyId, default → own company's projects (safe default).
      * Regular user → their company's projects.
      */
-    public function resolveProjectIds(?string $companyId = null): ?\Illuminate\Support\Collection
+    public function resolveProjectIds(?string $companyId = null, bool $superadminUnscoped = false): ?\Illuminate\Support\Collection
     {
         if ($this->isSuperadmin()) {
-            return $companyId ? Project::where('user_id', $companyId)->pluck('id') : null;
+            if ($companyId) {
+                return Project::where('user_id', $companyId)->pluck('id');
+            }
+            if ($superadminUnscoped) {
+                return null;
+            }
+            // Default: scope to superadmin's own company
+            $company = $this->company_id ? Company::find($this->company_id) : null;
+            if ($company) {
+                $userIds = $company->users()->pluck('id');
+                return Project::whereIn('user_id', $userIds)->pluck('id');
+            }
+            return collect();
         }
         return $this->getCompanyProjectIds();
     }
