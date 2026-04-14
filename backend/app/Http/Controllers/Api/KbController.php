@@ -71,6 +71,14 @@ class KbController extends Controller
             return response()->json(['success' => false, 'message' => 'Project not found'], 404);
         }
 
+        // Ensure the category belongs to this project to prevent IDOR
+        $categoryExists = KbCategory::where('id', $category_id)
+            ->where('project_id', $project_id)
+            ->exists();
+        if (!$categoryExists) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+
         $articles = KbArticle::where('category_id', $category_id)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -122,7 +130,22 @@ class KbController extends Controller
     public function createCategory(Request $request, string $project_id)
     {
         $user = auth('api')->user();
-        
+
+        if ($user->role === 'superadmin') {
+            $project = Project::find($project_id);
+        } else {
+            $project = Project::where('id', $project_id)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('agents', fn($q) => $q->where('users.id', $user->id));
+                })
+                ->first();
+        }
+
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -147,7 +170,29 @@ class KbController extends Controller
     public function createArticle(Request $request, string $project_id, string $category_id)
     {
         $user = auth('api')->user();
-        
+
+        if ($user->role === 'superadmin') {
+            $project = Project::find($project_id);
+        } else {
+            $project = Project::where('id', $project_id)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('agents', fn($q) => $q->where('users.id', $user->id));
+                })
+                ->first();
+        }
+
+        if (!$project) {
+            return response()->json(['success' => false, 'message' => 'Project not found'], 404);
+        }
+
+        $categoryExists = KbCategory::where('id', $category_id)
+            ->where('project_id', $project_id)
+            ->exists();
+        if (!$categoryExists) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',

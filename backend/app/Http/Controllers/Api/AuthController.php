@@ -386,6 +386,9 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->input('email'))->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+        }
         $user->update(['password' => Hash::make($request->input('password'))]);
         \DB::table('password_resets')->where('email', $request->input('email'))->delete();
 

@@ -42,6 +42,7 @@ export interface AuthResponse {
   project?: Project;
   analysis?: 'completed' | 'failed';
   kb_articles_count?: number;
+  is_new_user?: boolean;
 }
 
 // Token management

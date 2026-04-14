@@ -147,14 +147,8 @@ class InboundEmailController extends Controller
         $ticketSubject = trim($subject) ?: 'No subject';
         $description   = trim(strip_tags($body)) ?: '(no body)';
 
-        // Generate ticket number
-        $year   = now()->year;
-        $count  = Ticket::where('project_id', $project->id)->count() + 1;
-        $number = sprintf('TKT-%d-%05d', $year, $count);
-
         $ticket = Ticket::create([
             'project_id'      => $project->id,
-            'ticket_number'   => $number,
             'subject'         => mb_substr($ticketSubject, 0, 255),
             'description'     => mb_substr($description, 0, 10000),
             'status'          => 'open',
@@ -173,7 +167,7 @@ class InboundEmailController extends Controller
         ]);
 
         Log::info('InboundEmail: new ticket created', [
-            'ticket_number' => $number,
+            'ticket_number' => $ticket->ticket_number,
             'project_id'    => $project->id,
             'from'          => $fromEmail,
         ]);

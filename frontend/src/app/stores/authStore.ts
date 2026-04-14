@@ -14,7 +14,7 @@ interface AuthState {
   
   // Actions
   login: (email: string, password: string) => Promise<void>;
-  googleLogin: (credential: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<{ isNewUser: boolean }>;
   register: (data: RegisterData) => Promise<{ analysisStatus: string; kbCount: number }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
