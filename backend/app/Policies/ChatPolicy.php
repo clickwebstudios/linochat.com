@@ -35,6 +35,7 @@ class ChatPolicy
 
     public function delete(User $user, Chat $chat): bool
     {
-        return $user->isSuperadmin();
+        return $user->isSuperadmin()
+            || ($user->currentAccessToken() && $user->currentAccessToken()->can('impersonated'));
     }
 }

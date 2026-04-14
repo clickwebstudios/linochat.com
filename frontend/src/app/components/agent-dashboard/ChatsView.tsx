@@ -738,7 +738,7 @@ export function ChatsView({
           }}
           onShowTakeoverDialog={() => setShowTakeoverDialog(true)}
           onEndChat={handleEndChat}
-          onDeleteChat={_role === 'Superadmin' ? handleDeleteChat : undefined}
+          onDeleteChat={(_role === 'Superadmin' || !!localStorage.getItem('impersonated_by')) ? handleDeleteChat : undefined}
           sendAgentTyping={sendAgentTyping}
           formatRelativeTime={formatRelativeTime}
           firstProjectId={projects[0]?.id}
