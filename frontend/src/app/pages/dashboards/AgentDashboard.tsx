@@ -223,14 +223,6 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
     }
   }, [user, chatFilter, selectedCompanyId, isSuperadmin]);
 
-  // Reload chats when filter changes
-  useEffect(() => {
-    if (user && activeSection === 'chats') {
-      setActiveChat(null);
-      loadChats({ companyId: selectedCompanyId });
-    }
-  }, [chatFilter]);
-
   // Load next page of chats (infinite scroll)
   const loadMoreChats = useCallback(async () => {
     if (!user || !chatsPagination || chatsPagination.currentPage >= chatsPagination.lastPage || loadingMoreChats) return;
@@ -591,7 +583,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
             setActiveChat={setActiveChat}
             filteredChats={filteredChats}
             chatFilter={chatFilter}
-            setChatFilter={setChatFilter}
+            setChatFilter={(f) => { setChatFilter(f); setActiveChat(null); }}
             getProjectById={getProjectById}
             projects={displayProjects}
             role={role}
