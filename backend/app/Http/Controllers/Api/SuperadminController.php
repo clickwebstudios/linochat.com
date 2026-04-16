@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\Invitation;
 use App\Mail\AgentInvitationMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -90,6 +91,51 @@ class SuperadminController extends Controller
         ]);
     }
     
+    /**
+     * Create a new company shell (Company record + placeholder admin user).
+     * Used by superadmin to provision child companies without billing or admin signup.
+     */
+    public function storeCompany(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'plan' => 'required|string|in:Starter,Pro,Enterprise',
+        ]);
+
+        $companyRecord = Company::create([
+            'name' => $validated['name'],
+            'plan' => $validated['plan'],
+        ]);
+
+        // Placeholder admin user so the company appears in listings and is impersonatable.
+        $email = 'admin+company-' . $companyRecord->id . '@internal.linochat.local';
+        $user = User::create([
+            'company_id'   => $companyRecord->id,
+            'first_name'   => $validated['name'],
+            'last_name'    => '',
+            'company_name' => $validated['name'],
+            'email'        => $email,
+            'password'     => Hash::make(Str::random(40)),
+            'role'         => 'admin',
+            'status'       => 'Active',
+            'join_date'    => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => (string) $user->id,
+                'name' => $validated['name'],
+                'email' => $email,
+                'plan' => $validated['plan'],
+                'projects_count' => 0,
+                'users_count' => 1,
+                'created_at' => $user->created_at,
+                'status' => 'Active',
+            ],
+        ], 201);
+    }
+
     /**
      * Update company (admin user)
      */
@@ -1110,8 +1156,15 @@ class SuperadminController extends Controller
      */
     private function getCompanyPlan(User $company): string
     {
+        if ($company->company_id) {
+            $storedPlan = Company::where('id', $company->company_id)->value('plan');
+            if (in_array($storedPlan, ['Starter', 'Pro', 'Enterprise'], true)) {
+                return $storedPlan;
+            }
+        }
+
         $projectCount = $company->ownedProjects()->count();
-        
+
         return match(true) {
             $projectCount >= 5 => 'Enterprise',
             $projectCount >= 2 => 'Pro',

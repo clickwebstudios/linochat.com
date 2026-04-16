@@ -357,6 +357,7 @@ Route::prefix('ai')->group(function () {
 // Superadmin API (requires superadmin role)
 Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::get('/companies', [SuperadminController::class, 'companies']);
+    Route::post('/companies', [SuperadminController::class, 'storeCompany']);
     Route::get('/companies/{companyId}', [SuperadminController::class, 'companyDetails']);
     Route::put('/companies/{companyId}', [SuperadminController::class, 'updateCompany']);
     Route::delete('/companies/{companyId}', [SuperadminController::class, 'deleteCompany']);

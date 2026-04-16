@@ -57,6 +57,7 @@ import { AddProjectForm } from '../../components/superadmin/AddProjectForm';
 import { CompanySwitcher } from '../../components/superadmin/CompanySwitcher';
 import { useSuperadminStore } from '../../lib/superadminStore';
 import { api } from '../../api/client';
+import { toast } from 'sonner';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 // Types
@@ -141,6 +142,12 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Add company state
+  const [addCompanyOpen, setAddCompanyOpen] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyPlan, setNewCompanyPlan] = useState('Pro');
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
+
   // Data states
   const [companies, setCompanies] = useState<Company[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -193,6 +200,35 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
       console.error('Failed to fetch companies:', error);
     } finally {
       setIsLoadingCompanies(false);
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    const name = newCompanyName.trim();
+    if (!name) {
+      toast.error('Company name is required');
+      return;
+    }
+    setIsCreatingCompany(true);
+    try {
+      const res = await api.post<Company>('/superadmin/companies', {
+        name,
+        plan: newCompanyPlan,
+      });
+      if (res.success) {
+        toast.success(`Company "${name}" created`);
+        setAddCompanyOpen(false);
+        setNewCompanyName('');
+        setNewCompanyPlan('Pro');
+        fetchCompanies();
+      } else {
+        toast.error(res.message || 'Failed to create company');
+      }
+    } catch (error: any) {
+      console.error('Failed to create company:', error);
+      toast.error(error?.message || 'Failed to create company');
+    } finally {
+      setIsCreatingCompany(false);
     }
   };
 
@@ -442,7 +478,13 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
             <Card className="font-bold">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Company Management</CardTitle>
-                <Dialog>
+                <Dialog open={addCompanyOpen} onOpenChange={(open) => {
+                  setAddCompanyOpen(open);
+                  if (!open) {
+                    setNewCompanyName('');
+                    setNewCompanyPlan('Pro');
+                  }
+                }}>
                   <DialogTrigger asChild>
                     <Button className="bg-primary">
                       <Plus className="mr-2 h-4 w-4" />
@@ -457,17 +499,41 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                     <div className="space-y-4 mt-4">
                       <div>
                         <label className="text-sm mb-2 block">Company Name</label>
-                        <Input placeholder="Acme Corporation" />
+                        <Input
+                          placeholder="Acme Corporation"
+                          value={newCompanyName}
+                          onChange={(e) => setNewCompanyName(e.target.value)}
+                          disabled={isCreatingCompany}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isCreatingCompany) {
+                              e.preventDefault();
+                              handleCreateCompany();
+                            }
+                          }}
+                        />
                       </div>
                       <div>
                         <label className="text-sm mb-2 block">Plan</label>
-                        <select className="w-full p-2 border rounded-lg">
-                          <option>Starter</option>
-                          <option>Pro</option>
-                          <option>Enterprise</option>
+                        <select
+                          className="w-full p-2 border rounded-lg"
+                          value={newCompanyPlan}
+                          onChange={(e) => setNewCompanyPlan(e.target.value)}
+                          disabled={isCreatingCompany}
+                        >
+                          <option value="Starter">Starter</option>
+                          <option value="Pro">Pro</option>
+                          <option value="Enterprise">Enterprise</option>
                         </select>
                       </div>
-                      <Button className="w-full bg-primary">Create Company</Button>
+                      <Button
+                        className="w-full bg-primary"
+                        onClick={handleCreateCompany}
+                        disabled={isCreatingCompany || !newCompanyName.trim()}
+                      >
+                        {isCreatingCompany ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
+                        ) : 'Create Company'}
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
