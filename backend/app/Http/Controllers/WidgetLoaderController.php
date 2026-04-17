@@ -93,7 +93,6 @@ class WidgetLoaderController extends Controller
     var CUSTOMER_TYPING_TIMEOUT = null;
     var CUSTOMER_TYPING_SENT = false;
     var CHAT_INITIALIZED = false;
-    var CHAT_INIT_PROMISE = null;
     var HEARTBEAT_INTERVAL = null;
 
     // Default button icon (MessageSquare SVG)
@@ -659,10 +658,10 @@ class WidgetLoaderController extends Controller
     
     function processInitResponse(data) {
         if (data.success) {
-            CHAT_ID = data.data.chat_id;
+            CHAT_ID = data.data.chat_id || null;
             CHAT_STATUS = data.data.status;
             CUSTOMER_ID = data.data.customer_id;
-            localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
+            if (CUSTOMER_ID) localStorage.setItem('linochat_customer_id', CUSTOMER_ID);
             MESSAGES = data.data.messages || [];
             // Pre-populate notification tracking so existing messages don't trigger sounds
             // Note: do NOT set ADDED_MESSAGE_IDS here — that would prevent createWidget from rendering them
@@ -671,8 +670,12 @@ class WidgetLoaderController extends Controller
                     NOTIFIED_MSG_IDS[m.id] = true;
                 }
             });
-            connectWebSocket();
-            startPollingMessages();
+            // New visitors have no chat yet (lazy-created on first message).
+            // Subscribe / poll only when we have a real chat to watch.
+            if (CHAT_ID) {
+                connectWebSocket();
+                startPollingMessages();
+            }
             return data.data;
         }
         throw new Error(data.message || 'Failed to init chat');
@@ -722,6 +725,14 @@ class WidgetLoaderController extends Controller
     
     function processSendResponse(data) {
         if (data.success && data.data) {
+            // First customer message lazy-creates the chat server-side; adopt
+            // the returned chat_id so subsequent calls (WebSocket, heartbeat,
+            // polling) know which chat to target.
+            if (data.data.chat_id && CHAT_ID !== data.data.chat_id) {
+                CHAT_ID = data.data.chat_id;
+                connectWebSocket();
+                startPollingMessages();
+            }
             // Track the customer message and AI response IDs so poll skips them
             if (data.data.message && data.data.message.id) {
                 ADDED_MESSAGE_IDS[data.data.message.id] = true;
@@ -767,7 +778,8 @@ class WidgetLoaderController extends Controller
             var cb = 'linochat_msg_' + Date.now() + '_' + Math.random().toString(36).slice(2);
             var script = document.createElement('script');
             var url = API_URL + '/api/widget/' + WIDGET_ID + '/message?callback=' + encodeURIComponent(cb) +
-                '&chat_id=' + encodeURIComponent(CHAT_ID) + '&customer_id=' + encodeURIComponent(CUSTOMER_ID) +
+                (CHAT_ID ? '&chat_id=' + encodeURIComponent(CHAT_ID) : '') +
+                '&customer_id=' + encodeURIComponent(CUSTOMER_ID) +
                 '&message=' + encodeURIComponent(content);
             var done = false;
             function finish(data) {
@@ -1008,20 +1020,8 @@ class WidgetLoaderController extends Controller
                 }, 5000);
             };
 
-            if (CHAT_INIT_PROMISE) {
-                // Chat is already being initialized in background — open as soon as it resolves
-                CHAT_INIT_PROMISE.then(doOpen).catch(function() {
-                    // Pre-init failed, try again
-                    initChat().then(doOpen).catch(onError);
-                });
-            } else {
-                // Fallback: config didn't load yet, do full init now
-                btn.textContent = '...';
-                loadConfig()
-                    .then(function() { return initChat(); })
-                    .then(doOpen)
-                    .catch(onError);
-            }
+            // /init is a pure lookup (no chat creation); safe to call on click.
+            initChat().then(doOpen).catch(onError);
         });
     }
     
@@ -1569,8 +1569,9 @@ class WidgetLoaderController extends Controller
                 updateButtonAppearance();
                 showGreeting();
                 showPopover();
-                // Pre-initialize chat in background so clicking opens instantly
-                CHAT_INIT_PROMISE = initChat().catch(function() { CHAT_INIT_PROMISE = null; });
+                // No pre-warm: /init is called lazily on first button click so
+                // we don't hit the API (or touch DB) for visitors who never
+                // open the widget.
             })
             .catch(function() { createButtonOnly(); });
     }
