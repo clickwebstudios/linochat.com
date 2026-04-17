@@ -418,8 +418,20 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     );
   }
 
+  const autosaveStatus = saving ? (
+    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+    </span>
+  ) : isDirty ? (
+    <span className="text-muted-foreground">Unsaved changes</span>
+  ) : saveSuccess ? (
+    <span className="text-green-600">Saved</span>
+  ) : (
+    <span className="text-muted-foreground">All changes saved</span>
+  );
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 pb-16">
+    <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
             <aside className="w-full lg:w-48 shrink-0">
               <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
@@ -448,6 +460,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
               </nav>
             </aside>
             <div className="flex-1 min-w-0">
+            <div className="mb-3 flex justify-end text-sm">{autosaveStatus}</div>
 
             {/* ── Appearance ── */}
             {activeSection === 'appearance' && (
@@ -1249,20 +1262,6 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
               </div>
             </div>
 
-          {/* Auto-save status bar — every change is persisted automatically. */}
-          <div className="fixed bottom-0 left-0 md:left-24 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3 text-sm">
-            {saving ? (
-              <span className="text-muted-foreground inline-flex items-center gap-1.5">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
-              </span>
-            ) : isDirty ? (
-              <span className="text-muted-foreground">Unsaved changes</span>
-            ) : saveSuccess ? (
-              <span className="text-green-600">Saved</span>
-            ) : (
-              <span className="text-muted-foreground">All changes saved</span>
-            )}
-          </div>
           </div>
   );
 }
