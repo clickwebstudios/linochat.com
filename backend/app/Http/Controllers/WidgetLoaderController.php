@@ -801,6 +801,28 @@ class WidgetLoaderController extends Controller
     
     function getCfgFontSize() { return (CONFIG && CONFIG.font_size ? CONFIG.font_size : 14) + 'px'; }
 
+    // Reduce a user-entered pattern to just the URL path so it can be
+    // compared against window.location.pathname. Accepts:
+    //   - full URLs:        "https://example.com/admin"  -> "/admin"
+    //   - schemeless hosts: "example.com/admin"          -> "/admin"
+    //   - bare paths:       "/admin", "admin/x"          -> unchanged
+    // Returns '' for empty/whitespace input.
+    function normalizePagePattern(pattern) {
+        if (!pattern) return '';
+        var p = String(pattern).trim();
+        if (!p) return '';
+        if (/^https?:\/\\//i.test(p)) {
+            try { return new URL(p).pathname || '/'; } catch (_) { /* fall through */ }
+        }
+        // Schemeless host: starts with a hostname-ish token (contains a dot
+        // before any slash) and no leading slash.
+        if (p.charAt(0) !== '/' && /^[^\\/\\s]+\\.[^\\/\\s]+/.test(p)) {
+            var slash = p.indexOf('/');
+            return slash === -1 ? '/' : p.substring(slash);
+        }
+        return p;
+    }
+
     // Evaluate page_rules against window.location.pathname.
     // Returns the first matching rule for the requested action ('hide' or
     // 'custom_greeting'), or null. Empty url_pattern is ignored.
@@ -810,7 +832,7 @@ class WidgetLoaderController extends Controller
         for (var i = 0; i < CONFIG.page_rules.length; i++) {
             var r = CONFIG.page_rules[i];
             if (!r || r.action !== action) continue;
-            var pattern = (r.url_pattern || '').trim();
+            var pattern = normalizePagePattern(r.url_pattern);
             if (!pattern) continue;
             var mt = r.match_type || 'contains';
             var hit = false;

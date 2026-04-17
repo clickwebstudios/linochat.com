@@ -164,6 +164,29 @@ interface PageRule {
   greeting_message?: string;
 }
 
+/**
+ * Reduce a user-entered URL pattern to just the path, since the runtime
+ * matches against `window.location.pathname`. Mirrors the equivalent
+ * helper in WidgetLoaderController.php so the saved value matches what
+ * actually fires at runtime.
+ *   "https://example.com/admin/x"  -> "/admin/x"
+ *   "example.com/admin"            -> "/admin"
+ *   "/admin", "admin/x"            -> unchanged
+ */
+function normalizePagePattern(pattern: string): string {
+  if (!pattern) return '';
+  const p = pattern.trim();
+  if (!p) return '';
+  if (/^https?:\/\//i.test(p)) {
+    try { return new URL(p).pathname || '/'; } catch { /* fall through */ }
+  }
+  if (p.charAt(0) !== '/' && /^[^/\s]+\.[^/\s]+/.test(p)) {
+    const slash = p.indexOf('/');
+    return slash === -1 ? '/' : p.substring(slash);
+  }
+  return p;
+}
+
 const DEFAULT_POPOVER: PopoverConfig = {
   enabled: false,
   design: 'modern',
@@ -965,8 +988,21 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                                 next[idx] = { ...next[idx], url_pattern: e.target.value };
                                 setPageRules(next);
                               }}
+                              onBlur={() => {
+                                const cleaned = normalizePagePattern(rule.url_pattern);
+                                if (cleaned !== rule.url_pattern) {
+                                  const next = [...pageRules];
+                                  next[idx] = { ...next[idx], url_pattern: cleaned };
+                                  setPageRules(next);
+                                }
+                              }}
                               placeholder="/checkout"
                             />
+                            {rule.url_pattern && normalizePagePattern(rule.url_pattern) !== rule.url_pattern && (
+                              <p className="text-[11px] text-muted-foreground">
+                                Will match path: <code className="px-1 rounded bg-muted">{normalizePagePattern(rule.url_pattern)}</code>
+                              </p>
+                            )}
                           </div>
                           <div className="grid gap-1.5">
                             <Label className="text-xs">Match</Label>
