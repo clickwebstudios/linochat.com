@@ -803,6 +803,20 @@ class WidgetLoaderController extends Controller
         };
     }
     
+    // Render the configured welcome bubble into the messages container.
+    // Safe to call multiple times — re-uses existing bubble if present.
+    function renderWelcomeBubble() {
+        var container = document.getElementById('linochat-messages');
+        if (!container) return;
+        if (document.getElementById('linochat-welcome')) return;
+        var welcomeMsg = (CONFIG && CONFIG.welcome_message) || "Hi! How can we help you today?";
+        var welcomeEl = document.createElement('div');
+        welcomeEl.id = 'linochat-welcome';
+        welcomeEl.style.cssText = 'display:flex;align-items:flex-start;gap:8px;margin-bottom:12px';
+        welcomeEl.innerHTML = '<div style="width:24px;height:24px;border-radius:9999px;background:#d1d5db;flex-shrink:0"><\/div><div style="background:white;border-radius:8px;border-top-left-radius:0;padding:12px;max-width:80%;box-shadow:0 1px 2px rgba(0,0,0,0.05);font-size:' + getCfgFontSize() + ';line-height:1.4;color:#111827">' + welcomeMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '<\/div>';
+        container.appendChild(welcomeEl);
+    }
+
     function addMessage(content, type, messageId, playSound, metadata) {
         // Skip if already added (avoids duplicate from API response + WebSocket arriving in either order)
         if (messageId && ADDED_MESSAGE_IDS[messageId]) return;
@@ -811,8 +825,12 @@ class WidgetLoaderController extends Controller
         var container = document.getElementById('linochat-messages');
         if (!container) return;
 
-        var welcomeEl = document.getElementById('linochat-welcome');
-        if (welcomeEl) welcomeEl.remove();
+        // Only remove the welcome bubble when a real AI/agent/customer message arrives.
+        // System notices like "Customer returned — chat reopened." shouldn't clear it.
+        if (type !== 'system') {
+            var welcomeEl = document.getElementById('linochat-welcome');
+            if (welcomeEl) welcomeEl.remove();
+        }
         if (playSound && (type === 'ai' || type === 'agent')) playIncomingMessageSound();
         
         var typing = document.getElementById('linochat-typing');
@@ -1232,6 +1250,13 @@ class WidgetLoaderController extends Controller
             if (CUSTOMER_TYPING_SENT) sendCustomerTyping(false);
         });
         
+        // Show the welcome bubble immediately so the customer always has a
+        // greeting on chat open. addMessage() will remove it as soon as a
+        // real AI/agent/customer message renders. System notices (like
+        // "Customer returned — chat reopened.") leave it in place so a
+        // reopened chat without an AI message still shows the welcome.
+        renderWelcomeBubble();
+
         MESSAGES.forEach(function(m) {
             var type = m.sender_type === 'customer' ? 'customer' :
                       m.sender_type === 'system' ? 'system' :
@@ -1240,15 +1265,6 @@ class WidgetLoaderController extends Controller
             if (m.id) NOTIFIED_MSG_IDS[m.id] = true;
             addMessage(m.content, type, m.id, false, m.metadata);
         });
-        
-        if (MESSAGES.length === 0) {
-            var welcomeMsg = CONFIG.welcome_message || "Hi! How can we help you today?";
-            var welcomeEl = document.createElement('div');
-            welcomeEl.id = 'linochat-welcome';
-            welcomeEl.style.cssText = 'display:flex;align-items:flex-start;gap:8px;margin-bottom:12px';
-            welcomeEl.innerHTML = '<div style="width:24px;height:24px;border-radius:9999px;background:#d1d5db;flex-shrink:0"><\/div><div style="background:white;border-radius:8px;border-top-left-radius:0;padding:12px;max-width:80%;box-shadow:0 1px 2px rgba(0,0,0,0.05);font-size:' + getCfgFontSize() + ';line-height:1.4;color:#111827">' + welcomeMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '<\/div>';
-            document.getElementById('linochat-messages').appendChild(welcomeEl);
-        }
         
         if (!openImmediately && CONFIG.auto_open && !localStorage.getItem('linochat_auto_opened')) {
             setTimeout(function() {
