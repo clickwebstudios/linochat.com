@@ -61,6 +61,8 @@ import { useTransferRequestsStore } from '../../stores/transferRequestsStore';
 import { api } from '../../api/client';
 import { initEcho } from '../../lib/echo';
 import { playNotificationSound, playTransferRequestSound } from '../../lib/notificationSound';
+import { getNotificationPrefs } from '../../lib/notificationPrefs';
+import { useDesktopNotifications } from '../../hooks/useDesktopNotifications';
 import type { HumanRequestedPayload } from '../../components/HumanRequestedModal';
 
 type Section = 'dashboard' | 'chats' | 'tickets' | 'knowledge' | 'reports' | 'users' | 'projects' | 'settings';
@@ -109,6 +111,10 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
   // Get user from auth store
   const { user, logout } = useAuthStore();
+
+  // Desktop notifications (Notification API). Permission is requested from
+  // NotificationsSettingsView when the user opts in.
+  const { show: showDesktopNotification } = useDesktopNotifications();
   
   // Superadmin company selection
   const { selectedCompanyId, setSelectedCompany } = useSuperadminStore();
@@ -310,8 +316,17 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       });
       // Refresh team members (active chat counts changed)
       loadTeamMembers();
-      // Play notification sound for new chat
-      playNotificationSound();
+
+      const prefs = getNotificationPrefs();
+      if (prefs.sound) playNotificationSound();
+      if (prefs.desktop) {
+        showDesktopNotification({
+          title: 'New chat started',
+          body: chat.customer_name ? `${chat.customer_name} just opened a chat` : 'A customer just opened a chat',
+          tag: `chat-${chat.id}`,
+          onClick: () => navigate(`${basePath}/chats?chat=${chat.id}`),
+        });
+      }
     });
 
     // Listen for chat status updates
@@ -354,7 +369,52 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       channel.stopListening('.customer.presence.updated');
       echo.leave(`agent.${user.id}`);
     };
-  }, [user?.id, loadTeamMembers]);
+  }, [user?.id, loadTeamMembers, showDesktopNotification, navigate, basePath]);
+
+  // Subscribe to every visible project's channel so the admin gets a sound/
+  // desktop notification for any new customer or AI message in any chat of
+  // that project — not only the currently open one (ChatsView's per-chat
+  // listener only fires while a specific chat is focused).
+  const projectIds = projects.map(p => String(p.id)).sort().join(',');
+  useEffect(() => {
+    if (!user?.id || !projectIds) return;
+
+    const echo = initEcho();
+    if (!echo) return;
+
+    const ids = projectIds.split(',').filter(Boolean);
+    const subscribedChannels = ids.map((id) => {
+      const ch = echo.private(`project.${id}`);
+      ch.listen('.message.sent', (event: any) => {
+        // Only alert on incoming messages (customer or AI). Ignore agent's own.
+        if (event?.sender_type !== 'customer' && !event?.is_ai) return;
+
+        const prefs = getNotificationPrefs();
+        if (prefs.sound) playNotificationSound();
+        if (prefs.desktop) {
+          const who = event.customer_name || (event.is_ai ? 'AI assistant' : 'Customer');
+          const preview = typeof event.content === 'string'
+            ? (event.content.length > 140 ? event.content.slice(0, 140) + '\u2026' : event.content)
+            : '';
+          showDesktopNotification({
+            title: `New message from ${who}`,
+            body: preview,
+            tag: `chat-${event.chat_id}`,
+            onClick: () => navigate(`${basePath}/chats?chat=${event.chat_id}`),
+          });
+        }
+      });
+      return id;
+    });
+
+    return () => {
+      subscribedChannels.forEach((id) => {
+        const ch = echo.private(`project.${id}`);
+        ch.stopListening('.message.sent');
+        echo.leave(`project.${id}`);
+      });
+    };
+  }, [user?.id, projectIds, showDesktopNotification, navigate, basePath]);
 
   // Load tickets from API
   const loadTickets = useCallback(async (companyId?: string | null) => {
