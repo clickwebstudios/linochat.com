@@ -64,7 +64,13 @@ jobs:
 
       - name: Get commit title
         id: commit
-        run: echo "title=$(echo '${{ github.event.head_commit.message }}' | head -1)" >> $GITHUB_OUTPUT
+        # Pass the message via env to avoid shell-interpolating multi-line bodies,
+        # quotes, em-dashes or angle brackets directly into bash.
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          TITLE=$(printf '%s\n' "$COMMIT_MSG" | head -n1 | tr -d '`')
+          echo "title=${TITLE}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Slack - Deploy Success
         if: success()
