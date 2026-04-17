@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +9,7 @@ import {
 import { Badge } from '../ui/badge';
 import { Search, Bell } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { ProfileDropdown } from '../ProfileDropdown';
+import { HeaderUserBadge } from '../HeaderUserBadge';
 
 interface NotificationItem {
   id: string;
@@ -179,22 +178,11 @@ export function DashboardHeader({
     </DropdownMenu>
   );
 
-  // Default user menu — display avatar + name/role beside the shared
-  // ProfileDropdown so the chevron menu matches every other dashboard page
-  // (Plan + token balance + correct logout from the auth store).
+  // Default user menu — uses the shared HeaderUserBadge so this layout's
+  // header looks and behaves identically to every other dashboard page.
+  // The legacy `user` prop is ignored; HeaderUserBadge reads from useAuthStore.
   const DefaultUserMenu = (
-    <div className="flex items-center gap-3">
-      <Avatar className="h-8 w-8">
-        <AvatarFallback className="bg-primary text-primary-foreground">
-          {user.avatar}
-        </AvatarFallback>
-      </Avatar>
-      <div className="text-left hidden md:block">
-        <p className="text-sm font-medium">{user.name}</p>
-        <p className="text-xs text-muted-foreground">{user.role || 'Admin'}</p>
-      </div>
-      <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} />
-    </div>
+    <HeaderUserBadge basePath={basePath} isSuperadmin={isSuperadmin} />
   );
 
   return (

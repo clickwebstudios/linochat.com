@@ -55,12 +55,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
-import { ProfileDropdown } from '../../components/ProfileDropdown';
+import { HeaderUserBadge } from '../../components/HeaderUserBadge';
 import { Input } from '../../components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
 import { useLayout } from '../../components/layouts/LayoutContext';
-import { useAuthStore } from '../../stores/authStore';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { toast } from 'sonner';
 
@@ -146,8 +144,6 @@ export default function BillingPage() {
       : '/agent';
 
   const isReadOnly = role === 'Agent';
-  const authUser = useAuthStore((s) => s.user);
-  const authUserName = authUser ? `${authUser.first_name} ${authUser.last_name}` : '';
 
   // ─── State ─────────────────────────────────────────
   const [currentPlanId, setCurrentPlanId] = useState('free');
@@ -503,27 +499,12 @@ export default function BillingPage() {
               <span className="hidden md:inline">Back to Dashboard</span>
             </Link>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary text-primary-foreground">SC</AvatarFallback>
-              </Avatar>
-              <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                userStatus === 'online' ? 'bg-green-500' :
-                userStatus === 'away' ? 'bg-yellow-500' :
-                'bg-gray-400'
-              }`}></span>
-            </div>
-            <div className="hidden md:block">
-              <div className="text-sm font-semibold">{authUserName || 'Account'}</div>
-              <div className="text-xs text-muted-foreground capitalize">{role}</div>
-            </div>
-            <ProfileDropdown
-              basePath={basePath}
-              isSuperadmin={basePath === '/superadmin'}
-              onStatusClick={() => setStatusDialogOpen(true)}
-            />
-          </div>
+          <HeaderUserBadge
+            basePath={basePath}
+            isSuperadmin={basePath === '/superadmin'}
+            onStatusClick={() => setStatusDialogOpen(true)}
+            status={userStatus}
+          />
         </header>
 
         {/* Content */}

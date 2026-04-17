@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
 import {
   DropdownMenu,
@@ -47,7 +46,7 @@ import { CreateTicketDialog } from '../../components/CreateTicketDialog';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { InitiateTransferDialog } from '../../components/InitiateTransferDialog';
 import { AIGenerateKBDialog } from '../../components/AIGenerateKBDialog';
-import { ProfileDropdown } from '../../components/ProfileDropdown';
+import { HeaderUserBadge } from '../../components/HeaderUserBadge';
 import { AddCategoryDialog, EditCategoryDialog, DeleteCategoryDialog } from '../../components/CategoryDialogs';
 import { DashboardView } from '../../components/agent-dashboard/DashboardView';
 import { ChatsView } from '../../components/agent-dashboard/ChatsView';
@@ -918,30 +917,13 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
               + New Ticket
             </Button>
             {/* Agent Info - Right side after new ticket button */}
-            <div className="hidden md:flex items-center gap-3 pl-4 border-l">
-              <div className="relative">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user ? `${user.first_name[0]}${user.last_name[0]}` : '??'}
-                  </AvatarFallback>
-                </Avatar>
-                <span className={`absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                  userStatus === 'online' ? 'bg-green-500' :
-                  userStatus === 'away' ? 'bg-yellow-500' :
-                  'bg-muted-foreground'
-                }`} />
-              </div>
-              <div>
-                <div className="text-sm font-semibold">
-                  {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
-                </div>
-                <div className="text-xs">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                    {user?.company_plan || 'Free'}
-                  </span>
-                </div>
-              </div>
-              <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} onStatusClick={() => setStatusDialogOpen(true)} />
+            <div className="hidden md:flex items-center pl-4 border-l">
+              <HeaderUserBadge
+                basePath={basePath}
+                isSuperadmin={isSuperadmin}
+                onStatusClick={() => setStatusDialogOpen(true)}
+                status={userStatus}
+              />
             </div>
           </div>
         </header>
