@@ -347,123 +347,32 @@ class WidgetController extends Controller
             ], 404);
         }
 
-        // Find existing chat for this customer (active or archived/closed)
+        // Read-only lookup. Chats are created lazily in sendMessage() once the
+        // customer actually types, so we never persist ghost chats here.
+        // 1) Active chat for this customer (customer resumes mid-conversation).
         $chat = Chat::where('project_id', $project->id)
             ->where('customer_id', $customerId)
             ->whereIn('status', ['active', 'waiting', 'ai_handling'])
             ->first();
 
-        // If no active chat, check for a recently closed/archived one to reactivate
+        // 2) Otherwise show the most recent closed chat so returning customers
+        //    still see their prior history. Reactivation happens on first new
+        //    customer message, not here.
         if (!$chat) {
-            $archivedChat = Chat::where('project_id', $project->id)
+            $chat = Chat::where('project_id', $project->id)
                 ->where('customer_id', $customerId)
                 ->where('status', 'closed')
                 ->orderBy('updated_at', 'desc')
                 ->first();
-
-            if ($archivedChat) {
-                $archivedChat->update([
-                    'status' => 'ai_handling',
-                    'ai_enabled' => true,
-                    'agent_id' => null,
-                    'customer_last_seen_at' => now(),
-                ]);
-
-                // Add system message indicating chat was reopened
-                $systemMsg = ChatMessage::create([
-                    'chat_id' => $archivedChat->id,
-                    'sender_type' => 'system',
-                    'content' => 'Customer returned — chat reopened.',
-                ]);
-
-                // Notify agents in real-time
-                broadcast(new ChatStatusUpdated($archivedChat->id, 'ai_handling'));
-                broadcast(new MessageSent($systemMsg))->toOthers();
-
-                $chat = $archivedChat;
-            }
-        }
-
-        if (!$chat) {
-            // Enforce monthly chat limit for Free plan companies
-            $projectOwner = User::find($project->user_id);
-            $company = $projectOwner ? Company::find($projectOwner->company_id) : null;
-            if ($company) {
-                $plan = strtolower($company->plan ?? 'free');
-                $maxChats = config("plan_limits.{$plan}.max_chats_per_month");
-                if ($maxChats) {
-                    $chatCount = Chat::where('project_id', $project->id)
-                        ->where('created_at', '>=', now()->startOfMonth())
-                        ->count();
-                    if ($chatCount >= $maxChats) {
-                        dispatch(function () use ($company) {
-                            app(\App\Services\UsageLimitNotificationService::class)->notifyChatLimitReached($company);
-                        })->afterResponse();
-                        return $this->initResponse($request, [
-                            'success' => false,
-                            'message' => 'Monthly chat limit reached. Please contact support.',
-                        ], 422);
-                    }
-                }
-            }
-
-            $metadata = $this->buildSessionMetadata($request);
-
-            $chat = Chat::create([
-                'project_id' => $project->id,
-                'customer_id' => $customerId,
-                'customer_email' => $request->input('customer_email'),
-                'customer_name' => $request->input('customer_name'),
-                'status' => 'ai_handling',
-                'ai_enabled' => true,
-                'priority' => 'medium',
-                'metadata' => $metadata,
-            ]);
-
-            $aiName = ($project->ai_settings['ai_name'] ?? null) ?: 'Lino';
-            $welcomeMessage = ChatMessage::create([
-                'chat_id' => $chat->id,
-                'sender_type' => 'ai',
-                'content' => "Hi there! I'm {$aiName}, the AI assistant for {$project->name}. How can I help you today?",
-                'is_ai' => true,
-            ]);
-
-            $chat->update(['last_message_at' => now(), 'customer_last_seen_at' => now()]);
-            broadcast(new MessageSent($welcomeMessage))->toOthers();
-
-            // Notify agents about new chat in real time (broadcast immediately, no queue)
-            $project = Project::find($chat->project_id);
-            if ($project) {
-                $agentIds = $project->getCompanyAgentIds()->map(fn ($id) => (string) $id)->all();
-                if (!empty($agentIds)) {
-                    broadcast(new NewChatForAgent(
-                        $chat->load(['project', 'agent', 'messages' => fn ($q) => $q->latest()->limit(1)]),
-                        (string) $project->id,
-                        $agentIds
-                    ))->toOthers();
-
-                    // Persist a notification for each agent
-                    $customerName = $chat->customer_name ?? 'A customer';
-                    $projectName  = $project->name ?? 'your project';
-                    foreach ($agentIds as $agentId) {
-                        AppNotification::create([
-                            'user_id'     => $agentId,
-                            'type'        => 'user',
-                            'title'       => 'New chat',
-                            'description' => "{$customerName} started a chat in {$projectName}.",
-                        ]);
-                    }
-                }
-            }
         }
 
         $data = [
             'success' => true,
             'data' => [
-                'chat_id' => $chat->id,
+                'chat_id' => $chat?->id,
                 'customer_id' => $customerId,
-                'status' => $chat->status,
-                'messages' => $chat->messages()->orderBy('created_at')->get(),
+                'status' => $chat?->status,
+                'messages' => $chat ? $chat->messages()->orderBy('created_at')->get() : [],
             ],
         ];
 
@@ -601,7 +510,7 @@ class WidgetController extends Controller
         $input = $request->all();
 
         $validator = Validator::make($input, [
-            'chat_id' => 'required',
+            'chat_id' => 'nullable',
             'customer_id' => 'required|string',
             'message' => 'required|string|max:5000',
         ]);
@@ -623,16 +532,78 @@ class WidgetController extends Controller
             ], 404);
         }
 
-        $chat = Chat::where('id', $input['chat_id'])
-            ->where('project_id', $project->id)
-            ->where('customer_id', $input['customer_id'])
-            ->first();
-
+        // Try to locate the chat: first by explicit chat_id, then by customer_id
+        // (covers stale/missing chat_id from the widget after the init lookup).
+        $chat = null;
+        if (!empty($input['chat_id'])) {
+            $chat = Chat::where('id', $input['chat_id'])
+                ->where('project_id', $project->id)
+                ->where('customer_id', $input['customer_id'])
+                ->first();
+        }
         if (!$chat) {
-            return $this->sendMessageResponse($request, [
-                'success' => false,
-                'message' => 'Chat not found',
-            ], 404);
+            $chat = Chat::where('project_id', $project->id)
+                ->where('customer_id', $input['customer_id'])
+                ->orderBy('updated_at', 'desc')
+                ->first();
+        }
+
+        // First message from this customer — create the chat now (lazy init
+        // keeps the sidebar free of chats that never got a real message).
+        if (!$chat) {
+            $projectOwner = User::find($project->user_id);
+            $company = $projectOwner ? Company::find($projectOwner->company_id) : null;
+            if ($company) {
+                $plan = strtolower($company->plan ?? 'free');
+                $maxChats = config("plan_limits.{$plan}.max_chats_per_month");
+                if ($maxChats) {
+                    $chatCount = Chat::where('project_id', $project->id)
+                        ->where('created_at', '>=', now()->startOfMonth())
+                        ->count();
+                    if ($chatCount >= $maxChats) {
+                        dispatch(function () use ($company) {
+                            app(\App\Services\UsageLimitNotificationService::class)->notifyChatLimitReached($company);
+                        })->afterResponse();
+                        return $this->sendMessageResponse($request, [
+                            'success' => false,
+                            'message' => 'Monthly chat limit reached. Please contact support.',
+                        ], 422);
+                    }
+                }
+            }
+
+            $chat = Chat::create([
+                'project_id' => $project->id,
+                'customer_id' => $input['customer_id'],
+                'customer_email' => $request->input('customer_email'),
+                'customer_name' => $request->input('customer_name'),
+                'status' => 'ai_handling',
+                'ai_enabled' => true,
+                'priority' => 'medium',
+                'metadata' => $this->buildSessionMetadata($request),
+            ]);
+
+            // Notify agents about the new chat so it appears in their list
+            // before the customer message broadcast arrives.
+            $agentIds = $project->getCompanyAgentIds()->map(fn ($id) => (string) $id)->all();
+            if (!empty($agentIds)) {
+                broadcast(new NewChatForAgent(
+                    $chat->load(['project', 'agent', 'messages' => fn ($q) => $q->latest()->limit(1)]),
+                    (string) $project->id,
+                    $agentIds
+                ))->toOthers();
+
+                $customerName = $chat->customer_name ?? 'A customer';
+                $projectName  = $project->name ?? 'your project';
+                foreach ($agentIds as $agentId) {
+                    AppNotification::create([
+                        'user_id'     => $agentId,
+                        'type'        => 'user',
+                        'title'       => 'New chat',
+                        'description' => "{$customerName} started a chat in {$projectName}.",
+                    ]);
+                }
+            }
         }
 
         // Auto-reopen closed chats when customer sends a new message
@@ -767,6 +738,7 @@ class WidgetController extends Controller
             $data = [
                 'success' => true,
                 'data' => [
+                    'chat_id' => $chat->id,
                     'message' => $message,
                     'ai_response' => $aiResponse,
                     'chat_status' => $chat->fresh()->status,
