@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -323,6 +323,27 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   useEffect(() => {
     if (savedSnapshot === 'pending') setSavedSnapshot(currentSnapshot);
   }, [savedSnapshot, currentSnapshot]);
+
+  // Debounced auto-save: persist any change ~800ms after the user stops
+  // editing. handleSaveSettings is the same function the (now removed)
+  // explicit Save button used, so server logic and dirty tracking stay
+  // identical — we just trigger it automatically.
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    // Skip while initial load is still in flight or hasn't captured a baseline.
+    if (savedSnapshot === '' || savedSnapshot === 'pending') return;
+    if (currentSnapshot === savedSnapshot) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      handleSaveSettings();
+    }, 800);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+    // handleSaveSettings is intentionally omitted — recreated every render and
+    // would re-fire the timer immediately. It always reads the latest state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSnapshot, savedSnapshot]);
 
   // Push live updates to the iframe preview when settings change
   useEffect(() => {
@@ -1228,13 +1249,19 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
               </div>
             </div>
 
-          {/* Fixed save bar */}
-          <div className="fixed bottom-0 left-0 md:left-24 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3">
-            {saveSuccess && <span className="text-sm text-green-600">Saved!</span>}
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleSaveSettings} disabled={saving || !isDirty}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {isDirty ? 'Save Widget Settings' : 'Saved'}
-            </Button>
+          {/* Auto-save status bar — every change is persisted automatically. */}
+          <div className="fixed bottom-0 left-0 md:left-24 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3 text-sm">
+            {saving ? (
+              <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+              </span>
+            ) : isDirty ? (
+              <span className="text-muted-foreground">Unsaved changes</span>
+            ) : saveSuccess ? (
+              <span className="text-green-600">Saved</span>
+            ) : (
+              <span className="text-muted-foreground">All changes saved</span>
+            )}
           </div>
           </div>
   );
