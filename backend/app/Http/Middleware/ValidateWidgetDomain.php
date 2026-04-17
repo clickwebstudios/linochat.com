@@ -39,6 +39,13 @@ class ValidateWidgetDomain
             return $request->isMethod('GET') ? $next($request) : response()->json(['error' => 'Origin header required'], 403);
         }
 
+        // Allow loopback origins — the admin dashboard's widget-preview iframe runs
+        // on localhost in local dev. A real customer browser will never send a
+        // localhost Origin/Referer, so this does not weaken prod protection.
+        if (in_array($requestDomain, ['localhost', '127.0.0.1', '[::1]'], true)) {
+            return $next($request);
+        }
+
         $projectDomain = $this->extractDomain($project->website);
         if (!$projectDomain) {
             return $next($request);
