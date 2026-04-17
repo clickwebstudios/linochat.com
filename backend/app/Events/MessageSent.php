@@ -34,9 +34,16 @@ class MessageSent implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        return [
+        $channels = [
             new Channel('chat.' . $this->chatId),
         ];
+
+        $projectId = $this->message->chat?->project_id;
+        if ($projectId) {
+            $channels[] = new PrivateChannel('project.' . $projectId);
+        }
+
+        return $channels;
     }
 
     /**
@@ -52,9 +59,12 @@ class MessageSent implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
+        $chat = $this->message->chat;
+
         $payload = [
             'id' => $this->message->id,
             'chat_id' => $this->message->chat_id,
+            'project_id' => $chat?->project_id,
             'sender_type' => $this->message->sender_type,
             'sender_id' => $this->message->sender_id,
             'content' => $this->message->content,
@@ -63,12 +73,10 @@ class MessageSent implements ShouldBroadcastNow
             'metadata' => $this->message->metadata ?? [],
         ];
 
-        // Include updated customer_name when AI message (e.g. after AI detected name)
-        if ($this->message->sender_type === 'ai') {
-            $chat = $this->message->chat;
-            if ($chat) {
-                $payload['customer_name'] = $chat->customer_name ?? null;
-            }
+        // Include customer_name so the project-wide notification on the agent
+        // dashboard can show "<Name> sent: ..." without a follow-up fetch.
+        if ($chat) {
+            $payload['customer_name'] = $chat->customer_name ?? null;
         }
 
         return $payload;

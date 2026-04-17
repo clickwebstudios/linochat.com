@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Mail, Smartphone, Loader2, Ticket, MessageCircle, UserPlus, ArrowRightLeft, Bell, Bot } from 'lucide-react';
+import { Mail, Smartphone, Loader2, Ticket, MessageCircle, UserPlus, ArrowRightLeft, Bot, Volume2, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { api } from '../../api/client';
+import { useNotificationPrefs, setNotificationPrefs } from '../../lib/notificationPrefs';
+import { useDesktopNotifications } from '../../hooks/useDesktopNotifications';
+import { playNotificationSound } from '../../lib/notificationSound';
 
 interface NotificationEvent {
   key: string;
@@ -85,6 +88,35 @@ export function NotificationsSettingsView() {
   const [events, setEvents] = useState<NotificationEvent[]>(defaultEvents);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const prefs = useNotificationPrefs();
+  const { permission, requestPermission } = useDesktopNotifications();
+
+  const toggleSound = () => {
+    const next = !prefs.sound;
+    setNotificationPrefs({ sound: next });
+    if (next) playNotificationSound();
+  };
+
+  const toggleDesktop = async () => {
+    if (prefs.desktop) {
+      setNotificationPrefs({ desktop: false });
+      return;
+    }
+    if (permission === 'unsupported') {
+      toast.error('This browser does not support desktop notifications');
+      return;
+    }
+    if (permission === 'denied') {
+      toast.error('Notifications are blocked. Enable them in your browser site settings, then try again.');
+      return;
+    }
+    const result = await requestPermission();
+    if (result === 'granted') {
+      setNotificationPrefs({ desktop: true });
+    } else if (result === 'denied') {
+      toast.error('Notifications were blocked');
+    }
+  };
 
   useEffect(() => {
     api.get<{ data: Record<string, { email?: boolean; sms?: boolean }> }>('/settings/notifications')
@@ -135,7 +167,73 @@ export function NotificationsSettingsView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">In-browser alerts</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Play a sound and show a desktop notification when new chats or messages arrive on this computer.
+          </p>
+        </div>
+
+        <Card className="border border-border">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="shrink-0"><Volume2 className="h-5 w-5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-foreground">Play sound on new messages</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Short chime when a customer or AI replies in any chat.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                prefs.sound ? 'bg-primary' : 'bg-muted'
+              }`}
+              title="Sound"
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-card transition-transform ${
+                  prefs.sound ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="shrink-0"><Monitor className="h-5 w-5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-foreground">Show desktop notifications</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {permission === 'unsupported'
+                  ? 'Your browser does not support desktop notifications.'
+                  : permission === 'denied'
+                    ? 'Blocked in browser settings — unblock to enable.'
+                    : 'Banner pop-ups even when the tab is in the background.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleDesktop}
+              disabled={permission === 'unsupported'}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                prefs.desktop ? 'bg-primary' : 'bg-muted'
+              } ${permission === 'unsupported' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Desktop notifications"
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-card transition-transform ${
+                  prefs.desktop ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+
       <div>
         <h2 className="text-lg font-semibold text-foreground">Outgoing Notifications</h2>
         <p className="text-sm text-muted-foreground mt-1">

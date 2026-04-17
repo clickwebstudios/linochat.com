@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../api/client';
 import { initEcho } from '../../lib/echo';
 import { playNotificationSound } from '../../lib/notificationSound';
+import { getNotificationPrefs } from '../../lib/notificationPrefs';
 import { ChatConversationsList } from './ChatConversationsList';
 import { ChatMessageArea } from './ChatMessageArea';
 import { ChatActivityPanel } from './ChatActivityPanel';
@@ -253,9 +254,9 @@ export function ChatsView({
             return prev.map(m => (String(m.id).startsWith('temp-') ? newMessage : m));
           }
         }
-        if (event.sender_type === 'customer' || event.is_ai) {
-          playNotificationSound();
-        }
+        // Sound + desktop notifications for incoming messages are handled
+        // in AgentDashboard via the project-wide channel, so they fire for
+        // every chat — not only the one currently open here.
         return [...prev, newMessage];
       });
       setAgentTyping(null);
@@ -407,7 +408,7 @@ export function ChatsView({
               (m: { id: string | number; sender_type: string; is_ai?: boolean }) =>
                 !prevIds.has(String(m.id)) && (m.sender_type === 'customer' || m.is_ai)
             );
-            if (hasNewIncoming) playNotificationSound();
+            if (hasNewIncoming && getNotificationPrefs().sound) playNotificationSound();
           }
           return loadedMessages;
         });
