@@ -5,13 +5,12 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Badge } from '../ui/badge';
-import { Search, Bell, User, LogOut, Settings } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, Bell } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { ProfileDropdown } from '../ProfileDropdown';
 
 interface NotificationItem {
   id: string;
@@ -101,7 +100,13 @@ export function DashboardHeader({
   showSearch = true,
   unreadCount = 0,
 }: DashboardHeaderProps) {
-  const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/admin')
+    ? '/admin'
+    : location.pathname.startsWith('/superadmin')
+      ? '/superadmin'
+      : '/agent';
+  const isSuperadmin = basePath === '/superadmin';
 
   // Default search component
   const DefaultSearch = showSearch && (
@@ -174,43 +179,22 @@ export function DashboardHeader({
     </DropdownMenu>
   );
 
-  // Default user menu
+  // Default user menu — display avatar + name/role beside the shared
+  // ProfileDropdown so the chevron menu matches every other dashboard page
+  // (Plan + token balance + correct logout from the auth store).
   const DefaultUserMenu = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {user.avatar}
-            </AvatarFallback>
-          </Avatar>
-          <div className="text-left hidden md:block">
-            <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">{user.role || 'Admin'}</p>
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{user.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/profile-settings')}>
-          <User className="mr-2 h-4 w-4" />
-          Profile Settings
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          Preferences
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/login')} className="text-red-600">
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-3">
+      <Avatar className="h-8 w-8">
+        <AvatarFallback className="bg-primary text-primary-foreground">
+          {user.avatar}
+        </AvatarFallback>
+      </Avatar>
+      <div className="text-left hidden md:block">
+        <p className="text-sm font-medium">{user.name}</p>
+        <p className="text-xs text-muted-foreground">{user.role || 'Admin'}</p>
+      </div>
+      <ProfileDropdown basePath={basePath} isSuperadmin={isSuperadmin} />
+    </div>
   );
 
   return (
