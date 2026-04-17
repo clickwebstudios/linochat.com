@@ -34,8 +34,9 @@ LinoChat is a SaaS customer support platform with a Laravel API backend and a Re
 - No test suite yet — validate with build + syntax checks
 
 ## Git Workflow
-- **Always use a feature branch + PR**, never commit directly to `master`. Branch naming: short kebab-case (e.g. `superadmin-add-company`). Open the PR with `gh pr create` and let the user merge in GitHub.
-- Deploy is `scripts/deploy.sh` on prod (git pull + composer install + migrate + frontend build) — merging to `master` does NOT auto-deploy.
+- **Always use a feature branch + PR**, never commit directly to `master`. Branch naming: short kebab-case (e.g. `superadmin-add-company`).
+- **Batch multiple commits per PR.** When the user gives several small tasks in a row, commit each one to the same feature branch as you go. Do NOT open a new PR per fix — that floods the review queue. Open the PR only when the user explicitly signals readiness ("PR it", "ship it", "merge it", "deploy") or when they pivot to an unrelated area. Tell them the running commit count on the branch when you're between tasks so they know what's queued.
+- Open the PR with `gh pr create`. Push to `master` is auto-deployed to prod by the `Deploy to Production` workflow (no manual deploy step).
 
 ## Common Pitfalls
 - Tailwind v4 uses CSS-first config — no `tailwind.config.js`
