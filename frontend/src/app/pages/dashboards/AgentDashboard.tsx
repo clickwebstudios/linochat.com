@@ -316,7 +316,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
 
     // Listen for chat status updates
     channel.listen('.chat.status.updated', (event: any) => {
-      setChats(prev => 
+      setChats(prev =>
         prev.map(chat => {
           if (chat.id === event.chat_id) {
             return {
@@ -333,9 +333,25 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
       loadTeamMembers();
     });
 
+    // Listen for customer presence pings — fired by the backend on every
+    // customer message / heartbeat / page view. Keeps the chat list's
+    // online/offline pill fresh for ALL chats, not just the focused one
+    // (ChatsView's MessageSent listener only covers the active chat).
+    channel.listen('.customer.presence.updated', (event: any) => {
+      if (!event?.chat_id || !event?.last_seen_at) return;
+      setChats(prev =>
+        prev.map(chat =>
+          String(chat.id) === String(event.chat_id)
+            ? { ...chat, customer_last_seen_at: event.last_seen_at }
+            : chat,
+        ),
+      );
+    });
+
     return () => {
       channel.stopListening('.new.chat');
       channel.stopListening('.chat.status.updated');
+      channel.stopListening('.customer.presence.updated');
       echo.leave(`agent.${user.id}`);
     };
   }, [user?.id, loadTeamMembers]);
