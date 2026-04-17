@@ -854,7 +854,7 @@ class WidgetLoaderController extends Controller
             };
             wrap.appendChild(btn);
         });
-        container.appendChild(wrap);
+        if (wrap.children.length) container.appendChild(wrap);
     }
 
     function addMessage(content, type, messageId, playSound, metadata) {
