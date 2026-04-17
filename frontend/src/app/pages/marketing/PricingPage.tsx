@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import MarketingHeader from '../../components/MarketingHeader';
 import MarketingFooter from '../../components/MarketingFooter';
-import ChatWidget from '../../components/ChatWidget';
 import SEOHead from '../../components/SEOHead';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
@@ -584,7 +583,6 @@ export default function PricingPage() {
       </section>
 
       <MarketingFooter />
-      <ChatWidget />
     </div>
   );
 }

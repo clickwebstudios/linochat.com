@@ -1,6 +1,5 @@
 import MarketingHeader from '../../components/MarketingHeader';
 import MarketingFooter from '../../components/MarketingFooter';
-import ChatWidget from '../../components/ChatWidget';
 import SEOHead from '../../components/SEOHead';
 import { motion } from 'motion/react';
 import {
@@ -230,7 +229,6 @@ export default function DemoPage() {
       </section>
 
       <MarketingFooter />
-      <ChatWidget />
     </div>
   );
 }

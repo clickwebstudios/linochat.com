@@ -17,6 +17,15 @@
     <body>
       <div id="root"></div>
       <script type="module" src="/src/main.tsx"></script>
+      <script>
+        (window.requestIdleCallback || function(fn){ setTimeout(fn, 1) })(function() {
+          var script = document.createElement('script');
+          script.src = 'https://linochat.com/widget?id=wc_J0jarSQ48xkQk7k3Dgg4UJslq5rbDJ63';
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          document.body.appendChild(script);
+        });
+      </script>
     </body>
   </html>
   
