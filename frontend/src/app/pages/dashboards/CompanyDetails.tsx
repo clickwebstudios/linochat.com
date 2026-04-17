@@ -249,11 +249,11 @@ export default function CompanyDetails() {
                   <p className="text-sm text-muted-foreground">ID: {company.id}</p>
                 </div>
               </div>
-              <Badge 
+              <Badge
                 variant="outline"
                 className={
-                  company.plan === 'Enterprise' 
-                    ? 'border-secondary text-secondary'
+                  company.plan === 'Enterprise'
+                    ? 'border-purple-600 text-purple-700 dark:border-purple-400 dark:text-purple-300'
                     : company.plan === 'Pro'
                     ? 'border-primary text-primary'
                     : 'border-muted-foreground text-muted-foreground'

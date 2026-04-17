@@ -118,6 +118,15 @@ CI/CD: GitHub Actions on push to `master`.
 | [flows/ticket-creation.md](flows/ticket-creation.md) | End-to-end: ticket creation with emails, chat link, Frubix lead |
 | [flows/agent-invite.md](flows/agent-invite.md) | End-to-end: admin invites agent → agent accepts → joins project |
 
+### Deep Dives (architecture/)
+
+| File | Contents |
+|------|----------|
+| [architecture/ai-chat-control-tokens.md](architecture/ai-chat-control-tokens.md) | Control token system — all tokens, detection methods, booking flow, why not function calling |
+| [architecture/widget-loader.md](architecture/widget-loader.md) | Two widget files — which one to edit for customer-facing changes |
+| [architecture/superadmin-impersonation.md](architecture/superadmin-impersonation.md) | Impersonation auth flow, 2h token, escalation guard, audit log |
+| [architecture/realtime-presence.md](architecture/realtime-presence.md) | 30s active threshold, Reverb vs Pusher config, broadcast events |
+
 ---
 
 ## How to Keep Docs Current
