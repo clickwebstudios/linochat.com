@@ -1165,80 +1165,67 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
 
   var animMap = {bounce:'lc-bounce',pulse:'lc-pulse',shake:'lc-shake',wobble:'lc-wobble',tada:'lc-tada',heartbeat:'lc-heartbeat','rubber-band':'lc-rubber-band',swing:'lc-swing',jello:'lc-jello',float:'lc-float'};
 
-  function applyDesign(design, btn, panel, color) {
-    // Reset to defaults
-    panel.style.boxShadow = ''; panel.style.borderRadius = '';
-    btn.style.borderRadius = ''; btn.style.width = ''; btn.style.height = '';
-    btn.style.boxShadow = ''; btn.style.border = ''; btn.style.background = '';
-    panel.style.height = ''; panel.style.width = '';
-    switch (design) {
-      case 'minimal':
-        panel.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; panel.style.borderRadius = '8px';
-        btn.style.boxShadow = 'none'; btn.style.border = '2px solid rgba(0,0,0,.1)'; break;
-      case 'classic':
-        panel.style.borderRadius = '4px'; btn.style.borderRadius = '4px';
-        panel.style.boxShadow = '0 2px 12px rgba(0,0,0,.2)'; break;
-      case 'compact':
-        btn.style.width = '44px'; btn.style.height = '44px';
-        panel.style.height = '420px'; panel.style.width = '300px'; break;
-      case 'bubble':
-        panel.style.borderRadius = '20px'; btn.style.width = '60px';
-        btn.style.height = '60px'; panel.style.boxShadow = '0 12px 48px rgba(0,0,0,.22)'; break;
-      case 'professional':
-        panel.style.borderRadius = '6px'; btn.style.borderRadius = '6px';
-        panel.style.boxShadow = '0 4px 20px rgba(0,0,0,.15)'; break;
-      case 'friendly':
-        panel.style.borderRadius = '24px'; btn.style.borderRadius = '50%';
-        panel.style.boxShadow = '0 8px 32px rgba(0,0,0,.18)'; break;
-      case 'gradient':
-        btn.style.background = 'linear-gradient(135deg, ' + color + ', ' + color + 'cc)';
-        panel.style.borderRadius = '16px'; break;
+  function updateGreetingBubble() {
+    if (!p.greetingEnabled || !p.greetingMessage) return false;
+    var bubble = document.getElementById('linochat-greeting');
+    if (!bubble) return false;
+    var span = bubble.querySelector('span');
+    if (span) {
+      span.textContent = p.greetingMessage;
+      return true;
     }
-  }
-
-  function applyPosition(pos, wrap, panel) {
-    var isLeft = pos === 'bottom-left' || pos === 'top-left';
-    var isTop  = pos === 'top-right'   || pos === 'top-left';
-    wrap.style.bottom = isTop ? 'auto' : '20px'; wrap.style.top  = isTop ? '20px' : 'auto';
-    wrap.style.right  = isLeft ? 'auto' : '20px'; wrap.style.left = isLeft ? '20px' : 'auto';
-    panel.style.bottom = isTop ? 'auto' : '88px'; panel.style.top   = isTop ? '88px' : 'auto';
-    panel.style.right  = isLeft ? 'auto' : '20px'; panel.style.left  = isLeft ? '20px' : 'auto';
+    return false;
   }
 
   function applyAll() {
-    var wrap  = document.getElementById('lc-widget');
-    var btn   = document.getElementById('lc-btn');
-    var panel = document.getElementById('lc-panel');
-    if (!wrap || !btn || !panel) { setTimeout(applyAll, 300); return; }
-
-    // Color & font size
-    wrap.style.setProperty('--lc-color', p.color);
-    wrap.style.setProperty('--lc-font-size', p.fontSize + 'px');
+    var btn   = document.getElementById('linochat-button');
+    var panel = document.getElementById('linochat-window');
+    if (!btn) { setTimeout(applyAll, 300); return; }
 
     // Title
-    var titleEl = document.getElementById('lc-title');
-    if (titleEl) titleEl.textContent = p.title;
+    var titleEl = document.getElementById('linochat-title');
+    if (titleEl && p.title) titleEl.textContent = p.title;
 
-    // Position & design
-    applyPosition(p.position, wrap, panel);
-    applyDesign(p.design, btn, panel, p.color);
-
-    // Greeting
-    var greetText = document.getElementById('lc-greeting-text');
-    var greetEl   = document.getElementById('lc-greeting');
-    if (greetText && greetEl && p.greetingEnabled && p.greetingMessage) {
-      greetText.textContent = p.greetingMessage;
-      if (!greetEl._scheduled) {
-        greetEl._scheduled = true;
-        setTimeout(function() { greetEl.classList.add('lc-show'); }, Number(p.greetingDelay) * 1000);
+    // Color — chat button background + send button + header (best-effort).
+    // Position/design use inline styles set during widget render and aren't
+    // patchable here without re-rendering; full preview parity for those is
+    // covered by the iframe srcDoc reload that fires when those fields change.
+    if (p.color) {
+      btn.style.background = p.color;
+      var sendBtn = document.getElementById('linochat-send');
+      if (sendBtn) sendBtn.style.background = p.color;
+      var header = document.getElementById('linochat-header');
+      if (header && p.design !== 'minimal' && p.design !== 'professional') {
+        header.style.background = p.color;
       }
     }
 
-    // Animation
-    if (p.animation !== 'none') {
+    // Font size — applied to the panel so all message bubbles inherit
+    if (p.fontSize && panel) panel.style.fontSize = p.fontSize + 'px';
+
+    // Greeting bubble text. The bubble is created on a delay by the widget,
+    // so updateGreetingBubble may return false on first call — the
+    // MutationObserver below catches it once it appears.
+    updateGreetingBubble();
+
+    // Animation on the chat button
+    if (p.animation && p.animation !== 'none') {
       var animName = animMap[p.animation];
       if (animName) btn.style.animation = animName + ' 1s ease-in-out infinite';
+    } else {
+      btn.style.animation = '';
     }
+  }
+
+  // Watch for the dynamically-added greeting bubble so its text reflects
+  // the editor's current value the moment the widget shows it.
+  if (typeof MutationObserver !== 'undefined') {
+    var mo = new MutationObserver(function() {
+      if (updateGreetingBubble()) {
+        // Found and updated — keep observing in case bubble re-mounts.
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
   }
 
   // Run at 800ms for fast API responses, and again at 3s to override slow ones
