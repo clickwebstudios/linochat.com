@@ -1467,7 +1467,7 @@ class WidgetLoaderController extends Controller
         var greetMsg = override && override.greeting_message
             ? override.greeting_message
             : (CONFIG.greeting_message || '');
-        var greetEnabled = override ? true : !!CONFIG.greeting_enabled;
+        var greetEnabled = (override && override.greeting_message) ? true : !!CONFIG.greeting_enabled;
         if (!greetEnabled || !greetMsg) return;
         var delay = (CONFIG.greeting_delay || 0) * 1000;
         setTimeout(function() {
