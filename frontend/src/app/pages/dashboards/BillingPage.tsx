@@ -18,10 +18,6 @@ import {
   Info,
   Eye,
   EyeOff,
-  Settings,
-  LogOut,
-  User,
-  ChevronDown,
   Coins,
   TrendingUp,
   Clock,
@@ -60,12 +56,7 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../components/ui/dropdown-menu';
+import { ProfileDropdown } from '../../components/ProfileDropdown';
 import { Input } from '../../components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
 import { useLayout } from '../../components/layouts/LayoutContext';
@@ -527,35 +518,11 @@ export default function BillingPage() {
               <div className="text-sm font-semibold">{authUserName || 'Account'}</div>
               <div className="text-xs text-muted-foreground capitalize">{role}</div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to={`${basePath}/profile-settings`} className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Profile Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to={`${basePath}/billing`} className="flex items-center">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Billing
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-                  <User className="mr-2 h-4 w-4" />
-                  Update Status
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <Link to="/">Log Out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ProfileDropdown
+              basePath={basePath}
+              isSuperadmin={basePath === '/superadmin'}
+              onStatusClick={() => setStatusDialogOpen(true)}
+            />
           </div>
         </header>
 
