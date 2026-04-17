@@ -273,6 +273,12 @@ export function ChatsView({
               if (event.customer_name) {
                 updates.customer_name = event.customer_name;
               }
+              // Customer just sent a message → they're definitely online right now.
+              // Without this the chat list keeps showing "Offline" until the next
+              // 15s silent poll refreshes customer_last_seen_at from the API.
+              if (event.sender_type === 'customer') {
+                updates.customer_last_seen_at = event.created_at || new Date().toISOString();
+              }
               return { ...chat, ...updates };
             }
             return chat;

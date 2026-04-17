@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\ChatStatusUpdated;
+use App\Events\CustomerPresenceUpdated;
 use App\Events\CustomerTyping;
 use App\Events\HumanRequested;
 use App\Events\MessageSent;
@@ -260,6 +261,33 @@ class WidgetController extends Controller
     /**
      * Return config as JSON or JSONP based on callback param.
      */
+    /**
+     * Notify every agent who could see this chat that the customer is active right
+     * now. Lets dashboards flip the chat's online indicator without polling.
+     * Safe to call as a fire-and-forget — failures are logged and swallowed.
+     */
+    private function broadcastCustomerPresence(Chat $chat): void
+    {
+        if (!$chat->customer_last_seen_at) return;
+        $project = $chat->project ?: ($chat->project_id ? Project::find($chat->project_id) : null);
+        if (!$project) return;
+        $agentIds = $project->getCompanyAgentIds()->map(fn ($id) => (string) $id)->all();
+        if (empty($agentIds)) return;
+
+        try {
+            broadcast(new CustomerPresenceUpdated(
+                (int) $chat->id,
+                $chat->customer_last_seen_at->toIso8601String(),
+                $agentIds,
+            ));
+        } catch (\Throwable $e) {
+            \Log::warning('CustomerPresenceUpdated broadcast failed', [
+                'chat_id' => $chat->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function configResponse(Request $request, array $data, int $status)
     {
         $noCacheHeaders = [
@@ -665,6 +693,7 @@ class WidgetController extends Controller
             $chat->refresh();
 
             broadcast(new MessageSent($message))->toOthers();
+            $this->broadcastCustomerPresence($chat);
 
             // Forward to Frubix if this project is Frubix-managed
             $frubixManaged = $project->integrations['frubix_managed'] ?? null;
@@ -913,6 +942,8 @@ class WidgetController extends Controller
         }
 
         $chat->update($updates);
+        $chat->refresh();
+        $this->broadcastCustomerPresence($chat);
 
         return response()->json(['success' => true]);
     }
@@ -959,6 +990,8 @@ class WidgetController extends Controller
             'metadata' => $metadata,
             'customer_last_seen_at' => now(),
         ]);
+        $chat->refresh();
+        $this->broadcastCustomerPresence($chat);
 
         return response()->json(['success' => true]);
     }
