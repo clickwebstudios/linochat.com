@@ -1021,7 +1021,10 @@ class WidgetLoaderController extends Controller
             };
 
             // /init is a pure lookup (no chat creation); safe to call on click.
-            initChat().then(doOpen).catch(onError);
+            // If config failed to load earlier (this button was created from the
+            // catch path), retry loadConfig first so createWidget has CONFIG set.
+            var chain = CONFIG ? initChat() : loadConfig().then(function() { return initChat(); });
+            chain.then(doOpen).catch(onError);
         });
     }
     
