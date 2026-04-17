@@ -378,28 +378,82 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
           })}
         </nav>
 
-        {/* Draft status indicator */}
-        <div className="mt-4 px-3">
-          {draftStatus === 'saving' && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" /> Saving draft...
-            </div>
-          )}
-          {draftStatus === 'saved' && (
-            <div className="flex items-center gap-1.5 text-xs text-green-600">
-              <Check className="h-3 w-3" /> Draft saved
-            </div>
-          )}
-          {hasUnpublishedChanges && draftStatus === 'idle' && (
-            <div className="flex items-center gap-1.5 text-xs text-orange-500">
-              <CloudOff className="h-3 w-3" /> Unpublished changes
-            </div>
-          )}
-        </div>
       </aside>
 
       {/* Content */}
-      <div className="flex-1 space-y-4 min-w-0 pb-16">
+      <div className="flex-1 space-y-4 min-w-0">
+
+        {/* Top action bar: status + Discard / History / Publish Changes */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 text-xs min-h-[28px]">
+            {draftStatus === 'saving' && (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Saving draft...
+              </span>
+            )}
+            {draftStatus === 'saved' && (
+              <span className="inline-flex items-center gap-1.5 text-green-600">
+                <Check className="h-3 w-3" /> Draft saved
+              </span>
+            )}
+            {hasUnpublishedChanges && draftStatus === 'idle' && (
+              <span className="inline-flex items-center gap-1.5 text-orange-500">
+                <CloudOff className="h-3 w-3" /> Unpublished changes
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {hasUnpublishedChanges && (
+              <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
+                Discard
+              </Button>
+            )}
+            <DropdownMenu onOpenChange={(open) => { if (open && versions.length === 0) loadVersions(); }}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <History className="h-3.5 w-3.5" />
+                  History
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 max-h-72 overflow-y-auto">
+                {versionsLoading ? (
+                  <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                ) : versions.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-muted-foreground">No published versions yet</div>
+                ) : (
+                  versions.map(v => (
+                    <DropdownMenuItem key={v.id} className="flex items-center justify-between py-2.5 cursor-pointer" onSelect={(e) => { if (v.status !== 'published') { e.preventDefault(); restoreVersion(v.id); } }}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                          v{v.version_number}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium">{v.ai_name} · {v.response_tone}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          </div>
+                        </div>
+                      </div>
+                      {v.status === 'published' ? (
+                        <span className="text-xs text-green-600 font-medium shrink-0">Live</span>
+                      ) : (
+                        <span className="text-xs text-primary shrink-0">{restoringId === v.id ? '...' : 'Restore'}</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              size="sm"
+              onClick={publishSettings}
+              disabled={publishing || !hasUnpublishedChanges}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : hasUnpublishedChanges ? 'Publish Changes' : 'Published'}
+            </Button>
+          </div>
+        </div>
 
         {/* PROMPT */}
         {active === 'prompt' && (
@@ -723,67 +777,6 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
         )}
       </div>
 
-      {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {draftStatus === 'saving' && <span className="text-xs text-muted-foreground">Saving draft...</span>}
-          {draftStatus === 'saved' && <span className="text-xs text-green-600">Draft saved</span>}
-          {hasUnpublishedChanges && draftStatus === 'idle' && (
-            <span className="text-xs text-orange-500 flex items-center gap-1"><CloudOff className="h-3 w-3" /> Unpublished changes</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {hasUnpublishedChanges && (
-            <Button variant="outline" size="sm" onClick={discardDraft} className="text-xs">
-              Discard
-            </Button>
-          )}
-          <DropdownMenu onOpenChange={(open) => { if (open && versions.length === 0) loadVersions(); }}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <History className="h-3.5 w-3.5" />
-                History
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 max-h-72 overflow-y-auto">
-              {versionsLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
-              ) : versions.length === 0 ? (
-                <div className="text-center py-4 text-xs text-muted-foreground">No published versions yet</div>
-              ) : (
-                versions.map(v => (
-                  <DropdownMenuItem key={v.id} className="flex items-center justify-between py-2.5 cursor-pointer" onSelect={(e) => { if (v.status !== 'published') { e.preventDefault(); restoreVersion(v.id); } }}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${v.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                        v{v.version_number}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-medium">{v.ai_name} · {v.response_tone}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {v.published_at ? new Date(v.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                        </div>
-                      </div>
-                    </div>
-                    {v.status === 'published' ? (
-                      <span className="text-xs text-green-600 font-medium shrink-0">Live</span>
-                    ) : (
-                      <span className="text-xs text-primary shrink-0">{restoringId === v.id ? '...' : 'Restore'}</span>
-                    )}
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            size="sm"
-            onClick={publishSettings}
-            disabled={publishing || !hasUnpublishedChanges}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {publishing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Publishing...</> : hasUnpublishedChanges ? 'Publish Changes' : 'Published'}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

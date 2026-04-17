@@ -345,26 +345,42 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnapshot, savedSnapshot]);
 
-  // Push live updates to the iframe preview when settings change
+  // Push live updates to the iframe preview when settings change.
+  // Sends `lc-preview-config-update` to the widget's preview hook, which
+  // re-renders the button (or rebuilds the open chat panel) using the new
+  // config. Debounced so typing in text inputs doesn't flicker the widget
+  // on every keystroke. The keys here MUST match the widget's CONFIG schema
+  // (snake_case from /api/widget/{id}/config), not the local React state names.
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const iframe = document.getElementById('widget-preview-iframe') as HTMLIFrameElement;
     if (!iframe?.contentWindow) return;
-    iframe.contentWindow.postMessage({
-      type: 'lc-preview-update',
-      settings: {
-        color: widgetColor,
-        position: widgetPosition,
-        design: widgetDesign,
-        title: widgetTitle,
-        fontSize,
-        greetingEnabled,
-        greetingDelay,
-        greetingMessage,
-        animation: widgetAnimation || 'none',
-        gradient: widgetGradient,
-      },
-    }, '*');
-  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, widgetGradient]);
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    previewTimerRef.current = setTimeout(() => {
+      iframe.contentWindow?.postMessage({
+        type: 'lc-preview-config-update',
+        config: {
+          color: widgetColor,
+          position: widgetPosition,
+          design: widgetDesign,
+          widget_title: widgetTitle,
+          font_size: parseInt(fontSize) || 14,
+          greeting_enabled: greetingEnabled,
+          greeting_delay: parseInt(greetingDelay) || 3,
+          greeting_message: greetingMessage,
+          animation: widgetAnimation || 'none',
+          animation_repeat: animRepeat,
+          animation_delay: animDelay,
+          animation_duration: animDuration,
+          animation_stop_after: animStopAfter,
+          gradient: widgetGradient,
+        },
+      }, '*');
+    }, 250);
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    };
+  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient]);
 
   const handleSaveSettings = async () => {
     if (!project?.id) return;
@@ -418,8 +434,20 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     );
   }
 
+  const autosaveStatus = saving ? (
+    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+    </span>
+  ) : isDirty ? (
+    <span className="text-muted-foreground">Unsaved changes</span>
+  ) : saveSuccess ? (
+    <span className="text-green-600">Saved</span>
+  ) : (
+    <span className="text-muted-foreground">All changes saved</span>
+  );
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 pb-16">
+    <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
             <aside className="w-full lg:w-48 shrink-0">
               <div className="flex items-center justify-between p-3 border rounded-lg mb-4">
@@ -448,6 +476,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
               </nav>
             </aside>
             <div className="flex-1 min-w-0">
+            <div className="mb-3 flex justify-end text-sm">{autosaveStatus}</div>
 
             {/* ── Appearance ── */}
             {activeSection === 'appearance' && (
@@ -1117,128 +1146,18 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
     <div class="mock-card"></div>
   </div>
 </div>
-<style>
-@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 10px transparent}}
-@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-@keyframes lc-wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
-@keyframes lc-tada{0%,100%{transform:scale(1) rotate(0)}10%,20%{transform:scale(0.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}
-@keyframes lc-heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
-@keyframes lc-rubber-band{0%,100%{transform:scaleX(1)}30%{transform:scaleX(1.25) scaleY(0.75)}40%{transform:scaleX(0.75) scaleY(1.25)}50%{transform:scaleX(1.15) scaleY(0.85)}65%{transform:scaleX(0.95) scaleY(1.05)}75%{transform:scaleX(1.05) scaleY(0.95)}}
-@keyframes lc-swing{20%{transform:rotate(15deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}100%{transform:rotate(0)}}
-@keyframes lc-jello{0%,100%{transform:skewX(0) skewY(0)}22%{transform:skewX(-12.5deg) skewY(-12.5deg)}33%{transform:skewX(6.25deg) skewY(6.25deg)}44%{transform:skewX(-3.125deg) skewY(-3.125deg)}55%{transform:skewX(1.5625deg) skewY(1.5625deg)}66%{transform:skewX(-0.78125deg) skewY(-0.78125deg)}}
-@keyframes lc-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-</style>
 <script>
 (function() {
+  // Mark this iframe as the admin editor's preview so the widget exposes
+  // its window.__linochat_preview_apply() hook (no-op on real customer pages).
+  // The parent component pushes 'lc-preview-config-update' postMessages on
+  // every editor change; the widget's hook handles re-rendering.
+  window.__linochat_preview_mode = true;
+
   var s = document.createElement('script');
   s.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
   s.async = true;
   document.body.appendChild(s);
-
-  // All preview settings injected from editor state
-  var p = {
-    color:           ${JSON.stringify(widgetColor)},
-    position:        ${JSON.stringify(widgetPosition)},
-    design:          ${JSON.stringify(widgetDesign)},
-    title:           ${JSON.stringify(widgetTitle)},
-    fontSize:        ${JSON.stringify(fontSize)},
-    greetingEnabled: ${JSON.stringify(greetingEnabled)},
-    greetingDelay:   ${JSON.stringify(greetingDelay)},
-    greetingMessage: ${JSON.stringify(greetingMessage)},
-    animation:       ${JSON.stringify(widgetAnimation || 'none')},
-    gradient:        ${JSON.stringify(widgetGradient)},
-  };
-
-  var animMap = {bounce:'lc-bounce',pulse:'lc-pulse',shake:'lc-shake',wobble:'lc-wobble',tada:'lc-tada',heartbeat:'lc-heartbeat','rubber-band':'lc-rubber-band',swing:'lc-swing',jello:'lc-jello',float:'lc-float'};
-
-  function applyDesign(design, btn, panel, color) {
-    // Reset to defaults
-    panel.style.boxShadow = ''; panel.style.borderRadius = '';
-    btn.style.borderRadius = ''; btn.style.width = ''; btn.style.height = '';
-    btn.style.boxShadow = ''; btn.style.border = ''; btn.style.background = '';
-    panel.style.height = ''; panel.style.width = '';
-    switch (design) {
-      case 'minimal':
-        panel.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; panel.style.borderRadius = '8px';
-        btn.style.boxShadow = 'none'; btn.style.border = '2px solid rgba(0,0,0,.1)'; break;
-      case 'classic':
-        panel.style.borderRadius = '4px'; btn.style.borderRadius = '4px';
-        panel.style.boxShadow = '0 2px 12px rgba(0,0,0,.2)'; break;
-      case 'compact':
-        btn.style.width = '44px'; btn.style.height = '44px';
-        panel.style.height = '420px'; panel.style.width = '300px'; break;
-      case 'bubble':
-        panel.style.borderRadius = '20px'; btn.style.width = '60px';
-        btn.style.height = '60px'; panel.style.boxShadow = '0 12px 48px rgba(0,0,0,.22)'; break;
-      case 'professional':
-        panel.style.borderRadius = '6px'; btn.style.borderRadius = '6px';
-        panel.style.boxShadow = '0 4px 20px rgba(0,0,0,.15)'; break;
-      case 'friendly':
-        panel.style.borderRadius = '24px'; btn.style.borderRadius = '50%';
-        panel.style.boxShadow = '0 8px 32px rgba(0,0,0,.18)'; break;
-      case 'gradient':
-        btn.style.background = 'linear-gradient(135deg, ' + color + ', ' + color + 'cc)';
-        panel.style.borderRadius = '16px'; break;
-    }
-  }
-
-  function applyPosition(pos, wrap, panel) {
-    var isLeft = pos === 'bottom-left' || pos === 'top-left';
-    var isTop  = pos === 'top-right'   || pos === 'top-left';
-    wrap.style.bottom = isTop ? 'auto' : '20px'; wrap.style.top  = isTop ? '20px' : 'auto';
-    wrap.style.right  = isLeft ? 'auto' : '20px'; wrap.style.left = isLeft ? '20px' : 'auto';
-    panel.style.bottom = isTop ? 'auto' : '88px'; panel.style.top   = isTop ? '88px' : 'auto';
-    panel.style.right  = isLeft ? 'auto' : '20px'; panel.style.left  = isLeft ? '20px' : 'auto';
-  }
-
-  function applyAll() {
-    var wrap  = document.getElementById('lc-widget');
-    var btn   = document.getElementById('lc-btn');
-    var panel = document.getElementById('lc-panel');
-    if (!wrap || !btn || !panel) { setTimeout(applyAll, 300); return; }
-
-    // Color & font size
-    wrap.style.setProperty('--lc-color', p.color);
-    wrap.style.setProperty('--lc-font-size', p.fontSize + 'px');
-
-    // Title
-    var titleEl = document.getElementById('lc-title');
-    if (titleEl) titleEl.textContent = p.title;
-
-    // Position & design
-    applyPosition(p.position, wrap, panel);
-    applyDesign(p.design, btn, panel, p.color);
-
-    // Greeting
-    var greetText = document.getElementById('lc-greeting-text');
-    var greetEl   = document.getElementById('lc-greeting');
-    if (greetText && greetEl && p.greetingEnabled && p.greetingMessage) {
-      greetText.textContent = p.greetingMessage;
-      if (!greetEl._scheduled) {
-        greetEl._scheduled = true;
-        setTimeout(function() { greetEl.classList.add('lc-show'); }, Number(p.greetingDelay) * 1000);
-      }
-    }
-
-    // Animation
-    if (p.animation !== 'none') {
-      var animName = animMap[p.animation];
-      if (animName) btn.style.animation = animName + ' 1s ease-in-out infinite';
-    }
-  }
-
-  // Run at 800ms for fast API responses, and again at 3s to override slow ones
-  setTimeout(applyAll, 800);
-  setTimeout(applyAll, 3000);
-
-  // Listen for live updates from parent editor
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'lc-preview-update') {
-      Object.assign(p, e.data.settings);
-      applyAll();
-    }
-  });
 })();
 </script>
 </body></html>`}
@@ -1249,20 +1168,6 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
               </div>
             </div>
 
-          {/* Auto-save status bar — every change is persisted automatically. */}
-          <div className="fixed bottom-0 left-0 md:left-24 right-0 bg-card border-t px-6 py-3 z-50 flex items-center justify-end gap-3 text-sm">
-            {saving ? (
-              <span className="text-muted-foreground inline-flex items-center gap-1.5">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
-              </span>
-            ) : isDirty ? (
-              <span className="text-muted-foreground">Unsaved changes</span>
-            ) : saveSuccess ? (
-              <span className="text-green-600">Saved</span>
-            ) : (
-              <span className="text-muted-foreground">All changes saved</span>
-            )}
-          </div>
           </div>
   );
 }
