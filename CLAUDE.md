@@ -33,6 +33,10 @@ LinoChat is a SaaS customer support platform with a Laravel API backend and a Re
 - Backend: `php -l <file>` for syntax checks
 - No test suite yet — validate with build + syntax checks
 
+## Git Workflow
+- **Always use a feature branch + PR**, never commit directly to `master`. Branch naming: short kebab-case (e.g. `superadmin-add-company`). Open the PR with `gh pr create` and let the user merge in GitHub.
+- Deploy is `scripts/deploy.sh` on prod (git pull + composer install + migrate + frontend build) — merging to `master` does NOT auto-deploy.
+
 ## Common Pitfalls
 - Tailwind v4 uses CSS-first config — no `tailwind.config.js`
 - The `api.get()` client doesn't accept params object — build query strings into the URL
