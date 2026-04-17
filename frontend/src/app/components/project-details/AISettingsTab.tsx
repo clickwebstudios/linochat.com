@@ -412,6 +412,19 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
               <p className="text-sm text-muted-foreground">
                 This prompt is sent to the AI at the start of every chat conversation. Changes are auto-saved as draft — click "Publish Changes" to go live.
               </p>
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Editing prompt for agent</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                  {settings.ai_name?.trim() || 'Lino'}
+                </span>
+                <button
+                  type="button"
+                  className="underline hover:text-foreground"
+                  onClick={() => setActive('configuration')}
+                >
+                  Change name
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Generate prompt section */}
@@ -420,7 +433,9 @@ export function AISettingsTab({ projectId }: { projectId?: number | string }) {
                   <Sparkles className="h-4 w-4 text-primary" />
                   <Label className="text-sm font-medium">Generate with AI</Label>
                 </div>
-                <p className="text-xs text-muted-foreground">Describe your business or paste a website URL and AI will generate a system prompt for you.</p>
+                <p className="text-xs text-muted-foreground">
+                  Describe your business or paste a website URL and AI will generate a system prompt written as instructions to <span className="font-medium text-foreground">{settings.ai_name?.trim() || 'Lino'}</span>.
+                </p>
                 <div className="flex gap-2">
                   <Input
                     id="prompt-generator-input"

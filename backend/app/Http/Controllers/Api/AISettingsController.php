@@ -367,16 +367,18 @@ class AISettingsController extends Controller
                 ->withApiKey($apiKey)
                 ->withHttpClient(new \GuzzleHttp\Client(['timeout' => 15, 'connect_timeout' => 5]))
                 ->make();
+            $aiName = ($project->ai_settings['ai_name'] ?? null) ?: 'Lino';
+
             $response = $client->chat()->create([
                 'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are an expert at writing AI customer support system prompts. Given a business description or website content, generate a comprehensive system prompt for this specific business. Include: company overview, services offered, tone/personality, topics to handle, escalation rules, and things to avoid. Keep it under 2500 characters. Write in second person ("You are...").',
+                        'content' => 'You are an expert at writing AI customer support system prompts. You will be given the AI agent\'s name, the company name, and a business description or website content. Generate a comprehensive system prompt that instructs the AI to act as the named agent — writing the prompt as direct second-person instructions to that agent (the agent IS the persona, not the company). The first sentence MUST start with "You are <agent name>, " and describe the agent\'s role at the company (e.g., "You are James K., the AI support assistant for Acme Corp..."). Include: agent persona/tone, services offered by the company, topics to handle, escalation rules, and things to avoid. Keep it under 2500 characters.',
                     ],
                     [
                         'role' => 'user',
-                        'content' => "Company name: {$project->name}\n\n{$context}",
+                        'content' => "AI agent name: {$aiName}\nCompany name: {$project->name}\n\n{$context}",
                     ],
                 ],
                 'max_tokens' => 1000,
