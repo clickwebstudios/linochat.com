@@ -86,6 +86,7 @@ class WidgetController extends Controller
                     'offline_redirect_label' => $scheduleStatus['offline_redirect_label'],
                     'next_online_at' => $scheduleStatus['next_online_at'],
                     'popover' => ($settings['popover']['enabled'] ?? false) ? $settings['popover'] : null,
+                    'page_rules' => $settings['page_rules'] ?? [],
                     'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
                 ],
             ];
