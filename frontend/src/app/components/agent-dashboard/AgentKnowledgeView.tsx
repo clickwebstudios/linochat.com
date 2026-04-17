@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../ui/button';
@@ -32,9 +32,14 @@ import { UpgradeLimitDialog } from '../UpgradeLimitDialog';
 interface AgentKnowledgeViewProps {
   basePath: string;
   selectedCompanyId?: string | null;
+  /**
+   * Workspaces selected in the header dropdown. When empty, KB is loaded
+   * for every project the user has access to in the active company.
+   */
+  selectedProjects?: string[];
 }
 
-export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
+export function AgentKnowledgeView({ basePath, selectedProjects }: AgentKnowledgeViewProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   
@@ -67,78 +72,96 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
     }
   }, [user, fetchProjects]);
 
-  // Set current project when projects are loaded
-  // Reset when projects change (e.g., company switch)
+  // Lookup map: project_id -> project object (for category labels + dialog defaults)
+  const projectsById = useMemo(() => {
+    const m = new Map<string, any>();
+    projects.forEach(p => m.set(String(p.id), p));
+    return m;
+  }, [projects]);
+
+  // Effective project IDs to load KB for. If the user has filtered the
+  // workspace dropdown, honor that selection; otherwise load every project
+  // they have access to in the active company.
+  const effectiveProjectIds = useMemo(() => {
+    const all = projects.map(p => String(p.id));
+    if (!selectedProjects || selectedProjects.length === 0) return all;
+    const selected = new Set(selectedProjects.map(String));
+    const filtered = all.filter(id => selected.has(id));
+    return filtered.length > 0 ? filtered : all;
+  }, [projects, selectedProjects]);
+
+  // Keep currentProject populated so the New Article dialog has a sensible
+  // default project when a category somehow lacks project_id.
   useEffect(() => {
-    if (projects.length > 0) {
-      // Check if current project is still in the list
-      const stillExists = projects.find(p => p.id === currentProject?.id);
-      if (!stillExists) {
-        // Reset to first project of new company
-        setCurrentProject(projects[0]);
-        setCategories([]);
-        setArticles({});
-      }
-    } else {
-      // No projects for this company
+    if (projects.length === 0) {
       setCurrentProject(null);
-      setCategories([]);
-      setArticles({});
-      setHasKnowledgeBase(false);
+      return;
     }
+    const stillExists = currentProject && projects.find(p => p.id === currentProject.id);
+    if (!stillExists) setCurrentProject(projects[0]);
   }, [projects, currentProject]);
 
-  // Load KB data when project is loaded
-  const loadKB = async (projectId: string) => {
-    if (!projectId) return false;
-
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('access_token');
-
-      const catResponse = await fetch(`/api/projects/${projectId}/kb/categories`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const catData = await catResponse.json();
-
-      if (catData.success && catData.data.length > 0) {
-        setCategories(catData.data);
-        setSelectedCategoryId(catData.data[0].id);
-
-        const articlesMap: Record<string, any[]> = {};
-        for (const cat of catData.data) {
-          const artResponse = await fetch(`/api/projects/${projectId}/kb/categories/${cat.id}/articles`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          const artData = await artResponse.json();
-          if (artData.success) {
-            articlesMap[cat.id] = artData.data;
-          }
-        }
-        setArticles(articlesMap);
-        setHasKnowledgeBase(true);
-        return true;
-      }
-      setHasKnowledgeBase(false);
-      return false;
-    } catch (error) {
-      console.error('Failed to load KB:', error);
-      setHasKnowledgeBase(false);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!currentProject?.id) {
-      if (!projectsLoading && projects.length === 0) {
+    if (effectiveProjectIds.length === 0) {
+      if (!projectsLoading) {
         setLoading(false);
+        setCategories([]);
+        setArticles({});
+        setHasKnowledgeBase(false);
       }
       return;
     }
-    loadKB(currentProject.id);
-  }, [currentProject?.id, projects, projectsLoading, kbRefreshKey]);
+
+    let cancelled = false;
+    const loadAll = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      const allCategories: any[] = [];
+      const articlesMap: Record<string, any[]> = {};
+
+      await Promise.all(effectiveProjectIds.map(async (projectId) => {
+        try {
+          const catResp = await fetch(`/api/projects/${projectId}/kb/categories`, { headers });
+          const catData = await catResp.json();
+          if (!catData.success || !catData.data?.length) return;
+
+          const projectName = projectsById.get(String(projectId))?.name;
+          catData.data.forEach((c: any) => {
+            allCategories.push({ ...c, _projectName: projectName });
+          });
+
+          await Promise.all(catData.data.map(async (cat: any) => {
+            try {
+              const artResp = await fetch(`/api/projects/${projectId}/kb/categories/${cat.id}/articles`, { headers });
+              const artData = await artResp.json();
+              if (artData.success) articlesMap[cat.id] = artData.data;
+            } catch (err) {
+              console.error(`Failed to load articles for category ${cat.id}:`, err);
+            }
+          }));
+        } catch (err) {
+          console.error(`Failed to load KB for project ${projectId}:`, err);
+        }
+      }));
+
+      if (cancelled) return;
+      setCategories(allCategories);
+      setArticles(articlesMap);
+      setSelectedCategoryId(prev => {
+        if (allCategories.find(c => String(c.id) === String(prev))) return prev;
+        return allCategories[0]?.id ?? '';
+      });
+      setHasKnowledgeBase(allCategories.length > 0);
+      setLoading(false);
+    };
+
+    loadAll();
+    return () => { cancelled = true; };
+  // effectiveProjectIds is a fresh array each render — depend on its joined string
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveProjectIds.join(','), projectsLoading, kbRefreshKey]);
 
   // Show loading state
   if (loading) {
@@ -292,10 +315,12 @@ export function AgentKnowledgeView({ basePath }: AgentKnowledgeViewProps) {
                           <span className="text-[#ff6900]">{draftCount} draft</span>
                         )}
                       </div>
-                      {currentProject?.name && (
+                      {(category._projectName || projectsById.get(String(category.project_id))?.name) && (
                         <div className="flex items-center gap-1 mt-1">
                           <span className="w-2 h-2 rounded-full bg-primary" />
-                          <span className="text-xs text-[#99a1af] truncate">{currentProject.name}</span>
+                          <span className="text-xs text-[#99a1af] truncate">
+                            {category._projectName || projectsById.get(String(category.project_id))?.name}
+                          </span>
                         </div>
                       )}
                     </div>

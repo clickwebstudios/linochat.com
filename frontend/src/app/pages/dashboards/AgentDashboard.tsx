@@ -619,7 +619,7 @@ export default function AgentDashboard({ role = 'Agent' }: { role?: 'Agent' | 'A
           />
         );
       case 'knowledge':
-        return <AgentKnowledgeView basePath={basePath} selectedCompanyId={selectedCompanyId} />;
+        return <AgentKnowledgeView basePath={basePath} selectedCompanyId={selectedCompanyId} selectedProjects={selectedProjects} />;
       case 'reports':
         return <ReportsView />;
       case 'users':
