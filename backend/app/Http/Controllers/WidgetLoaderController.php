@@ -118,7 +118,7 @@ class WidgetLoaderController extends Controller
         try {
             var s = document.createElement('style');
             s.id = 'linochat-inline-styles';
-            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100dvh!important;max-height:100dvh!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}#linochat-header{flex-shrink:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
+            s.textContent = '#linochat-widget *{box-sizing:border-box}#linochat-button{position:fixed!important;display:flex!important}#linochat-messages::-webkit-scrollbar{width:6px}#linochat-messages::-webkit-scrollbar-track{background:transparent}#linochat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}#linochat-input:focus{border-color:var(--linochat-color,#4F46E5)!important}#linochat-send:hover{transform:scale(1.06)}#linochat-send:active{transform:scale(0.96)}#linochat-close:hover{opacity:1!important}@media(max-width:480px){#linochat-window{width:100%!important;height:100dvh!important;max-height:100dvh!important;bottom:0!important;right:0!important;left:0!important;top:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}#linochat-header{flex-shrink:0!important}#linochat-button{bottom:20px!important;right:20px!important}}'
             + '@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
             + '@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 12px transparent}}'
             + '@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}'
@@ -809,12 +809,52 @@ class WidgetLoaderController extends Controller
         var container = document.getElementById('linochat-messages');
         if (!container) return;
         if (document.getElementById('linochat-welcome')) return;
-        var welcomeMsg = (CONFIG && CONFIG.welcome_message) || "Hi! How can we help you today?";
+        var aiName = (CONFIG && CONFIG.ai_name) || 'Lino';
+        var welcomeMsg = (CONFIG && CONFIG.welcome_message)
+            || ("Hello! I'm " + aiName + ", your AI Agent here to help. How may I assist you today?");
         var welcomeEl = document.createElement('div');
         welcomeEl.id = 'linochat-welcome';
-        welcomeEl.style.cssText = 'display:flex;align-items:flex-start;gap:8px;margin-bottom:12px';
-        welcomeEl.innerHTML = '<div style="width:24px;height:24px;border-radius:9999px;background:#d1d5db;flex-shrink:0"><\/div><div style="background:white;border-radius:8px;border-top-left-radius:0;padding:12px;max-width:80%;box-shadow:0 1px 2px rgba(0,0,0,0.05);font-size:' + getCfgFontSize() + ';line-height:1.4;color:#111827">' + welcomeMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '<\/div>';
+        welcomeEl.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:4px';
+        welcomeEl.innerHTML = '<div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);font-size:' + getCfgFontSize() + ';line-height:1.5;color:#111827;align-self:flex-start;max-width:92%;">' + welcomeMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
         container.appendChild(welcomeEl);
+        renderQuickActions();
+    }
+
+    // Render clickable suggestion chips under the welcome bubble. Pulls from
+    // CONFIG.quick_actions (array of strings) and falls back to two safe
+    // defaults. Chips are removed as soon as any real message is added.
+    function renderQuickActions() {
+        var container = document.getElementById('linochat-messages');
+        if (!container) return;
+        if (document.getElementById('linochat-quick-actions')) return;
+        var raw = (CONFIG && CONFIG.quick_actions);
+        var actions;
+        if (Array.isArray(raw)) {
+            actions = raw;
+        } else {
+            actions = ['Get help with an issue', 'Explore available options'];
+        }
+        if (!actions.length) return;
+        var wrap = document.createElement('div');
+        wrap.id = 'linochat-quick-actions';
+        wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:4px';
+        actions.forEach(function(action) {
+            var label = typeof action === 'string' ? action : (action && action.label) || '';
+            if (!label) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = label;
+            btn.style.cssText = 'background:white;border:1px solid #e5e7eb;color:#111827;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;line-height:1.3;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:background 0.15s,border-color 0.15s';
+            btn.onmouseover = function() { btn.style.background = '#f9fafb'; btn.style.borderColor = '#d1d5db'; };
+            btn.onmouseout = function() { btn.style.background = 'white'; btn.style.borderColor = '#e5e7eb'; };
+            btn.onclick = function() {
+                var qa = document.getElementById('linochat-quick-actions');
+                if (qa) qa.remove();
+                sendMessage(label);
+            };
+            wrap.appendChild(btn);
+        });
+        container.appendChild(wrap);
     }
 
     function addMessage(content, type, messageId, playSound, metadata) {
@@ -830,6 +870,8 @@ class WidgetLoaderController extends Controller
         if (type !== 'system') {
             var welcomeEl = document.getElementById('linochat-welcome');
             if (welcomeEl) welcomeEl.remove();
+            var qaEl = document.getElementById('linochat-quick-actions');
+            if (qaEl) qaEl.remove();
         }
         if (playSound && (type === 'ai' || type === 'agent')) playIncomingMessageSound();
         
@@ -1044,7 +1086,7 @@ class WidgetLoaderController extends Controller
         // Design-specific variables
         var btnW = 67, btnH = 67, btnRadius = '9999px', btnFontSize = '22px';
         var btnBorder = '', btnContent = DEFAULT_ICON, btnBg = color;
-        var winW = 320, winRadius = '8px', msgBg = '#f9fafb';
+        var winW = 320, winH = 480, winRadius = '8px', msgBg = '#f9fafb';
         var headerHTML = '';
 
         if (design === 'minimal') {
@@ -1120,14 +1162,22 @@ class WidgetLoaderController extends Controller
                 + '<span id="linochat-close" style="cursor:pointer;font-size:20px;opacity:0.9;line-height:1;">×</span>'
                 + '</div></div>';
         } else {
-            // modern (default)
-            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;">'
-                + '<div style="display:flex;align-items:center;gap:8px;">'
-                + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;">' + HEADER_ICON + '</div>'
-                + '<div><div id="linochat-title" style="font-weight:500;font-size:14px;">' + title + '</div>'
-                + '<div id="linochat-status" style="font-size:12px;opacity:0.9;">We\'re online</div></div>'
+            // modern (default) — polished header with agent avatar, AI badge and role subtitle
+            winW = 360; winH = 560; winRadius = '16px'; msgBg = '#f8fafc';
+            var aiName = (CONFIG && CONFIG.ai_name) || title || 'Lino';
+            var aiInitial = (aiName.charAt(0) || 'L').toUpperCase();
+            headerHTML = '<div id="linochat-header" style="background:' + color + ';color:white;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;">'
+                + '<div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">'
+                + '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.22);color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;flex-shrink:0;letter-spacing:0.3px;">' + aiInitial + '</div>'
+                + '<div style="min-width:0;">'
+                + '<div style="display:flex;align-items:center;gap:6px;">'
+                + '<span id="linochat-title" style="font-weight:600;font-size:15px;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + aiName + '</span>'
+                + '<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.22);padding:2px 6px;border-radius:4px;letter-spacing:0.5px;flex-shrink:0;">AI</span>'
                 + '</div>'
-                + '<span id="linochat-close" style="cursor:pointer;font-size:20px;opacity:0.8;line-height:1;">×</span>'
+                + '<div id="linochat-status" style="font-size:12px;opacity:0.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">AI Assistant</div>'
+                + '</div>'
+                + '</div>'
+                + '<span id="linochat-close" style="cursor:pointer;font-size:22px;opacity:0.85;line-height:1;padding:4px 2px 4px 8px;flex-shrink:0;">×</span>'
                 + '</div>';
         }
 
@@ -1140,15 +1190,20 @@ class WidgetLoaderController extends Controller
         div.id = 'linochat-widget';
         div.style.cssText = 'box-sizing:border-box;--linochat-color:' + color;
         div.innerHTML = '<div id="linochat-button" style="' + btnStyle + '">' + btnContent + '</div>'
-            + '<div id="linochat-window" style="box-sizing:border-box;position:fixed;width:' + winW + 'px;height:480px;background:white;border-radius:' + winRadius
+            + '<div id="linochat-window" style="box-sizing:border-box;position:fixed;width:' + winW + 'px;height:' + winH + 'px;background:white;border-radius:' + winRadius
             + ';box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);border:1px solid #e5e7eb;z-index:2147483647'
             + ';display:none;flex-direction:column;overflow:hidden'
             + ';font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;' + winBottom + winSide + '">'
             + headerHTML
             + '<div id="linochat-messages" style="box-sizing:border-box;flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:' + msgBg + ';"></div>'
-            + '<div style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;background:white;flex-shrink:0;">'
-            + '<input type="text" id="linochat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--linochat-color,#d1d5db);border-radius:8px;outline:none;font-size:16px;">'
-            + '<button id="linochat-send" style="background:' + color + ';color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;">Send</button>'
+            + '<div style="padding:12px 12px 6px;background:white;flex-shrink:0;border-top:1px solid #f1f5f9;">'
+            + '<div style="display:flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:9999px;padding:4px 4px 4px 16px;">'
+            + '<input type="text" id="linochat-input" placeholder="Type a message..." style="flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:15px;padding:8px 0;color:#111827;">'
+            + '<button id="linochat-send" aria-label="Send" style="background:' + color + ';color:white;border:none;width:36px;height:36px;border-radius:9999px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;transition:transform 0.15s,opacity 0.15s;">'
+            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>'
+            + '</button>'
+            + '</div>'
+            + '<div style="text-align:center;padding:8px 0 4px;font-size:11px;color:#9ca3af;">Powered by <a href="https://linochat.com" target="_blank" rel="noopener" style="color:#6b7280;font-weight:600;text-decoration:none;">LinoChat</a></div>'
             + '</div>'
             + '</div>';
         document.body.appendChild(div);
