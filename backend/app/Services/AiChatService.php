@@ -913,7 +913,7 @@ class AiChatService
 
         // Extract and save customer name if AI detected it before handover
         if ($aiContent) {
-            $customerName = $this->extractCustomerName($aiContent, $customerMessage);
+            $customerName = $this->extractCustomerName($aiContent);
             $notRealName2 = ['Guest', 'Visitor', 'Hello', 'Hi', 'Hey', 'Test', 'User', 'Customer', 'Anonymous'];
             $curName = $chat->customer_name ?? '';
             if ($customerName && (empty($curName) || in_array($curName, $notRealName2, true) || strlen($curName) <= 2)) {

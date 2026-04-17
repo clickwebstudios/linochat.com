@@ -81,7 +81,8 @@ class ProjectController extends Controller
             $planLimits = ['free' => 1, 'starter' => 3, 'growth' => 5, 'pro' => 10, 'scale' => 20, 'enterprise' => PHP_INT_MAX];
             $plan       = strtolower($company->plan ?? 'free');
             $limit      = $planLimits[$plan] ?? 1;
-            $count      = Project::where('user_id', $company->id)->where('status', 'active')->count();
+            $companyUserIds = \App\Models\User::where('company_id', $user->company_id)->pluck('id');
+            $count      = Project::whereIn('user_id', $companyUserIds)->where('status', 'active')->count();
             if ($count >= $limit) {
                 return response()->json([
                     'success' => false,
