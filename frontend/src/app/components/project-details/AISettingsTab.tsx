@@ -94,8 +94,8 @@ interface VersionEntry {
 }
 
 const NAV_ITEMS = [
-  { id: 'prompt' as SidebarSection, label: 'Prompt', icon: MessageSquare },
   { id: 'configuration' as SidebarSection, label: 'Configuration', icon: Settings2 },
+  { id: 'prompt' as SidebarSection, label: 'Prompt', icon: MessageSquare },
   { id: 'training' as SidebarSection, label: 'Training Data Sources', icon: Database },
 ];
 
@@ -112,7 +112,7 @@ const defaultSettings: AISettings = {
 };
 
 export function AISettingsTab({ projectId }: { projectId?: number | string }) {
-  const [active, setActive] = useState<SidebarSection>('prompt');
+  const [active, setActive] = useState<SidebarSection>('configuration');
   const [settings, setSettings] = useState<AISettings>(defaultSettings);
   const [liveSettings, setLiveSettings] = useState<AISettings>(defaultSettings);
   const [stats, setStats] = useState<AIStats | null>(null);
