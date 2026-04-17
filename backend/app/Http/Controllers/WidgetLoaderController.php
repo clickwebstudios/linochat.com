@@ -1587,6 +1587,48 @@ class WidgetLoaderController extends Controller
     } else {
         init();
     }
+
+    // === Preview override hook ===
+    // Only active when the parent page sets window.__linochat_preview_mode = true
+    // BEFORE this script loads. Used by the admin Chat Widget editor's preview
+    // iframe so design, position, colour, animation, greeting and other settings
+    // re-render the widget without reloading the iframe (and without ever
+    // affecting real customer pages, which never set the flag).
+    if (typeof window !== 'undefined' && window.__linochat_preview_mode) {
+        window.__linochat_preview_apply = function(newConfig) {
+            if (!CONFIG || !newConfig) return;
+            Object.assign(CONFIG, newConfig);
+            try {
+                if (CHAT_INITIALIZED) {
+                    // Chat panel is open — full rebuild keeps it open with new settings.
+                    if (SETTINGS_CHECK_INTERVAL) { clearInterval(SETTINGS_CHECK_INTERVAL); SETTINGS_CHECK_INTERVAL = null; }
+                    CHAT_INITIALIZED = false;
+                    createWidget(true);
+                    CHAT_INITIALIZED = true;
+                    SETTINGS_CHECK_INTERVAL = setInterval(checkSettingsUpdate, 30000);
+                } else {
+                    // Only the button is on screen — re-render it with the new design /
+                    // position / size, then reapply colour and animation styles.
+                    createButtonOnly();
+                    updateButtonAppearance();
+                }
+                // Refresh the greeting bubble so its enabled-state and text reflect
+                // the editor (only when the chat panel isn't already open).
+                var oldGreet = document.getElementById('linochat-greeting');
+                if (oldGreet) oldGreet.remove();
+                if (CONFIG.greeting_enabled && CONFIG.greeting_message && !CHAT_INITIALIZED) {
+                    showGreeting();
+                }
+            } catch (err) {
+                if (window.console) console.warn('LinoChat preview apply failed:', err);
+            }
+        };
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'lc-preview-config-update') {
+                window.__linochat_preview_apply(e.data.config);
+            }
+        });
+    }
 })();
 JS;
 

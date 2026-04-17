@@ -345,26 +345,42 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnapshot, savedSnapshot]);
 
-  // Push live updates to the iframe preview when settings change
+  // Push live updates to the iframe preview when settings change.
+  // Sends `lc-preview-config-update` to the widget's preview hook, which
+  // re-renders the button (or rebuilds the open chat panel) using the new
+  // config. Debounced so typing in text inputs doesn't flicker the widget
+  // on every keystroke. The keys here MUST match the widget's CONFIG schema
+  // (snake_case from /api/widget/{id}/config), not the local React state names.
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const iframe = document.getElementById('widget-preview-iframe') as HTMLIFrameElement;
     if (!iframe?.contentWindow) return;
-    iframe.contentWindow.postMessage({
-      type: 'lc-preview-update',
-      settings: {
-        color: widgetColor,
-        position: widgetPosition,
-        design: widgetDesign,
-        title: widgetTitle,
-        fontSize,
-        greetingEnabled,
-        greetingDelay,
-        greetingMessage,
-        animation: widgetAnimation || 'none',
-        gradient: widgetGradient,
-      },
-    }, '*');
-  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, widgetGradient]);
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    previewTimerRef.current = setTimeout(() => {
+      iframe.contentWindow?.postMessage({
+        type: 'lc-preview-config-update',
+        config: {
+          color: widgetColor,
+          position: widgetPosition,
+          design: widgetDesign,
+          widget_title: widgetTitle,
+          font_size: parseInt(fontSize) || 14,
+          greeting_enabled: greetingEnabled,
+          greeting_delay: parseInt(greetingDelay) || 3,
+          greeting_message: greetingMessage,
+          animation: widgetAnimation || 'none',
+          animation_repeat: animRepeat,
+          animation_delay: animDelay,
+          animation_duration: animDuration,
+          animation_stop_after: animStopAfter,
+          gradient: widgetGradient,
+        },
+      }, '*');
+    }, 250);
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    };
+  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient]);
 
   const handleSaveSettings = async () => {
     if (!project?.id) return;
@@ -1130,115 +1146,18 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
     <div class="mock-card"></div>
   </div>
 </div>
-<style>
-@keyframes lc-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes lc-pulse{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 10px transparent}}
-@keyframes lc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-@keyframes lc-wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
-@keyframes lc-tada{0%,100%{transform:scale(1) rotate(0)}10%,20%{transform:scale(0.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}
-@keyframes lc-heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
-@keyframes lc-rubber-band{0%,100%{transform:scaleX(1)}30%{transform:scaleX(1.25) scaleY(0.75)}40%{transform:scaleX(0.75) scaleY(1.25)}50%{transform:scaleX(1.15) scaleY(0.85)}65%{transform:scaleX(0.95) scaleY(1.05)}75%{transform:scaleX(1.05) scaleY(0.95)}}
-@keyframes lc-swing{20%{transform:rotate(15deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}100%{transform:rotate(0)}}
-@keyframes lc-jello{0%,100%{transform:skewX(0) skewY(0)}22%{transform:skewX(-12.5deg) skewY(-12.5deg)}33%{transform:skewX(6.25deg) skewY(6.25deg)}44%{transform:skewX(-3.125deg) skewY(-3.125deg)}55%{transform:skewX(1.5625deg) skewY(1.5625deg)}66%{transform:skewX(-0.78125deg) skewY(-0.78125deg)}}
-@keyframes lc-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-</style>
 <script>
 (function() {
+  // Mark this iframe as the admin editor's preview so the widget exposes
+  // its window.__linochat_preview_apply() hook (no-op on real customer pages).
+  // The parent component pushes 'lc-preview-config-update' postMessages on
+  // every editor change; the widget's hook handles re-rendering.
+  window.__linochat_preview_mode = true;
+
   var s = document.createElement('script');
   s.src = '${getWidgetBaseUrl()}/widget?id=${project?.widget_id || widgetId}';
   s.async = true;
   document.body.appendChild(s);
-
-  // All preview settings injected from editor state
-  var p = {
-    color:           ${JSON.stringify(widgetColor)},
-    position:        ${JSON.stringify(widgetPosition)},
-    design:          ${JSON.stringify(widgetDesign)},
-    title:           ${JSON.stringify(widgetTitle)},
-    fontSize:        ${JSON.stringify(fontSize)},
-    greetingEnabled: ${JSON.stringify(greetingEnabled)},
-    greetingDelay:   ${JSON.stringify(greetingDelay)},
-    greetingMessage: ${JSON.stringify(greetingMessage)},
-    animation:       ${JSON.stringify(widgetAnimation || 'none')},
-    gradient:        ${JSON.stringify(widgetGradient)},
-  };
-
-  var animMap = {bounce:'lc-bounce',pulse:'lc-pulse',shake:'lc-shake',wobble:'lc-wobble',tada:'lc-tada',heartbeat:'lc-heartbeat','rubber-band':'lc-rubber-band',swing:'lc-swing',jello:'lc-jello',float:'lc-float'};
-
-  function updateGreetingBubble() {
-    if (!p.greetingEnabled || !p.greetingMessage) return false;
-    var bubble = document.getElementById('linochat-greeting');
-    if (!bubble) return false;
-    var span = bubble.querySelector('span');
-    if (span) {
-      span.textContent = p.greetingMessage;
-      return true;
-    }
-    return false;
-  }
-
-  function applyAll() {
-    var btn   = document.getElementById('linochat-button');
-    var panel = document.getElementById('linochat-window');
-    if (!btn) { setTimeout(applyAll, 300); return; }
-
-    // Title
-    var titleEl = document.getElementById('linochat-title');
-    if (titleEl && p.title) titleEl.textContent = p.title;
-
-    // Color — chat button background + send button + header (best-effort).
-    // Position/design use inline styles set during widget render and aren't
-    // patchable here without re-rendering; full preview parity for those is
-    // covered by the iframe srcDoc reload that fires when those fields change.
-    if (p.color) {
-      btn.style.background = p.color;
-      var sendBtn = document.getElementById('linochat-send');
-      if (sendBtn) sendBtn.style.background = p.color;
-      var header = document.getElementById('linochat-header');
-      if (header && p.design !== 'minimal' && p.design !== 'professional') {
-        header.style.background = p.color;
-      }
-    }
-
-    // Font size — applied to the panel so all message bubbles inherit
-    if (p.fontSize && panel) panel.style.fontSize = p.fontSize + 'px';
-
-    // Greeting bubble text. The bubble is created on a delay by the widget,
-    // so updateGreetingBubble may return false on first call — the
-    // MutationObserver below catches it once it appears.
-    updateGreetingBubble();
-
-    // Animation on the chat button
-    if (p.animation && p.animation !== 'none') {
-      var animName = animMap[p.animation];
-      if (animName) btn.style.animation = animName + ' 1s ease-in-out infinite';
-    } else {
-      btn.style.animation = '';
-    }
-  }
-
-  // Watch for the dynamically-added greeting bubble so its text reflects
-  // the editor's current value the moment the widget shows it.
-  if (typeof MutationObserver !== 'undefined') {
-    var mo = new MutationObserver(function() {
-      if (updateGreetingBubble()) {
-        // Found and updated — keep observing in case bubble re-mounts.
-      }
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-  }
-
-  // Run at 800ms for fast API responses, and again at 3s to override slow ones
-  setTimeout(applyAll, 800);
-  setTimeout(applyAll, 3000);
-
-  // Listen for live updates from parent editor
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'lc-preview-update') {
-      Object.assign(p, e.data.settings);
-      applyAll();
-    }
-  });
 })();
 </script>
 </body></html>`}
