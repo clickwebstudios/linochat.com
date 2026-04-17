@@ -26,7 +26,7 @@ import { useState, useEffect } from 'react';
 import { useLayout } from '../../components/layouts/LayoutContext';
 import { UpdateStatusDialog } from '../../components/UpdateStatusDialog';
 import { useAuthStore } from '../../stores/authStore';
-import { ProfileDropdown } from '../../components/ProfileDropdown';
+import { HeaderUserBadge } from '../../components/HeaderUserBadge';
 import {
   Select,
   SelectContent,
@@ -153,19 +153,11 @@ export default function ProfileSettings() {
             <span className="hidden md:inline">Back to Dashboard</span>
           </Link>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary text-primary-foreground">{getInitials()}</AvatarFallback>
-            </Avatar>
-            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
-          </div>
-          <div className="hidden md:block">
-            <div className="text-sm font-semibold">{getDisplayName()}</div>
-            <div className="text-xs text-muted-foreground">{user.role === 'admin' ? 'Admin' : 'Agent'}</div>
-          </div>
-          <ProfileDropdown basePath={basePath} onStatusClick={() => setStatusDialogOpen(true)} />
-        </div>
+        <HeaderUserBadge
+          basePath={basePath}
+          isSuperadmin={basePath === '/superadmin'}
+          onStatusClick={() => setStatusDialogOpen(true)}
+        />
       </header>
 
       {/* Content */}
