@@ -36,6 +36,7 @@ import {
   Globe,
   CalendarOff,
   ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { api } from '../../api/client';
 
@@ -154,6 +155,15 @@ interface PopoverConfig {
   page_urls: string[];
 }
 
+// --- Page Rules ---
+interface PageRule {
+  id: string;
+  url_pattern: string;
+  match_type: 'contains' | 'exact' | 'starts_with';
+  action: 'hide' | 'custom_greeting';
+  greeting_message?: string;
+}
+
 const DEFAULT_POPOVER: PopoverConfig = {
   enabled: false,
   design: 'modern',
@@ -191,12 +201,13 @@ interface ChatWidgetTabProps {
   onCopyWidgetId: () => void;
 }
 
-type WidgetSection = 'appearance' | 'greeting' | 'animations' | 'schedule' | 'inactivity' | 'embed';
+type WidgetSection = 'appearance' | 'greeting' | 'animations' | 'pages' | 'schedule' | 'inactivity' | 'embed';
 
 const WIDGET_NAV = [
   { id: 'appearance' as WidgetSection, label: 'Appearance', icon: Paintbrush },
   { id: 'greeting' as WidgetSection, label: 'Greeting', icon: HandMetal },
   { id: 'animations' as WidgetSection, label: 'Animations', icon: Sparkles },
+  { id: 'pages' as WidgetSection, label: 'Pages', icon: FileText },
   { id: 'schedule' as WidgetSection, label: 'Schedule', icon: Clock },
   { id: 'inactivity' as WidgetSection, label: 'Inactivity', icon: Clock },
   { id: 'embed' as WidgetSection, label: 'Embed Code', icon: Code },
@@ -241,6 +252,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     auto_close_delay_minutes: 5,
     auto_close_message: 'This chat has been closed due to inactivity. Feel free to start a new conversation anytime!',
   });
+  const [pageRules, setPageRules] = useState<PageRule[]>([]);
 
   // Derive offline fields from schedule for WidgetPreview backward compat
   const offlineBehavior = schedule.offline_behavior;
@@ -257,7 +269,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
   const currentSnapshot = JSON.stringify({
     widgetColor, widgetPosition, widgetTitle, welcomeMessage, buttonText, widgetDesign,
     widgetActive, greetingEnabled, greetingDelay, greetingMessage, fontSize,
-    widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, schedule, inactivity,
+    widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, schedule, inactivity, pageRules,
   });
   const isDirty = savedSnapshot !== '' && currentSnapshot !== savedSnapshot;
 
@@ -266,7 +278,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
     if (!project?.id) return;
     const loadSettings = async () => {
       try {
-        const response = await api.get<{ color?: string; position?: string; widget_title?: string; welcome_message?: string; button_text?: string; design?: string; font_size?: number }>(`/projects/${project.id}/widget-settings`);
+        const response = await api.get<{ color?: string; position?: string; widget_title?: string; welcome_message?: string; button_text?: string; design?: string; font_size?: number; page_rules?: PageRule[] }>(`/projects/${project.id}/widget-settings`);
         if (response.success && response.data) {
           const d = response.data;
           if (d.color) setWidgetColor(d.color);
@@ -306,6 +318,9 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           }
           if (d.inactivity) {
             setInactivity(prev => ({ ...prev, ...d.inactivity }));
+          }
+          if (Array.isArray(d.page_rules)) {
+            setPageRules(d.page_rules);
           }
         }
       } catch {
@@ -374,13 +389,14 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
           animation_duration: animDuration,
           animation_stop_after: animStopAfter,
           gradient: widgetGradient,
+          page_rules: pageRules,
         },
       }, '*');
     }, 250);
     return () => {
       if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
     };
-  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient]);
+  }, [widgetColor, widgetPosition, widgetDesign, widgetTitle, fontSize, greetingEnabled, greetingDelay, greetingMessage, widgetAnimation, animRepeat, animDelay, animDuration, animStopAfter, widgetGradient, pageRules]);
 
   const handleSaveSettings = async () => {
     if (!project?.id) return;
@@ -409,6 +425,7 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
         offline_message: schedule.offline_message,
         schedule,
         inactivity,
+        page_rules: pageRules,
       });
       if (response.success) {
         setSavedSnapshot(currentSnapshot);
@@ -898,6 +915,148 @@ export function ChatWidgetTab({ project, widgetId }: ChatWidgetTabProps) {
                   </div>
                 )}
 
+              </div>
+            )}
+
+            {/* ── Pages ── */}
+            {activeSection === 'pages' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Pages</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Hide the widget or show a custom greeting on specific pages. Rules match against the page URL path (e.g. <code className="text-xs px-1 py-0.5 rounded bg-muted">/checkout</code>).
+                  </p>
+                </div>
+
+                {pageRules.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      No page rules yet. Add one to tailor how the widget behaves on specific URLs.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPageRules([
+                        ...pageRules,
+                        {
+                          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+                          url_pattern: '',
+                          match_type: 'contains',
+                          action: 'hide',
+                          greeting_message: '',
+                        },
+                      ])}
+                    >
+                      <Plus className="h-4 w-4 mr-1.5" /> Add rule
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pageRules.map((rule, idx) => (
+                      <div key={rule.id} className="rounded-lg border p-3 space-y-2">
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+                          <div className="grid gap-1.5">
+                            <Label htmlFor={`pr-url-${rule.id}`} className="text-xs">URL pattern</Label>
+                            <Input
+                              id={`pr-url-${rule.id}`}
+                              value={rule.url_pattern}
+                              onChange={e => {
+                                const next = [...pageRules];
+                                next[idx] = { ...next[idx], url_pattern: e.target.value };
+                                setPageRules(next);
+                              }}
+                              placeholder="/checkout"
+                            />
+                          </div>
+                          <div className="grid gap-1.5">
+                            <Label className="text-xs">Match</Label>
+                            <Select
+                              value={rule.match_type}
+                              onValueChange={(v: 'contains' | 'exact' | 'starts_with') => {
+                                const next = [...pageRules];
+                                next[idx] = { ...next[idx], match_type: v };
+                                setPageRules(next);
+                              }}
+                            >
+                              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="contains">Contains</SelectItem>
+                                <SelectItem value="exact">Exact</SelectItem>
+                                <SelectItem value="starts_with">Starts with</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-1.5">
+                            <Label className="text-xs">Action</Label>
+                            <Select
+                              value={rule.action}
+                              onValueChange={(v: 'hide' | 'custom_greeting') => {
+                                const next = [...pageRules];
+                                next[idx] = { ...next[idx], action: v };
+                                setPageRules(next);
+                              }}
+                            >
+                              <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="hide">Hide widget</SelectItem>
+                                <SelectItem value="custom_greeting">Custom greeting</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Remove rule"
+                            onClick={() => setPageRules(pageRules.filter((_, i) => i !== idx))}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {rule.action === 'custom_greeting' && (
+                          <div className="grid gap-1.5">
+                            <Label htmlFor={`pr-msg-${rule.id}`} className="text-xs">Greeting message</Label>
+                            <Textarea
+                              id={`pr-msg-${rule.id}`}
+                              value={rule.greeting_message || ''}
+                              onChange={e => {
+                                const next = [...pageRules];
+                                next[idx] = { ...next[idx], greeting_message: e.target.value };
+                                setPageRules(next);
+                              }}
+                              placeholder="👋 Need help checking out?"
+                              rows={2}
+                              maxLength={500}
+                            />
+                            <p className="text-[11px] text-muted-foreground">{(rule.greeting_message || '').length}/500 characters</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPageRules([
+                        ...pageRules,
+                        {
+                          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+                          url_pattern: '',
+                          match_type: 'contains',
+                          action: 'hide',
+                          greeting_message: '',
+                        },
+                      ])}
+                    >
+                      <Plus className="h-4 w-4 mr-1.5" /> Add rule
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground">
+                      When multiple rules match, <strong>Hide widget</strong> wins over Custom greeting. Rules match against <code className="text-[11px] px-1 rounded bg-muted">window.location.pathname</code> — query strings and hashes are ignored.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

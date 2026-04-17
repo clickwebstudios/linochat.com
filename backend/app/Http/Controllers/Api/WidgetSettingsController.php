@@ -112,6 +112,7 @@ class WidgetSettingsController extends Controller
                     'auto_close_delay_minutes' => 5,
                     'auto_close_message' => 'This chat has been closed due to inactivity. Feel free to start a new conversation anytime!',
                 ],
+                'page_rules' => $settings['page_rules'] ?? [],
                 'settings_updated_at' => $project->settings_updated_at?->toIso8601String(),
             ],
         ]);
@@ -223,6 +224,12 @@ class WidgetSettingsController extends Controller
             'inactivity.auto_close_enabled'        => 'nullable|boolean',
             'inactivity.auto_close_delay_minutes'  => 'nullable|integer|min:1|max:60',
             'inactivity.auto_close_message'        => 'nullable|string|max:500',
+            'page_rules'                          => 'nullable|array|max:50',
+            'page_rules.*.id'                     => 'nullable|string|max:50',
+            'page_rules.*.url_pattern'            => 'nullable|string|max:500',
+            'page_rules.*.match_type'             => 'nullable|string|in:contains,exact,starts_with',
+            'page_rules.*.action'                 => 'nullable|string|in:hide,custom_greeting',
+            'page_rules.*.greeting_message'       => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -244,7 +251,7 @@ class WidgetSettingsController extends Controller
             'greeting_enabled', 'greeting_delay', 'greeting_message', 'font_size',
             'animation', 'animation_repeat', 'animation_delay', 'animation_duration',
             'animation_stop_after', 'gradient', 'offline_behavior', 'offline_message',
-            'schedule', 'popover', 'inactivity',
+            'schedule', 'popover', 'inactivity', 'page_rules',
         ];
 
         foreach ($updatableFields as $field) {

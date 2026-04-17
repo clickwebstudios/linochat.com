@@ -801,6 +801,27 @@ class WidgetLoaderController extends Controller
     
     function getCfgFontSize() { return (CONFIG && CONFIG.font_size ? CONFIG.font_size : 14) + 'px'; }
 
+    // Evaluate page_rules against window.location.pathname.
+    // Returns the first matching rule for the requested action ('hide' or
+    // 'custom_greeting'), or null. Empty url_pattern is ignored.
+    function matchPageRules(action) {
+        if (!CONFIG || !Array.isArray(CONFIG.page_rules)) return null;
+        var path = window.location.pathname || '/';
+        for (var i = 0; i < CONFIG.page_rules.length; i++) {
+            var r = CONFIG.page_rules[i];
+            if (!r || r.action !== action) continue;
+            var pattern = (r.url_pattern || '').trim();
+            if (!pattern) continue;
+            var mt = r.match_type || 'contains';
+            var hit = false;
+            if (mt === 'exact') hit = path === pattern;
+            else if (mt === 'starts_with') hit = path.indexOf(pattern) === 0;
+            else hit = path.indexOf(pattern) !== -1; // contains (default)
+            if (hit) return r;
+        }
+        return null;
+    }
+
     function getMsgStyles() {
         var c = CONFIG ? (CONFIG.color || '#155dfc') : '#155dfc';
         // Use gradient for customer bubbles if gradient design is active
@@ -1441,7 +1462,13 @@ class WidgetLoaderController extends Controller
     
     // Show greeting bubble above the chat button
     function showGreeting() {
-        if (!CONFIG || !CONFIG.greeting_enabled || !CONFIG.greeting_message) return;
+        if (!CONFIG) return;
+        var override = matchPageRules('custom_greeting');
+        var greetMsg = override && override.greeting_message
+            ? override.greeting_message
+            : (CONFIG.greeting_message || '');
+        var greetEnabled = override ? true : !!CONFIG.greeting_enabled;
+        if (!greetEnabled || !greetMsg) return;
         var delay = (CONFIG.greeting_delay || 0) * 1000;
         setTimeout(function() {
             if (CHAT_INITIALIZED) return;
@@ -1460,7 +1487,7 @@ class WidgetLoaderController extends Controller
             var arrowSide = isLeft ? 'left:20px' : 'right:20px';
 
             bubble.style.cssText = 'position:fixed;' + sideStyle + vertStyle + 'background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 32px 12px 14px;width:220px;font-size:' + getCfgFontSize() + ';line-height:1.5;color:#111;z-index:2147483646;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;';
-            bubble.innerHTML = '<span>' + CONFIG.greeting_message + '<\/span>' +
+            bubble.innerHTML = '<span>' + greetMsg + '<\/span>' +
                 '<button id="linochat-greeting-close" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:16px;line-height:1;padding:0;" aria-label="Close">\u00d7<\/button>' +
                 '<div style="position:absolute;' + (isTop ? 'top:-6px;' : 'bottom:-6px;') + arrowSide + ';width:12px;height:12px;background:#fff;transform:rotate(45deg);box-shadow:' + (isTop ? '-2px -2px 4px' : '2px 2px 4px') + ' rgba(0,0,0,.08);"><\/div>';
 
@@ -1604,6 +1631,7 @@ class WidgetLoaderController extends Controller
         loadConfig()
             .then(function() {
                 if (CONFIG && CONFIG.widget_active === false) return; // Widget disabled by owner
+                if (matchPageRules('hide')) return; // Widget hidden on this URL by page rule
                 // Offline handling based on schedule
                 if (CONFIG && CONFIG.is_online === false) {
                     var ob = CONFIG.offline_behavior || 'hide';
