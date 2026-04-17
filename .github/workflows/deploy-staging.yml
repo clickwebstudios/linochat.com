@@ -5,6 +5,12 @@ on:
     branches: [dev]
   workflow_dispatch:
 
+# Same serialization as production deploy — avoids supervisorctl restart races
+# when multiple commits land on dev in quick succession.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

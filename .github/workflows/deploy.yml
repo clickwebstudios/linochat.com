@@ -5,6 +5,14 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# Serialize deploys: rapid master pushes (e.g. two PR merges in a row) used
+# to race on supervisorctl restart, leaving workers in "abnormal termination".
+# Queue the next run instead of cancelling — every commit still gets deployed,
+# just one at a time.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
