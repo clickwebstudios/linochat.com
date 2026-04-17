@@ -582,6 +582,13 @@ class WidgetController extends Controller
                 'ai_enabled' => true,
                 'priority' => 'medium',
                 'metadata' => $this->buildSessionMetadata($request),
+                // Seed these so the chat survives the agent sidebar's "active"
+                // filter (customer_last_seen_at >= now-30s) and sorts to the
+                // top (order by last_message_at desc) the moment the
+                // NewChatForAgent broadcast arrives. The customer-message save
+                // below refreshes both values anyway.
+                'last_message_at' => now(),
+                'customer_last_seen_at' => now(),
             ]);
 
             // Notify agents about the new chat so it appears in their list
