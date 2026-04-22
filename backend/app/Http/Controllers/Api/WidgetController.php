@@ -43,12 +43,12 @@ class WidgetController extends Controller
                 ->first();
 
             if (!$project || $project->status !== 'active') {
-                $data = ['success' => false, 'message' => 'Widget not found or inactive'];
+                $data = ['success' => false, 'disabled' => true, 'message' => 'Widget not found or inactive'];
                 return $this->configResponse($request, $data, 404);
             }
 
             if (optional($project->owner?->company)->status === 'paused') {
-                $data = ['success' => false, 'message' => 'Widget disabled'];
+                $data = ['success' => false, 'disabled' => true, 'message' => 'Widget disabled'];
                 return $this->configResponse($request, $data, 404);
             }
 

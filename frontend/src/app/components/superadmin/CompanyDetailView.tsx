@@ -45,6 +45,7 @@ interface Company {
   status?: string;
   usage?: number;
   color?: string;
+  company_status?: 'active' | 'paused';
   subscription_status?: string;
   subscription_ends_at?: string;
 }
@@ -420,7 +421,11 @@ export function CompanyDetailView({
                   >
                     {company.plan}
                   </Badge>
-                  <Badge className={editedStatus === 'Active' ? 'bg-green-100 text-green-700' : editedStatus === 'Suspended' ? 'bg-red-100 text-red-700' : editedStatus === 'Archived' ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}>{editedStatus}</Badge>
+                  {(() => {
+                    if (company?.company_status === 'paused') return <Badge className="bg-orange-100 text-orange-700">Paused</Badge>;
+                    if (company?.subscription_status === 'past_due') return <Badge className="bg-red-100 text-red-700">Payment Due</Badge>;
+                    return <Badge className="bg-green-100 text-green-700">Active</Badge>;
+                  })()}
                 </div>
                 <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{editedEmail}</span>
