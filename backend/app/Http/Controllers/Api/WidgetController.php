@@ -38,10 +38,17 @@ class WidgetController extends Controller
     public function config(Request $request, string $widget_id)
     {
         try {
-            $project = Project::where('widget_id', $widget_id)->first();
+            $project = Project::where('widget_id', $widget_id)
+                ->with('owner.company:id,status')
+                ->first();
 
             if (!$project || $project->status !== 'active') {
                 $data = ['success' => false, 'message' => 'Widget not found or inactive'];
+                return $this->configResponse($request, $data, 404);
+            }
+
+            if (optional($project->owner?->company)->status === 'paused') {
+                $data = ['success' => false, 'message' => 'Widget disabled'];
                 return $this->configResponse($request, $data, 404);
             }
 

@@ -12,6 +12,7 @@ use App\Models\Chat;
 use App\Models\Ticket;
 use App\Models\Invitation;
 use App\Mail\AgentInvitationMail;
+use App\Mail\CompanyPausedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -51,12 +52,16 @@ class SuperadminController extends Controller
                       ->whereHas('ownedProjects');
             })
             ->withCount('ownedProjects')
-            ->with(['ownedProjects' => function($query) {
-                $query->withCount('agents');
-            }])
+            ->with([
+                'ownedProjects' => function($query) {
+                    $query->withCount('agents');
+                },
+                'company:id,status',
+                'company.subscription:id,company_id,status',
+            ])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
-        
+
         $data = $companies->map(function($company) {
             // Count all unique users in the company: agents assigned to any project + the admin
             $agentIds = collect();
@@ -76,6 +81,8 @@ class SuperadminController extends Controller
                 'users_count' => $totalUsers,
                 'created_at' => $company->created_at,
                 'status' => $company->status,
+                'company_status' => $company->company?->status ?? 'active',
+                'subscription_status' => $company->company?->subscription?->status,
             ];
         });
         
@@ -132,8 +139,67 @@ class SuperadminController extends Controller
                 'users_count' => 1,
                 'created_at' => $user->created_at,
                 'status' => 'Active',
+                'company_status' => 'active',
+                'subscription_status' => null,
             ],
         ], 201);
+    }
+
+    /**
+     * Pause a company. Disables its chat widget on customer sites and
+     * emails the admin owner.
+     */
+    public function pauseCompany(Request $request, $companyId)
+    {
+        $user = User::find($companyId);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+
+        $company = $user->company;
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company record missing'], 404);
+        }
+
+        $company->update(['status' => 'paused']);
+
+        try {
+            Mail::to($user->email)->queue(new CompanyPausedMail($user));
+        } catch (\Throwable $e) {
+            \Log::error('Failed to queue CompanyPausedMail', [
+                'company_id' => $company->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => ['company_status' => 'paused'],
+        ]);
+    }
+
+    /**
+     * Resume a paused company. Re-enables its widget. No email.
+     */
+    public function resumeCompany(Request $request, $companyId)
+    {
+        $user = User::find($companyId);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Company not found'], 404);
+        }
+
+        $company = $user->company;
+        if (!$company) {
+            return response()->json(['success' => false, 'message' => 'Company record missing'], 404);
+        }
+
+        $company->update(['status' => 'active']);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['company_status' => 'active'],
+        ]);
     }
 
     /**

@@ -361,6 +361,8 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::get('/companies/{companyId}', [SuperadminController::class, 'companyDetails']);
     Route::put('/companies/{companyId}', [SuperadminController::class, 'updateCompany']);
     Route::delete('/companies/{companyId}', [SuperadminController::class, 'deleteCompany']);
+    Route::post('/companies/{companyId}/pause', [SuperadminController::class, 'pauseCompany']);
+    Route::post('/companies/{companyId}/resume', [SuperadminController::class, 'resumeCompany']);
     Route::get('/companies/{companyId}/chats', [SuperadminController::class, 'companyChats']);
     Route::get('/companies/{companyId}/projects', [SuperadminController::class, 'companyProjects']);
     Route::get('/companies/{companyId}/agents', [SuperadminController::class, 'companyAgents']);

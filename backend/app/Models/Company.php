@@ -14,6 +14,7 @@ class Company extends Model
     protected $fillable = [
         'name',
         'plan',
+        'status',
         'notification_settings',
         'token_balance',
         'monthly_token_allowance',
