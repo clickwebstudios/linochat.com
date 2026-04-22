@@ -45,6 +45,8 @@ import {
   ChevronDown,
   FolderKanban,
   Loader2,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { ProjectSelector } from '../../components/ProjectSelector';
 import { OverviewSection } from '../../components/superadmin/OverviewSection';
@@ -70,6 +72,20 @@ interface Company {
   users_count: number;
   created_at: string;
   status: string;
+  company_status?: 'active' | 'paused';
+  subscription_status?: string | null;
+}
+
+type CompanyStatusDisplay = { label: 'Active' | 'Paused' | 'Payment Due'; className: string };
+
+function deriveCompanyStatus(c: Company): CompanyStatusDisplay {
+  if (c.company_status === 'paused') {
+    return { label: 'Paused', className: 'border-orange-500 text-orange-600 dark:border-orange-400 dark:text-orange-300' };
+  }
+  if (c.subscription_status === 'past_due') {
+    return { label: 'Payment Due', className: 'border-red-500 text-red-600 dark:border-red-400 dark:text-red-300' };
+  }
+  return { label: 'Active', className: 'border-green-500 text-green-600 dark:border-green-400 dark:text-green-300' };
 }
 
 interface Project {
@@ -229,6 +245,30 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
       toast.error(error?.message || 'Failed to create company');
     } finally {
       setIsCreatingCompany(false);
+    }
+  };
+
+  const handleTogglePauseCompany = async (company: Company) => {
+    const isPaused = company.company_status === 'paused';
+    const action = isPaused ? 'resume' : 'pause';
+    const confirmMessage = isPaused
+      ? `Resume "${company.name}"? The chat widget will be re-enabled on their websites.`
+      : `Pause "${company.name}"? The chat widget will be disabled on all their websites and an email will be sent to the account owner.`;
+    if (!window.confirm(confirmMessage)) return;
+    try {
+      const res = await api.post<{ company_status: 'active' | 'paused' }>(`/superadmin/companies/${company.id}/${action}`);
+      if (res.success) {
+        const newStatus = res.data?.company_status ?? (isPaused ? 'active' : 'paused');
+        setCompanies(prev => prev.map(c =>
+          String(c.id) === String(company.id) ? { ...c, company_status: newStatus } : c
+        ));
+        toast.success(isPaused ? 'Company resumed' : 'Company paused');
+      } else {
+        toast.error('Failed to update company status');
+      }
+    } catch (error: any) {
+      console.error(`Failed to ${action} company:`, error);
+      toast.error(error?.message || `Failed to ${action} company`);
     }
   };
 
@@ -552,6 +592,7 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                         <TableHead>Projects</TableHead>
                         <TableHead>Users</TableHead>
                         <TableHead>Sign Up Date</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -609,6 +650,12 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                             <span className="text-sm font-normal">{new Date(company.created_at).toLocaleDateString()}</span>
                           </TableCell>
                           <TableCell>
+                            {(() => {
+                              const s = deriveCompanyStatus(company);
+                              return <Badge variant="outline" className={s.className}>{s.label}</Badge>;
+                            })()}
+                          </TableCell>
+                          <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
@@ -627,6 +674,19 @@ export default function SuperadminDashboard({ hideHeader = false, sectionOverrid
                                 <DropdownMenuItem>
                                   <Settings className="mr-2 h-4 w-4" />
                                   Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTogglePauseCompany(company);
+                                  }}
+                                >
+                                  {company.company_status === 'paused' ? (
+                                    <><Play className="mr-2 h-4 w-4" />Resume Company</>
+                                  ) : (
+                                    <><Pause className="mr-2 h-4 w-4" />Pause Company</>
+                                  )}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-red-600" onClick={() => setCompanyToDelete(company)}>
