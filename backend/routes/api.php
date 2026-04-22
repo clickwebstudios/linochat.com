@@ -387,6 +387,9 @@ Route::middleware('auth:sanctum')->prefix('superadmin')->group(function () {
     Route::get('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'show']);
     Route::put('/platform-settings/{key}', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'update']);
     Route::get('/ai-usage-stats', [\App\Http\Controllers\Api\PlatformSettingsController::class, 'aiUsageStats']);
+    Route::get('/integrations', [\App\Http\Controllers\Api\PlatformIntegrationsController::class, 'index']);
+    Route::get('/integrations/{provider}', [\App\Http\Controllers\Api\PlatformIntegrationsController::class, 'show']);
+    Route::put('/integrations/{provider}', [\App\Http\Controllers\Api\PlatformIntegrationsController::class, 'update']);
     Route::post('/impersonate/{userId}', [SuperadminController::class, 'impersonate']);
 });
 

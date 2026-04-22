@@ -31,6 +31,7 @@ import {
   UserPlus,
   AlertCircle,
   HelpCircle,
+  Plug,
 } from 'lucide-react';
 import {
   Table,
@@ -44,6 +45,8 @@ import { useAuthStore } from '../../stores/authStore';
 import SuperadminDashboard from './SuperadminDashboard';
 const PlatformAnalytics = lazy(() => import('../../components/superadmin/PlatformAnalytics'));
 import HelpCenterManager from '../../components/superadmin/HelpCenterManager';
+import PlatformIntegrationsTab from '../../components/superadmin/PlatformIntegrationsTab';
+import PlatformSettingsTab from '../../components/superadmin/PlatformSettingsTab';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -52,7 +55,7 @@ import { Loader2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { toast } from 'sonner';
 
-type PlatformTab = 'overview' | 'companies' | 'activity' | 'pricing' | 'transactions' | 'analytics' | 'settings';
+type PlatformTab = 'overview' | 'companies' | 'activity' | 'pricing' | 'transactions' | 'analytics' | 'helpcenter' | 'integrations' | 'settings';
 
 const PLATFORM_TABS: { id: PlatformTab; label: string; icon: any }[] = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -62,7 +65,8 @@ const PLATFORM_TABS: { id: PlatformTab; label: string; icon: any }[] = [
   { id: 'pricing', label: 'Pricing & Plans', icon: CreditCard },
   { id: 'transactions', label: 'Transactions', icon: Receipt },
   { id: 'helpcenter', label: 'Help Center', icon: HelpCircle },
-  { id: 'settings', label: 'Platform Settings', icon: Settings },
+  { id: 'integrations', label: 'Integrations', icon: Plug },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export default function SuperadminPlatform() {
@@ -144,15 +148,9 @@ export default function SuperadminPlatform() {
 
         {activeTab === 'helpcenter' && <HelpCenterManager />}
 
-        {activeTab === 'settings' && (
-          <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-lg font-semibold mb-4">Platform Settings</h2>
-            <div className="text-center py-20 text-muted-foreground">
-              <Settings className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Global platform configuration coming soon.</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'integrations' && <PlatformIntegrationsTab />}
+
+        {activeTab === 'settings' && <PlatformSettingsTab />}
       </div>
     </div>
   );
