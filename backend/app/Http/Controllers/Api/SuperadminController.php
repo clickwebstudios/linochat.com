@@ -340,6 +340,7 @@ class SuperadminController extends Controller
                 'location' => $company->location,
                 'plan' => $this->getCompanyPlan($company),
                 'status' => $company->status ?? 'Active',
+                'company_status' => $companyRecord?->status ?? 'active',
                 'created_at' => $company->created_at,
                 'joined' => $company->created_at?->format('M j, Y') ?? 'N/A',
                 'mrr' => '$0',

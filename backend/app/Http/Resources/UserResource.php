@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatar_url ?? '',
             'role' => $this->role ?? 'agent',
             'company_plan' => $this->company?->plan ?? 'Free',
+            'company_status' => $this->company?->status ?? 'active',
             'status' => $this->status ?? 'Active',
             'two_factor_enabled' => $this->two_factor_enabled ?? false,
             'last_active_at' => $this->last_active_at ?? null,

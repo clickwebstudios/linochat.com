@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Loader2, Shield } from 'lucide-react';
+import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, Loader2, PauseCircle, Shield } from 'lucide-react';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { AdminSidebar } from '../AdminSidebar';
@@ -60,6 +60,35 @@ function ImpersonationBanner() {
   );
 }
 
+function PausedAccountBanner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin' }) {
+  const user = useAuthStore((s) => s.user);
+  const impersonatedBy = localStorage.getItem('impersonated_by');
+  const superadminToken = localStorage.getItem('superadmin_token');
+  const isImpersonating = !!impersonatedBy && !!superadminToken;
+
+  if (role !== 'Admin' || isImpersonating) return null;
+  if (user?.company_status !== 'paused') return null;
+
+  return (
+    <div className="flex items-center justify-between gap-4 bg-orange-50 border-b border-orange-200 px-6 py-2.5 shrink-0">
+      <div className="flex items-center gap-2">
+        <PauseCircle className="h-4 w-4 text-orange-600 shrink-0" />
+        <span className="text-sm text-orange-900">
+          Your account is on pause. Please contact the administrator to restore access.
+        </span>
+      </div>
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="shrink-0 border-orange-300 text-orange-700 hover:bg-orange-100"
+      >
+        <Link to="/contact">Contact administrator</Link>
+      </Button>
+    </div>
+  );
+}
+
 function CancellationBanner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin' }) {
   const { subscription, isLoading } = usePlanGuard();
   const navigate = useNavigate();
@@ -114,6 +143,7 @@ function AgentAdminLayoutInner({ role }: { role: 'Agent' | 'Admin' | 'Superadmin
       {/* Main Content Area - pages render their own header + content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <ImpersonationBanner />
+        <PausedAccountBanner role={role} />
         <CancellationBanner role={role} />
         <Outlet />
       </div>

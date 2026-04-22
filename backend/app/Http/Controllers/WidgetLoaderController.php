@@ -135,16 +135,21 @@ class WidgetLoaderController extends Controller
     // Load widget config - try fetch first (works with CORS), fallback to JSONP (bypasses strict CSP)
     function loadConfig() {
         return fetch(API_URL + '/api/widget/' + WIDGET_ID + '/config', { headers: FETCH_HEADERS, cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) {
+            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            .then(function(res) {
+                var data = res.data;
+                if (data && data.success) {
                     CONFIG = data.data;
                     LAST_SETTINGS_UPDATE = CONFIG.settings_updated_at;
                     return CONFIG;
                 }
-                throw new Error(data.message || 'Failed to load config');
+                var err = new Error((data && data.message) || 'Failed to load config');
+                if (data && data.disabled) err.__widgetDisabled = true;
+                throw err;
             })
-            .catch(function() {
+            .catch(function(err) {
+                // Server explicitly said the widget is disabled — don't try JSONP fallback.
+                if (err && err.__widgetDisabled) throw err;
                 return loadConfigJsonp();
             });
     }
@@ -165,7 +170,9 @@ class WidgetLoaderController extends Controller
                     LAST_SETTINGS_UPDATE = CONFIG.settings_updated_at;
                     resolve(CONFIG);
                 } else {
-                    reject(new Error((data && data.message) || 'Failed to load config'));
+                    var jerr = new Error((data && data.message) || 'Failed to load config');
+                    if (data && data.disabled) jerr.__widgetDisabled = true;
+                    reject(jerr);
                 }
             }
             window[cb] = function(data) { finish(null, data); };
@@ -552,6 +559,18 @@ class WidgetLoaderController extends Controller
         fetch(API_URL + '/api/widget/' + WIDGET_ID + '/config', { headers: FETCH_HEADERS, cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                // Widget was disabled after load (company paused or project deactivated) — tear down immediately.
+                if (data && data.disabled) {
+                    console.log('LinoChat: Widget disabled by server, tearing down');
+                    var rootDisabled = document.getElementById('linochat-widget');
+                    if (rootDisabled) rootDisabled.remove();
+                    document.querySelectorAll('.linochat-unread-bubble, #linochat-greeting-bubble, #linochat-popover').forEach(function(el) { el.remove(); });
+                    if (SETTINGS_CHECK_INTERVAL) { clearInterval(SETTINGS_CHECK_INTERVAL); SETTINGS_CHECK_INTERVAL = null; }
+                    stopHeartbeat();
+                    if (PUSHER) { try { PUSHER.disconnect(); } catch (_) {} PUSHER = null; }
+                    CONFIG = null;
+                    return;
+                }
                 if (data.success && data.data.settings_updated_at !== LAST_SETTINGS_UPDATE) {
                     console.log('LinoChat: Settings updated, full reload...');
                     CONFIG = data.data;
@@ -1678,7 +1697,13 @@ class WidgetLoaderController extends Controller
                 // we don't hit the API (or touch DB) for visitors who never
                 // open the widget.
             })
-            .catch(function() { createButtonOnly(); });
+            .catch(function(err) {
+                // Server says widget is disabled (project inactive or company paused) — render nothing.
+                if (err && err.__widgetDisabled) return;
+                // Generic/network failure — keep the resilience fallback so a broken config request
+                // doesn't hide the widget from real visitors.
+                createButtonOnly();
+            });
     }
     
     // Cleanup
